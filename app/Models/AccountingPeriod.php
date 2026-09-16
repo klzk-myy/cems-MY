@@ -114,8 +114,8 @@ class AccountingPeriod extends BaseModel
      */
     public function scopeCurrent($query)
     {
-        return $query->whereDate('start_date', '<=', now())
-            ->whereDate('end_date', '>=', now());
+        return $query->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString());
     }
 
     /**
@@ -127,7 +127,7 @@ class AccountingPeriod extends BaseModel
      */
     public function scopeForDate($query, string $date)
     {
-        return $query->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date);
+        return $query->whereDate('start_date', '<=', Carbon::parse($date)->toDateString())
+            ->whereDate('end_date', '>=', Carbon::parse($date)->toDateString());
     }
 }

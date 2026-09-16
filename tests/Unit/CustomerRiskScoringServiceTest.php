@@ -18,6 +18,7 @@ use App\Services\Risk\GeographicRiskService;
 use App\Services\Risk\PatternRiskService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\System\CacheOptimizationService;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -51,7 +52,7 @@ class CustomerRiskScoringServiceTest extends TestCase
             new VelocityRiskService($this->mathService, $this->thresholdService),
             new StructuringRiskService($this->mathService, $this->thresholdService),
         );
-        $auditService = new AuditService;
+        $auditService = new AuditService(new CacheOptimizationService);
         $riskCalculationService = new RiskCalculationService(
             $this->mathService,
             $this->thresholdService,

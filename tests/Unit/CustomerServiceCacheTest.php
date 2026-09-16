@@ -63,13 +63,20 @@ class CustomerServiceCacheTest extends TestCase
         ]);
 
         // CacheInvalidationService calls Cache::getStore() to decide whether the store
-        // supports tags, then Cache::tags(...)->flush() to invalidate 'dashboard'.
+        // supports tags, then Cache::tags(...)->flush() to invalidate 'dashboard'
+        // and 'customers' (the cached nationality list lives there). The model
+        // event safety net flushes both tags again on Customer::saved after the
+        // transaction commits, so each tag can be flushed more than once per update.
         $taggableStore = Mockery::mock(TaggableStore::class);
-        Cache::shouldReceive('getStore')->once()->andReturn($taggableStore);
+        Cache::shouldReceive('getStore')->atLeast()->once()->andReturn($taggableStore);
 
         $dashboardMock = Mockery::mock();
-        $dashboardMock->shouldReceive('flush')->once();
-        Cache::shouldReceive('tags')->with(['dashboard'])->once()->andReturn($dashboardMock);
+        $dashboardMock->shouldReceive('flush')->atLeast()->once();
+        Cache::shouldReceive('tags')->with(['dashboard'])->atLeast()->once()->andReturn($dashboardMock);
+
+        $customersMock = Mockery::mock();
+        $customersMock->shouldReceive('flush')->atLeast()->once();
+        Cache::shouldReceive('tags')->with(['customers'])->atLeast()->once()->andReturn($customersMock);
 
         // RiskScoringEngine caches the high-risk country code list (one read per recalculation)
         Cache::shouldReceive('remember')

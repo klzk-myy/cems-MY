@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceFlagService;
 use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheOptimizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -30,7 +31,7 @@ class ComplianceFlagServiceTest extends TestCase
 
         $this->auditService = $this->createMock(AuditService::class);
         $this->cacheInvalidationService = $this->createMock(CacheInvalidationService::class);
-        $this->service = new ComplianceFlagService($this->auditService, $this->cacheInvalidationService);
+        $this->service = new ComplianceFlagService($this->auditService, $this->cacheInvalidationService, new CacheOptimizationService);
     }
 
     #[Test]

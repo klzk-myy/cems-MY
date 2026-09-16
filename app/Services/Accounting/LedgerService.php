@@ -224,8 +224,8 @@ class LedgerService
 
         $query = AccountLedger::with('journalEntry')
             ->where('account_code', $accountCode)
-            ->whereDate('entry_date', '>=', $fromDate)
-            ->whereDate('entry_date', '<=', $toDate);
+            ->whereDate('entry_date', '>=', Carbon::parse($fromDate)->toDateString())
+            ->whereDate('entry_date', '<=', Carbon::parse($toDate)->toDateString());
 
         // Apply branch filter if specified
         if ($branchId !== null) {

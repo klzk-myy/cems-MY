@@ -23,4 +23,14 @@ class DbDateTest extends TestCase
 
         $this->assertSame('MONTH(`created_at`)', DbDate::monthColumn('created_at'));
     }
+
+    #[Test]
+    public function it_returns_driver_aware_month_bucket_expressions(): void
+    {
+        config(['database.default' => 'sqlite']);
+        $this->assertSame("strftime('%Y-%m', \"created_at\")", DbDate::monthBucket('created_at'));
+
+        config(['database.default' => 'mysql']);
+        $this->assertSame("DATE_FORMAT(`created_at`, '%Y-%m')", DbDate::monthBucket('created_at'));
+    }
 }

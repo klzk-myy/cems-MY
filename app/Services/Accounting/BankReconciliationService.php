@@ -35,7 +35,7 @@ class BankReconciliationService
                 // a line is identical when every supplied field matches an
                 // existing record for this account.
                 $exists = BankReconciliation::where('account_code', $accountCode)
-                    ->where('statement_date', $line['date'])
+                    ->whereDate('statement_date', $line['date'])
                     ->where('description', $line['description'])
                     ->where('debit', $line['debit'] ?? 0)
                     ->where('credit', $line['credit'] ?? 0)
@@ -211,7 +211,7 @@ class BankReconciliationService
                 // amount lines both matched the same entry.
                 ->whereNotIn('id', BankReconciliation::whereNotNull('matched_to_journal_entry_id')
                     ->select('matched_to_journal_entry_id'))
-                ->whereDate('entry_date', $record->statement_date)
+                ->whereDate('entry_date', Carbon::parse($record->statement_date)->toDateString())
                 ->first();
 
             if ($matchingEntry) {

@@ -1,20 +1,23 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\Compliance;
+namespace App\Http\Requests;
 
 use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
-use App\Http\Requests\ApiFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class FindingIndexRequest extends ApiFormRequest
+class FindingIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

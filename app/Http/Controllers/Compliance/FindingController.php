@@ -6,6 +6,7 @@ use App\Enums\ComplianceCaseType;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DismissFindingRequest;
+use App\Http\Requests\FindingIndexRequest;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
 use Illuminate\Http\RedirectResponse;
@@ -22,13 +23,13 @@ class FindingController extends Controller
         protected CaseManagementService $caseService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(FindingIndexRequest $request): View
     {
         $query = ComplianceFinding::query()->with('subject');
 
         $this->applyFindingFilters($query, $request);
 
-        $perPage = min(100, max(1, (int) $request->get('per_page', 20)));
+        $perPage = min(100, max(1, (int) ($request->validated()['per_page'] ?? 20)));
         $findingsPaginated = $query->orderBy('generated_at', 'desc')->paginate($perPage);
 
         $findings = $findingsPaginated->map(fn (ComplianceFinding $finding) => [

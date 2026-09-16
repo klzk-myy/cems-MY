@@ -15,4 +15,17 @@ class DbDate
             ? "strftime('%m', {$wrapped})"
             : "MONTH({$wrapped})";
     }
+
+    /**
+     * Year-month bucket expression ('YYYY-MM') for GROUP BY, driver-aware.
+     */
+    public static function monthBucket(string $column): string
+    {
+        $grammar = DB::connection()->getQueryGrammar();
+        $wrapped = $grammar->wrap($column);
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', {$wrapped})"
+            : "DATE_FORMAT({$wrapped}, '%Y-%m')";
+    }
 }

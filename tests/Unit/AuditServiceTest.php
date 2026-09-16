@@ -6,7 +6,9 @@ use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\System\CacheOptimizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -20,7 +22,7 @@ class AuditServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->auditService = new AuditService;
+        $this->auditService = new AuditService(new CacheOptimizationService);
     }
 
     #[Test]
@@ -39,6 +41,19 @@ class AuditServiceTest extends TestCase
 
         $this->assertNotNull($log->id);
         $this->assertEquals('test_action', $log->action);
+    }
+
+    #[Test]
+    public function matching_log_values_filters_distinct_values_from_the_cached_list(): void
+    {
+        Cache::flush();
+        SystemLog::create(['action' => 'compliance_case_opened', 'severity' => 'INFO']);
+        SystemLog::create(['action' => 'transaction_created', 'severity' => 'INFO']);
+
+        $this->assertSame(
+            ['compliance_case_opened'],
+            $this->auditService->matchingLogValues('action', ['CASE'])
+        );
     }
 
     #[Test]

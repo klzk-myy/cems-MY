@@ -25,14 +25,33 @@ class CsvReportWriter
     }
 
     /**
+     * Write a CSV report streaming rows from an iterable (e.g. a generator
+     * over chunked query results) so large exports never materialize the
+     * full result set in memory.
+     *
+     * @param  array<int, string>  $headers
+     * @param  iterable<int, array<int, mixed>>  $rows
+     */
+    public function writeStreaming(string $filename, array $headers, iterable $rows): string
+    {
+        return $this->writeToDisk($filename, function ($csv) use ($headers, $rows) {
+            fputcsv($csv, $this->sanitizeRow($headers));
+
+            foreach ($rows as $row) {
+                fputcsv($csv, $this->sanitizeRow($row));
+            }
+        });
+    }
+
+    /**
      * Write a CSV report with leading title rows, a blank separator row,
      * a header row, and then data rows.
      *
      * @param  array<int, array<int, mixed>>  $titleRows
      * @param  array<int, string>  $headers
-     * @param  array<int, array<int, mixed>>  $rows
+     * @param  iterable<int, array<int, mixed>>  $rows
      */
-    public function writeWithTitleRows(string $filename, array $titleRows, array $headers, array $rows): string
+    public function writeWithTitleRows(string $filename, array $titleRows, array $headers, iterable $rows): string
     {
         return $this->writeToDisk($filename, function ($csv) use ($titleRows, $headers, $rows) {
             foreach ($titleRows as $titleRow) {

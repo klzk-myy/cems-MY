@@ -5,14 +5,15 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Accounting\JournalIndexRequest;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
 use App\Http\Requests\Accounting\StoreJournalEntryRequest;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Services\Accounting\AccountingService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -22,7 +23,7 @@ class JournalController extends Controller
         protected AccountingService $accountingService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(JournalIndexRequest $request): View
     {
         $this->authorize('viewAny', JournalEntry::class);
 
@@ -45,7 +46,7 @@ class JournalController extends Controller
             )
             ->when(
                 $request->filled('date'),
-                fn ($q) => $q->whereDate('entry_date', $request->string('date')->value())
+                fn ($q) => $q->whereDate('entry_date', Carbon::parse($request->string('date')->value())->toDateString())
             )
             ->orderBy('entry_date', 'desc')
             ->orderBy('id', 'desc')

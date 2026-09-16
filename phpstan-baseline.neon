@@ -721,42 +721,6 @@ parameters:
 			path: app/Http/Controllers/Compliance/StrReportController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:alertStats\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:alertStats\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:fetchAlerts\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:fetchFindings\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:findingStats\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Compliance\\UnifiedAlertController\:\:findingStats\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Compliance/UnifiedAlertController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\CounterController\:\:getActiveCurrencies\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
 			identifier: missingType.generics
 			count: 1

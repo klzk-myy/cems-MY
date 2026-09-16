@@ -27,15 +27,16 @@ class CacheOptimizationService
             $cache = Cache::store();
         }
 
-        if ($cache->has($key)) {
-            $this->stats['hits']++;
+        // Atomic check-and-fill: a single remember() costs one round-trip on a
+        // hit, versus two for has()+get(), and cannot race between them.
+        $wasHit = true;
+        $value = $cache->remember($key, now()->addSeconds($ttl), function () use ($callback, &$wasHit) {
+            $wasHit = false;
 
-            return $cache->get($key);
-        }
+            return $callback();
+        });
 
-        $this->stats['misses']++;
-        $value = $callback();
-        $cache->put($key, $value, now()->addSeconds($ttl));
+        $this->stats[$wasHit ? 'hits' : 'misses']++;
 
         return $value;
     }

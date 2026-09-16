@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Customer;
+use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\Contracts\MathServiceInterface;
 use App\Services\Contracts\RateManagementServiceInterface;
@@ -14,6 +15,7 @@ use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Contracts\TransactionStatusServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\RateManagementService;
@@ -29,7 +31,10 @@ use App\View\Composers\UserComposer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\LazyLoadingViolationException;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -105,8 +110,31 @@ class AppServiceProvider extends ServiceProvider
         // after app bootstrap. The runningUnitTests() check is unavailable during
         // AppServiceProvider::boot() because 'unitTesting' is set after provider boot.
 
-        // Prevent lazy loading during development to catch N+1 queries
-        Model::preventLazyLoading(! app()->isProduction());
+        // Catch N+1 queries: violations throw in dev/test but only log in
+        // production, so a missed eager load can never 500 a live request.
+        Model::preventLazyLoading();
+        Model::handleLazyLoadingViolationUsing(function (Model $model, string $relation) {
+            // Keep the stock handler's exemption: freshly created and unsaved
+            // models may still resolve relations lazily (the callback
+            // bypasses this check when registered, so re-apply it here).
+            if (! $model->exists || $model->wasRecentlyCreated) {
+                return;
+            }
+
+            if (app()->isProduction()) {
+                Log::warning('Lazy loading violation', [
+                    'model' => $model::class,
+                    'relation' => $relation,
+                    'url' => app()->runningInConsole() ? 'console' : request()->fullUrl(),
+                ]);
+
+                return;
+            }
+
+            throw new LazyLoadingViolationException($model, $relation);
+        });
+
+        $this->registerCacheInvalidationSafetyNet();
 
         $this->registerMorphMap();
         $this->registerCarbonMacros();
@@ -222,5 +250,43 @@ class AppServiceProvider extends ServiceProvider
     {
         View::composer('*', UserComposer::class);
         View::composer('components.app-layout', NotificationComposer::class);
+    }
+
+    /**
+     * Flush the dashboard cache tag on writes to the primary aggregates.
+     *
+     * Defense-in-depth: explicit invalidation lives at the service layer, but
+     * any write path that bypasses it (jobs, importers, future code) still
+     * flushes the tag. The entry TTL already bounds staleness, so this only
+     * shortens it for missed call sites. Mass updates bypass model events,
+     * which is inherent and acceptable for a safety net.
+     */
+    protected function registerCacheInvalidationSafetyNet(): void
+    {
+        $invalidator = $this->app->make(CacheInvalidationService::class);
+
+        // On stores without tag support, invalidate() falls back to a full
+        // cache flush — far too expensive to run on every model save.
+        if (! $invalidator->supportsTags()) {
+            return;
+        }
+
+        // Flushes are deferred to afterCommit: firing on save() would let a
+        // concurrent reader repopulate the tag with uncommitted state, and
+        // the writes above often run inside DB::transaction().
+        $flush = fn (string ...$tags) => DB::afterCommit(
+            function () use ($invalidator, $tags) {
+                foreach ($tags as $tag) {
+                    $invalidator->invalidate($tag);
+                }
+            }
+        );
+
+        Transaction::saved(fn () => $flush('dashboard'));
+        Transaction::deleted(fn () => $flush('dashboard'));
+        Customer::saved(fn () => $flush('dashboard', 'customers'));
+        Customer::deleted(fn () => $flush('dashboard', 'customers'));
+        FlaggedTransaction::saved(fn () => $flush('dashboard'));
+        FlaggedTransaction::deleted(fn () => $flush('dashboard'));
     }
 }

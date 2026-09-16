@@ -384,7 +384,7 @@ class AccountingService implements AccountingServiceInterface
         // balances stay contiguous in date order.
         foreach (array_keys($touchedAccounts) as $accountCode) {
             $hasLaterRows = AccountLedger::where('account_code', $accountCode)
-                ->whereDate('entry_date', '>', $entry->entry_date)
+                ->whereDate('entry_date', '>', Carbon::parse($entry->entry_date)->toDateString())
                 ->when(
                     $entry->branch_id === null,
                     fn ($q) => $q->whereNull('branch_id'),
@@ -567,8 +567,8 @@ class AccountingService implements AccountingServiceInterface
     public function getAccountActivity(string $accountCode, string $startDate, string $endDate): string
     {
         $totals = AccountLedger::where('account_code', $accountCode)
-            ->whereDate('entry_date', '>=', $startDate)
-            ->whereDate('entry_date', '<=', $endDate)
+            ->whereDate('entry_date', '>=', Carbon::parse($startDate)->toDateString())
+            ->whereDate('entry_date', '<=', Carbon::parse($endDate)->toDateString())
             ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
             ->first();
 
@@ -595,8 +595,8 @@ class AccountingService implements AccountingServiceInterface
             ->select('account_code')
             ->selectRaw('SUM(debit - credit) as activity')
             ->whereIn('account_code', $accountCodes)
-            ->whereDate('entry_date', '>=', $fromDate)
-            ->whereDate('entry_date', '<=', $toDate)
+            ->whereDate('entry_date', '>=', Carbon::parse($fromDate)->toDateString())
+            ->whereDate('entry_date', '<=', Carbon::parse($toDate)->toDateString())
             ->groupBy('account_code')
             ->pluck('activity', 'account_code')
             ->toArray();

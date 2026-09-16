@@ -259,7 +259,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         return TellerAllocation::where('branch_id', $branch->id)
             ->where('status', TellerAllocationStatus::PENDING->value)
             ->whereDate('session_date', now()->toDateString())
-            ->with('user')
+            ->with(TellerAllocation::API_RELATIONS)
             ->get();
     }
 
@@ -268,7 +268,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         return TellerAllocation::where('branch_id', $branch->id)
             ->where('status', TellerAllocationStatus::ACTIVE->value)
             ->whereDate('session_date', now()->toDateString())
-            ->with('user')
+            ->with(TellerAllocation::API_RELATIONS)
             ->get();
     }
 
@@ -477,7 +477,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
         return [
             'success' => true,
-            'data' => $allocation,
+            'data' => $allocation->loadMissing(TellerAllocation::API_RELATIONS),
             'message' => null,
         ];
     }
@@ -488,7 +488,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
      */
     private function allocationBranchOrFail(TellerAllocation $allocation): Branch
     {
-        $branch = $allocation->branch;
+        $branch = $allocation->loadMissing('branch')->branch;
 
         if (! $branch instanceof Branch) {
             throw new TellerBranchRequiredException;

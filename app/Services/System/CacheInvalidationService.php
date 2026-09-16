@@ -49,6 +49,9 @@ class CacheInvalidationService
         }
 
         Cache::forget(CacheKeys::ExchangeRates->value);
+
+        // Resolved (branch+company merged) rate maps live under the 'rates' tag.
+        $this->invalidate('rates');
     }
 
     public function forgetExchangeRates(?int $branchId = null): void
@@ -57,6 +60,9 @@ class CacheInvalidationService
         // The transaction form caches the full rate table under a separate key;
         // forgetting only the branch key left tellers reading stale rates until TTL.
         Cache::forget(CacheKeys::ExchangeRates->value);
+
+        // Resolved (branch+company merged) rate maps live under the 'rates' tag.
+        $this->invalidate('rates');
     }
 
     public function forgetWizardSession(string $sessionId): void

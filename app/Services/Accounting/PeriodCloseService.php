@@ -12,6 +12,7 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -298,7 +299,7 @@ class PeriodCloseService
 
         /** @var Collection<string, object{account_code:string, td:?string, tc:?string}> $totals */
         $totals = AccountLedger::whereIn('account_code', $accountCodes)
-            ->whereDate('entry_date', '<=', $asOfDate)
+            ->whereDate('entry_date', '<=', Carbon::parse($asOfDate)->toDateString())
             ->selectRaw('account_code, COALESCE(SUM(debit),0) as td, COALESCE(SUM(credit),0) as tc')
             ->groupBy('account_code')
             ->get()

@@ -4,27 +4,30 @@ namespace App\Http\Concerns;
 
 use App\Enums\FindingStatus;
 use App\Models\Compliance\ComplianceFinding;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Http\FormRequest;
 
 trait FiltersComplianceFindings
 {
-    protected function applyFindingFilters(Builder $query, Request $request, string $dateFromKey = 'date_from', string $dateToKey = 'date_to'): void
+    protected function applyFindingFilters(Builder $query, FormRequest $request, string $dateFromKey = 'date_from', string $dateToKey = 'date_to'): void
     {
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        $validated = $request->validated();
+
+        if (! empty($validated['status'])) {
+            $query->where('status', $validated['status']);
         }
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->input('severity'));
+        if (! empty($validated['severity'])) {
+            $query->where('severity', $validated['severity']);
         }
-        if ($request->filled('type')) {
-            $query->where('finding_type', $request->input('type'));
+        if (! empty($validated['type'])) {
+            $query->where('finding_type', $validated['type']);
         }
-        if ($request->has($dateFromKey)) {
-            $query->whereDate('generated_at', '>=', $request->input($dateFromKey));
+        if (! empty($validated[$dateFromKey])) {
+            $query->where('generated_at', '>=', Carbon::parse($validated[$dateFromKey])->startOfDay());
         }
-        if ($request->has($dateToKey)) {
-            $query->whereDate('generated_at', '<=', $request->input($dateToKey));
+        if (! empty($validated[$dateToKey])) {
+            $query->where('generated_at', '<=', Carbon::parse($validated[$dateToKey])->endOfDay());
         }
     }
 

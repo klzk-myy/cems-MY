@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\JournalEntryStatus;
 use App\Models\JournalEntry;
 use App\Services\Contracts\MathServiceInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -62,8 +63,8 @@ class CashFlowService
         // whereDate (not whereBetween on the column): on drivers that store a
         // datetime string in this column, a bare 'YYYY-MM-DD' upper bound
         // lexically excludes same-day entries.
-        return JournalEntry::whereDate('entry_date', '>=', $fromDate)
-            ->whereDate('entry_date', '<=', $toDate)
+        return JournalEntry::whereDate('entry_date', '>=', Carbon::parse($fromDate)->toDateString())
+            ->whereDate('entry_date', '<=', Carbon::parse($toDate)->toDateString())
             ->whereIn('status', [JournalEntryStatus::Posted->value, JournalEntryStatus::Reversed->value])
             ->with(['lines.account'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
@@ -238,8 +239,8 @@ class CashFlowService
             ->whereIn('journal_entries.status', [JournalEntryStatus::Posted->value, JournalEntryStatus::Reversed->value])
             ->when(
                 $fromDate === null,
-                fn ($q) => $q->whereDate('journal_entries.entry_date', '<', $toDate),
-                fn ($q) => $q->whereDate('journal_entries.entry_date', '<=', $toDate)
+                fn ($q) => $q->whereDate('journal_entries.entry_date', '<', Carbon::parse($toDate)->toDateString()),
+                fn ($q) => $q->whereDate('journal_entries.entry_date', '<=', Carbon::parse($toDate)->toDateString())
             )
             ->when($branchId, fn ($q) => $q->where('journal_entries.branch_id', $branchId))
             ->selectRaw('COALESCE(SUM(journal_lines.debit), 0) - COALESCE(SUM(journal_lines.credit), 0) as balance')

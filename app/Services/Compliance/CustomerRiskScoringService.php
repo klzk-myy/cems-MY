@@ -173,7 +173,7 @@ class CustomerRiskScoringService
     {
         return Customer::whereHas('riskScoreSnapshots', function ($query) use ($threshold) {
             $query->where('overall_score', '>=', $threshold)
-                ->where('snapshot_date', today());
+                ->whereDate('snapshot_date', today());
         })->with('latestRiskSnapshot')->get();
     }
 
@@ -194,7 +194,7 @@ class CustomerRiskScoringService
     public function getRiskTrend(int $customerId, int $months = 6): array
     {
         $snapshots = RiskScoreSnapshot::where('customer_id', $customerId)
-            ->where('snapshot_date', '>=', now()->subMonths($months))
+            ->whereDate('snapshot_date', '>=', now()->subMonths($months))
             ->orderBy('snapshot_date')
             ->get();
 
@@ -217,16 +217,35 @@ class CustomerRiskScoringService
      */
     public function getDashboardSummary(): array
     {
-        $todaySnapshots = RiskScoreSnapshot::where('snapshot_date', today())->get();
+        // One grouped aggregate instead of hydrating all of today's snapshots
+        // and counting them in PHP. SUM(boolean) evaluates to 0/1 per row on
+        // both MySQL and SQLite.
+        $today = RiskScoreSnapshot::whereDate('snapshot_date', today())
+            ->selectRaw(
+                'COUNT(*) as total,
+                 SUM(overall_score >= 80) as critical,
+                 SUM(overall_score BETWEEN 60 AND 79) as high,
+                 SUM(overall_score BETWEEN 30 AND 59) as medium,
+                 SUM(overall_score < 30) as low,
+                 SUM(trend = ?) as deteriorating',
+                [RiskTrend::Deteriorating->value]
+            )
+            ->first();
 
+        // total/critical/… are selectRaw aliases, not model attributes — read
+        // them through getAttribute() so static analysis stays honest. ->first()
+        // returns null on an empty set, so guard with ?->.
         return [
-            'total_scored_today' => $todaySnapshots->count(),
-            'critical_risk' => $todaySnapshots->where('overall_score', '>=', 80)->count(),
-            'high_risk' => $todaySnapshots->whereBetween('overall_score', [60, 79])->count(),
-            'medium_risk' => $todaySnapshots->whereBetween('overall_score', [30, 59])->count(),
-            'low_risk' => $todaySnapshots->where('overall_score', '<', 30)->count(),
-            'deteriorating_trend' => $todaySnapshots->where('trend', RiskTrend::Deteriorating)->count(),
-            'needs_rescreening' => $this->getCustomersNeedingRescreening()->count(),
+            'total_scored_today' => (int) ($today?->getAttribute('total') ?? 0),
+            'critical_risk' => (int) ($today?->getAttribute('critical') ?? 0),
+            'high_risk' => (int) ($today?->getAttribute('high') ?? 0),
+            'medium_risk' => (int) ($today?->getAttribute('medium') ?? 0),
+            'low_risk' => (int) ($today?->getAttribute('low') ?? 0),
+            'deteriorating_trend' => (int) ($today?->getAttribute('deteriorating') ?? 0),
+            'needs_rescreening' => Customer::whereHas('riskScoreSnapshots', function ($query) {
+                /** @var Builder<RiskScoreSnapshot> $query */
+                $query->needsRescreening();
+            })->count(),
         ];
     }
 

@@ -23,8 +23,6 @@ class StockTransferItem extends BaseModel
 {
     use HasFactory;
 
-    protected $with = ['currency'];
-
     protected $fillable = [
         'stock_transfer_id',
         'currency_code',

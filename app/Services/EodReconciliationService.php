@@ -15,6 +15,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Support\ActorContext;
 use App\Support\BcmathHelper;
+use App\ValueObjects\EodCounterReconciliationData;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -48,7 +49,13 @@ class EodReconciliationService
                     $q->where('branch_id', $branchId);
                 });
             })
+            ->orderBy('id')
             ->get();
+
+        // A counter can hold several sessions per day (handover opens a
+        // successor); keep the first — matching the previous ->first()
+        // semantics — while stats below still count sessions, not counters.
+        $sessionByCounter = $sessions->groupBy('counter_id')->map->first();
 
         $counters = Counter::with('branch')
             ->when($branchId, function ($query) use ($branchId) {
@@ -56,6 +63,44 @@ class EodReconciliationService
             })
             ->active()
             ->get();
+
+        // Batch-load everything the per-counter reconciliation needs up front
+        // so the loop below is pure computation instead of ~15 queries per
+        // counter.
+        $counterCodes = $counters->pluck('code');
+        $counterIds = $counters->pluck('id');
+
+        $tillBalancesByTill = TillBalance::with('currency')
+            ->whereIn('till_id', $counterCodes)
+            ->where('date', $date->toDateString())
+            ->get()
+            ->groupBy('till_id');
+
+        $transactionsByTill = Transaction::with(['customer', 'user', 'flags'])
+            ->whereIn('till_id', $counterCodes)
+            ->forDateRange($date->toDateString(), $date->toDateString())
+            ->notCancelled()
+            ->whereNotIn('status', [TransactionStatus::Failed->value, TransactionStatus::Pending->value])
+            ->get()
+            ->groupBy('till_id');
+
+        $flaggedByTill = FlaggedTransaction::with(['transaction', 'transaction.customer'])
+            ->whereHas('transaction', function ($query) use ($date, $counterCodes) {
+                $query->whereIn('till_id', $counterCodes)
+                    ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
+            })
+            ->where('status', '!=', 'Resolved')
+            ->get()
+            ->groupBy(fn (FlaggedTransaction $flag) => (string) $flag->transaction?->till_id);
+
+        $handoversByCounter = CounterHandover::with(['counterSession', 'fromUser', 'toUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($date, $counterIds) {
+                $query->whereIn('counter_id', $counterIds)
+                    ->where('session_date', $date->toDateString());
+            })
+            ->orderBy('handover_time', 'asc')
+            ->get()
+            ->groupBy(fn ($handover) => $handover->counterSession?->counter_id);
 
         $counterSummaries = [];
         $totalOpeningFloat = '0';
@@ -66,13 +111,21 @@ class EodReconciliationService
         $totalVariance = '0';
 
         foreach ($counters as $counter) {
-            $session = $sessions->where('counter_id', $counter->id)->first();
+            $session = $sessionByCounter->get($counter->id);
 
             if (! $session) {
                 continue;
             }
 
-            $summary = $this->generateCounterReconciliation($counter->id, $date);
+            $summary = $this->counterReconciliationFromData(new EodCounterReconciliationData(
+                counter: $counter,
+                date: $date,
+                session: $session,
+                tillBalances: $tillBalancesByTill->get($counter->code, collect()),
+                transactions: $transactionsByTill->get($counter->code, collect()),
+                flaggedTransactions: $flaggedByTill->get($counter->code, collect()),
+                handovers: $handoversByCounter->get($counter->id, collect()),
+            ));
             $counterSummaries[] = $summary;
 
             $totalOpeningFloat = BcmathHelper::add($totalOpeningFloat, $summary['opening_float']);
@@ -180,28 +233,71 @@ class EodReconciliationService
             ];
         }
 
-        $cashTotals = $this->cashTotals($counterId, $date);
+        $tillBalances = TillBalance::with('currency')
+            ->where('till_id', $counter->code)
+            ->where('date', $date->toDateString())
+            ->get();
 
-        // Get transactions for this counter on this date
         $transactions = $this->reconcilableTransactionsQuery($counterId, $date)
             ->with(['customer', 'user', 'flags'])
             ->get();
 
+        $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
+            ->whereHas('transaction', function ($query) use ($counter, $date) {
+                $query->where('till_id', $counter->code)
+                    ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
+            })
+            ->where('status', '!=', 'Resolved')
+            ->get();
+
+        $handovers = CounterHandover::with(['counterSession', 'fromUser', 'toUser', 'supervisor'])
+            ->whereHas('counterSession', function ($query) use ($counterId, $date) {
+                $query->where('counter_id', $counterId)
+                    ->where('session_date', $date->toDateString());
+            })
+            ->orderBy('handover_time', 'asc')
+            ->get();
+
+        return $this->counterReconciliationFromData(new EodCounterReconciliationData(
+            counter: $counter,
+            date: $date,
+            session: $session,
+            tillBalances: $tillBalances,
+            transactions: $transactions,
+            flaggedTransactions: $flaggedTransactions,
+            handovers: $handovers,
+        ));
+    }
+
+    /**
+     * Assemble the per-counter reconciliation payload from preloaded
+     * collections. Shared by the single-counter API path and the daily
+     * summary batch path so both return identical shapes.
+     *
+     * @return array<string, mixed>
+     */
+    private function counterReconciliationFromData(EodCounterReconciliationData $data): array
+    {
+        $cashTotals = $this->cashTotalsFromTransactions($data->transactions);
+
         return [
-            'counter_id' => $counterId,
-            'counter_code' => $counter->code,
-            'counter_name' => $counter->name,
-            'branch_name' => $counter->branch->name,
-            'date' => $date->toDateString(),
+            'counter_id' => $data->counter->id,
+            'counter_code' => $data->counter->code,
+            'counter_name' => $data->counter->name,
+            'branch_name' => $data->counter->branch->name,
+            'date' => $data->date->toDateString(),
             'has_session' => true,
-            'session' => $this->sessionSection($session),
-            ...$this->floatSection($counter, $date, $cashTotals),
-            'variance' => $this->calculateVariance($counterId, $date),
-            'currency_breakdown' => $this->getCurrencyBreakdown($counterId, $date),
-            'transactions' => $this->transactionSection($transactions, $cashTotals),
-            'large_transactions' => $this->largeTransactionsSection($transactions),
-            'flagged_transactions' => $this->flaggedSection($counter, $date),
-            'handover_history' => $this->handoverSection($counterId, $date),
+            'session' => $this->sessionSection($data->session),
+            ...$this->floatSectionFromBalances($data->tillBalances, $cashTotals),
+            'variance' => $this->varianceFromBalances($data->tillBalances, $cashTotals),
+            'currency_breakdown' => $this->currencyBreakdownFromBalances($data->tillBalances),
+            'transactions' => $this->transactionSection($data->transactions, $cashTotals),
+            'large_transactions' => $this->largeTransactionsSection($data->transactions),
+            'flagged_transactions' => [
+                'count' => $data->flaggedTransactions->count(),
+                'transactions' => $data->flaggedTransactions->take(50)->values(),
+            ],
+            'handover_history' => $this->mapHandovers($data->handovers),
         ];
     }
 
@@ -210,15 +306,20 @@ class EodReconciliationService
      * sells foreign currency, customer pays MYR (received). Buy-type = bureau
      * buys foreign currency, pays MYR (paid out).
      *
+     * @param  Collection<int, Transaction>  $transactions
      * @return array{received: string, paid_out: string}
      */
-    private function cashTotals(int $counterId, Carbon $date): array
+    private function cashTotalsFromTransactions(Collection $transactions): array
     {
-        $sumQuery = $this->reconcilableTransactionsQuery($counterId, $date);
-
         return [
-            'received' => (string) ((clone $sumQuery)->sell()->sum('amount_local')),
-            'paid_out' => (string) ((clone $sumQuery)->buy()->sum('amount_local')),
+            'received' => $this->sumDecimalColumn(
+                $transactions->filter(fn ($tx) => $tx->type === TransactionType::Sell),
+                'amount_local'
+            ),
+            'paid_out' => $this->sumDecimalColumn(
+                $transactions->filter(fn ($tx) => $tx->type === TransactionType::Buy),
+                'amount_local'
+            ),
         ];
     }
 
@@ -248,16 +349,12 @@ class EodReconciliationService
     }
 
     /**
+     * @param  Collection<int, TillBalance>  $tillBalances
      * @param  array{received: string, paid_out: string}  $cashTotals
      * @return array{opening_float: string, total_cash_received: string, total_cash_paid_out: string, closing_float_expected: string, closing_float_actual: ?string}
      */
-    private function floatSection(Counter $counter, Carbon $date, array $cashTotals): array
+    private function floatSectionFromBalances(Collection $tillBalances, array $cashTotals): array
     {
-        // Get till balances for the day
-        $tillBalances = TillBalance::where('till_id', $counter->code)
-            ->where('date', $date->toDateString())
-            ->get();
-
         // The MYR float is tracked on the MYR till row only — summing every
         // currency row would mix USD/EUR/etc. units into an MYR figure.
         $myrTillBalances = $tillBalances->where('currency_code', Currency::baseCurrency());
@@ -326,37 +423,40 @@ class EodReconciliationService
     }
 
     /**
-     * @return array{count: int, transactions: Collection<int, FlaggedTransaction>}
+     * Calculate variance from preloaded till balances and cash totals.
+     *
+     * @param  Collection<int, TillBalance>  $tillBalances
+     * @param  array{received: string, paid_out: string}  $cashTotals
      */
-    private function flaggedSection(Counter $counter, Carbon $date): array
+    private function varianceFromBalances(Collection $tillBalances, array $cashTotals): string
     {
-        $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
-            ->whereHas('transaction', function ($query) use ($counter, $date) {
-                $query->where('till_id', $counter->code)
-                    ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
-            })
-            ->where('status', '!=', 'Resolved')
-            ->get();
+        $myrTillBalances = $tillBalances->where('currency_code', Currency::baseCurrency());
+        $openingFloat = $this->sumDecimalColumn($myrTillBalances, 'opening_balance');
 
-        return [
-            'count' => $flaggedTransactions->count(),
-            'transactions' => $flaggedTransactions->take(50)->values(),
-        ];
+        $expectedClosing = BcmathHelper::subtract(
+            BcmathHelper::add($openingFloat, $cashTotals['received']),
+            $cashTotals['paid_out']
+        );
+
+        $closedBalances = $myrTillBalances->whereNotNull('closing_balance');
+
+        if ($closedBalances->isEmpty()) {
+            // Session not yet closed, return expected closing to show pending variance
+            return $expectedClosing;
+        }
+
+        return BcmathHelper::subtract(
+            $this->sumDecimalColumn($closedBalances, 'closing_balance'),
+            $expectedClosing
+        );
     }
 
     /**
+     * @param  Collection<int, CounterHandover>  $handovers
      * @return Collection<int, array<string, mixed>>
      */
-    private function handoverSection(int $counterId, Carbon $date): Collection
+    private function mapHandovers(Collection $handovers): Collection
     {
-        $handovers = CounterHandover::with(['fromUser', 'toUser', 'supervisor'])
-            ->whereHas('counterSession', function ($query) use ($counterId, $date) {
-                $query->where('counter_id', $counterId)
-                    ->where('session_date', $date->toDateString());
-            })
-            ->orderBy('handover_time', 'asc')
-            ->get();
-
         /** @var Collection<int, array<string, mixed>> */
         return $handovers->map(fn ($h) => [
             'id' => $h->id,
@@ -450,21 +550,13 @@ class EodReconciliationService
     }
 
     /**
-     * Get currency breakdown for a counter on a given date.
+     * Map preloaded till balances to the currency breakdown payload.
      *
-     * @param  int  $counterId  Counter ID
-     * @param  Carbon  $date  Reconciliation date
-     * @return array Currency breakdown
+     * @param  Collection<int, TillBalance>  $tillBalances
+     * @return array<int, array<string, mixed>>
      */
-    private function getCurrencyBreakdown(int $counterId, Carbon $date): array
+    private function currencyBreakdownFromBalances(Collection $tillBalances): array
     {
-        $counter = Counter::findOrFail($counterId);
-
-        $tillBalances = TillBalance::with('currency')
-            ->where('till_id', $counter->code)
-            ->where('date', $date->toDateString())
-            ->get();
-
         return $tillBalances->map(function ($balance) {
             return [
                 'currency_code' => $balance->currency_code,

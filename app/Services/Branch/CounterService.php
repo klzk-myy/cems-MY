@@ -182,7 +182,7 @@ class CounterService
             })->get()->keyBy('code');
 
             $tillBalances = TillBalance::where('till_id', $session->tillCode())
-                ->where('date', $session->session_date)
+                ->whereDate('date', $session->session_date)
                 ->whereNull('closed_at')
                 ->orderBy('currency_code')
                 ->lockForUpdate()

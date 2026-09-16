@@ -2,11 +2,15 @@
 
 namespace App\Services\Reporting\Generators;
 
+use App\Enums\TransactionType;
 use App\Services\Reporting\CsvReportWriter;
 use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Support\DbDate;
 use App\ValueObjects\Quarter;
+use Carbon\Carbon;
+use Illuminate\Support\LazyCollection;
 
 class QlvrReportGenerator
 {
@@ -26,72 +30,19 @@ class QlvrReportGenerator
         $startDate = $quarterVo->startDate();
         $endDate = $quarterVo->endDate();
 
-        $transactions = $this->transactionReportQuery
-            ->completed()
-            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
-            ->with(['customer', 'user'])
-            ->where('amount_local', '>=', $this->thresholdService->getLargeTransactionThreshold())
-            ->orderBy('created_at')
-            ->get();
-
-        // Collection::sum() casts DECIMAL strings to float; use bcmath so large
-        // monetary totals in the report do not lose precision.
-        $sumAmounts = function ($txns) {
-            $total = '0';
-            foreach ($txns as $txn) {
-                $total = $this->mathService->add($total, (string) $txn->amount_local);
-            }
-
-            return $total;
-        };
-
-        $monthlyBreakdown = [];
-        for ($m = 0; $m < 3; $m++) {
-            $monthDate = $startDate->copy()->addMonths($m);
-            $monthTxns = $transactions->filter(function ($txn) use ($monthDate) {
-                return $txn->created_at->format('Y-m') === $monthDate->format('Y-m');
-            });
-
-            $monthlyBreakdown[] = [
-                'month' => $monthDate->format('Y-m'),
-                'count' => $monthTxns->count(),
-                'total_amount' => $sumAmounts($monthTxns),
-            ];
-        }
-
-        $byCurrency = $transactions->groupBy('currency_code')->map(function ($txns) use ($sumAmounts) {
-            return [
-                'currency' => $txns->first()->currency_code,
-                'count' => $txns->count(),
-                'total_amount' => $sumAmounts($txns),
-            ];
-        })->values();
-
-        return [
-            'quarter' => $quarter,
-            'period_start' => $startDate->toDateString(),
-            'period_end' => $endDate->toDateString(),
-            'generated_at' => now()->toIso8601String(),
-            'total_transactions' => $transactions->count(),
-            'total_amount' => $sumAmounts($transactions),
-            'monthly_breakdown' => $monthlyBreakdown,
-            'by_currency' => $byCurrency,
-            'data' => $transactions->map(function ($txn) {
-                return [
-                    'Transaction_ID' => 'TXN-'.str_pad((string) $txn->id, 8, '0', STR_PAD_LEFT),
-                    'Date' => $txn->created_at->format('Y-m-d'),
-                    'Customer_Name' => $this->maskName($txn->customer->full_name),
-                    'Amount_Local' => $txn->amount_local,
-                    'Currency' => $txn->currency_code,
-                    'Transaction_Type' => $txn->type,
-                ];
-            })->toArray(),
-        ];
+        return array_merge(
+            $this->summarize($quarter, $startDate, $endDate),
+            ['data' => iterator_to_array($this->transactionRows($startDate, $endDate), false)]
+        );
     }
 
     public function generateCsv(string $quarter): string
     {
-        $data = $this->generate($quarter);
+        $quarterVo = Quarter::fromString($quarter);
+        $startDate = $quarterVo->startDate();
+        $endDate = $quarterVo->endDate();
+
+        $data = $this->summarize($quarter, $startDate, $endDate);
         $filename = "QLVR_{$quarter}.csv";
 
         $titleRows = [
@@ -103,12 +54,119 @@ class QlvrReportGenerator
         ];
 
         $headers = ['Transaction_ID', 'Date', 'Customer_Name', 'Amount_Local', 'Currency', 'Transaction_Type'];
-        $rows = [];
-        foreach ($data['data'] as $row) {
-            $rows[] = array_values($row);
+
+        $rows = function () use ($startDate, $endDate) {
+            foreach ($this->transactionRows($startDate, $endDate) as $row) {
+                yield array_values($row);
+            }
+        };
+
+        return $this->csvReportWriter->writeWithTitleRows($filename, $titleRows, $headers, $rows());
+    }
+
+    /**
+     * Compute the report totals in SQL instead of hydrating the full quarter
+     * into memory. SUM() over a DECIMAL column returns an exact decimal
+     * string, so there is no float-precision risk; the returned breakdown
+     * totals are combined with bcmath for the grand total.
+     *
+     * @return array<string, mixed>
+     */
+    protected function summarize(string $quarter, Carbon $startDate, Carbon $endDate): array
+    {
+        $monthExpr = DbDate::monthBucket('created_at');
+
+        $base = fn () => $this->transactionReportQuery
+            ->completed()
+            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
+            ->where('amount_local', '>=', $this->thresholdService->getLargeTransactionThreshold());
+
+        $monthlyAggregates = $base()
+            ->selectRaw("{$monthExpr} as month, COUNT(*) as count, SUM(amount_local) as total")
+            ->groupBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $monthlyBreakdown = [];
+        $totalTransactions = 0;
+        $totalAmount = '0';
+
+        for ($m = 0; $m < 3; $m++) {
+            $monthDate = $startDate->copy()->addMonths($m);
+            $key = $monthDate->format('Y-m');
+            $aggregate = $monthlyAggregates->get($key);
+            // count/total are selectRaw aliases, not model attributes — read
+            // them through getAttribute() so static analysis stays honest.
+            $count = (int) ($aggregate?->getAttribute('count') ?? 0);
+            $total = (string) ($aggregate?->getAttribute('total') ?? '0');
+
+            $totalTransactions += $count;
+            $totalAmount = $this->mathService->add($totalAmount, $total);
+
+            $monthlyBreakdown[] = [
+                'month' => $key,
+                'count' => $count,
+                'total_amount' => $total,
+            ];
         }
 
-        return $this->csvReportWriter->writeWithTitleRows($filename, $titleRows, $headers, $rows);
+        $byCurrency = $base()
+            ->selectRaw('currency_code, COUNT(*) as count, SUM(amount_local) as total')
+            ->groupBy('currency_code')
+            ->get()
+            ->map(fn ($row) => [
+                'currency' => $row->currency_code,
+                'count' => (int) $row->getAttribute('count'),
+                'total_amount' => (string) $row->getAttribute('total'),
+            ])
+            ->values();
+
+        return [
+            'quarter' => $quarter,
+            'period_start' => $startDate->toDateString(),
+            'period_end' => $endDate->toDateString(),
+            'generated_at' => now()->toIso8601String(),
+            'total_transactions' => $totalTransactions,
+            'total_amount' => $totalAmount,
+            'monthly_breakdown' => $monthlyBreakdown,
+            'by_currency' => $byCurrency,
+        ];
+    }
+
+    /**
+     * Stream the report's detail rows one at a time so a large quarter never
+     * materializes every transaction model at once. Only the columns the
+     * report renders are selected, and the customer name is eager loaded with
+     * a narrow column list.
+     *
+     * lazyById() (not cursor()): cursor() hydrates row-by-row and never applies
+     * eager loads, so ->customer would lazy-load per row — an N+1 that also
+     * trips preventLazyLoading in dev/test. lazyById() keyset-pages by id
+     * (monotonic with created_at), which both eager-loads each chunk and stays
+     * stable when created_at ties or rows are inserted mid-report.
+     *
+     * @return LazyCollection<int, array{Transaction_ID: string, Date: string, Customer_Name: string, Amount_Local: string, Currency: string, Transaction_Type: TransactionType}>
+     */
+    protected function transactionRows(Carbon $startDate, Carbon $endDate): LazyCollection
+    {
+        return $this->transactionReportQuery
+            ->completed()
+            ->forDateRange($startDate->toDateString(), $endDate->toDateString())
+            ->with('customer:id,full_name')
+            ->select(['id', 'created_at', 'customer_id', 'amount_local', 'currency_code', 'type'])
+            ->where('amount_local', '>=', $this->thresholdService->getLargeTransactionThreshold())
+            ->lazyById()
+            ->map(
+                /** @return array<string, mixed> */
+                fn ($txn) => [
+                    'Transaction_ID' => 'TXN-'.str_pad((string) $txn->id, 8, '0', STR_PAD_LEFT),
+                    'Date' => $txn->created_at->format('Y-m-d'),
+                    'Customer_Name' => $this->maskName($txn->customer->full_name),
+                    'Amount_Local' => $txn->amount_local,
+                    'Currency' => $txn->currency_code,
+                    'Transaction_Type' => $txn->type,
+                ]
+            );
     }
 
     protected function maskName(string $name): string

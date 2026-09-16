@@ -151,6 +151,7 @@ class CustomerService implements CustomerServiceInterface
             return $customer;
         });
         $this->cacheInvalidationService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('customers');
 
         return $customer;
     }
@@ -240,6 +241,7 @@ class CustomerService implements CustomerServiceInterface
         CustomerRecordUpdated::dispatch($customer, $changedFields, $userId);
 
         $this->cacheInvalidationService->invalidate('dashboard');
+        $this->cacheInvalidationService->invalidate('customers');
         // Invalidate individual customer cache
         $this->cacheInvalidationService->forgetCustomer($customer->id);
 

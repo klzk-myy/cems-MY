@@ -20,7 +20,10 @@ class AuditLogController extends Controller
 
         $logs = SystemLog::query()
             ->with('user')
-            ->when($request->filled('action'), fn ($q) => $q->where('action', 'like', '%'.$request->string('action').'%'))
+            // Resolve the substring against the (cached) distinct action list so
+            // the filter itself stays a whereIn on the indexed action column
+            // instead of a '%…%' scan over the largest table.
+            ->when($request->filled('action'), fn ($q) => $q->whereIn('action', $this->auditService->matchingLogValues('action', [$request->string('action')->toString()])))
             ->when($request->filled('entity_type'), fn ($q) => $q->where('entity_type', $request->string('entity_type')))
             ->when($request->filled('severity'), fn ($q) => $q->where('severity', $request->string('severity')))
             ->orderByDesc('id')

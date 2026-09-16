@@ -10,11 +10,11 @@ use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\SanctionEntry;
 use App\Services\Compliance\CustomerRiskScoringService;
+use App\Support\DbDate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class RiskDashboardController extends Controller
@@ -33,7 +33,17 @@ class RiskDashboardController extends Controller
             $query->where('overall_score', '>=', $threshold);
         })
             ->with('latestRiskSnapshot')
-            ->orderByDesc('latestRiskSnapshot.overall_score')
+            // The ordering subquery must mirror latestRiskSnapshot's
+            // latestOfMany('snapshot_date') tiebreak (greatest id on a
+            // same-date tie), or a row can be ordered by a score other than
+            // the snapshot the eager load displays.
+            ->orderByDesc(
+                RiskScoreSnapshot::select('overall_score')
+                    ->whereColumn('customer_id', 'customers.id')
+                    ->latest('snapshot_date')
+                    ->latest('id')
+                    ->limit(1)
+            )
             ->paginate(25);
 
         $summary = $this->riskScoringService->getDashboardSummary();
@@ -96,9 +106,7 @@ class RiskDashboardController extends Controller
         $months = $this->getLastSixMonths();
         $start = $months->first()->copy()->startOfMonth();
         $end = $months->last()->copy()->endOfMonth();
-        $format = DB::getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m', snapshot_date)"
-            : "DATE_FORMAT(snapshot_date, '%Y-%m')";
+        $format = DbDate::monthBucket('snapshot_date');
 
         $counts = RiskScoreSnapshot::query()
             ->where('overall_score', '>=', 60)
@@ -123,9 +131,7 @@ class RiskDashboardController extends Controller
         $months = $this->getLastSixMonths();
         $start = $months->first()->copy()->startOfMonth();
         $end = $months->last()->copy()->endOfMonth();
-        $format = DB::getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m', created_at)"
-            : "DATE_FORMAT(created_at, '%Y-%m')";
+        $format = DbDate::monthBucket('created_at');
 
         $counts = Alert::query()
             ->whereBetween('created_at', [$start, $end])

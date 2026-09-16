@@ -70,7 +70,7 @@ use Illuminate\Support\Collection;
  * @property-read string $risk_variant UI risk badge variant
  * @property-read string $id_number_masked PDPA-masked ID number
  * @property-read string|null $ic_number Legacy masked IC number
- * @property-read Branch|null $branch Branch of the latest transaction
+ * @property-read Branch|null $branch Branch of the latest transaction — eager-load latestTransaction.branch before reading
  * @property-read string|null $transactions_sum_amount_local Result of withSum('transactions', 'amount_local')
  */
 class Customer extends BaseModel
@@ -173,6 +173,13 @@ class Customer extends BaseModel
         return $this->hasOne(Transaction::class)->latestOfMany();
     }
 
+    /**
+     * Branch of the customer's latest transaction.
+     *
+     * Reads the already-loaded relations — eager-load
+     * `latestTransaction.branch` on list endpoints to avoid a per-row
+     * lazy-load cascade.
+     */
     public function getBranchAttribute(): ?Branch
     {
         return $this->latestTransaction?->branch;

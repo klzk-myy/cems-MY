@@ -27,6 +27,15 @@ enum CacheKeys: string
     /** Cache tag used for account balance data. */
     case BalancesTag = 'balances';
 
+    /** Terminal setup-complete flag probed by HomeController. */
+    case SetupComplete = 'setup:complete';
+
+    /** Distinct customer nationalities for the index filter dropdown. */
+    case CustomerNationalities = 'customer_nationalities';
+
+    /** Compliance flag status counts for the dashboard. */
+    case ComplianceFlagStatusCounts = 'compliance_flag_status_counts';
+
     /**
      * Build a wizard session cache key.
      */
@@ -59,5 +68,21 @@ enum CacheKeys: string
     public static function exchangeRates(?int $branchId = null): string
     {
         return $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
+    }
+
+    /**
+     * Resolved (branch+company merged) rate map used by the customer API.
+     */
+    public static function exchangeRatesResolved(?int $branchId): string
+    {
+        return 'exchange_rates_resolved_'.($branchId ?? 'company');
+    }
+
+    /**
+     * Cached distinct-value list for a SystemLog column (audit filters).
+     */
+    public static function auditLogDistinct(string $column): string
+    {
+        return "audit_log_distinct_{$column}s";
     }
 }

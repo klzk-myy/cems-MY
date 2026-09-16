@@ -25,7 +25,7 @@ class FindingController extends Controller
 
         $this->applyFindingFilters($query, $request);
 
-        $perPage = min(100, max(1, (int) $request->get('per_page', 20)));
+        $perPage = min(100, max(1, (int) ($request->validated()['per_page'] ?? 20)));
         $findings = $query->orderBy('generated_at', 'desc')->paginate($perPage);
 
         return $this->successResponse($findings, 'Findings retrieved successfully.');

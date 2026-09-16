@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
+use App\Services\System\CacheOptimizationService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,7 +44,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $this->stockTransferService = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $this->user);
+        $this->stockTransferService = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $this->user);
     }
 
     #[Test]
@@ -65,7 +66,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $this->branchA->id,
         ]);
-        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $teller);
+        $service = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $teller);
 
         $this->assertValidationError(
             'within-branch stock transfers',
@@ -236,8 +237,8 @@ class StockTransferServiceTest extends TestCase
             'quantity' => '1000',
         ]);
 
-        $maker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerA);
-        $taker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerB);
+        $maker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerA);
+        $taker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerB);
 
         $transfer = $maker->createRequest([
             'source_branch_name' => 'Branch A',
@@ -274,7 +275,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $otherMaker = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), $managerA2);
+        $otherMaker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerA2);
 
         try {
             $otherMaker->approveByBranchManager($transfer);

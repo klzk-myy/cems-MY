@@ -7,6 +7,8 @@ use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\AuditTrail;
 use App\Models\SystemLog;
 use App\Services\Contracts\AuditServiceInterface;
+use App\Services\System\CacheKeys;
+use App\Services\System\CacheOptimizationService;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,12 @@ use Illuminate\Support\Facades\Request;
 
 class AuditService implements AuditServiceInterface
 {
+    public function __construct(
+        protected ?CacheOptimizationService $cacheOptimizationService = null,
+    ) {
+        $this->cacheOptimizationService ??= new CacheOptimizationService;
+    }
+
     /**
      * Hash algorithm versions are encoded inside entry_hash itself (no schema
      * change): v1 rows store a bare 64-char SHA-256 of the legacy metadata-only
@@ -830,6 +838,31 @@ class AuditService implements AuditServiceInterface
     public function getUnsealedCount(): int
     {
         return SystemLog::whereNull('entry_hash')->count();
+    }
+
+    /**
+     * Distinct SystemLog values for a column containing any of the given
+     * substrings (case-insensitive). The distinct list rides a covering index
+     * and is cached; new values become matchable within the TTL.
+     *
+     * @param  list<string>  $needles
+     * @return list<string>
+     */
+    public function matchingLogValues(string $column, array $needles): array
+    {
+        $values = $this->cacheOptimizationService->remember(
+            CacheKeys::auditLogDistinct($column),
+            300,
+            ['audit'],
+            fn () => SystemLog::distinct()->pluck($column)->all()
+        );
+
+        return array_values(array_filter(
+            $values,
+            fn (string $value) => collect($needles)->contains(
+                fn (string $needle) => str_contains(mb_strtolower($value), mb_strtolower($needle))
+            )
+        ));
     }
 
     /**

@@ -38,7 +38,14 @@ class TellerAllocation extends BaseModel
 {
     use BelongsToBranch, HasFactory;
 
-    protected $with = ['user', 'branch', 'counter', 'approver'];
+    /**
+     * Relations every API/UI payload of an allocation needs — shared by the
+     * controller eager loads and the service result payloads so the two never
+     * drift apart.
+     *
+     * @var list<string>
+     */
+    public const API_RELATIONS = ['user', 'branch', 'counter', 'approver'];
 
     protected $fillable = [
         'user_id',

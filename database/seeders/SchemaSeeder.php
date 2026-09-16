@@ -249,7 +249,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
-            $table->index('code', 'branches_code_index');
             $table->unique('code', 'branches_code_unique');
             $table->index('deleted_at', 'branches_deleted_at_index');
             $table->index(['is_active', 'type'], 'branches_is_active_type_index');
@@ -345,7 +344,9 @@ class SchemaSeeder extends Seeder
             $table->index('status', 'idx_journal_entries_status');
             $table->index('created_by', 'idx_journal_entries_created_by');
             $table->index(['period_id', 'status'], 'idx_journal_entries_period_status');
-            $table->index(['period_id', 'approved_by', 'created_by', 'reversed_by', 'posted_by'], 'idx_360ab721c158');
+            $table->index('approved_by', 'idx_journal_entries_approved_by');
+            $table->index('reversed_by', 'idx_journal_entries_reversed_by');
+            $table->index('posted_by', 'idx_journal_entries_posted_by');
             $table->foreign('period_id')->references('id')->on('accounting_periods');
             $table->foreign('branch_id')->references('id')->on('branches');
             $table->foreign('approved_by')->references('id')->on('users');
@@ -385,9 +386,7 @@ class SchemaSeeder extends Seeder
             $table->index(['account_code', 'entry_date'], 'account_ledger_account_code_entry_date_index');
             $table->index('journal_entry_id', 'account_ledger_journal_entry_id_index');
             $table->index('branch_id', 'account_ledger_branch_id_index');
-            $table->index(['account_code', 'entry_date'], 'idx_account_ledger_account_entry');
             $table->index('entry_date', 'idx_account_ledger_entry_date');
-            $table->index('journal_entry_id', 'idx_account_ledger_journal_entry');
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
             $table->foreign('journal_entry_id')->references('id')->on('journal_entries');
             $table->foreign('account_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
@@ -585,27 +584,19 @@ class SchemaSeeder extends Seeder
             $table->index('approved_by', 'transactions_approved_by_index');
             $table->index('compliance_cleared_by', 'transactions_compliance_cleared_by_index');
             $table->index(['branch_id', 'created_at'], 'transactions_branch_created_idx');
-            $table->index('branch_id', 'transactions_branch_id_fk_index');
-            $table->index('branch_id', 'transactions_branch_id_index');
             $table->index('cancelled_at', 'transactions_cancelled_at_index');
             $table->index('created_at', 'transactions_created_at_index');
             $table->index(['currency_code', 'created_at'], 'transactions_currency_created_idx');
             $table->index(['customer_id', 'created_at'], 'transactions_customer_created_idx');
-            $table->index(['customer_id', 'created_at'], 'transactions_customer_id_created_at_index');
-            $table->index('customer_id', 'transactions_customer_id_index');
             $table->index('deleted_at', 'transactions_deleted_at_index');
             $table->unique('idempotency_key', 'transactions_idempotency_key_unique');
             $table->index('is_refund', 'transactions_is_refund_index');
             $table->index('original_transaction_id', 'transactions_original_transaction_id_index');
             $table->index(['status', 'created_at'], 'transactions_status_created_idx');
-            $table->index('status', 'transactions_status_index');
             $table->index(['type', 'currency_code'], 'transactions_type_currency_code_index');
-            $table->index(['user_id', 'created_at'], 'transactions_user_created_idx');
-            $table->index('user_id', 'transactions_user_id_index');
             $table->index('is_dlq', 'transactions_is_dlq_index');
-            $table->index(['branch_id', 'created_at'], 'transactions_branch_created');
             $table->index(['branch_id', 'status', 'created_at'], 'idx_transactions_branch_status_date');
-            $table->index(['branch_id', 'created_at'], 'transactions_branch_id_created_at_index');
+            $table->index(['till_id', 'created_at'], 'transactions_till_created_idx');
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
             $table->foreign('approved_by')->references('id')->on('users');
@@ -633,20 +624,14 @@ class SchemaSeeder extends Seeder
             $table->timestamp('deleted_at')->nullable();
             $table->string('severity')->nullable();
             $table->index('transaction_id', 'flagged_transactions_transaction_id_index');
-            $table->index('status', 'flagged_transactions_status_index');
             $table->index('assigned_to', 'flagged_transactions_assigned_to_index');
-            $table->index('flag_type', 'flagged_transactions_flag_type_index');
-            $table->index('status', 'flagged_trans_status_idx');
             $table->index('created_at', 'flagged_trans_created_idx');
-            $table->index('flag_type', 'flagged_trans_flag_type_idx');
             $table->index(['flag_type', 'created_at'], 'flagged_transactions_flag_type_created_idx');
             $table->index(['status', 'created_at'], 'flagged_transactions_status_created_idx');
-            $table->index(['status', 'created_at'], 'flagged_transactions_status_date_idx');
-            $table->index(['flag_type', 'created_at'], 'flagged_transactions_flag_type_date_idx');
             $table->index(['reviewed_by', 'customer_id'], 'idx_f024fc6e952e');
             $table->index(['status', 'flag_type'], 'flagged_transactions_status_flag_type');
-            $table->index(['status', 'created_at'], 'idx_flagged_transactions_status_date');
-            $table->index(['status', 'flag_type'], 'flagged_transactions_status_flag_type_index');
+            $table->index('resolved_at', 'flagged_transactions_resolved_at_index');
+            $table->index('customer_id', 'flagged_transactions_customer_id_index');
             $table->foreign('reviewed_by')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('assigned_to')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('customer_id')->references('id')->on('customers')->restrictOnDelete();
@@ -675,7 +660,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
-            $table->index('case_number', 'compliance_cases_case_number_idx');
             $table->index(['case_type', 'status'], 'compliance_cases_case_type_status_index');
             $table->index(['severity', 'status'], 'compliance_cases_severity_status_index');
             $table->index('customer_id', 'compliance_cases_customer_id_index');
@@ -717,8 +701,8 @@ class SchemaSeeder extends Seeder
             // One alert per flag: makes the flag→alert bridge race-free (MySQL和SQLite both
             // permit multiple NULLs here so case-created alerts are unaffected).
             $table->unique('flagged_transaction_id', 'alerts_flagged_transaction_unique');
-            $table->index(['priority', 'status'], 'alerts_priority_status');
             $table->index(['priority', 'status'], 'alerts_priority_status_index');
+            $table->index('updated_at', 'alerts_updated_at_index');
             $table->foreign('case_id')->references('id')->on('compliance_cases')->nullOnDelete();
             $table->foreign('assigned_to')->references('id')->on('users')->nullOnDelete();
             $table->foreign('reviewed_by')->references('id')->on('users')->nullOnDelete();
@@ -783,8 +767,6 @@ class SchemaSeeder extends Seeder
             $table->text('verification_error')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->index('status', 'backup_logs_status_index');
-            $table->index('backup_type', 'backup_logs_backup_type_index');
             $table->index('disk', 'backup_logs_disk_index');
             $table->index('started_at', 'backup_logs_started_at_index');
             $table->index('completed_at', 'backup_logs_completed_at_index');
@@ -849,7 +831,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique(['branch_id', 'currency_code'], 'branch_pools_branch_id_currency_code_unique');
-            $table->index(['branch_id', 'currency_code'], 'branch_pools_branch_id_currency_code_index');
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
         });
 
@@ -1037,7 +1018,6 @@ class SchemaSeeder extends Seeder
             $table->index('session_date', 'counter_sessions_session_date_index');
             $table->index('status', 'counter_sessions_status_index');
             $table->index(['user_id', 'session_date'], 'counter_sessions_user_date_idx');
-            $table->index('user_id', 'counter_sessions_user_id_index');
             $table->foreign('closed_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('opened_by')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete();
@@ -1084,10 +1064,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique(['currency_code', 'branch_id'], 'currency_positions_currency_code_branch_id_unique');
-            $table->index('currency_code', 'currency_positions_currency_code_index');
             $table->index('branch_id', 'currency_positions_branch_id_index');
-            $table->index('currency_code', 'currency_positions_currency_idx');
-            $table->unique(['currency_code', 'branch_id'], 'currency_positions_currency_branch_unique');
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
@@ -1204,7 +1181,6 @@ class SchemaSeeder extends Seeder
             $table->index('risk_tier', 'customer_risk_profiles_risk_tier_index');
             $table->index('risk_score', 'customer_risk_profiles_risk_score_index');
             $table->unique('customer_id', 'customer_risk_profiles_customer_id_unique');
-            $table->index('risk_tier', 'customer_risk_profiles_risk_tier_idx');
             $table->foreign('customer_id')->references('id')->on('customers')->cascadeOnDelete();
         });
 
@@ -1265,10 +1241,10 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unsignedBigInteger('edd_template_id')->nullable();
-            $table->index('edd_reference', 'enhanced_diligence_records_edd_reference_index');
             $table->unique('edd_reference', 'enhanced_diligence_records_edd_reference_unique');
             $table->index('status', 'enhanced_diligence_records_status_index');
-            $table->index(['approved_by', 'questionnaire_completed_by', 'reviewed_by', 'customer_id', 'flagged_transaction_id'], 'idx_b50f1bb45631');
+            $table->index('customer_id', 'enhanced_diligence_records_customer_id_index');
+            $table->index('flagged_transaction_id', 'enhanced_diligence_records_flagged_transaction_id_index');
             $table->foreign('edd_template_id')->references('id')->on('edd_questionnaire_templates')->nullOnDelete();
             $table->foreign('flagged_transaction_id')->references('id')->on('flagged_transactions')->restrictOnDelete();
             $table->foreign('customer_id')->references('id')->on('customers')->restrictOnDelete();
@@ -1320,7 +1296,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('acknowledged_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->index('counter_id', 'emergency_closures_counter_id_index');
             $table->index('teller_id', 'emergency_closures_teller_id_index');
             $table->index(['counter_id', 'created_at'], 'emergency_closures_counter_id_created_at_index');
             $table->foreign('acknowledged_by')->references('id')->on('users')->nullOnDelete();
@@ -1343,7 +1318,6 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('created_by');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->index('branch_id', 'expenses_branch_id_index');
             $table->index('expense_date', 'expenses_expense_date_index');
             $table->index(['branch_id', 'expense_date'], 'expenses_branch_date_index');
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
@@ -1366,7 +1340,6 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->string('spread_applied')->nullable();
             $table->index(['currency_code', 'effective_date'], 'exchange_rate_histories_currency_code_effective_date_index');
-            $table->index('currency_code', 'exchange_rate_histories_currency_code_index');
             $table->index('effective_date', 'exchange_rate_histories_effective_date_index');
             $table->index(['branch_id', 'currency_code', 'effective_date'], 'erh_branch_idx');
             $table->index('created_by', 'idx_abb70be2c84e');
@@ -1476,12 +1449,12 @@ class SchemaSeeder extends Seeder
             $table->string('id')->primary();
             $table->string('type');
             $table->string('notifiable_type');
-            $table->integer('notifiable_id');
+            $table->unsignedBigInteger('notifiable_id');
             $table->text('data');
             $table->timestamp('read_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->index(['notifiable_type', 'notifiable_id'], 'notifications_notifiable_type_notifiable_id_index');
+            $table->index(['notifiable_type', 'notifiable_id', 'read_at'], 'notifications_notifiable_type_notifiable_id_index');
         });
 
         Schema::create('password_histories', function (Blueprint $table) {
@@ -1758,6 +1731,8 @@ class SchemaSeeder extends Seeder
             $table->string('source')->default('sanctions');
             $table->unsignedBigInteger('adverse_media_entry_id')->nullable();
             $table->index(['sanction_entry_id', 'transaction_id', 'customer_id'], 'idx_cefb37a5e10e');
+            $table->index('customer_id', 'screening_results_customer_id_index');
+            $table->index('transaction_id', 'screening_results_transaction_id_index');
             $table->index(['disposition', 'result'], 'screening_results_disposition_result_index');
             $table->index(['result', 'created_at'], 'screening_results_result_created_at_index');
             $table->index('source', 'screening_results_source_index');
@@ -1912,19 +1887,13 @@ class SchemaSeeder extends Seeder
             $table->text('description')->nullable();
             $table->string('previous_hash')->nullable();
             $table->string('entry_hash')->nullable();
-            $table->index(['user_id', 'action'], 'system_logs_user_id_action_index');
             $table->index(['entity_type', 'entity_id'], 'system_logs_entity_type_entity_id_index');
             $table->index('created_at', 'system_logs_created_at_index');
             $table->index('session_id', 'system_logs_session_id_index');
-            $table->index('action', 'idx_system_logs_action');
-            $table->index('severity', 'idx_system_logs_severity');
-            $table->index('entity_type', 'idx_system_logs_entity_type');
             $table->index(['user_id', 'created_at'], 'idx_system_logs_user_date');
             $table->index(['action', 'created_at'], 'idx_system_logs_action_date');
             $table->index(['severity', 'created_at'], 'idx_system_logs_severity_date');
             $table->index('previous_hash', 'system_logs_previous_hash_index');
-            $table->index('user_id', 'system_logs_user_id_index');
-            $table->index('entity_type', 'system_logs_entity_type_index');
             $table->index('ip_address', 'system_logs_ip_address_index');
             $table->index(['user_id', 'action', 'created_at'], 'system_logs_user_action_created_idx');
             $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete();

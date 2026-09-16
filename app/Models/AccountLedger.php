@@ -86,11 +86,11 @@ class AccountLedger extends AccountingModel
     public function scopeEntryDateBetween($query, ?string $startDate, ?string $endDate)
     {
         if ($startDate !== null) {
-            $query->whereDate('entry_date', '>=', $startDate);
+            $query->whereDate('entry_date', '>=', Carbon::parse($startDate)->toDateString());
         }
 
         if ($endDate !== null) {
-            $query->whereDate('entry_date', '<=', $endDate);
+            $query->whereDate('entry_date', '<=', Carbon::parse($endDate)->toDateString());
         }
 
         return $query;

@@ -242,11 +242,11 @@ class CounterController extends Controller
             ->with(['user', 'openedByUser', 'closedByUser']);
 
         if ($request->has('from_date')) {
-            $query->where('session_date', '>=', $request->input('from_date'));
+            $query->whereDate('session_date', '>=', $request->input('from_date'));
         }
 
         if ($request->has('to_date')) {
-            $query->where('session_date', '<=', $request->input('to_date'));
+            $query->whereDate('session_date', '<=', $request->input('to_date'));
         }
 
         if ($request->has('user_id')) {

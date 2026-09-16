@@ -49,10 +49,10 @@ class StockCashController extends Controller
         $totalPnl = $this->currencyPositionService->getTotalPnl();
 
         // Get till information (scoped to the user's branch - admins see all)
-        $openTills = $this->scopeByBranch(TillBalance::whereDate('date', today())->whereNull('closed_at'))
+        $openTills = $this->scopeByBranch(TillBalance::whereDate('date', today()->toDateString())->whereNull('closed_at'))
             ->distinct()->pluck('till_id')->toArray();
 
-        $closedTills = $this->scopeByBranch(TillBalance::whereDate('date', today())->whereNotNull('closed_at'))
+        $closedTills = $this->scopeByBranch(TillBalance::whereDate('date', today()->toDateString())->whereNotNull('closed_at'))
             ->distinct()->pluck('till_id')->toArray();
 
         // Get today's till balances, scoped to the user's branch (admins see all)
@@ -78,7 +78,7 @@ class StockCashController extends Controller
 
         // Calculate MYR cash in hand from today's till balances
         // For open tills: use opening_balance. For closed tills: use closing_balance
-        $myrQuery = $this->scopeByBranch(TillBalance::whereDate('date', today())->where('currency_code', Currency::baseCurrency()));
+        $myrQuery = $this->scopeByBranch(TillBalance::whereDate('date', today()->toDateString())->where('currency_code', Currency::baseCurrency()));
 
         $myrBalances = $myrQuery->get();
         $myrCashInHand = $myrBalances->reduce(
@@ -279,7 +279,7 @@ class StockCashController extends Controller
         // Get all transactions for this till on this date
         $transactions = Transaction::with(['customer', 'currency'])
             ->where('till_id', $tillId)
-            ->whereDate('created_at', $date)
+            ->forDateRange($date, $date)
             ->orderBy('created_at', 'asc')
             ->get();
 

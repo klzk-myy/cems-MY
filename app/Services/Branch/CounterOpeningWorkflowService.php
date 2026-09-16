@@ -12,6 +12,7 @@ use App\Models\CounterSession;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\AuditService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class CounterOpeningWorkflowService
@@ -69,7 +70,7 @@ class CounterOpeningWorkflowService
                 ->where('counter_id', $counter->id)
                 ->whereIn('currency_code', $currencyCodes)
                 ->where('status', TellerAllocationStatus::PENDING->value)
-                ->whereDate('session_date', '<=', $today)
+                ->whereDate('session_date', '<=', Carbon::parse($today)->toDateString())
                 ->orderByDesc('session_date')
                 ->get()
                 ->unique('currency_code')

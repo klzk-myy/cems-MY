@@ -15,14 +15,14 @@ class DashboardService
         $user = ActorContext::capture()->user;
 
         return [
-            'total_transactions' => Transaction::whereDate('created_at', today())
+            'total_transactions' => Transaction::today()
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->count(),
-            'buy_volume' => Transaction::completed()->whereDate('created_at', today())
+            'buy_volume' => Transaction::completed()->today()
                 ->buy()
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('amount_local'),
-            'sell_volume' => Transaction::completed()->whereDate('created_at', today())
+            'sell_volume' => Transaction::completed()->today()
                 ->sell()
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('amount_local'),

@@ -31,8 +31,6 @@ class EddDocumentRequest extends BaseModel
     use HasFactory;
     use HasStatus;
 
-    protected $with = ['eddRecord', 'verifier'];
-
     protected $fillable = [
         'edd_record_id',
         'document_type',

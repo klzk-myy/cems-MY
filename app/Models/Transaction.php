@@ -190,9 +190,12 @@ class Transaction extends TransactionModel
         return $query->where('status', TransactionStatus::PendingApproval);
     }
 
+    /**
+     * @param  Builder<Transaction>  $query
+     */
     public function scopeToday(Builder $query): Builder
     {
-        return $query->whereDate('created_at', today());
+        return $query->forDateRange(today()->toDateString(), today()->toDateString());
     }
 
     public function scopeNotCancelled(Builder $query): Builder

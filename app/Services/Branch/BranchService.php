@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Support\ActorContext;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -179,7 +180,7 @@ class BranchService
             'user_count' => $branch->users()->count(),
             'counter_count' => $branch->counters()->count(),
             'transaction_today' => $branch->transactions()
-                ->whereDate('created_at', now()->toDateString())
+                ->whereBetween('created_at', [Carbon::parse(now()->toDateString())->startOfDay(), Carbon::parse(now()->toDateString())->endOfDay()])
                 ->count(),
             'transaction_month' => $branch->transactions()
                 ->whereMonth('created_at', now()->month)

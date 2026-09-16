@@ -14,6 +14,7 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\ReportGenerated;
 use App\Models\SystemLog;
+use App\Services\AuditService;
 use App\ValueObjects\Quarter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -34,6 +35,10 @@ class ComplianceReportingService
      * BNM filing deadline in working days for QLVR (quarterly).
      */
     public const QUARTERLY_FILING_DEADLINE_DAYS = 10;
+
+    public function __construct(
+        protected AuditService $auditService,
+    ) {}
 
     /**
      * Get dashboard KPIs including case summary, EDD status, findings, and risk distribution.
@@ -319,25 +324,28 @@ class ComplianceReportingService
         $toDate = $filters['to_date'] ?? null;
         $caseId = $filters['case_id'] ?? null;
 
+        // Resolve the fixed compliance substrings against the cached distinct
+        // entity_type/action lists, then filter with whereIn on the indexed
+        // columns instead of five '%…%' scans over the largest table.
+        $entityTypes = $this->auditService->matchingLogValues('entity_type', ['compliance']);
+        $actions = $this->auditService->matchingLogValues('action', ['compliance', 'case', 'edd', 'str']);
+
         // Group the disjuncts: without the closure, SQL operator precedence
-        // bound every following whereDate/entity_id filter to only the LAST
+        // would bind every following date/entity_id filter to only the LAST
         // orWhere() branch instead of the whole compliance set.
         $query = SystemLog::query()
-            ->where(function ($q) {
-                $q->where('entity_type', 'like', '%Compliance%')
-                    ->orWhere('action', 'like', '%compliance%')
-                    ->orWhere('action', 'like', '%case%')
-                    ->orWhere('action', 'like', '%edd%')
-                    ->orWhere('action', 'like', '%str%');
+            ->where(function ($q) use ($entityTypes, $actions) {
+                $q->whereIn('entity_type', $entityTypes)
+                    ->orWhereIn('action', $actions);
             })
             ->orderBy('created_at', 'desc');
 
         if ($fromDate) {
-            $query->whereDate('created_at', '>=', $fromDate);
+            $query->where('created_at', '>=', Carbon::parse($fromDate)->startOfDay());
         }
 
         if ($toDate) {
-            $query->whereDate('created_at', '<=', $toDate);
+            $query->where('created_at', '<=', Carbon::parse($toDate)->endOfDay());
         }
 
         if ($caseId) {

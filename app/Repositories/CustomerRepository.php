@@ -47,6 +47,7 @@ class CustomerRepository
 
         return Customer::whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
             ->orWhereRaw('id_number_hash LIKE ? ESCAPE ?', [$pattern, '\\'])
+            ->limit(50)
             ->get();
     }
 

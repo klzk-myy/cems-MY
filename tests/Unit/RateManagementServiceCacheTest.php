@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\Transaction\RateManagementService;
+use Illuminate\Cache\ArrayStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
@@ -63,6 +64,11 @@ class RateManagementServiceCacheTest extends TestCase
             ->with(\Mockery::pattern('/^rate:USD:branch:\d+$/'));
         Cache::shouldReceive('forget')
             ->with('exchange_rates_for_transactions');
+        // Rate invalidation now also flushes the 'rates' tag; the array test
+        // store is taggable, so mock the tag path too.
+        Cache::shouldReceive('getStore')->zeroOrMoreTimes()->andReturn(new ArrayStore);
+        Cache::shouldReceive('tags')->zeroOrMoreTimes()->andReturnSelf();
+        Cache::shouldReceive('flush')->zeroOrMoreTimes();
 
         $service = app(RateManagementService::class);
         // Create a manager user to authorize override
@@ -144,6 +150,11 @@ class RateManagementServiceCacheTest extends TestCase
             ->with(\Mockery::pattern('/^rate:USD:branch:\d+$/'));
         Cache::shouldReceive('forget')
             ->with('exchange_rates_for_transactions');
+        // Rate invalidation now also flushes the 'rates' tag; the array test
+        // store is taggable, so mock the tag path too.
+        Cache::shouldReceive('getStore')->zeroOrMoreTimes()->andReturn(new ArrayStore);
+        Cache::shouldReceive('tags')->zeroOrMoreTimes()->andReturnSelf();
+        Cache::shouldReceive('flush')->zeroOrMoreTimes();
 
         app(RateManagementService::class)->overrideRate('USD', '4.6000', '4.7000', $manager);
     }

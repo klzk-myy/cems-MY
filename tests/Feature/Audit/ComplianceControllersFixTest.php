@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\AlertPriority;
+use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\FlagStatus;
 use App\Enums\UserRole;
@@ -93,7 +94,11 @@ class ComplianceControllersFixTest extends TestCase
 
         $this->actingAs($this->officer);
 
-        $response = $this->patch("/compliance/cases/{$case->id}", ['status' => 'Closed']);
+        // Closing a case requires a resolution per UpdateCaseStatusRequest.
+        $response = $this->patch("/compliance/cases/{$case->id}", [
+            'status' => 'Closed',
+            'resolution' => CaseResolution::ClosedNoAction->value,
+        ]);
         $response->assertStatus(302);
         $response->assertSessionHas('success');
 

@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Services\System\SystemAlertService;
 use App\Services\ThresholdService;
+use App\Support\BcmathHelper;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,11 +36,16 @@ class LowStockAlertJob implements ShouldQueue
 
         $currencies = Currency::where('is_active', true)->get();
 
-        foreach ($currencies as $currency) {
-            $totalPosition = CurrencyPosition::where('currency_code', $currency->code)
-                ->sum('foreign_total');
+        // One grouped aggregate instead of a per-currency sum() query.
+        $positions = CurrencyPosition::query()
+            ->selectRaw('currency_code, SUM(foreign_total) as total')
+            ->groupBy('currency_code')
+            ->pluck('total', 'currency_code');
 
-            if (bccomp((string) $totalPosition, $threshold, 4) < 0) {
+        foreach ($currencies as $currency) {
+            $totalPosition = $positions->get($currency->code, 0);
+
+            if (BcmathHelper::lt((string) $totalPosition, $threshold)) {
                 $lowStockCurrencies[] = [
                     'currency' => $currency->code,
                     'position' => (string) $totalPosition,

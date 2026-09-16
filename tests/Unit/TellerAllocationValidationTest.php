@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\System\CacheOptimizationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +24,7 @@ class TellerAllocationValidationTest extends TestCase
         parent::setUp();
 
         $this->service = new TellerAllocationService(
-            new BranchPoolService(new AuditService, new MathService),
+            new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService),
             new MathService,
             app(AuditService::class)
         );

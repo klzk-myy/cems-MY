@@ -64,8 +64,8 @@ class FiscalYearService
         // Attach any existing unlinked periods that fall inside the year so
         // the year view and closeFiscalYear()'s all-periods-closed guard see them.
         AccountingPeriod::whereNull('fiscal_year_id')
-            ->where('start_date', '>=', $startDate)
-            ->where('end_date', '<=', $endDate)
+            ->whereDate('start_date', '>=', $startDate)
+            ->whereDate('end_date', '<=', $endDate)
             ->update(['fiscal_year_id' => $year->id]);
 
         // A fiscal year without periods accepts no postings — generate one
@@ -518,8 +518,8 @@ class FiscalYearService
 
         /** @var Collection<int, object{account_code:string, total_debit:?string, total_credit:?string}> $totals */
         $totals = AccountLedger::whereIn('account_code', $accountCodes)
-            ->whereDate('entry_date', '>=', $fromDate)
-            ->whereDate('entry_date', '<=', $toDate)
+            ->whereDate('entry_date', '>=', Carbon::parse($fromDate)->toDateString())
+            ->whereDate('entry_date', '<=', Carbon::parse($toDate)->toDateString())
             ->selectRaw('account_code, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->groupBy('account_code')
             ->get()

@@ -7,12 +7,15 @@ use App\Models\FlaggedTransaction;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheKeys;
+use App\Services\System\CacheOptimizationService;
 
 class ComplianceFlagService
 {
     public function __construct(
         protected AuditService $auditService,
         protected CacheInvalidationService $cacheInvalidationService,
+        protected CacheOptimizationService $cacheOptimizationService,
     ) {}
 
     public function assignToCurrentUser(FlaggedTransaction $flaggedTransaction, User $user): void
@@ -82,19 +85,28 @@ class ComplianceFlagService
      */
     public function getStatusCounts(): array
     {
-        $counts = FlaggedTransaction::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
+        // Flag writes flush the 'dashboard' tag, so stale counts cannot
+        // outlive the TTL.
+        return $this->cacheOptimizationService->remember(
+            CacheKeys::ComplianceFlagStatusCounts->value,
+            60,
+            ['dashboard'],
+            function () {
+                $counts = FlaggedTransaction::selectRaw('status, COUNT(*) as count')
+                    ->groupBy('status')
+                    ->pluck('count', 'status');
 
-        return [
-            'open' => $counts->get('Open', 0),
-            'under_review' => $counts->get('Under_Review', 0),
-            'resolved_today' => FlaggedTransaction::where('status', 'Resolved')
-                ->whereDate('resolved_at', today())
-                ->count(),
-            'high_priority' => FlaggedTransaction::whereIn('flag_type', ['Sanction_Match', 'Structuring', 'Velocity'])
-                ->where('status', '!=', 'Resolved')
-                ->count(),
-        ];
+                return [
+                    'open' => $counts->get('Open', 0),
+                    'under_review' => $counts->get('Under_Review', 0),
+                    'resolved_today' => FlaggedTransaction::where('status', 'Resolved')
+                        ->whereBetween('resolved_at', [today()->startOfDay(), today()->endOfDay()])
+                        ->count(),
+                    'high_priority' => FlaggedTransaction::whereIn('flag_type', ['Sanction_Match', 'Structuring', 'Velocity'])
+                        ->where('status', '!=', 'Resolved')
+                        ->count(),
+                ];
+            }
+        );
     }
 }

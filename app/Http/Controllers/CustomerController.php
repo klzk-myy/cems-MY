@@ -15,6 +15,8 @@ use App\Models\ExchangeRate;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
+use App\Services\System\CacheKeys;
+use App\Services\System\CacheOptimizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +37,7 @@ class CustomerController extends Controller
         protected CustomerService $customerService,
         protected AuditService $auditService,
         protected CustomerIndexAction $customerIndexAction,
+        protected CacheOptimizationService $cacheOptimizationService,
     ) {}
 
     /**
@@ -50,24 +53,31 @@ class CustomerController extends Controller
         $user = Auth::user();
         $branchId = $user?->branch_id;
 
-        $rates = ExchangeRate::query()
-            ->active()
-            ->when(
-                $branchId !== null,
-                fn ($q) => $q->forBranchOrCompany($branchId),
-                fn ($q) => $q->whereNull('branch_id')
-            )
-            ->orderByRaw('branch_id IS NULL')
-            ->orderByDesc('fetched_at')
-            ->orderByDesc('id')
-            ->get()
-            ->unique('currency_code')
-            ->mapWithKeys(fn ($r) => [$r->currency_code => [
-                'buy' => (float) $r->rate_buy,
-                'sell' => (float) $r->rate_sell,
-                'rate_unit' => (int) $r->rate_unit,
-                'rate_inverse' => (bool) $r->rate_inverse,
-            ]]);
+        // Rate writes flush the 'rates' tag via CacheInvalidationService
+        // (forgetRateScopes/forgetExchangeRates), so stale maps cannot outlive TTL.
+        $rates = $this->cacheOptimizationService->remember(
+            CacheKeys::exchangeRatesResolved($branchId),
+            300,
+            ['rates'],
+            fn () => ExchangeRate::query()
+                ->active()
+                ->when(
+                    $branchId !== null,
+                    fn ($q) => $q->forBranchOrCompany($branchId),
+                    fn ($q) => $q->whereNull('branch_id')
+                )
+                ->orderByRaw('branch_id IS NULL')
+                ->orderByDesc('fetched_at')
+                ->orderByDesc('id')
+                ->get()
+                ->unique('currency_code')
+                ->mapWithKeys(fn ($r) => [$r->currency_code => [
+                    'buy' => (float) $r->rate_buy,
+                    'sell' => (float) $r->rate_sell,
+                    'rate_unit' => (int) $r->rate_unit,
+                    'rate_inverse' => (bool) $r->rate_inverse,
+                ]])->toArray()
+        );
 
         return response()->json([
             'success' => true,
@@ -104,9 +114,15 @@ class CustomerController extends Controller
             $request->user()
         )->withQueryString();
 
-        // Get filter options
+        // Get filter options; the distinct-nationality scan is cached and
+        // flushed via the 'customers' tag on customer create/update.
         $riskRatings = ['Low', 'Medium', 'High'];
-        $nationalities = Customer::distinct()->pluck('nationality')->sort()->toArray();
+        $nationalities = $this->cacheOptimizationService->remember(
+            CacheKeys::CustomerNationalities->value,
+            300,
+            ['customers'],
+            fn () => Customer::distinct()->pluck('nationality')->sort()->values()->toArray()
+        );
 
         return view('customers.index', compact(
             'customers',

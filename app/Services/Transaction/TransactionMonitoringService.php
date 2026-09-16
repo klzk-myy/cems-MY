@@ -11,6 +11,7 @@ use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\Contracts\TransactionMonitoringServiceInterface;
 use App\Services\Transaction\Checks\TransactionCheckRegistry;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -67,17 +68,24 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
      */
     protected function createAlertsForFlags(array $flags): void
     {
-        foreach ($flags as $flag) {
-            if (! $flag instanceof FlaggedTransaction) {
+        $flagModels = (new EloquentCollection($flags))
+            ->filter(fn ($flag) => $flag instanceof FlaggedTransaction)
+            ->values();
+
+        // One eager load for the whole batch and one probe for existing
+        // alerts, instead of per-flag lazy loads + exists() queries.
+        $flagModels->loadMissing(['customer', 'transaction']);
+        $alertedFlagIds = Alert::whereIn('flagged_transaction_id', $flagModels->modelKeys())
+            ->pluck('flagged_transaction_id')
+            ->flip();
+
+        foreach ($flagModels as $flag) {
+            if ($alertedFlagIds->has($flag->id)) {
                 continue;
             }
 
             try {
-                $hasAlert = Alert::where('flagged_transaction_id', $flag->id)->exists();
-
-                if (! $hasAlert) {
-                    $this->alertTriageService->createFromFlaggedTransaction($flag);
-                }
+                $this->alertTriageService->createFromFlaggedTransaction($flag);
             } catch (\Throwable $e) {
                 Log::error('Failed to create alert for flagged transaction', [
                     'flag_id' => $flag->id,

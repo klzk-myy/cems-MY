@@ -54,7 +54,7 @@ class TransactionController extends Controller
 
         $validated = $request->validated();
 
-        $query = Transaction::with(['journalEntry', 'deferredJournalEntry', 'customer'])
+        $query = Transaction::with(['journalEntry', 'deferredJournalEntry', 'customer:id,full_name'])
             ->when($validated['search'] ?? null, function ($q, string $search) {
                 // `reference` is a computed accessor (TX-00000123), so it cannot
                 // be searched in SQL. Search by the numeric part of the reference
@@ -107,7 +107,7 @@ class TransactionController extends Controller
 
         $suggested_rate = null;
 
-        $tillQuery = TillBalance::where('date', today())
+        $tillQuery = TillBalance::whereDate('date', today())
             ->whereNull('closed_at')
             ->with('currency');
 

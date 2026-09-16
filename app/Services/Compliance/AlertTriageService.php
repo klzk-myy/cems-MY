@@ -37,6 +37,10 @@ class AlertTriageService
      */
     public function createFromFlaggedTransaction(FlaggedTransaction $flaggedTransaction): Alert
     {
+        // Batched by the caller (TransactionMonitoringService); loadMissing is
+        // a no-op there but keeps this method self-sufficient if invoked alone.
+        $flaggedTransaction->loadMissing(['customer', 'transaction']);
+
         $customer = $flaggedTransaction->customer;
         $transaction = $flaggedTransaction->transaction;
 
@@ -363,7 +367,7 @@ class AlertTriageService
             'overdue' => $this->getOverdueCount(),
             'pending' => $baseQuery->where('status', FlagStatus::Open)->count(),
             'in_progress' => $baseQuery->whereIn('status', [FlagStatus::UnderReview, FlagStatus::Escalated])->count(),
-            'resolved_today' => Alert::whereDate('updated_at', today())
+            'resolved_today' => Alert::whereBetween('updated_at', [today()->startOfDay(), today()->endOfDay()])
                 ->where('status', FlagStatus::Resolved)->count(),
         ];
     }

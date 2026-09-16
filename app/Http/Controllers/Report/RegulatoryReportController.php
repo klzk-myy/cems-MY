@@ -45,7 +45,7 @@ class RegulatoryReportController extends Controller
 
         // Check existing report
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Msb2)
-            ->whereDate('period_start', $date)
+            ->whereDate('period_start', Carbon::parse($date)->toDateString())
             ->first();
 
         $rows = $this->transactionReportQuery
@@ -158,7 +158,7 @@ class RegulatoryReportController extends Controller
         $month = $request->validated('month', now()->format('Y-m'));
 
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Lmca)
-            ->where('period_start', Carbon::parse($month)->startOfMonth())
+            ->whereDate('period_start', Carbon::parse($month)->startOfMonth())
             ->first();
 
         $reportData = $this->reportingService->generateFormLMCA($month);
@@ -213,7 +213,7 @@ class RegulatoryReportController extends Controller
         }
 
         $report = ReportGenerated::where('report_type', $reportType)
-            ->where('period_start', $periodStart)
+            ->whereDate('period_start', $periodStart)
             ->first();
 
         if (! $report) {
@@ -242,7 +242,7 @@ class RegulatoryReportController extends Controller
         $quarterVo = Quarter::fromString($quarter);
 
         $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr)
-            ->where('period_start', $quarterVo->startDate())
+            ->whereDate('period_start', $quarterVo->startDate())
             ->first();
 
         $reportData = $this->reportingService->generateQuarterlyLargeValueReport($quarter);

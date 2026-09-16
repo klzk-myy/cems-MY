@@ -55,7 +55,7 @@ class DashboardController extends Controller
             function () use ($branchId) {
                 return Transaction::with('customer')
                     ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                    ->whereDate('created_at', today())
+                    ->today()
                     ->orderBy('created_at', 'desc')
                     ->limit(10)
                     ->get();

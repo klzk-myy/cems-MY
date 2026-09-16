@@ -77,8 +77,7 @@ class TellerAllocationController extends Controller
      */
     public function show(int $allocationId): JsonResponse
     {
-        // The model's $with already eager-loads user, branch, counter, approver.
-        $allocation = TellerAllocation::find($allocationId);
+        $allocation = TellerAllocation::with(TellerAllocation::API_RELATIONS)->find($allocationId);
 
         if (! $allocation) {
             return $this->notFoundResponse('Allocation not found');
@@ -123,7 +122,13 @@ class TellerAllocationController extends Controller
         }
 
         try {
-            return $this->successResponse($operation($allocation, $user));
+            $result = $operation($allocation, $user);
+
+            if ($result instanceof TellerAllocation) {
+                $result->loadMissing(TellerAllocation::API_RELATIONS);
+            }
+
+            return $this->successResponse($result);
         } catch (\Exception $e) {
             Log::error("Failed to {$actionName} allocation", ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
 
@@ -249,7 +254,7 @@ class TellerAllocationController extends Controller
             return $this->errorResponse($e->getMessage(), [], 400);
         }
 
-        return $this->successResponse($allocation, 'Allocation request created', 201);
+        return $this->successResponse($allocation->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation request created', 201);
     }
 
     /**
@@ -274,7 +279,7 @@ class TellerAllocationController extends Controller
 
         $this->allocationService->activateAllocation($allocation);
 
-        return $this->successResponse($allocation->refresh(), 'Allocation activated');
+        return $this->successResponse($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation activated');
     }
 
     /**
@@ -299,6 +304,6 @@ class TellerAllocationController extends Controller
 
         $this->allocationService->returnToPool($allocation);
 
-        return $this->successResponse($allocation->refresh(), 'Allocation returned to pool');
+        return $this->successResponse($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation returned to pool');
     }
 }

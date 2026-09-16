@@ -379,8 +379,8 @@ class EodReconciliationServiceTest extends TestCase
         // (legacy pairing — buy_total is cash received).
         $this->assertSame(1, $report['transactions']['buy_count']);
         $this->assertSame(1, $report['transactions']['sell_count']);
-        $this->assertSame('5000', $report['transactions']['buy_total']);
-        $this->assertSame('1000', $report['transactions']['sell_total']);
+        $this->assertSame('5000.0000', $report['transactions']['buy_total']);
+        $this->assertSame('1000.0000', $report['transactions']['sell_total']);
         $this->assertSame('10000.0000', $report['opening_float']);
         $this->assertSame('14000.0000', $report['closing_float_expected']);
         $this->assertSame('14000.0000', $report['closing_float_actual']);

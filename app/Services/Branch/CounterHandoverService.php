@@ -155,7 +155,10 @@ class CounterHandoverService
     private function lockTillBalances(string $tillCode, string $sessionDate, array $currencyCodes): Collection
     {
         return TillBalance::where('till_id', $tillCode)
-            ->where('date', $sessionDate)
+            // $sessionDate arrives as 'Y-m-d' or a datetime string (Carbon
+            // coerced through the string hint) — normalize to a date so the
+            // whereDate comparison matches both storage formats.
+            ->whereDate('date', Carbon::parse($sessionDate)->toDateString())
             ->whereIn('currency_code', $currencyCodes)
             ->orderBy('currency_code')
             ->lockForUpdate()

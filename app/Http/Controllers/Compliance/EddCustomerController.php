@@ -87,6 +87,10 @@ class EddCustomerController extends Controller
     {
         $customer = $this->resolveCustomer($request);
 
+        // eddRecord is no longer auto-eager-loaded (the model's $with was
+        // removed); load it explicitly rather than triggering a lazy load.
+        $eddDocumentRequest->loadMissing('eddRecord');
+
         if ($eddDocumentRequest->eddRecord?->customer_id !== $customer->id) {
             abort(403, 'Unauthorized access to this document request.');
         }
@@ -122,6 +126,8 @@ class EddCustomerController extends Controller
     public function download(Request $request, EddDocumentRequest $eddDocumentRequest)
     {
         $customer = $this->resolveCustomer($request);
+
+        $eddDocumentRequest->loadMissing('eddRecord');
 
         if ($eddDocumentRequest->eddRecord?->customer_id !== $customer->id) {
             abort(403, 'Unauthorized access to this document.');
