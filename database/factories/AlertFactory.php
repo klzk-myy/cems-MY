@@ -9,6 +9,9 @@ use App\Models\Alert;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Alert>
+ */
 class AlertFactory extends Factory
 {
     protected $model = Alert::class;
