@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidRateException;
+use App\Http\Controllers\Concerns\ResolvesBranchScope;
+use App\Http\Requests\CopyPreviousRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Http\Requests\UpdateRateUnitRequest;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
-use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Transaction\RateManagementService;
 use App\ValueObjects\QuoteConvention;
@@ -22,6 +23,8 @@ use Illuminate\View\View;
 
 class RateController extends Controller
 {
+    use ResolvesBranchScope;
+
     public function __construct(
         protected RateManagementService $rateService,
         protected AuditService $auditService
@@ -34,11 +37,13 @@ class RateController extends Controller
 
         $rates = $this->rateService->getRatesSummary($branchId);
 
-        $historyQuery = ExchangeRateHistory::query();
-        if ($branchId !== null) {
-            $historyQuery->where('branch_id', $branchId);
-        }
-        $availableDates = $historyQuery->select('effective_date')
+        // Scoped like copy-previous so the dates offered are the ones the
+        // caller may actually copy: a company-wide scope sees company-wide
+        // history only, matching the API availableDates endpoint.
+        $availableDates = ExchangeRateHistory::query()
+            ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($branchId === null, fn ($q) => $q->whereNull('branch_id'))
+            ->select('effective_date')
             ->distinct()
             ->orderBy('effective_date', 'desc')
             ->limit(30)
@@ -70,8 +75,8 @@ class RateController extends Controller
             'rates' => $rates,
             'availableDates' => $availableDates,
             'currentBranch' => $branch,
-            'canSelectBranch' => $user->role->isAdmin(),
-            'branches' => $user->role->isAdmin()
+            'canSelectBranch' => $user->role->canManageAllBranches(),
+            'branches' => $user->role->canManageAllBranches()
                 ? Branch::where('is_active', true)->orderBy('name')->get()
                 : collect(),
             'currencies' => $currencies,
@@ -88,8 +93,7 @@ class RateController extends Controller
         $branchId = $this->resolveBranchId($user, $request);
 
         $cards = ExchangeRate::query()->active()
-            ->when($branchId !== null, fn ($q) => $q
-                ->where(fn ($inner) => $inner->forBranch($branchId)->orWhereNull('branch_id')))
+            ->when($branchId !== null, fn ($q) => $q->forBranchOrCompany($branchId))
             ->get()
             ->sortBy(fn (ExchangeRate $rate) => $rate->branch_id === $branchId ? 0 : 1)
             ->unique('currency_code')
@@ -122,8 +126,8 @@ class RateController extends Controller
         return view('rates.units', [
             'currencies' => $currencies,
             'currentBranch' => $branch,
-            'canSelectBranch' => $user->role->isAdmin(),
-            'branches' => $user->role->isAdmin()
+            'canSelectBranch' => $user->role->canManageAllBranches(),
+            'branches' => $user->role->canManageAllBranches()
                 ? Branch::where('is_active', true)->orderBy('name')->get()
                 : collect(),
         ]);
@@ -150,9 +154,9 @@ class RateController extends Controller
         $oldInverse = (bool) $currency->rate_inverse;
 
         // rate_unit / rate_inverse live on the global currencies row — a
-        // branch manager's convention change would affect every branch, so
-        // only admins may change it; managers can still save branch cards.
-        if (! $user->isAdmin() && ($newUnit !== $oldUnit || $newInverse !== $oldInverse)) {
+        // convention change would affect every branch, so only company-wide
+        // roles may change it; branch-scoped roles can still save branch cards.
+        if (! $user->role->canManageAllBranches() && ($newUnit !== $oldUnit || $newInverse !== $oldInverse)) {
             return back()->with('error', 'Only admins can change a currency\'s quote convention.')->withInput();
         }
 
@@ -264,7 +268,7 @@ class RateController extends Controller
         return back()->with('success', $result->message);
     }
 
-    public function copyPrevious(Request $request): RedirectResponse
+    public function copyPrevious(CopyPreviousRateRequest $request): RedirectResponse
     {
         $user = Auth::user();
 
@@ -272,10 +276,7 @@ class RateController extends Controller
             abort(403, 'You do not have permission to copy rates.');
         }
 
-        $validated = $request->validate([
-            'date' => 'nullable|date',
-            'branch_id' => 'nullable|integer|exists:branches,id',
-        ]);
+        $validated = $request->validated();
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
         $branchId = $this->resolveBranchId($user, $request);
@@ -287,16 +288,5 @@ class RateController extends Controller
         }
 
         return back()->with('success', $result['message']);
-    }
-
-    protected function resolveBranchId(User $user, Request $request): ?int
-    {
-        if ($user->role->isAdmin() && $request->has('branch_id')) {
-            return (int) $request->get('branch_id');
-        }
-
-        // Branch scope: non-admin roles always operate on their own branch's
-        // rates; an unassigned user falls back to company-wide (null).
-        return $user->branch_id;
     }
 }

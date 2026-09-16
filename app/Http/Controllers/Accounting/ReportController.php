@@ -141,9 +141,10 @@ class ReportController extends Controller
 
             if ($type === 'Asset') {
                 $totalAssets = $this->mathService->add($totalAssets, $netBalance);
-                // Everything but fixed assets is current in this chart
-                // (cash, bank, nostro, forex inventory, receivables).
-                if ($class !== 'Fixed Asset') {
+                // Current assets are the explicitly liquid classes (cash,
+                // bank, nostro, forex inventory, receivables); unclassified
+                // or long-term asset classes stay out of the numerator.
+                if (in_array($class, ['Cash', 'Inventory', 'Receivable'], true)) {
                     $currentAssets = $this->mathService->add($currentAssets, $netBalance);
                 }
             } elseif ($type === 'Liability') {

@@ -70,6 +70,18 @@ class ExchangeRate extends BaseModel
     }
 
     /**
+     * Branch overlay resolution: the branch's own card plus the company-wide
+     * fallback (branch_id null), ordered so the branch card wins.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForBranchOrCompany(Builder $query, int $branchId): Builder
+    {
+        return $query->where(fn ($inner) => $inner->where('branch_id', $branchId)->orWhereNull('branch_id'));
+    }
+
+    /**
      * The quote convention this row snapshots (rate_unit + rate_inverse).
      */
     public function quoteConvention(): QuoteConvention

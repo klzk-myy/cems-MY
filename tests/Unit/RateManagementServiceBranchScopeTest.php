@@ -2,10 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
+use App\Models\User;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -172,5 +174,38 @@ class RateManagementServiceBranchScopeTest extends TestCase
         $companyCard->refresh();
         $this->assertSame('api', $companyCard->source);
         $this->assertSame('4.40000000', (string) $companyCard->rate_buy);
+    }
+
+    #[Test]
+    public function company_wide_override_invalidates_cardless_branch_cache(): void
+    {
+        Currency::factory()->create(['code' => 'USD']);
+        // The branch has NO card row of its own: its per-currency cache key
+        // holds a cached fallback to the company rate.
+        $cardlessBranch = Branch::factory()->create();
+
+        ExchangeRate::factory()->create([
+            'currency_code' => 'USD',
+            'rate_buy' => '4.4000',
+            'rate_sell' => '4.5000',
+            'fetched_at' => now(),
+        ]);
+
+        $service = app(RateManagementService::class);
+
+        // Populate the branch-scoped cache entry with the company fallback.
+        $cached = $service->getRateCard('USD', $cardlessBranch->id);
+        $this->assertSame('4.40000000', (string) $cached->rate_buy);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $result = $service->overrideRate('USD', '4.6000', '4.7000', $admin);
+
+        $this->assertTrue($result->success);
+
+        // Without enumerating every branch id, the cardless branch's cached
+        // key would keep serving the pre-override company rate until TTL.
+        $served = $service->getRateCard('USD', $cardlessBranch->id);
+        $this->assertSame('4.60000000', (string) $served->rate_buy);
     }
 }

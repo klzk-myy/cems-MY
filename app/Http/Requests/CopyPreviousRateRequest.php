@@ -13,6 +13,7 @@ class CopyPreviousRateRequest extends AuthorizedFormRequest
     {
         return [
             'date' => 'nullable|date|before_or_equal:today',
+            'branch_id' => 'nullable|integer|exists:branches,id',
         ];
     }
 }

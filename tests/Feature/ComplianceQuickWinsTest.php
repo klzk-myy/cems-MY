@@ -133,7 +133,7 @@ class ComplianceQuickWinsTest extends TestCase
 
         $service = $this->revaluationService();
         $method = new \ReflectionMethod($service, 'checkPositionLimitBreach');
-        $method->invoke($service, ['currency' => 'USD', 'gain_loss' => '150'], 'HQ');
+        $method->invoke($service, ['currency' => 'USD', 'quantity' => '150'], 'HQ');
 
         $alert = SystemAlert::where('source', 'revaluation')->sole();
         $this->assertEquals(SystemAlertLevel::Critical->value, $alert->level->value);
@@ -150,7 +150,7 @@ class ComplianceQuickWinsTest extends TestCase
 
         $service = $this->revaluationService();
         $method = new \ReflectionMethod($service, 'checkPositionLimitBreach');
-        $method->invoke($service, ['currency' => 'EUR', 'gain_loss' => '1050'], null);
+        $method->invoke($service, ['currency' => 'EUR', 'quantity' => '1050'], null);
 
         $alert = SystemAlert::where('source', 'revaluation')->sole();
         $this->assertEquals(SystemAlertLevel::Warning->value, $alert->level->value);

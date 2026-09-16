@@ -25,24 +25,44 @@ class CheckRateStalenessCommand extends Command
 
     /**
      * Alert when the newest rate refresh is older than the configured window.
+     *
+     * Staleness is checked per scope: a fresh branch card must not mask a
+     * stale company-wide card (the fallback every branch resolves to), and
+     * a stale branch card is still served to that branch's readers.
      */
     private function checkStaleness(SystemAlertService $alertService): void
     {
         $maxAgeHours = (int) config('cems.rate_staleness_hours', 8);
 
-        $lastUpdate = ExchangeRate::query()->max('updated_at');
+        $scopes = ExchangeRate::query()
+            ->toBase()
+            ->select('branch_id')
+            ->selectRaw('MAX(updated_at) as last_update')
+            ->groupBy('branch_id')
+            ->get();
 
-        if ($lastUpdate === null) {
+        if ($scopes->isEmpty()) {
             $this->info('No exchange rates stored yet; skipping staleness check.');
 
             return;
         }
 
-        $lastUpdate = Carbon::parse($lastUpdate);
-        $ageHours = $lastUpdate->diffInHours(now(), false);
+        $staleScopes = [];
+        foreach ($scopes as $scope) {
+            $lastUpdate = Carbon::parse($scope->last_update);
+            $ageHours = $lastUpdate->diffInHours(now(), false);
 
-        if ($ageHours < $maxAgeHours) {
-            $this->info("Exchange rates are fresh (last updated {$lastUpdate->toDateTimeString()}).");
+            if ($ageHours >= $maxAgeHours) {
+                $staleScopes[] = [
+                    'branch_id' => $scope->branch_id,
+                    'last_updated_at' => $lastUpdate->toIso8601String(),
+                    'age_hours' => (int) $ageHours,
+                ];
+            }
+        }
+
+        if (empty($staleScopes)) {
+            $this->info('Exchange rates are fresh in every scope.');
 
             return;
         }
@@ -59,20 +79,22 @@ class CheckRateStalenessCommand extends Command
             return;
         }
 
+        $scopeList = collect($staleScopes)
+            ->map(fn (array $s) => ($s['branch_id'] === null ? 'company-wide' : "branch {$s['branch_id']}")." ({$s['age_hours']}h ago)")
+            ->implode(', ');
+
         $alertService->warning(
-            "Exchange rates are stale: last refresh was {$lastUpdate->toDateTimeString()} ".
-            "({$ageHours} hours ago), exceeding the {$maxAgeHours}-hour threshold.",
+            "Exchange rates are stale for {$scopeList}, exceeding the {$maxAgeHours}-hour threshold.",
             [
                 'source' => 'rate_staleness',
                 'metadata' => [
-                    'last_updated_at' => $lastUpdate->toIso8601String(),
-                    'age_hours' => (int) $ageHours,
+                    'stale_scopes' => $staleScopes,
                     'threshold_hours' => $maxAgeHours,
                 ],
             ]
         );
 
-        $this->warn("Exchange rates are stale ({$ageHours}h old); warning alert raised.");
+        $this->warn("Exchange rates are stale ({$scopeList}); warning alert raised.");
     }
 
     /**
@@ -95,7 +117,10 @@ class CheckRateStalenessCommand extends Command
             return;
         }
 
-        $covered = ExchangeRate::query()->active()->distinct()->pluck('currency_code')->flip();
+        // Company-wide cards are the fallback every branch resolves to; a
+        // currency covered only by a branch card still leaves company
+        // readers (and other branches) without a rate.
+        $covered = ExchangeRate::query()->active()->whereNull('branch_id')->distinct()->pluck('currency_code')->flip();
 
         $missing = $activeCodes->reject(fn (string $code) => $covered->has($code))->values();
 

@@ -14,7 +14,7 @@ interface RateManagementServiceInterface
 
     public function getCurrentRates(?int $branchId = null): Collection;
 
-    public function getRateForCurrency(string $currencyCode, ?int $branchId = null): ?ExchangeRate;
+    public function getRateCard(string $currencyCode, ?int $branchId = null): ?ExchangeRate;
 
     public function overrideRate(
         string $currencyCode,

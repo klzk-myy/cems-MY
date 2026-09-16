@@ -31,6 +31,10 @@ class CacheInvalidationService
      * (a company-wide card is the fallback for branches without their own),
      * so no reader serves a stale rate until the TTL expires.
      *
+     * The transaction form caches the full rate table under a separate key;
+     * it is forgotten here too because every card write funnels through this
+     * method — otherwise tellers would read stale rates until TTL.
+     *
      * @param  list<string>  $currencies
      * @param  list<int>  $branchIds
      */
@@ -43,6 +47,8 @@ class CacheInvalidationService
                 $this->forgetRate($currency, $branchId);
             }
         }
+
+        Cache::forget(CacheKeys::ExchangeRates->value);
     }
 
     public function forgetExchangeRates(?int $branchId = null): void

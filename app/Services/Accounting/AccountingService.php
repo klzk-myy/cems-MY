@@ -30,6 +30,12 @@ use Illuminate\Support\Facades\DB;
 class AccountingService implements AccountingServiceInterface
 {
     /**
+     * Debit-normal account types for rows whose account_type is stored as a
+     * raw string rather than the AccountType enum.
+     */
+    private const DEBIT_NORMAL_TYPES = ['Asset', 'Expense'];
+
+    /**
      * Math service for high-precision calculations.
      */
     protected MathService $mathService;
@@ -144,7 +150,7 @@ class AccountingService implements AccountingServiceInterface
 
             foreach ($lines as $line) {
                 if (empty($line['account_code'])) {
-                    throw new \InvalidArgumentException('Journal line must have a non-empty account_code');
+                    throw new AccountingPeriodException('Journal line must have a non-empty account_code');
                 }
 
                 JournalLine::create([
@@ -193,9 +199,9 @@ class AccountingService implements AccountingServiceInterface
         ?int $rejectedBy = null,
         ?string $rejectionNotes = null
     ): JournalEntry {
-        $rejectedBy = $rejectedBy ?? ActorContext::capture()->userId;
+        $rejectedBy = $rejectedBy ?? ActorContext::capture()->userIdOrSystem();
 
-        return DB::transaction(function () use ($entry, $rejectionNotes) {
+        return DB::transaction(function () use ($entry, $rejectedBy, $rejectionNotes) {
             // Re-fetch with a row lock to serialize concurrent reject attempts
             $entry = JournalEntry::where('id', $entry->id)->lockForUpdate()->firstOrFail();
 
@@ -212,6 +218,7 @@ class AccountingService implements AccountingServiceInterface
                 'old' => ['status' => 'Pending'],
                 'new' => [
                     'status' => JournalEntryStatus::Rejected->value,
+                    'rejected_by' => $rejectedBy,
                     'rejection_notes' => $rejectionNotes,
                 ],
             ]);
@@ -345,7 +352,7 @@ class AccountingService implements AccountingServiceInterface
 
             if ($account->account_type instanceof AccountType
                 ? $account->account_type->isDebitNormal()
-                : in_array($account->account_type, ['Asset', 'Expense'])) {
+                : in_array($account->account_type, self::DEBIT_NORMAL_TYPES)) {
                 $newBalance = $this->mathService->add(
                     $this->mathService->add($currentBalance, (string) $line->debit),
                     $this->mathService->multiply((string) $line->credit, '-1')
@@ -466,7 +473,7 @@ class AccountingService implements AccountingServiceInterface
 
         return $account->account_type instanceof AccountType
             ? $account->account_type->isDebitNormal()
-            : in_array($account->account_type, ['Asset', 'Expense']);
+            : in_array($account->account_type, self::DEBIT_NORMAL_TYPES);
     }
 
     /**

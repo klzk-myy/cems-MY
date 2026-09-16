@@ -5911,12 +5911,6 @@ parameters:
 			path: app/Services/Accounting/FiscalYearService.php
 
 		-
-			message: '#^Method App\\Services\\Accounting\\FiscalYearService\:\:createQuarterPeriods\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Accounting/FiscalYearService.php
-
-		-
 			message: '#^Method App\\Services\\Accounting\\FiscalYearService\:\:getClosingBalancesForAccounts\(\) has parameter \$accountCodes with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -5966,12 +5960,6 @@ parameters:
 
 		-
 			message: '#^Method App\\Services\\Accounting\\PeriodCloseService\:\:createClosingEntries\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/Accounting/PeriodCloseService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\PeriodCloseService\:\:getBatchBalances\(\) has parameter \$accountCodes with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Accounting/PeriodCloseService.php

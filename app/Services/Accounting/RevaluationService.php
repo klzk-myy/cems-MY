@@ -110,7 +110,7 @@ class RevaluationService
     public function runRevaluationWithJournal(?string $date = null, ?int $postedBy = null): array
     {
         $date = $date ?? now()->toDateString();
-        $postedBy = $postedBy ?? ActorContext::capture()->userId ?? config('cems.system_user_id', 1);
+        $postedBy = $postedBy ?? ActorContext::capture()->userIdOrSystem();
 
         $this->validatePeriodForDate($date);
 
@@ -144,11 +144,12 @@ class RevaluationService
         }
 
         // Position-limit breach alerts (previously only reachable via the
-        // removed non-journal runRevaluation path).
+        // removed non-journal runRevaluation path). Limits are denominated in
+        // foreign-currency units, so the position quantity is what is compared.
         foreach ($results as $result) {
             $this->checkPositionLimitBreach([
                 'currency' => $result['currency_code'],
-                'gain_loss' => $result['gain_loss'],
+                'quantity' => $result['quantity'],
             ], $result['branch_id'] ?? null);
         }
 
@@ -162,8 +163,6 @@ class RevaluationService
             'total_loss' => $totalLoss,
             'net_pnl' => $this->mathService->add($totalGain, $totalLoss),
             'report_path' => null,
-            'has_failures' => false,
-            'failed_currencies' => [],
         ];
     }
 
@@ -197,14 +196,10 @@ class RevaluationService
      * thrown failure into an error descriptor so the caller can accumulate
      * and summarize failures after the loop.
      *
-     * @return array{result: ?array{currency_code: string, branch_id: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
+     * @return array{result: ?array{currency_code: string, branch_id: string, quantity: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
      */
     protected function revaluePositionForJournal(CurrencyPosition $position, string $date, int $postedBy): array
     {
-        if ($this->mathService->compare($position->quantity, '0') <= 0) {
-            return ['result' => null, 'error' => null];
-        }
-
         $newRate = $this->getCurrentRate($position->currency_code, $this->rateBranchId($position))
             ?? ($position->current_rate ?? $position->average_cost);
 
@@ -238,7 +233,7 @@ class RevaluationService
      * cannot double-book the same revaluation.
      *
      * @param  numeric-string  $newRate
-     * @return array{currency_code: string, branch_id: string, gain_loss: string, is_gain: bool}|null
+     * @return array{currency_code: string, branch_id: string, quantity: string, gain_loss: string, is_gain: bool}|null
      */
     protected function revaluePositionUnderLock(CurrencyPosition $position, string $newRate, string $date, int $postedBy): ?array
     {
@@ -285,6 +280,7 @@ class RevaluationService
             return [
                 'currency_code' => $lockedPosition->currency_code,
                 'branch_id' => $lockedPosition->branch_id,
+                'quantity' => $lockedPosition->quantity,
                 'gain_loss' => $gainLoss,
                 'is_gain' => $isGain,
             ];
@@ -466,34 +462,35 @@ class RevaluationService
      * Check if a revaluation result breaches position limits.
      *
      * Logs a warning event and raises a SystemAlert (Warning when the breach
-     * is within 10% of the limit, Critical beyond it).
+     * is within 10% of the limit, Critical beyond it). Position limits are
+     * denominated in foreign-currency units, matching the buy-side check in
+     * TransactionCreationService.
      *
-     * @param  array  $result  Revaluation result containing currency and gain/loss
+     * @param  array  $result  Revaluation result containing currency and position quantity
      */
     protected function checkPositionLimitBreach(array $result, ?string $branchId = null): void
     {
         $currencyCode = $result['currency'] ?? null;
-        $gainLossAmount = $result['gain_loss'] ?? '0';
+        $positionAmount = $result['quantity'] ?? '0';
 
-        // Only alert if there's a gain (position increase)
-        if ($this->mathService->compare($gainLossAmount, '0') <= 0) {
+        if ($this->mathService->compare($positionAmount, '0') <= 0) {
             return;
         }
 
         $limit = $this->thresholdService->getPositionLimit((string) $currencyCode);
 
         // Check if this currency has a configured limit
-        if ($limit === null || $this->mathService->compare($gainLossAmount, $limit) <= 0) {
+        if ($limit === null || $this->mathService->compare($positionAmount, $limit) <= 0) {
             return;
         }
 
         $positionLimit = $limit;
-        $breachAmount = $this->mathService->subtract($gainLossAmount, $positionLimit);
+        $breachAmount = $this->mathService->subtract($positionAmount, $positionLimit);
 
         $this->auditService->logPositionEvent('position_limit_breach', [
             'new' => [
                 'currency_code' => $currencyCode,
-                'gain_loss' => $gainLossAmount,
+                'quantity' => $positionAmount,
                 'limit' => $positionLimit,
                 'breach_amount' => $breachAmount,
             ],
@@ -510,14 +507,14 @@ class RevaluationService
             $this->alertService->send(
                 "Position limit breached for {$currencyCode}"
                 .($branchId !== null ? " at branch {$branchId}" : '')
-                .": gain/loss {$gainLossAmount} exceeds limit {$positionLimit} (breach {$breachAmount})",
+                .": position {$positionAmount} exceeds limit {$positionLimit} (breach {$breachAmount})",
                 $level->value,
                 [
                     'source' => 'revaluation',
                     'metadata' => [
                         'branch_id' => $branchId,
                         'currency_code' => $currencyCode,
-                        'gain_loss' => $gainLossAmount,
+                        'quantity' => $positionAmount,
                         'limit' => $positionLimit,
                         'breach_amount' => $breachAmount,
                         'severity_ratio' => $overRatio,

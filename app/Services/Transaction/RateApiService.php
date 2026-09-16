@@ -3,10 +3,12 @@
 namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\InvalidRateException;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheKeys;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Support\ActorContext;
@@ -70,7 +72,7 @@ class RateApiService
             throw new InvalidRateException('EXCHANGE_RATE_API_KEY is not configured. Set it in .env');
         }
 
-        $cacheKey = $branchId ? "exchange_rates_branch_{$branchId}" : 'exchange_rates';
+        $cacheKey = CacheKeys::exchangeRates($branchId);
 
         return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId) {
             $response = Http::timeout(30)
@@ -167,19 +169,15 @@ class RateApiService
     {
         $currencies = array_keys($processed);
 
-        $branchScopes = ExchangeRate::query()
-            ->whereIn('currency_code', $currencies)
-            ->whereNotNull('branch_id')
-            ->distinct()
-            ->pluck('branch_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
+        // A company-wide fetch changes what EVERY branch reader resolves to —
+        // including branches with no card of their own, whose branch key holds
+        // a cached fallback to the old company rate. Enumerate all branches,
+        // not just branches that happen to have a card row.
+        $branchScopes = $branchId !== null
+            ? [$branchId]
+            : array_values(Branch::query()->pluck('id')->map(fn ($id) => (int) $id)->all());
 
-        if ($branchId !== null) {
-            $branchScopes[] = $branchId;
-        }
-
-        $this->cacheInvalidationService->forgetRateScopes($currencies, array_values($branchScopes));
+        $this->cacheInvalidationService->forgetRateScopes($currencies, $branchScopes);
     }
 
     /**
@@ -351,7 +349,7 @@ class RateApiService
     protected function logRatesToHistory(array $rates, ?int $branchId = null): void
     {
         $today = now()->toDateString();
-        $userId = ActorContext::capture()->userId ?? config('cems.system_user_id', 1);
+        $userId = ActorContext::capture()->userIdOrSystem();
 
         $existing = ExchangeRateHistory::where('branch_id', $branchId)
             ->whereIn('currency_code', array_keys($rates))
@@ -408,7 +406,7 @@ class RateApiService
         if ($branchId !== null) {
             // Branch override wins; fall back to the company-wide rate so the
             // deviation guard still applies at branches without their own card.
-            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
+            $query->forBranchOrCompany($branchId);
         }
         // Only cards whose scheduled effective_date has arrived may be served
         // (scopeActive), and the company-wide card is preferred over a branch

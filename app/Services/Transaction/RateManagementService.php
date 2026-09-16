@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidRateException;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
@@ -13,6 +14,7 @@ use App\Services\AuditService;
 use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheKeys;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\ValueObjects\QuoteConvention;
@@ -60,7 +62,7 @@ class RateManagementService implements RateManagementServiceInterface
             // Branch rate card = company-wide rows (branch_id NULL) overlaid by
             // branch-specific overrides. Branch rows win per currency.
             $rates = $query
-                ->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
+                ->forBranchOrCompany($branchId)
                 ->get();
 
             return $rates
@@ -75,16 +77,16 @@ class RateManagementService implements RateManagementServiceInterface
         return $query->whereNull('branch_id')->get();
     }
 
-    public function getRateForCurrency(string $currencyCode, ?int $branchId = null): ?ExchangeRate
+    public function getRateCard(string $currencyCode, ?int $branchId = null): ?ExchangeRate
     {
-        $cacheKey = $this->rateCacheKey($currencyCode, $branchId);
+        $cacheKey = CacheKeys::rate($currencyCode, $branchId);
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($currencyCode, $branchId) {
             $query = ExchangeRate::where('currency_code', $currencyCode)->active();
             if ($branchId !== null) {
                 // Branch override wins; fall back to the company-wide rate.
                 return $query
-                    ->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'))
+                    ->forBranchOrCompany($branchId)
                     ->orderByRaw('branch_id IS NULL')
                     ->orderByDesc('fetched_at')
                     ->orderByDesc('id')
@@ -103,44 +105,29 @@ class RateManagementService implements RateManagementServiceInterface
     }
 
     /**
-     * Build the canonical per-currency rate cache key.
-     *
-     * Every writer (override, copy, API fetch) must invalidate this exact key
-     * so readers never serve a stale rate after a rate change.
-     */
-    private function rateCacheKey(string $currencyCode, ?int $branchId = null): string
-    {
-        return 'rate:'.$currencyCode.($branchId !== null ? ':branch:'.$branchId : '');
-    }
-
-    /**
      * Forget the per-currency rate cache for a currency (optionally branch-scoped).
      */
     private function forgetRateCache(string $currencyCode, ?int $branchId = null): void
     {
-        // A company-wide write also changes what branch readers resolve to
-        // (a branch key falls back to the company card), so every branch scope
-        // holding this currency is forgotten too — otherwise branches keep
-        // serving the pre-write rate until the TTL expires.
-        $branchScopes = $branchId !== null ? [$branchId] : $this->branchScopesFor($currencyCode);
+        // A company-wide write changes what EVERY branch reader resolves to —
+        // including branches with no card of their own, whose branch key holds
+        // a cached fallback to the old company rate. Enumerate all branches,
+        // not just branches that happen to have a card row.
+        $branchScopes = $branchId !== null ? [$branchId] : $this->allBranchIds();
 
         $this->cacheInvalidationService->forgetRateScopes([$currencyCode], $branchScopes);
     }
 
     /**
-     * Branch ids holding their own card for a currency.
+     * Every branch id — a company-wide write can change what any branch reader
+     * resolves to (its branch key may hold a cached fallback to the old company
+     * rate), so invalidation must cover all scopes, not just carded branches.
      *
      * @return list<int>
      */
-    private function branchScopesFor(string $currencyCode): array
+    private function allBranchIds(): array
     {
-        return array_values(ExchangeRate::query()
-            ->where('currency_code', $currencyCode)
-            ->whereNotNull('branch_id')
-            ->distinct()
-            ->pluck('branch_id')
-            ->map(fn ($id) => (int) $id)
-            ->all());
+        return array_values(Branch::query()->pluck('id')->map(fn ($id) => (int) $id)->all());
     }
 
     public function getRateHistory(string $currencyCode, int $days, ?int $branchId = null): EloquentCollection
@@ -379,9 +366,7 @@ class RateManagementService implements RateManagementServiceInterface
             return $result;
         }
 
-        $deviation = abs((float) $deviationPercent);
-
-        if ($deviation <= $limit) {
+        if (bccomp($deviationPercent, (string) $limit, 8) <= 0) {
             return $result;
         }
 
@@ -390,7 +375,7 @@ class RateManagementService implements RateManagementServiceInterface
             'valid' => false,
             'reason' => sprintf(
                 'Rate deviation %.2f%% exceeds the maximum %.2f%% allowed for your role (%s). Ask a manager to book this rate.',
-                $deviation,
+                (float) $deviationPercent,
                 $limit,
                 $role->label()
             ),
@@ -403,7 +388,7 @@ class RateManagementService implements RateManagementServiceInterface
         $query = ExchangeRate::where('currency_code', $currencyCode)->active();
 
         if ($branchId !== null) {
-            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
+            $query->forBranchOrCompany($branchId);
         }
 
         return $query->exists();
@@ -415,7 +400,7 @@ class RateManagementService implements RateManagementServiceInterface
         $query = ExchangeRate::whereIn('currency_code', $currencyCodes)->active();
 
         if ($branchId !== null) {
-            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
+            $query->forBranchOrCompany($branchId);
         }
 
         $existing = $query->pluck('currency_code')->flip();

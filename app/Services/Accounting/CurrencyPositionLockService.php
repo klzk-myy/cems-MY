@@ -2,7 +2,6 @@
 
 namespace App\Services\Accounting;
 
-use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\CurrencyPosition;
 use App\Services\System\MathService;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -67,7 +66,7 @@ class CurrencyPositionLockService
         $newQuantity = match ($operation) {
             'add' => $this->mathService->add($currentQuantity, $amount),
             'subtract' => $this->mathService->subtract($currentQuantity, $amount),
-            default => throw new AccountingPeriodException("Unknown position operation: {$operation}"),
+            default => throw new \InvalidArgumentException("Unknown position operation: {$operation}"),
         };
 
         $position->update(['quantity' => $newQuantity]);

@@ -28,7 +28,7 @@ class ReconciliationReportRequest extends AuthorizedFormRequest
         return [
             'account_code' => 'required|string|exists:chart_of_accounts,account_code',
             'from' => 'required|date',
-            'to' => 'required|date',
+            'to' => 'required|date|after_or_equal:from',
         ];
     }
 }

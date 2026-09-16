@@ -5,7 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\CounterSessionStatus;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionType;
-use App\Exceptions\Domain\AccountingPeriodException;
+use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -125,14 +125,18 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 $position = $this->lockService->findForUpdate($branchId, $currencyCode);
 
                 if ($position === null || $this->mathService->compare($position->quantity, '0') <= 0) {
-                    throw new AccountingPeriodException(
-                        'Cannot sell: Position is empty or negative'
+                    throw new InsufficientStockException(
+                        $currencyCode,
+                        $amount,
+                        $position === null ? '0' : (string) $position->quantity
                     );
                 }
 
                 if ($this->mathService->compare($position->quantity, $amount) < 0) {
-                    throw new AccountingPeriodException(
-                        "Insufficient balance. Available: {$position->quantity}, Requested: {$amount}"
+                    throw new InsufficientStockException(
+                        $currencyCode,
+                        $amount,
+                        (string) $position->quantity
                     );
                 }
 
@@ -336,7 +340,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     public function getPosition(string $currencyCode, ?string $branchId = null): ?CurrencyPosition
     {
         if ($branchId === null || $branchId === '') {
-            throw new AccountingPeriodException(
+            throw new \InvalidArgumentException(
                 'branch_id is required for position lookup. Transaction must specify a branch.'
             );
         }
@@ -358,7 +362,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     public function getPositionForTransaction(string $currencyCode, string $branchId): ?CurrencyPosition
     {
         if (empty($branchId) || $branchId === 'undefined') {
-            throw new AccountingPeriodException(
+            throw new \InvalidArgumentException(
                 'branch_id is required for position lookup. Transaction must specify a branch.'
             );
         }

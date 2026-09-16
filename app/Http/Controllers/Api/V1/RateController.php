@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\RequiresPermission;
+use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Rate\CheckRateSetRequest;
 use App\Http\Requests\Api\V1\Rate\CopyPreviousRateRequest;
@@ -14,7 +15,6 @@ use App\Http\Requests\Api\V1\RateHistoryRequest;
 use App\Http\Requests\FetchRateRequest;
 use App\Http\Requests\OverrideRateRequest;
 use App\Models\ExchangeRateHistory;
-use App\Models\User;
 use App\Services\Transaction\RateManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +30,7 @@ class RateController extends Controller
 {
     use ApiResponse;
     use RequiresPermission;
+    use ResolvesBranchScope;
 
     public function __construct(
         protected RateManagementService $rateService
@@ -38,9 +39,9 @@ class RateController extends Controller
     /**
      * Get all current rates.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $rates = $this->rateService->getCurrentRates();
+        $rates = $this->rateService->getCurrentRates($this->resolveBranchId(Auth::user(), $request));
 
         return $this->successResponse($rates);
     }
@@ -48,9 +49,9 @@ class RateController extends Controller
     /**
      * Get rates summary with spread calculation.
      */
-    public function summary(): JsonResponse
+    public function summary(Request $request): JsonResponse
     {
-        $summary = $this->rateService->getRatesSummary();
+        $summary = $this->rateService->getRatesSummary($this->resolveBranchId(Auth::user(), $request));
 
         return $this->successResponse($summary);
     }
@@ -72,7 +73,7 @@ class RateController extends Controller
 
         // Branch rate cards: a non-admin manager fetches/sets rates for their
         // own branch only; admins may target any branch.
-        $result = $this->rateService->fetchAndStoreRates($user, $user->isAdmin() ? null : $user->branch_id);
+        $result = $this->rateService->fetchAndStoreRates($user, $user->role->canManageAllBranches() ? null : $user->branch_id);
 
         if (! $result['success']) {
             return $this->errorResponse($result['message'], [], 500);
@@ -84,9 +85,9 @@ class RateController extends Controller
     /**
      * Get a specific currency rate.
      */
-    public function show(string $currencyCode): JsonResponse
+    public function show(Request $request, string $currencyCode): JsonResponse
     {
-        $rate = $this->rateService->getRateForCurrency($currencyCode);
+        $rate = $this->rateService->getRateCard($currencyCode, $this->resolveBranchId(Auth::user(), $request));
 
         if (! $rate) {
             return $this->errorResponse("No rate found for {$currencyCode}", [], 404);
@@ -104,9 +105,10 @@ class RateController extends Controller
         $validated = $request->validated();
         $user = Auth::user();
 
-        // Non-admin managers may only write their own branch's rate card —
-        // a client-supplied branch_id is ignored unless the caller is admin.
-        $branchId = $user->isAdmin() ? ($validated['branch_id'] ?? null) : $user->branch_id;
+        // Branch-scoped managers may only write their own branch's rate card —
+        // a client-supplied branch_id is ignored unless the caller can manage
+        // all branches.
+        $branchId = $user->role->canManageAllBranches() ? ($validated['branch_id'] ?? null) : $user->branch_id;
 
         try {
             $result = $this->rateService->overrideRate(
@@ -120,6 +122,10 @@ class RateController extends Controller
             );
         } catch (InvalidRateException $e) {
             return $this->errorResponse($e->getMessage(), [], 422);
+        }
+
+        if (! $result->success) {
+            return $this->errorResponse($result->message, [], 422);
         }
 
         return $this->successResponse($result, $result->message);
@@ -144,7 +150,7 @@ class RateController extends Controller
 
         $targetDate = $validated['date'] ?? now()->subDay()->toDateString();
 
-        $result = $this->rateService->copyPreviousRates($targetDate, $this->resolveBranchId($request));
+        $result = $this->rateService->copyPreviousRates($targetDate, $this->resolveBranchId(Auth::user(), $request));
 
         if (! $result['success']) {
             return $this->errorResponse($result['message'], [], 404);
@@ -161,7 +167,7 @@ class RateController extends Controller
      */
     public function availableDates(Request $request): JsonResponse
     {
-        $branchId = $this->resolveBranchId($request);
+        $branchId = $this->resolveBranchId(Auth::user(), $request);
 
         $dates = ExchangeRateHistory::select('effective_date')
             ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
@@ -183,7 +189,7 @@ class RateController extends Controller
     {
         $days = $request->get('days', 30);
 
-        $histories = $this->rateService->getRateHistory($currencyCode, $days, $this->resolveBranchId($request));
+        $histories = $this->rateService->getRateHistory($currencyCode, $days, $this->resolveBranchId(Auth::user(), $request));
 
         return $this->successResponse($histories);
     }
@@ -195,7 +201,7 @@ class RateController extends Controller
     {
         $validated = $request->validated();
 
-        $result = $this->rateService->areAllRatesSet($validated['currencies'], $this->resolveBranchId($request));
+        $result = $this->rateService->areAllRatesSet($validated['currencies'], $this->resolveBranchId(Auth::user(), $request));
 
         return $this->successResponse(null, 'Rate check completed.', 200, [
             'all_set' => $result['all_set'],
@@ -214,7 +220,7 @@ class RateController extends Controller
             $validated['rate'],
             $validated['currency_code'],
             $validated['type'],
-            $this->resolveBranchId($request),
+            $this->resolveBranchId(Auth::user(), $request),
             Auth::user()?->role
         );
 
@@ -227,23 +233,5 @@ class RateController extends Controller
             'submitted_rate' => $result['submitted_rate'] ?? null,
             'role_limit_percent' => $result['role_limit_percent'] ?? null,
         ]);
-    }
-
-    /**
-     * Branch scope for rate reads and writes: admins may target any branch
-     * (or the company-wide card when no branch_id is given); every other role
-     * is limited to its own branch. Without this the endpoints resolved to an
-     * unscoped set that mixed every branch's overrides.
-     */
-    protected function resolveBranchId(Request $request): ?int
-    {
-        /** @var User|null $user */
-        $user = Auth::user();
-
-        if ($user?->isAdmin()) {
-            return $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
-        }
-
-        return $user?->branch_id;
     }
 }

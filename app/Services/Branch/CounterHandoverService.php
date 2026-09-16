@@ -183,7 +183,7 @@ class CounterHandoverService
         $query = ExchangeRate::whereIn('currency_code', $nonMyrCodes)->active();
 
         if ($branchId !== null) {
-            $query->where(fn ($q) => $q->forBranch($branchId)->orWhereNull('branch_id'));
+            $query->forBranchOrCompany($branchId);
         }
 
         return $query

@@ -238,7 +238,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The spread determines the buy/sell rate difference. A 2% spread means
-    | buy rate is 1% below mid and sell rate is 1% above mid.
+    | buy rate is 2% below mid and sell rate is 2% above mid (a 4% gap).
     |
     */
     'rates' => [

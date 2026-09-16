@@ -54,7 +54,7 @@ class CustomerController extends Controller
             ->active()
             ->when(
                 $branchId !== null,
-                fn ($q) => $q->where(fn ($inner) => $inner->forBranch($branchId)->orWhereNull('branch_id')),
+                fn ($q) => $q->forBranchOrCompany($branchId),
                 fn ($q) => $q->whereNull('branch_id')
             )
             ->orderByRaw('branch_id IS NULL')

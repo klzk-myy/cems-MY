@@ -32,7 +32,7 @@ class RateManagementServiceCacheTest extends TestCase
             ->andReturn(ExchangeRate::first());
 
         $service = app(RateManagementService::class);
-        $rate = $service->getRateForCurrency('USD');
+        $rate = $service->getRateCard('USD');
 
         $this->assertInstanceOf(ExchangeRate::class, $rate);
         $this->assertEquals('4.50000000', $rate->rate_buy);
@@ -49,13 +49,20 @@ class RateManagementServiceCacheTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        // Expect cache forget for key 'rate:USD'. The role-permission
-        // matrix lookup also goes through Cache::remember — pass it through.
+        // Expect cache forget for key 'rate:USD'. A company-wide write also
+        // forgets every branch-scoped key plus the transaction-form table
+        // key — both covered by the expectations below. The
+        // role-permission matrix lookup also goes through Cache::remember —
+        // pass it through.
         Cache::shouldReceive('remember')
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
         Cache::shouldReceive('forget')
             ->once()
             ->with('rate:USD');
+        Cache::shouldReceive('forget')
+            ->with(\Mockery::pattern('/^rate:USD:branch:\d+$/'));
+        Cache::shouldReceive('forget')
+            ->with('exchange_rates_for_transactions');
 
         $service = app(RateManagementService::class);
         // Create a manager user to authorize override
@@ -131,6 +138,12 @@ class RateManagementServiceCacheTest extends TestCase
             ->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
         Cache::shouldReceive('forget')->with('rate:USD')->once();
         Cache::shouldReceive('forget')->with("rate:USD:branch:{$branch->id}")->once();
+        // Other seeded branches' keys and the transaction-form table key are
+        // forgotten too — a company write enumerates every branch.
+        Cache::shouldReceive('forget')
+            ->with(\Mockery::pattern('/^rate:USD:branch:\d+$/'));
+        Cache::shouldReceive('forget')
+            ->with('exchange_rates_for_transactions');
 
         app(RateManagementService::class)->overrideRate('USD', '4.6000', '4.7000', $manager);
     }
