@@ -28,6 +28,7 @@ use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -123,7 +124,7 @@ class TransactionAccountingVerificationTest extends TestCase
         $complianceService = resolve(ComplianceService::class);
 
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
         $counterService = new CounterService($tellerAllocationService, $thresholdService, $auditService);
         $auditService = resolve(AuditService::class);
         $workflowService = new CounterOpeningWorkflowService(

@@ -19,6 +19,7 @@ use App\Services\Branch\BranchClosingService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -146,7 +147,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
 
         $allocation = $tellerAllocationService->requestAllocation(
             $this->tellerA,

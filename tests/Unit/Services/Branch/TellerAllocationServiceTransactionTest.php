@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,8 +30,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service = new TellerAllocationService(
             new BranchPoolService(new AuditService, new MathService),
             new MathService,
-            app(AuditService::class)
-        );
+            app(AuditService::class), app(TillService::class));
     }
 
     private function activeAllocation(User $teller, Branch $branch, string $currencyCode, string $currentBalance, string $dailyLimitMyr = '50000.0000'): TellerAllocation

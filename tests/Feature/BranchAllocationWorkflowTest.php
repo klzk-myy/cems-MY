@@ -18,6 +18,7 @@ use App\Services\Branch\CounterOpeningWorkflowService;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\HandoverVarianceCalculator;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -102,7 +103,7 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class));
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
         $counterService = new CounterService($tellerAllocationService, new ThresholdService, app(AuditService::class));

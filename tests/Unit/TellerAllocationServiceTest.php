@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,7 +30,7 @@ class TellerAllocationServiceTest extends TestCase
     {
         parent::setUp();
         $this->branchPoolService = new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService);
-        $this->service = new TellerAllocationService($this->branchPoolService, new MathService, app(AuditService::class));
+        $this->service = new TellerAllocationService($this->branchPoolService, new MathService, app(AuditService::class), app(TillService::class));
     }
 
     #[Test]
