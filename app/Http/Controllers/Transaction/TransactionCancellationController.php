@@ -115,6 +115,8 @@ class TransactionCancellationController extends Controller
     /**
      * Pull the pending-cancellation request context (reason, requester,
      * timestamp) from the transaction's transition history.
+     *
+     * @return array{reason?: string|null, requested_by?: string|null, requested_at?: string|null}
      */
     protected function pendingCancellationContext(Transaction $transaction): array
     {
@@ -122,15 +124,17 @@ class TransactionCancellationController extends Controller
             ->filter(fn ($e) => ($e['to'] ?? null) === TransactionStatus::PendingCancellation->value)
             ->last();
 
-        if (! $entry) {
+        if (! is_array($entry)) {
             return [];
         }
 
-        $requester = isset($entry['user_id']) ? User::find($entry['user_id']) : null;
+        $requester = isset($entry['user_id'])
+            ? User::query()->find((int) $entry['user_id'])
+            : null;
 
         return [
-            'reason' => $entry['reason'] ?? null,
-            'requested_by' => $requester?->username ?? $requester?->name,
+            'reason' => isset($entry['reason']) && is_string($entry['reason']) ? $entry['reason'] : null,
+            'requested_by' => $requester?->username,
             'requested_at' => isset($entry['timestamp'])
                 ? Carbon::parse($entry['timestamp'])->format('Y-m-d H:i')
                 : null,

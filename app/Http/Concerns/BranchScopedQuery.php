@@ -62,15 +62,22 @@ trait BranchScopedQuery
 
     /**
      * Apply branch scoping to a Collection / Enumerable.
+     *
+     * @template TKey of array-key
+     * @template TValue
+     *
+     * @param  Enumerable<TKey, TValue>  $collection
+     * @return Enumerable<TKey, TValue>
      */
     protected function filterByBranch(Enumerable $collection, ?int $branchId = null): Enumerable
     {
         $branchId = $branchId ?? $this->currentUserBranchId();
 
         if ($branchId !== null) {
-            return $collection->filter(function ($item) use ($branchId): bool {
-                /** @var Model&object{branch_id:int|string|null}|array{branch_id:int|string|null} $item */
-                $value = $item instanceof Model ? $item->branch_id : $item['branch_id'];
+            return $collection->filter(function (mixed $item) use ($branchId): bool {
+                $value = $item instanceof Model
+                    ? $item->getAttribute('branch_id')
+                    : (is_array($item) ? ($item['branch_id'] ?? null) : null);
 
                 return (int) $value === (int) $branchId;
             });

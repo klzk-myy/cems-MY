@@ -32,7 +32,7 @@ class HandoverCounterRequest extends AuthorizedFormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $toUser = User::find($this->input('to_user_id'));
+            $toUser = User::query()->find((int) $this->input('to_user_id'));
 
             if (! $toUser || $toUser->isTeller()) {
                 return;
