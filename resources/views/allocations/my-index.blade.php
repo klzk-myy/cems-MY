@@ -11,9 +11,14 @@
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Requested</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Allocated</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Daily Limit (MYR)</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Session Date</th>
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Approver</th>
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
@@ -21,13 +26,27 @@
                         <tr class="border-t border-border hover:bg-canvas-subtle">
                             <td class="px-4 py-3">{{ $allocation->id }}</td>
                             <td class="px-4 py-3">{{ $allocation->currency?->code ?? $allocation->currency_code }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_amount, 4) }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_amount, 4) }}</td>
+                            <td class="px-4 py-3 text-right">{{ $allocation->current_balance !== null ? number_format((float) $allocation->current_balance, 4) : '—' }}</td>
+                            <td class="px-4 py-3 text-right">
+                                @if($allocation->daily_limit_myr !== null)
+                                    {{ number_format((float) $allocation->daily_used_myr, 2) }} / {{ number_format((float) $allocation->daily_limit_myr, 2) }}
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $allocation->counter?->name ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ $allocation->session_date?->format('Y-m-d') ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge variant="{{ $allocation->status->isActive() ? 'success' : ($allocation->status->isPending() || $allocation->status->isApproved() ? 'warning' : 'info') }}">
                                     {{ $allocation->status->label() }}
                                 </x-badge>
+                                @if($allocation->rejection_reason)
+                                    <p class="mt-1 text-xs text-danger-text">{{ $allocation->rejection_reason }}</p>
+                                @endif
                             </td>
+                            <td class="px-4 py-3">{{ $allocation->approver?->username ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex gap-2 justify-center">
                                     @if($allocation->isApproved())
@@ -46,7 +65,7 @@
                             </td>
                         </tr>
                     @empty
-                        <x-empty-state message="No allocations found." :colspan="6" />
+                        <x-empty-state message="No allocations found." :colspan="11" />
                     @endforelse
                 </x-slot:tbody>
             </x-table>
