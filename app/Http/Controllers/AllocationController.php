@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TellerAllocationStatus;
+use App\Enums\UserRole;
+use App\Models\BranchPool;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
+use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillService;
 use Illuminate\Http\RedirectResponse;
@@ -114,6 +117,112 @@ class AllocationController extends Controller
         }
 
         return back()->with('success', 'Allocation rejected.');
+    }
+
+    /**
+     * Manager-initiated allocation form: hand stock from the branch pool
+     * to a teller without waiting for a request.
+     */
+    public function create(Request $request): View
+    {
+        $user = $request->user();
+        $branch = $user->branch;
+
+        $tellers = User::where('is_active', true)
+            ->where('role', UserRole::Teller->value)
+            ->when(! $user->role->canManageAllBranches() && $branch,
+                fn ($q) => $q->where('branch_id', $branch->id))
+            ->orderBy('username')
+            ->get();
+
+        $currencies = Currency::where('is_active', true)->orderBy('code')->get();
+
+        $pools = $branch
+            ? BranchPool::where('branch_id', $branch->id)->get()->keyBy('currency_code')
+            : collect();
+
+        return view('allocations.create', compact('tellers', 'currencies', 'pools'));
+    }
+
+    /**
+     * Manager-initiated allocation: create the request and approve it in one
+     * step. Status lands on APPROVED so the teller still acknowledges custody
+     * via Accept on My Allocations — same as a request-driven approval.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code'],
+            'amount' => ['required', 'numeric', 'min:0.0001'],
+            'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $teller = User::query()->find((int) $validated['user_id']);
+
+        abort_unless(
+            $teller?->isTeller()
+                && ($request->user()->role->canManageAllBranches()
+                    || (int) $teller->branch_id === (int) $request->user()->branch_id),
+            403
+        );
+
+        $dailyLimit = isset($validated['daily_limit_myr']) ? (string) $validated['daily_limit_myr'] : null;
+
+        try {
+            $allocation = $this->allocationService->requestAllocation(
+                $teller,
+                $request->user(),
+                $validated['currency_code'],
+                (string) $validated['amount'],
+                $dailyLimit
+            );
+
+            $this->allocationService->approveAllocation(
+                $allocation,
+                $request->user(),
+                (string) $validated['amount'],
+                $dailyLimit
+            );
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('allocations.show', $allocation->id)
+            ->with('success', 'Allocation created and approved — awaiting teller acceptance.');
+    }
+
+    /**
+     * Increase or decrease an approved/active allocation (manager/admin).
+     * Increase draws more from the branch pool; decrease returns unspent
+     * float to the pool — see TellerAllocationService::modifyAllocation().
+     */
+    public function modify(Request $request, TellerAllocation $allocation): RedirectResponse
+    {
+        $this->authorizeAllocationBranch($request, $allocation);
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.0001'],
+            'direction' => ['required', 'in:increase,decrease'],
+        ]);
+
+        if (! $allocation->isApproved() && ! $allocation->isActive()) {
+            return back()->with('error', 'Only approved or active allocations can be adjusted.');
+        }
+
+        try {
+            $this->allocationService->modifyAllocation(
+                $allocation,
+                $request->user(),
+                (string) $validated['amount'],
+                $validated['direction'] === 'increase'
+            );
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "Allocation {$validated['direction']}d by {$validated['amount']}.");
     }
 
     /**

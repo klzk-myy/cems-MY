@@ -68,6 +68,31 @@
             </div>
         @endif
 
+        @if($allocation->isApproved() || $allocation->isActive())
+            <x-card title="Adjust Allocation">
+                <p class="text-sm text-ink-muted mb-4">
+                    Increase draws additional stock from the branch pool; decrease returns unspent
+                    float to the pool. Current balance: {{ number_format((float) $allocation->current_balance, 4) }}
+                    {{ $allocation->currency?->code }}.
+                </p>
+                <form method="POST" action="{{ route('allocations.modify', $allocation->id) }}">
+                    @csrf
+                    <x-input
+                        name="amount"
+                        label="Amount"
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        required
+                    />
+                    <div class="flex gap-3 mt-4">
+                        <x-button type="submit" name="direction" value="increase" variant="success">Increase</x-button>
+                        <x-button type="submit" name="direction" value="decrease" variant="warning">Decrease</x-button>
+                    </div>
+                </form>
+            </x-card>
+        @endif
+
         @if($allocation->isActive())
             <x-card title="Return to Pool">
                 <p class="text-sm text-ink-muted mb-4">

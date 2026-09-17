@@ -2,6 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Allocations" description="Teller currency allocation management">
             <x-slot:actions>
+                <x-button href="{{ route('allocations.create') }}">New Allocation</x-button>
                 <x-button href="{{ route('allocations.index', ['status' => 'active']) }}" variant="secondary">Active</x-button>
                 <x-button href="{{ route('allocations.index', ['status' => 'approved']) }}" variant="secondary">Approved</x-button>
                 <x-button href="{{ route('allocations.index', ['status' => 'pending']) }}" variant="secondary">Pending</x-button>

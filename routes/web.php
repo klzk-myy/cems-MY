@@ -283,9 +283,12 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     // Allocations (manager/admin)
     Route::middleware('role:manage_allocations')->prefix('allocations')->name('allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'index'])->name('index');
+        Route::get('/create', [AllocationController::class, 'create'])->name('create');
+        Route::post('/', [AllocationController::class, 'store'])->name('store');
         Route::get('/{allocation}', [AllocationController::class, 'show'])->name('show');
         Route::post('/{allocation}/approve', [AllocationController::class, 'approve'])->name('approve');
         Route::post('/{allocation}/reject', [AllocationController::class, 'reject'])->name('reject');
+        Route::post('/{allocation}/modify', [AllocationController::class, 'modify'])->name('modify');
         Route::post('/{allocation}/return-to-pool', [AllocationController::class, 'returnToPool'])->name('return-to-pool');
     });
 
