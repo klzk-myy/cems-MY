@@ -35,8 +35,10 @@ class BranchPoolController extends Controller
     /**
      * Show a single pool.
      */
-    public function show(BranchPool $branchPool): View
+    public function show(Request $request, BranchPool $branchPool): View
     {
+        $this->authorizePoolBranch($request, $branchPool);
+
         $branchPool->load('branch');
 
         return view('branch.pools.show', compact('branchPool'));
@@ -47,6 +49,8 @@ class BranchPoolController extends Controller
      */
     public function fund(Request $request, BranchPool $branchPool): RedirectResponse
     {
+        $this->authorizePoolBranch($request, $branchPool);
+
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
         ]);
@@ -72,6 +76,8 @@ class BranchPoolController extends Controller
      */
     public function debit(Request $request, BranchPool $branchPool): RedirectResponse
     {
+        $this->authorizePoolBranch($request, $branchPool);
+
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
         ]);
@@ -91,5 +97,20 @@ class BranchPoolController extends Controller
         $pool->save();
 
         return back()->with('success', 'Pool debited successfully.');
+    }
+
+    /**
+     * Users without the manage_all_branches grant may only view and act on
+     * pools in their own branch.
+     */
+    private function authorizePoolBranch(Request $request, BranchPool $branchPool): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->role->canManageAllBranches()
+                || (int) $branchPool->branch_id === (int) $user->branch_id,
+            403
+        );
     }
 }
