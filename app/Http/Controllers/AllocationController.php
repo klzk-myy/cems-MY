@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
+use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Counter;
 use App\Models\CounterSession;
@@ -15,6 +16,8 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AllocationController extends Controller
@@ -137,24 +140,32 @@ class AllocationController extends Controller
 
         $currencies = Currency::where('is_active', true)->orderBy('code')->get();
 
-        $pools = $branch
-            ? BranchPool::where('branch_id', $branch->id)->get()->keyBy('currency_code')
-            : collect();
+        $branchIds = $tellers->pluck('branch_id')->filter()->unique()->values();
+        $poolSummary = $this->poolSummary($branchIds);
 
-        return view('allocations.create', compact('tellers', 'currencies', 'pools'));
+        // {"branchId:CCY": available} — lets the form hint availability for
+        // whichever branch the selected teller belongs to.
+        $poolAvailable = BranchPool::whereIn('branch_id', $branchIds)->get()
+            ->mapWithKeys(fn (BranchPool $p) => [$p->branch_id.':'.$p->currency_code => (float) $p->available_balance]);
+
+        $tellerBranches = $tellers->mapWithKeys(fn (User $t) => [$t->id => $t->branch_id]);
+
+        return view('allocations.create', compact('tellers', 'currencies', 'poolSummary', 'poolAvailable', 'tellerBranches'));
     }
 
     /**
      * Manager-initiated allocation: create the request and approve it in one
      * step. Status lands on APPROVED so the teller still acknowledges custody
      * via Accept on My Allocations — same as a request-driven approval.
+     * Accepts multiple currency lines; the batch is atomic.
      */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code'],
-            'amount' => ['required', 'numeric', 'min:0.0001'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
+            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
             'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -169,28 +180,42 @@ class AllocationController extends Controller
 
         $dailyLimit = isset($validated['daily_limit_myr']) ? (string) $validated['daily_limit_myr'] : null;
 
-        try {
-            $allocation = $this->allocationService->requestAllocation(
-                $teller,
-                $request->user(),
-                $validated['currency_code'],
-                (string) $validated['amount'],
-                $dailyLimit
-            );
+        $created = collect();
 
-            $this->allocationService->approveAllocation(
-                $allocation,
-                $request->user(),
-                (string) $validated['amount'],
-                $dailyLimit
-            );
+        try {
+            DB::transaction(function () use ($validated, $teller, $request, $dailyLimit, $created) {
+                foreach ($validated['lines'] as $line) {
+                    $allocation = $this->allocationService->requestAllocation(
+                        $teller,
+                        $request->user(),
+                        $line['currency_code'],
+                        (string) $line['amount'],
+                        $dailyLimit
+                    );
+
+                    $this->allocationService->approveAllocation(
+                        $allocation,
+                        $request->user(),
+                        (string) $line['amount'],
+                        $dailyLimit
+                    );
+
+                    $created->push($allocation);
+                }
+            });
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        if ($created->count() === 1) {
+            return redirect()
+                ->route('allocations.show', $created->first()->id)
+                ->with('success', 'Allocation created and approved — awaiting teller acceptance.');
+        }
+
         return redirect()
-            ->route('allocations.show', $allocation->id)
-            ->with('success', 'Allocation created and approved — awaiting teller acceptance.');
+            ->route('allocations.index')
+            ->with('success', $created->count().' allocations created and approved — awaiting teller acceptance.');
     }
 
     /**
@@ -274,7 +299,9 @@ class AllocationController extends Controller
                 ->map(fn (TillBalance $b) => $this->tillService->expectedClosingForBalance($b))
             : collect();
 
-        return view('allocations.my-index', compact('allocations', 'session', 'till'));
+        $poolSummary = $this->poolSummary(collect([$request->user()->branch_id])->filter());
+
+        return view('allocations.my-index', compact('allocations', 'session', 'till', 'poolSummary'));
     }
 
     /**
@@ -366,6 +393,61 @@ class AllocationController extends Controller
         }
 
         return back()->with('success', 'Allocation returned to the branch pool.');
+    }
+
+    /**
+     * Per-branch pool breakdown: total pool, available to allocate, and the
+     * amount currently allocated to each teller (approved + active).
+     *
+     * @param  iterable<int>  $branchIds
+     * @return array<int, array{branch: string, rows: array<int, array{currency: string, total: float, available: float, tellers: array<int, array{name: string, amount: float}>}>}>
+     */
+    private function poolSummary(iterable $branchIds): array
+    {
+        $branchIds = collect($branchIds);
+
+        if ($branchIds->isEmpty()) {
+            return [];
+        }
+
+        $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
+        $pools = BranchPool::whereIn('branch_id', $branchIds)->get();
+        $allocations = TellerAllocation::whereIn('branch_id', $branchIds)
+            ->whereIn('status', [TellerAllocationStatus::APPROVED, TellerAllocationStatus::ACTIVE])
+            ->with('user:id,username')
+            ->get(['id', 'branch_id', 'user_id', 'currency_code', 'allocated_amount']);
+
+        $summary = [];
+
+        foreach ($pools->groupBy('branch_id') as $branchId => $branchPools) {
+            $rows = $branchPools->map(function (BranchPool $pool) use ($allocations, $branchId) {
+                $tellers = $allocations
+                    ->where('branch_id', $branchId)
+                    ->where('currency_code', $pool->currency_code)
+                    ->groupBy('user_id')
+                    ->map(fn (Collection $group) => [
+                        'name' => $group->first()->user->username ?? 'unknown',
+                        'amount' => (float) $group->sum('allocated_amount'),
+                    ])
+                    ->sortBy('name')
+                    ->values()
+                    ->all();
+
+                return [
+                    'currency' => $pool->currency_code,
+                    'total' => (float) $pool->available_balance + (float) $pool->allocated_balance,
+                    'available' => (float) $pool->available_balance,
+                    'tellers' => $tellers,
+                ];
+            })->sortBy('currency')->values()->all();
+
+            $summary[] = [
+                'branch' => $branches->get((int) $branchId)->name ?? "Branch {$branchId}",
+                'rows' => $rows,
+            ];
+        }
+
+        return $summary;
     }
 
     /**

@@ -26,6 +26,13 @@
         </x-card>
 
         <x-card>
+            <h3 class="text-sm font-semibold text-ink">Branch Pool</h3>
+            <div class="mt-3">
+                @include('allocations.partials.pool-summary')
+            </div>
+        </x-card>
+
+        <x-card>
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>

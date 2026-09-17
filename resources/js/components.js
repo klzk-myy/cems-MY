@@ -111,6 +111,32 @@ export function registerComponents(Alpine) {
         },
     }));
 
+    // Manager push-allocation: multiple currency lines in one submission.
+    // Pool availability arrives as {"branchId:CCY": amount} so the hint
+    // follows whichever branch the selected teller belongs to.
+    Alpine.data('allocationCreate', () => ({
+        lines: [{ currency: '', amount: '' }],
+        pool: {},
+        tellerBranches: {},
+        userId: '',
+        init() {
+            try { this.pool = JSON.parse(this.$el.dataset.pool || '{}'); } catch (e) { this.pool = {}; }
+            try { this.tellerBranches = JSON.parse(this.$el.dataset.tellerBranches || '{}'); } catch (e) { this.tellerBranches = {}; }
+            this.userId = this.$el.dataset.initialUser || '';
+        },
+        addLine() {
+            this.lines.push({ currency: '', amount: '' });
+        },
+        removeLine(index) {
+            if (this.lines.length > 1) this.lines.splice(index, 1);
+        },
+        availableFor(currency) {
+            const b = this.tellerBranches[this.userId];
+            const v = b !== undefined ? this.pool[b + ':' + currency] : undefined;
+            return v === undefined ? null : Number(v).toFixed(4);
+        },
+    }));
+
     Alpine.data('budgetRows', () => ({
         rows: [{ account_code: '', amount: '' }],
         addRow() {
