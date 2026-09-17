@@ -13,7 +13,9 @@ use App\Exceptions\Domain\PoolAllocationException;
 use App\Exceptions\Domain\TellerBranchRequiredException;
 use App\Models\Branch;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Models\TellerAllocation;
+use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
@@ -29,6 +31,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         protected BranchPoolService $branchPoolService,
         protected MathService $mathService,
         protected AuditService $auditService,
+        protected TillService $tillService,
     ) {}
 
     public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedAmount, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation
@@ -115,6 +118,80 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         $allocation->activate();
 
         return $allocation;
+    }
+
+    /**
+     * Move stock between the teller's allocation (custody) and the open
+     * session's till (drawer). Loading bumps the till row's opening_balance
+     * so expected-closing math covers it; unloading returns only unspent
+     * drawer cash (expected closing) back into custody.
+     */
+    public function moveBetweenTillAndAllocation(
+        TellerAllocation $allocation,
+        CounterSession $session,
+        string $amount,
+        bool $toTill
+    ): TellerAllocation {
+        return DB::transaction(function () use ($allocation, $session, $amount, $toTill) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked || ! $locked->isActive()) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::ACTIVE->value);
+            }
+
+            $till = TillBalance::where('till_id', $session->tillCode())
+                ->where('currency_code', $locked->currency_code)
+                ->whereDate('date', $session->session_date)
+                ->whereNull('closed_at')
+                ->lockForUpdate()
+                ->first();
+
+            if ($toTill) {
+                if ($this->mathService->compare($amount, (string) $locked->current_balance) > 0) {
+                    throw new AllocationValidationException(
+                        "Load of {$amount} exceeds allocation balance of {$locked->current_balance}"
+                    );
+                }
+
+                if (! $till) {
+                    $till = TillBalance::openFor(
+                        $session->tillCode(),
+                        $locked->currency_code,
+                        $session->counter->branch_id ?? $locked->branch_id,
+                        '0',
+                        $session->session_date,
+                        $session->user_id
+                    );
+                }
+
+                $till->opening_balance = $this->mathService->add((string) $till->opening_balance, $amount);
+                $locked->current_balance = $this->mathService->subtract((string) $locked->current_balance, $amount);
+            } else {
+                if (! $till) {
+                    throw new AllocationValidationException(
+                        "No open till balance for {$locked->currency_code} in this session."
+                    );
+                }
+
+                $expected = $this->tillService->expectedClosingForBalance($till);
+
+                if ($this->mathService->compare($amount, $expected) > 0) {
+                    throw new AllocationValidationException(
+                        "Unload of {$amount} exceeds till balance of {$expected}"
+                    );
+                }
+
+                $till->opening_balance = $this->mathService->subtract((string) $till->opening_balance, $amount);
+                $locked->current_balance = $this->mathService->add((string) $locked->current_balance, $amount);
+            }
+
+            $till->save();
+            $locked->save();
+
+            return $locked;
+        });
     }
 
     public function modifyAllocation(TellerAllocation $allocation, User $modifier, string $newAmount, bool $isIncrease): TellerAllocation

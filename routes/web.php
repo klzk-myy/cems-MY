@@ -299,6 +299,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/request', [AllocationController::class, 'submitRequest'])->name('request.store');
         Route::post('/{allocation}/accept', [AllocationController::class, 'accept'])->name('accept');
         Route::post('/{allocation}/return', [AllocationController::class, 'requestReturn'])->name('return');
+        Route::post('/{allocation}/till', [AllocationController::class, 'transferTill'])->name('till-transfer');
     });
 
     // Branch Pools (manager/admin)

@@ -84,6 +84,13 @@
                                             @csrf
                                             <x-button type="submit" variant="secondary" size="sm">Return to Pool</x-button>
                                         </form>
+                                        <form method="POST" action="{{ route('my-allocations.till-transfer', $allocation->id) }}" class="flex gap-1 items-center">
+                                            @csrf
+                                            <input type="number" name="amount" step="0.0001" min="0.0001" required placeholder="amt"
+                                                   class="w-24 px-2 py-1 text-xs rounded-md border-border bg-surface text-ink focus:border-primary focus:ring-primary" />
+                                            <x-button type="submit" name="direction" value="load" size="sm" title="Move from allocation into the drawer">→ Till</x-button>
+                                            <x-button type="submit" name="direction" value="unload" variant="secondary" size="sm" title="Return unspent drawer cash to the allocation">← Till</x-button>
+                                        </form>
                                     @endif
                                 </div>
                             </td>

@@ -396,6 +396,49 @@ class AllocationController extends Controller
     }
 
     /**
+     * Teller moves stock between an active allocation and their open
+     * session's till — direction=load puts custody into the drawer,
+     * direction=unload returns unspent drawer cash to custody.
+     */
+    public function transferTill(Request $request, TellerAllocation $allocation): RedirectResponse
+    {
+        abort_unless($allocation->user_id === $request->user()->id, 403);
+
+        if (! $allocation->isActive()) {
+            return back()->with('error', 'Allocation is not active.');
+        }
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.0001'],
+            'direction' => ['required', 'in:load,unload'],
+        ]);
+
+        $session = CounterSession::open()
+            ->where('user_id', $request->user()->id)
+            ->latest('opened_at')
+            ->first();
+
+        if (! $session) {
+            return back()->with('error', 'No open counter session — open a counter first.');
+        }
+
+        try {
+            $this->allocationService->moveBetweenTillAndAllocation(
+                $allocation,
+                $session,
+                (string) $validated['amount'],
+                $validated['direction'] === 'load'
+            );
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', $validated['direction'] === 'load'
+            ? 'Stock loaded to till.'
+            : 'Stock returned to allocation.');
+    }
+
+    /**
      * Teller returns an active allocation to the branch pool.
      */
     public function requestReturn(Request $request, TellerAllocation $allocation): RedirectResponse
