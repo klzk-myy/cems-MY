@@ -316,20 +316,26 @@ class AllocationController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('allocations.request', compact('currencies', 'counters'));
+        $branchIds = collect([$request->user()->branch_id])->filter();
+        $poolSummary = $this->poolSummary($branchIds);
+        $poolAvailable = BranchPool::whereIn('branch_id', $branchIds)->get()
+            ->mapWithKeys(fn (BranchPool $p) => [$p->branch_id.':'.$p->currency_code => (float) $p->available_balance]);
+
+        return view('allocations.request', compact('currencies', 'counters', 'poolSummary', 'poolAvailable'));
     }
 
     /**
-     * Submit a teller stock request. Creates a pending allocation that the
-     * branch manager approves from the allocations screen.
+     * Submit teller stock requests — one pending allocation per currency
+     * line, atomic. The branch manager approves from the allocations screen.
      */
     public function submitRequest(Request $request): RedirectResponse
     {
         $user = $request->user();
 
         $validated = $request->validate([
-            'currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code'],
-            'requested_amount' => ['required', 'numeric', 'min:0.0001'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
+            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
             'counter_id' => ['nullable', 'integer', 'exists:counters,id'],
         ]);
 
@@ -337,22 +343,36 @@ class AllocationController extends Controller
             ? Counter::query()->find((int) $validated['counter_id'])
             : null;
 
+        abort_if(
+            $counter && (int) $counter->branch_id !== (int) $user->branch_id,
+            403
+        );
+
+        $count = 0;
+
         try {
-            $this->allocationService->requestAllocation(
-                $user,
-                $user,
-                $validated['currency_code'],
-                (string) $validated['requested_amount'],
-                null,
-                $counter
-            );
+            DB::transaction(function () use ($validated, $user, $counter, &$count) {
+                foreach ($validated['lines'] as $line) {
+                    $this->allocationService->requestAllocation(
+                        $user,
+                        $user,
+                        $line['currency_code'],
+                        (string) $line['amount'],
+                        null,
+                        $counter
+                    );
+                    $count++;
+                }
+            });
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
         return redirect()
             ->route('my-allocations.index')
-            ->with('success', 'Stock request submitted. Awaiting manager approval.');
+            ->with('success', $count === 1
+                ? 'Stock request submitted. Awaiting manager approval.'
+                : $count.' stock requests submitted. Awaiting manager approval.');
     }
 
     /**

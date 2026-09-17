@@ -119,10 +119,12 @@ export function registerComponents(Alpine) {
         pool: {},
         tellerBranches: {},
         userId: '',
+        branchId: '',
         init() {
             try { this.pool = JSON.parse(this.$el.dataset.pool || '{}'); } catch (e) { this.pool = {}; }
             try { this.tellerBranches = JSON.parse(this.$el.dataset.tellerBranches || '{}'); } catch (e) { this.tellerBranches = {}; }
             this.userId = this.$el.dataset.initialUser || '';
+            this.branchId = this.$el.dataset.branch || '';
         },
         addLine() {
             this.lines.push({ currency: '', amount: '' });
@@ -131,7 +133,7 @@ export function registerComponents(Alpine) {
             if (this.lines.length > 1) this.lines.splice(index, 1);
         },
         availableFor(currency) {
-            const b = this.tellerBranches[this.userId];
+            const b = this.branchId !== '' ? this.branchId : this.tellerBranches[this.userId];
             const v = b !== undefined ? this.pool[b + ':' + currency] : undefined;
             return v === undefined ? null : Number(v).toFixed(4);
         },
