@@ -7,6 +7,25 @@
         </x-page-header>
 
         <x-card>
+            <h3 class="text-sm font-semibold text-ink">My Till</h3>
+            @if($session && $till->isNotEmpty())
+                <p class="mt-1 text-xs text-ink-muted">
+                    Session opened {{ $session->opened_at?->format('Y-m-d H:i') }} — expected balances
+                </p>
+                <dl class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    @foreach($till as $code => $expected)
+                        <div>
+                            <dt class="text-xs text-ink-muted uppercase">{{ $code }}</dt>
+                            <dd class="text-lg font-semibold text-ink">{{ number_format((float) $expected, 2) }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            @else
+                <p class="mt-1 text-sm text-ink-muted">No open counter session — your till balances appear here once a counter is open.</p>
+            @endif
+        </x-card>
+
+        <x-card>
             <x-table>
                 <x-slot:thead>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>
@@ -15,7 +34,6 @@
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Allocated</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Daily Limit (MYR)</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Session Date</th>
                     <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Approver</th>
@@ -36,7 +54,6 @@
                                     —
                                 @endif
                             </td>
-                            <td class="px-4 py-3">{{ $allocation->counter?->name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ $allocation->session_date?->format('Y-m-d') ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge variant="{{ $allocation->status->isActive() ? 'success' : ($allocation->status->isPending() || $allocation->status->isApproved() ? 'warning' : 'info') }}">
@@ -65,7 +82,7 @@
                             </td>
                         </tr>
                     @empty
-                        <x-empty-state message="No allocations found." :colspan="11" />
+                        <x-empty-state message="No allocations found." :colspan="10" />
                     @endforelse
                 </x-slot:tbody>
             </x-table>

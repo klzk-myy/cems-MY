@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\TellerAllocationStatus;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
+use App\Models\TillBalance;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,6 +18,7 @@ class AllocationController extends Controller
 {
     public function __construct(
         protected TellerAllocationService $allocationService,
+        protected TillService $tillService,
     ) {}
 
     /**
@@ -137,12 +141,31 @@ class AllocationController extends Controller
      */
     public function myIndex(Request $request): View
     {
-        $allocations = TellerAllocation::with(['counter', 'currency', 'approver'])
+        $allocations = TellerAllocation::with(['currency', 'approver'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->paginate(25);
 
-        return view('allocations.my-index', compact('allocations'));
+        // Expected drawer contents for the teller's open session — same
+        // formula the close workflow uses (MYR: opening + transaction_total;
+        // FCY: opening + buys − sells via expectedClosingForBalance).
+        $session = CounterSession::open()
+            ->where('user_id', $request->user()->id)
+            ->with('counter')
+            ->latest('opened_at')
+            ->first();
+
+        $till = $session
+            ? TillBalance::where('till_id', $session->tillCode())
+                ->whereDate('date', $session->session_date)
+                ->whereNull('closed_at')
+                ->orderBy('currency_code')
+                ->get()
+                ->keyBy('currency_code')
+                ->map(fn (TillBalance $b) => $this->tillService->expectedClosingForBalance($b))
+            : collect();
+
+        return view('allocations.my-index', compact('allocations', 'session', 'till'));
     }
 
     /**
