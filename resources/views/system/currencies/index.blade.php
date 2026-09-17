@@ -48,6 +48,12 @@
                                             @csrf
                                             <x-button type="submit" variant="danger" size="sm">Disable</x-button>
                                         </form>
+                                    @else
+                                        <form action="{{ route('system.currencies.enable', $currency) }}" method="POST"
+                                              data-confirm="Re-enable {{ $currency->code }}? It will appear in transaction form selects again.">
+                                            @csrf
+                                            <x-button type="submit" variant="ghost" size="sm">Enable</x-button>
+                                        </form>
                                     @endif
                                 </div>
                             </td>

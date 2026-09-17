@@ -8,15 +8,21 @@ use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\CurrencyPosition;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -35,6 +41,14 @@ class StockTransferServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // SealAuditHashJob is dispatched after-commit; under the test
+        // transaction callbacks fire at inner-transaction commits where an
+        // earlier unsealed row would throw AuditIntegrityException through the
+        // business path. Faking the queue records the dispatch without
+        // executing it — sealing is asserted via dispatchSync elsewhere.
+        Queue::fake();
+
         $this->branchA = Branch::factory()->create(['name' => 'Branch A', 'code' => 'BRA']);
         $this->branchB = Branch::factory()->create(['name' => 'Branch B', 'code' => 'BRB']);
         $this->user = User::factory()->create([
@@ -44,7 +58,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $this->stockTransferService = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $this->user);
+        $this->stockTransferService = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $this->user);
     }
 
     #[Test]
@@ -66,7 +80,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $this->branchA->id,
         ]);
-        $service = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $teller);
+        $service = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $teller);
 
         $this->assertValidationError(
             'within-branch stock transfers',
@@ -237,8 +251,8 @@ class StockTransferServiceTest extends TestCase
             'quantity' => '1000',
         ]);
 
-        $maker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerA);
-        $taker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerB);
+        $maker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $managerA);
+        $taker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $managerB);
 
         $transfer = $maker->createRequest([
             'source_branch_name' => 'Branch A',
@@ -275,7 +289,7 @@ class StockTransferServiceTest extends TestCase
             'role' => UserRole::Manager,
             'branch_id' => $this->branchA->id,
         ]);
-        $otherMaker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), $managerA2);
+        $otherMaker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $managerA2);
 
         try {
             $otherMaker->approveByBranchManager($transfer);
@@ -577,5 +591,172 @@ class StockTransferServiceTest extends TestCase
         // The same manager who created the transfer can approve it
         $this->stockTransferService->approveByBranchManager($transfer);
         $this->assertTrue($transfer->fresh()->canDispatch());
+    }
+
+    /**
+     * Sum debits minus credits posted to one account across all journal
+     * entries referencing a transfer — the clearing account must net to zero
+     * once every dispatched quantity has been accounted for.
+     */
+    private function clearingNetFor(StockTransfer $transfer, string $accountCode = '2300'): string
+    {
+        $entries = JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->pluck('id');
+
+        $math = new MathService;
+        $net = '0';
+        foreach (JournalLine::whereIn('journal_entry_id', $entries)->where('account_code', $accountCode)->get() as $line) {
+            $net = $math->add($net, (string) $line->debit);
+            $net = $math->subtract($net, (string) $line->credit);
+        }
+
+        return $net;
+    }
+
+    /**
+     * Assert a journal line exists on the entry for an account with the given
+     * amount in the given column (debit|credit).
+     */
+    private function assertJournalLine(JournalEntry $entry, string $accountCode, string $column, string $expected): void
+    {
+        $line = JournalLine::where('journal_entry_id', $entry->id)
+            ->where('account_code', $accountCode)
+            ->where($column, '>', 0)
+            ->first();
+
+        $this->assertNotNull($line, "Missing {$column} journal line for account {$accountCode} on entry {$entry->id}");
+        $this->assertSame(0, (new MathService)->compare((string) $line->{$column}, $expected));
+    }
+
+    #[Test]
+    public function dispatch_posts_inventory_credit_and_clearing_debit_on_source_branch(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        // USD has no inventory.USD override in the fixture, so the leg falls
+        // back to inventory.default → 2000; clearing is suspense.hq → 2300.
+        $entry = JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->sole();
+
+        $this->assertEquals($this->branchA->id, $entry->branch_id);
+        $this->assertJournalLine($entry, '2300', 'debit', '4500');
+        $this->assertJournalLine($entry, '2000', 'credit', '4500');
+    }
+
+    #[Test]
+    public function receipt_posts_inventory_debit_on_destination_and_zeroes_clearing(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+
+        $taker->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '1000'],
+        ]);
+
+        $receiptEntry = JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->where('branch_id', $this->branchB->id)
+            ->sole();
+
+        $this->assertJournalLine($receiptEntry, '2000', 'debit', '4500');
+        $this->assertJournalLine($receiptEntry, '2300', 'credit', '4500');
+
+        // Dispatch (Dr) + receipt (Cr) leave no residual in-transit balance.
+        $this->assertSame(0, (new MathService)->compare($this->clearingNetFor($transfer), '0'));
+    }
+
+    #[Test]
+    public function cancel_returns_in_transit_value_to_the_source_leg(): void
+    {
+        [$maker, $taker, $transfer] = $this->makeMakerTakerContext();
+
+        $taker->approveByBranchManager($transfer);
+        $maker->dispatch($transfer->fresh());
+        $taker->cancel($transfer->fresh(), 'no longer needed');
+
+        // Third entry on the source chain: Dr inventory / Cr clearing.
+        $returnEntry = JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->where('description', 'like', '%receipt%')
+            ->sole();
+
+        $this->assertEquals($this->branchA->id, $returnEntry->branch_id);
+        $this->assertJournalLine($returnEntry, '2000', 'debit', '4500');
+        $this->assertSame(0, (new MathService)->compare($this->clearingNetFor($transfer), '0'));
+    }
+
+    #[Test]
+    public function within_branch_transfer_posts_no_journal_entries(): void
+    {
+        $transfer = $this->stockTransferService->createRequest([
+            'source_branch_name' => 'Branch A',
+            'destination_branch_name' => 'Branch A',
+            'items' => [
+                ['currency_code' => 'USD', 'quantity' => '500', 'rate' => '4.5000'],
+            ],
+        ]);
+
+        CurrencyPosition::create([
+            'branch_id' => (string) $this->branchA->id,
+            'currency_code' => 'USD',
+            'quantity' => '500',
+        ]);
+
+        $this->stockTransferService->approveByBranchManager($transfer);
+        $this->stockTransferService->dispatch($transfer->fresh());
+        $this->stockTransferService->receiveItems($transfer->fresh(), [
+            ['id' => $transfer->items->first()->id, 'quantity_received' => '500'],
+        ]);
+
+        $this->assertSame(0, JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->count());
+    }
+
+    #[Test]
+    public function myr_items_post_through_the_cash_account_not_inventory(): void
+    {
+        $managerB = User::factory()->create([
+            'role' => UserRole::Manager,
+            'branch_id' => $this->branchB->id,
+        ]);
+
+        CurrencyPosition::create([
+            'branch_id' => (string) $this->branchA->id,
+            'currency_code' => 'MYR',
+            'quantity' => '5000',
+        ]);
+
+        $taker = new StockTransferService(new MathService, new AuditService(new CacheOptimizationService), new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService(new CacheOptimizationService), new MathService), new AccountingService(new MathService, new AuditService(new CacheOptimizationService), new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService(new CacheOptimizationService)), $managerB);
+
+        $transfer = $this->stockTransferService->createRequest([
+            'source_branch_name' => 'Branch A',
+            'destination_branch_name' => 'Branch B',
+            'items' => [
+                ['currency_code' => 'MYR', 'quantity' => '5000', 'rate' => '1.0000'],
+            ],
+        ]);
+
+        $taker->approveByBranchManager($transfer);
+        $this->stockTransferService->dispatch($transfer->fresh());
+
+        // MYR is the base currency — its leg moves through cash.myr (1000),
+        // not the pooled forex inventory account.
+        $entry = JournalEntry::where('reference_type', 'StockTransfer')
+            ->where('reference_id', $transfer->id)
+            ->sole();
+
+        $this->assertJournalLine($entry, '1000', 'credit', '5000');
+        $this->assertNull(
+            JournalLine::where('journal_entry_id', $entry->id)->where('account_code', '2000')->first(),
+            'MYR leg must not touch the forex inventory account'
+        );
     }
 }

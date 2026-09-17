@@ -4,6 +4,7 @@ namespace App\Http\Requests\Accounting;
 
 use App\Enums\AccountMappingKey;
 use App\Http\Requests\AuthorizedFormRequest;
+use App\Models\Currency;
 use App\Services\Accounting\AccountMappingService;
 use Illuminate\Validation\Validator;
 
@@ -58,6 +59,9 @@ class UpdateAccountMappingsRequest extends AuthorizedFormRequest
             /** @var AccountMappingService $service */
             $service = $this->container->make(AccountMappingService::class);
 
+            /** @var array<int, string>|null $knownCurrencyCodes */
+            $knownCurrencyCodes = null;
+
             foreach ($this->input('mappings', []) as $index => $row) {
                 $key = (string) ($row['key'] ?? '');
                 $accountCode = $row['account_code'] ?? null;
@@ -66,6 +70,20 @@ class UpdateAccountMappingsRequest extends AuthorizedFormRequest
                     $validator->errors()->add("mappings.{$index}.key", "Unknown mapping key '{$key}'.");
 
                     continue;
+                }
+
+                // Dynamic per-currency keys must reference a real currency —
+                // otherwise a crafted request could plant dormant
+                // cash.AAA / inventory.AAA rows for invented codes.
+                if (AccountMappingKey::tryFrom($key) === null) {
+                    $knownCurrencyCodes ??= Currency::query()->pluck('code')->all();
+                    $currencyCode = substr($key, (int) strrpos($key, '.') + 1);
+
+                    if (! in_array($currencyCode, $knownCurrencyCodes, true)) {
+                        $validator->errors()->add("mappings.{$index}.key", "Unknown currency '{$currencyCode}'.");
+
+                        continue;
+                    }
                 }
 
                 if ($accountCode === null || $accountCode === '') {

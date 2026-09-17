@@ -18,6 +18,7 @@ enum ReferenceType: string
     case Expense = 'Expense';
     case PettyCashFunding = 'PettyCashFunding';
     case Revaluation = 'Revaluation';
+    case StockTransfer = 'StockTransfer';
 
     public function label(): string
     {
@@ -36,6 +37,7 @@ enum ReferenceType: string
             self::Expense => 'Expense',
             self::PettyCashFunding => 'Petty Cash Funding',
             self::Revaluation => 'Revaluation',
+            self::StockTransfer => 'Stock Transfer',
         };
     }
 }

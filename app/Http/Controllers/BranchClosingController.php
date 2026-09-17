@@ -17,6 +17,28 @@ class BranchClosingController extends Controller
         protected BranchClosingService $branchClosingService,
     ) {}
 
+    /**
+     * Sidebar entry point (route 'closing.show'). The closing workflow is
+     * per-branch, so resolve the manager's own branch — falling back to the
+     * first active trading branch for HQ-scoped users — and forward to the
+     * real page.
+     */
+    public function index(): RedirectResponse
+    {
+        $branch = auth()->user()?->branch;
+
+        if ($branch === null || ! $branch->canTrade() || ! $branch->is_active) {
+            $branch = Branch::where('is_active', true)
+                ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
+                ->orderBy('id')
+                ->first();
+        }
+
+        abort_if($branch === null, 404);
+
+        return redirect()->route('branches.closing.show', $branch);
+    }
+
     public function show(Branch $branch): View
     {
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);

@@ -8,10 +8,12 @@ use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\AccountMapping;
 use App\Models\Branch;
+use App\Models\Currency;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\Accounting\ExpenseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -218,5 +220,131 @@ class AccountMappingPageTest extends TestCase
         $this->assertSame('1100', $creditLine->account_code);
         $this->assertSame('1050', $debitLine->account_code);
         $this->assertSame($branch->id, $journal->branch_id);
+    }
+
+    #[Test]
+    public function admin_can_provision_dedicated_accounts_for_a_currency(): void
+    {
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        $this->assertNull(AccountMapping::where('key', 'inventory.USD')->first());
+
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('accounting.mappings.provision', 'USD'))
+            ->assertRedirect(route('accounting.mappings.index'))
+            ->assertSessionHas('success');
+
+        // USD has dedicated enum accounts — provisioning maps to them.
+        $this->assertSame('1001', AccountMapping::where('key', 'cash.USD')->value('account_code'));
+        $this->assertSame('2001', AccountMapping::where('key', 'inventory.USD')->value('account_code'));
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'currency_accounts_provisioned',
+            'entity_type' => 'Currency',
+        ]);
+    }
+
+    #[Test]
+    public function provision_requires_the_manage_account_mappings_permission(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $this->actingAs($manager);
+        $this->setMfaVerification($manager);
+
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('accounting.mappings.provision', 'USD'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function provision_requires_password_confirmation(): void
+    {
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        $this->post(route('accounting.mappings.provision', 'USD'))
+            ->assertRedirect(route('password.confirm'));
+
+        $this->assertNull(AccountMapping::where('key', 'cash.USD')->first());
+    }
+
+    #[Test]
+    public function provision_rejects_a_disabled_currency(): void
+    {
+        Currency::factory()->create(['code' => 'CHF', 'is_active' => false]);
+
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('accounting.mappings.provision', 'CHF'))
+            ->assertRedirect(route('accounting.mappings.index'))
+            ->assertSessionHas('error');
+
+        $this->assertNull(AccountMapping::where('key', 'cash.CHF')->first());
+    }
+
+    #[Test]
+    public function partially_provisioned_currency_is_listed_and_completed(): void
+    {
+        // A currency with only one leg mapped (e.g. a manual cash override)
+        // must still be offered for provisioning so the pair completes.
+        Currency::factory()->create(['code' => 'CHF']);
+        AccountMapping::create([
+            'key' => 'cash.CHF',
+            'account_code' => '1001',
+            'description' => 'manual override',
+        ]);
+
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        $this->get(route('accounting.mappings.index'))
+            ->assertOk()
+            ->assertSee('Provision CHF');
+
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('accounting.mappings.provision', 'CHF'))
+            ->assertRedirect(route('accounting.mappings.index'))
+            ->assertSessionHas('success');
+
+        // The manual row is preserved; only the missing leg is added.
+        $this->assertSame('1001', AccountMapping::where('key', 'cash.CHF')->value('account_code'));
+        $this->assertNotNull(AccountMapping::where('key', 'inventory.CHF')->first());
+    }
+
+    #[Test]
+    public function update_rejects_dynamic_keys_for_unknown_currencies(): void
+    {
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        // ZZZ matches the key shape but no such currency exists — the row
+        // must not be planted.
+        $this->withSession($this->passwordConfirmedSession())
+            ->post(route('accounting.mappings.update'), $this->payload('cash.ZZZ', '1001'))
+            ->assertSessionHasErrors('mappings.0.key');
+
+        $this->assertNull(AccountMapping::where('key', 'cash.ZZZ')->first());
+    }
+
+    #[Test]
+    public function index_renders_read_only_defaults_when_the_mappings_table_is_missing(): void
+    {
+        // Databases that have not run accounting:install-mappings yet must
+        // still render the page — posting paths resolve enum defaults, so
+        // the page shows them read-only instead of throwing a QueryException.
+        // SQLite DDL is transactional: the drop rolls back with the test.
+        Schema::drop('account_mappings');
+
+        $this->actingAs($this->admin);
+        $this->setMfaVerification($this->admin);
+
+        $this->get(route('accounting.mappings.index'))
+            ->assertOk()
+            ->assertSee('accounting:install-mappings')
+            ->assertSee('cash.myr')
+            ->assertDontSee('Save Mappings');
     }
 }

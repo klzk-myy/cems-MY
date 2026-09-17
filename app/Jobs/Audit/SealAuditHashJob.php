@@ -7,13 +7,14 @@ use App\Models\SystemLog;
 use App\Services\AuditService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class SealAuditHashJob implements ShouldQueue
+class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -37,6 +38,15 @@ class SealAuditHashJob implements ShouldQueue
     public function handle(AuditService $auditService): void
     {
         DB::transaction(function () use ($auditService) {
+            // A missing row means this job was picked up before the writing
+            // transaction committed (a queue connector without after_commit)
+            // or the row was hard-deleted. Throw so the backoff ladder retries —
+            // returning silently would leave a committed entry permanently
+            // unsealed, indistinguishable from the already-sealed case below.
+            if (! SystemLog::where('id', $this->logId)->exists()) {
+                throw new AuditIntegrityException("Audit log {$this->logId} is not visible yet; retrying.");
+            }
+
             // Step 1: Lock the predecessor first (if exists) to ensure consistent lock ordering
             $predecessorId = SystemLog::where('id', '<', $this->logId)
                 ->whereNotNull('entry_hash')

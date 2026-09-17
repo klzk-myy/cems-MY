@@ -3,12 +3,16 @@
 namespace Tests\Feature;
 
 use App\Enums\TransactionStatus;
+use App\Models\AccountMapping;
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Accounting\AccountMappingService;
+use App\Services\Accounting\CurrencyAccountProvisioner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -65,6 +69,114 @@ class CurrencyManagementTest extends TestCase
         // Inactive branches are not provisioned.
         $this->assertSame($activeCount, CurrencyPosition::where('currency_code', 'XYZ')->count());
         $this->assertSame($activeCount, BranchPool::where('currency_code', 'XYZ')->count());
+    }
+
+    #[Test]
+    public function created_currency_gets_dedicated_gl_accounts_and_mappings(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('system.currencies.store'), $this->payload())
+            ->assertRedirect(route('system.currencies.index'));
+
+        $cash = ChartOfAccount::where('account_name', 'Cash (XYZ)')->first();
+        $inventory = ChartOfAccount::where('account_name', 'Forex Inventory (XYZ)')->first();
+
+        $this->assertNotNull($cash);
+        $this->assertNotNull($inventory);
+        $this->assertSame('Cash', $cash->account_class);
+        $this->assertSame('Inventory', $inventory->account_class);
+
+        $this->assertSame($cash->account_code, AccountMapping::where('key', 'cash.XYZ')->value('account_code'));
+        $this->assertSame($inventory->account_code, AccountMapping::where('key', 'inventory.XYZ')->value('account_code'));
+
+        // Posting paths resolve the dedicated accounts at runtime.
+        $mappings = app(AccountMappingService::class);
+        $this->assertSame($inventory->account_code, $mappings->forCurrency('inventory', 'XYZ'));
+        $this->assertSame($cash->account_code, $mappings->forCurrency('cash', 'XYZ'));
+
+        $this->assertDatabaseHas('system_logs', [
+            'action' => 'currency_accounts_provisioned',
+            'entity_type' => 'Currency',
+        ]);
+    }
+
+    #[Test]
+    public function provision_maps_enum_covered_currencies_to_their_dedicated_accounts(): void
+    {
+        // USD has dedicated enum accounts (1001/2001) seeded in the chart —
+        // provisioning must map to them instead of allocating new codes.
+        $resolved = app(CurrencyAccountProvisioner::class)->provision(Currency::findOrFail('USD'));
+
+        $this->assertSame('1001', $resolved['cash']);
+        $this->assertSame('2001', $resolved['inventory']);
+        $this->assertSame('1001', AccountMapping::where('key', 'cash.USD')->value('account_code'));
+        $this->assertSame('2001', AccountMapping::where('key', 'inventory.USD')->value('account_code'));
+    }
+
+    #[Test]
+    public function provision_is_idempotent_and_respects_existing_rows(): void
+    {
+        $provisioner = app(CurrencyAccountProvisioner::class);
+        $usd = Currency::findOrFail('USD');
+
+        // An existing (possibly remapped) row always wins.
+        AccountMapping::create([
+            'key' => 'inventory.USD',
+            'account_code' => '2000',
+            'description' => 'manual override',
+        ]);
+
+        $resolved = $provisioner->provision($usd);
+
+        $this->assertSame('1001', $resolved['cash']);
+        $this->assertSame('2000', $resolved['inventory']);
+
+        $second = $provisioner->provision($usd);
+        $this->assertSame($resolved, $second);
+        $this->assertSame(1, AccountMapping::where('key', 'inventory.USD')->count());
+    }
+
+    #[Test]
+    public function provision_skips_the_base_currency(): void
+    {
+        $resolved = app(CurrencyAccountProvisioner::class)->provision(Currency::findOrFail('MYR'));
+
+        $this->assertSame(['cash' => null, 'inventory' => null], $resolved);
+        $this->assertNull(AccountMapping::where('key', 'cash.MYR')->first());
+    }
+
+    #[Test]
+    public function provision_allocates_a_window_code_when_the_enum_account_is_unusable(): void
+    {
+        // The canonical USD cash account exists but is inactive — the
+        // provisioner must not map cash.USD to an account the management
+        // page's own validation would reject; it allocates from the window.
+        ChartOfAccount::where('account_code', '1001')->update(['is_active' => false]);
+
+        $resolved = app(CurrencyAccountProvisioner::class)->provision(Currency::findOrFail('USD'));
+
+        $this->assertSame('1008', $resolved['cash']);
+        $this->assertSame('2001', $resolved['inventory']);
+
+        $allocated = ChartOfAccount::find('1008');
+        $this->assertNotNull($allocated);
+        $this->assertSame('Cash (USD)', $allocated->account_name);
+        $this->assertTrue($allocated->is_active);
+        $this->assertSame('1008', AccountMapping::where('key', 'cash.USD')->value('account_code'));
+    }
+
+    #[Test]
+    public function provision_allocates_a_window_code_when_the_enum_account_has_the_wrong_type(): void
+    {
+        // Same guard for a mistyped row: 1001 as Revenue must not be mapped.
+        ChartOfAccount::where('account_code', '1001')->update(['account_type' => 'Revenue']);
+
+        $resolved = app(CurrencyAccountProvisioner::class)->provision(Currency::findOrFail('USD'));
+
+        $this->assertSame('1008', $resolved['cash']);
+        $this->assertSame('1008', AccountMapping::where('key', 'cash.USD')->value('account_code'));
     }
 
     #[Test]
@@ -333,5 +445,65 @@ class CurrencyManagementTest extends TestCase
 
         $this->assertTrue($currency->refresh()->is_active);
         $this->assertSame(1, (int) $currency->rate_unit);
+    }
+
+    #[Test]
+    public function enable_reactivates_a_disabled_currency_and_provisions_missing_gl_accounts(): void
+    {
+        $admin = User::factory()->admin()->create();
+        // A currency disabled before dedicated-account provisioning existed
+        // has no cash.{CCY}/inventory.{CCY} mappings — re-enabling must
+        // complete the accounting footprint, not just flip the flag.
+        $currency = Currency::factory()->create(['code' => 'ZZZ', 'is_active' => false]);
+
+        // A branch created while the currency was disabled has no pool or
+        // position rows for it — re-enable must backfill them.
+        $branch = Branch::factory()->create(['type' => Branch::TYPE_BRANCH, 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->post(route('system.currencies.enable', $currency))
+            ->assertRedirect(route('system.currencies.index'))
+            ->assertSessionHas('success');
+
+        $this->assertTrue($currency->refresh()->is_active);
+        $this->assertDatabaseHas('account_mappings', ['key' => 'cash.ZZZ']);
+        $this->assertDatabaseHas('account_mappings', ['key' => 'inventory.ZZZ']);
+        $this->assertDatabaseHas('branch_pools', [
+            'branch_id' => $branch->id,
+            'currency_code' => 'ZZZ',
+        ]);
+        $this->assertDatabaseHas('currency_positions', [
+            'branch_id' => (string) $branch->id,
+            'currency_code' => 'ZZZ',
+        ]);
+        $this->assertDatabaseHas('system_logs', ['action' => 'currency_enabled']);
+    }
+
+    #[Test]
+    public function enable_rejects_an_already_active_currency(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $currency = Currency::factory()->create(['code' => 'ZZY', 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->post(route('system.currencies.enable', $currency))
+            ->assertRedirect(route('system.currencies.index'))
+            ->assertSessionHas('error');
+
+        $this->assertTrue($currency->refresh()->is_active);
+        $this->assertDatabaseMissing('system_logs', ['action' => 'currency_enabled']);
+    }
+
+    #[Test]
+    public function enable_requires_manage_currencies_permission(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $currency = Currency::factory()->create(['code' => 'ZZX', 'is_active' => false]);
+
+        $this->actingAs($manager)
+            ->post(route('system.currencies.enable', $currency))
+            ->assertForbidden();
+
+        $this->assertFalse($currency->refresh()->is_active);
     }
 }

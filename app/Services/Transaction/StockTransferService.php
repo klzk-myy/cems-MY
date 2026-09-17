@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\AccountMappingKey;
 use App\Enums\Permission;
 use App\Enums\StockTransferStatus;
 use App\Exceptions\Domain\InsufficientStockException;
@@ -13,6 +14,8 @@ use App\Models\Currency;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\User;
+use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
@@ -30,6 +33,8 @@ class StockTransferService
         protected AuditService $auditService,
         protected CurrencyPositionLockService $positionLockService,
         protected BranchPoolService $branchPoolService,
+        protected AccountingService $accountingService,
+        protected AccountMappingService $accountMappingService,
         ?User $requester = null,
     ) {
         $this->requester = $requester ?? $this->resolveRequester();
@@ -257,6 +262,23 @@ class StockTransferService
                 }
             }
 
+            // GL leg: the transferred value leaves the source branch's
+            // ledger chain into inter-branch clearing (Dr 2300 / Cr
+            // inventory.{CCY}); the receive/complete legs settle it out.
+            // Within-branch transfers net to zero on one position row, so
+            // no entry is posted for them.
+            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+                $glAmounts = [];
+                foreach ($transfer->items as $item) {
+                    $currencyCode = (string) $item->currency_code;
+                    $glAmounts[$currencyCode] = $this->mathService->add(
+                        $glAmounts[$currencyCode] ?? '0',
+                        (string) $item->value_myr
+                    );
+                }
+                $this->postTransferGl($transfer, $sourceBranch, $glAmounts, 'dispatch');
+            }
+
             $transfer->dispatch();
         });
     }
@@ -291,6 +313,7 @@ class StockTransferService
             $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
             $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
 
+            $glAmounts = [];
             foreach ($items as $itemData) {
                 $this->receiveItem(
                     $transfer,
@@ -298,8 +321,15 @@ class StockTransferService
                     $existingItems,
                     $destinationBranchKey,
                     $destinationBranch,
-                    $requester
+                    $requester,
+                    $glAmounts
                 );
+            }
+
+            // GL leg: what actually arrived lands on the destination branch's
+            // ledger chain (Dr inventory.{CCY} / Cr 2300 clearing).
+            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+                $this->postTransferGl($transfer, $destinationBranch, $glAmounts, 'receipt');
             }
 
             $transfer->load('items');
@@ -315,6 +345,7 @@ class StockTransferService
     /**
      * @param  array<string, mixed>  $itemData
      * @param  Collection<(int|string), StockTransferItem>  $existingItems
+     * @param  array<string, string>  $glAmounts  Accumulated currency_code => MYR received value for the clearing-pair journal
      */
     private function receiveItem(
         StockTransfer $transfer,
@@ -322,7 +353,8 @@ class StockTransferService
         Collection $existingItems,
         string $destinationBranchKey,
         ?Branch $destinationBranch,
-        User $requester
+        User $requester,
+        array &$glAmounts
     ): void {
         if (! isset($itemData['id']) || ! is_numeric($itemData['id'])) {
             throw new TransactionValidationException(message: 'Each item must have a valid numeric id');
@@ -388,6 +420,14 @@ class StockTransferService
                 (string) $item->currency_code,
                 $receivedDelta,
                 $requester->id
+            );
+        }
+
+        if ($this->mathService->compare($receivedDelta, '0') > 0) {
+            $currencyCode = (string) $item->currency_code;
+            $glAmounts[$currencyCode] = $this->mathService->add(
+                $glAmounts[$currencyCode] ?? '0',
+                $this->mathService->multiply($receivedDelta, (string) $item->rate)
             );
         }
 
@@ -457,6 +497,7 @@ class StockTransferService
             $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
             $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
 
+            $glAmounts = [];
             foreach ($transfer->items as $item) {
                 $received = (string) ($item->quantity_received ?? '0');
                 $outstanding = $this->mathService->subtract((string) $item->quantity, $received);
@@ -475,6 +516,20 @@ class StockTransferService
                         $requester->id
                     );
                 }
+
+                if ($this->mathService->compare($outstanding, '0') > 0) {
+                    $currencyCode = (string) $item->currency_code;
+                    $glAmounts[$currencyCode] = $this->mathService->add(
+                        $glAmounts[$currencyCode] ?? '0',
+                        $this->mathService->multiply($outstanding, (string) $item->rate)
+                    );
+                }
+            }
+
+            // GL leg: the dispatched-but-unreceived remainder lands on the
+            // destination branch (Dr inventory.{CCY} / Cr 2300 clearing).
+            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+                $this->postTransferGl($transfer, $destinationBranch, $glAmounts, 'receipt');
             }
 
             $transfer->complete();
@@ -571,6 +626,7 @@ class StockTransferService
         $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
         $sourceBranch = $this->branchFromIdentifier($transfer->source_branch_name);
 
+        $glAmounts = [];
         foreach ($transfer->items as $item) {
             $unreceived = $this->mathService->subtract(
                 (string) $item->quantity,
@@ -580,6 +636,11 @@ class StockTransferService
             if ($this->mathService->compare($unreceived, '0') <= 0) {
                 continue;
             }
+
+            $glAmounts[(string) $item->currency_code] = $this->mathService->add(
+                $glAmounts[(string) $item->currency_code] ?? '0',
+                $this->mathService->multiply($unreceived, (string) $item->rate)
+            );
 
             $position = $this->positionLocks()->lock($sourceBranchKey, (string) $item->currency_code);
             $position->update([
@@ -604,6 +665,12 @@ class StockTransferService
                     );
                 }
             }
+        }
+
+        // GL leg: returned in-transit stock comes back onto the source
+        // branch's ledger chain (Dr inventory.{CCY} / Cr 2300 clearing).
+        if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+            $this->postTransferGl($transfer, $sourceBranch, $glAmounts, 'receipt');
         }
     }
 
@@ -699,5 +766,63 @@ class StockTransferService
             ->where('name', $identifier)
             ->orWhere('code', $identifier)
             ->first();
+    }
+
+    /**
+     * Post the GL leg of a stock movement through the inter-branch clearing
+     * account (suspense.hq / 2300). Journal entries carry a single branch_id,
+     * so a transfer posts one entry per side of the movement: dispatch credits
+     * the currency's inventory account on the SOURCE branch's ledger chain and
+     * debits clearing; receipt legs (receive / complete / cancel-return) debit
+     * inventory on the branch where the stock landed and credit clearing. The
+     * clearing account therefore holds the value of stock in transit and nets
+     * to zero once every dispatched quantity is accounted for. MYR items move
+     * through the cash.myr account rather than the pooled forex inventory.
+     * Unresolvable branch identifiers post to the company-wide (null) chain so
+     * global account totals still move correctly.
+     *
+     * @param  array<string, string>  $currencyAmounts  currency_code => MYR value moved
+     */
+    private function postTransferGl(StockTransfer $transfer, ?Branch $branch, array $currencyAmounts, string $direction): void
+    {
+        $clearingAccount = $this->accountMappingService->code(AccountMappingKey::SuspenseHq);
+
+        $lines = [];
+        $total = '0';
+        foreach ($currencyAmounts as $currencyCode => $amount) {
+            $amount = (string) $amount;
+
+            if ($this->mathService->compare($amount, '0') <= 0) {
+                continue;
+            }
+
+            $accountCode = $currencyCode === Currency::baseCurrency()
+                ? $this->accountMappingService->code(AccountMappingKey::CashMyr)
+                : $this->accountMappingService->forCurrency('inventory', $currencyCode);
+
+            $lines[] = $direction === 'dispatch'
+                ? ['account_code' => $accountCode, 'credit' => $amount, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} dispatched"]
+                : ['account_code' => $accountCode, 'debit' => $amount, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} received"];
+
+            $total = $this->mathService->add($total, $amount);
+        }
+
+        if ($lines === []) {
+            return;
+        }
+
+        $lines[] = $direction === 'dispatch'
+            ? ['account_code' => $clearingAccount, 'debit' => $total, 'description' => "Transfer {$transfer->transfer_number} — in transit"]
+            : ['account_code' => $clearingAccount, 'credit' => $total, 'description' => "Transfer {$transfer->transfer_number} — in transit"];
+
+        $this->accountingService->createJournalEntry(
+            $lines,
+            'StockTransfer',
+            (int) $transfer->id,
+            "Stock transfer {$transfer->transfer_number} ({$direction})",
+            null,
+            $this->requester()->id,
+            $branch?->id
+        );
     }
 }

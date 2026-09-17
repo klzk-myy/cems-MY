@@ -340,4 +340,36 @@ class BranchClosingWorkflowTest extends TestCase
         $this->expectException(BranchClosingChecklistIncompleteException::class);
         $this->branchClosingService->settle($workflow, $this->manager);
     }
+
+    #[Test]
+    public function sidebar_closing_route_redirects_to_the_users_branch_workflow(): void
+    {
+        // The navigation links to 'closing.show' with no branch parameter —
+        // the redirect route must exist and forward to the manager's branch.
+        $this->actingAs($this->manager)
+            ->get(route('closing.show'))
+            ->assertRedirect(route('branches.closing.show', $this->branch));
+    }
+
+    #[Test]
+    public function sidebar_closing_route_falls_back_to_an_active_trading_branch_for_hq_users(): void
+    {
+        $hqUser = User::factory()->create([
+            'username' => 'hq'.substr(uniqid(), -6),
+            'email' => 'hq-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        $expected = Branch::where('is_active', true)
+            ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
+            ->orderBy('id')
+            ->firstOrFail();
+
+        $this->actingAs($hqUser)
+            ->get(route('closing.show'))
+            ->assertRedirect(route('branches.closing.show', $expected));
+    }
 }

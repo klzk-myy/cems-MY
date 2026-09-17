@@ -66,12 +66,17 @@ class AccountMappingService
     /**
      * Every fixed key with its effective account code (table row or enum
      * default) plus any dynamic per-currency rows, for the management page.
+     * When the account_mappings table is absent (install-mappings not run
+     * yet) the page still renders: every key shows its enum default and the
+     * dynamic set is empty, matching what posting paths resolve.
      *
-     * @return array{fixed: array<int, array{key: AccountMappingKey, account_code: string, is_default: bool}>, currency: array<int, AccountMapping>}
+     * @return array{fixed: array<int, array{key: AccountMappingKey, account_code: string, is_default: bool}>, currency: array<int, AccountMapping>, installed: bool}
      */
     public function effectiveMappings(): array
     {
-        $rows = AccountMapping::query()->get();
+        $installed = Schema::hasTable('account_mappings');
+
+        $rows = $installed ? AccountMapping::query()->get() : collect();
 
         $fixed = [];
         foreach (AccountMappingKey::cases() as $key) {
@@ -91,11 +96,14 @@ class AccountMappingService
 
         return [
             'fixed' => $fixed,
-            'currency' => AccountMapping::query()
-                ->whereNotIn('key', $enumKeys)
-                ->orderBy('key')
-                ->get()
-                ->all(),
+            'currency' => $installed
+                ? AccountMapping::query()
+                    ->whereNotIn('key', $enumKeys)
+                    ->orderBy('key')
+                    ->get()
+                    ->all()
+                : [],
+            'installed' => $installed,
         ];
     }
 
@@ -110,6 +118,10 @@ class AccountMappingService
      */
     public function update(array $mappings, ?int $userId, ?string $reason = null): void
     {
+        if (! Schema::hasTable('account_mappings')) {
+            throw new AccountingPeriodException('Account mappings are not installed on this database — run accounting:install-mappings first');
+        }
+
         DB::transaction(function () use ($mappings, $userId, $reason) {
             foreach ($mappings as $key => $accountCode) {
                 $key = (string) $key;

@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Create Currency" description="Add a new currency to the system" />
 
-        <x-card title="Currency Details" description="ISO alpha-3 codes are uppercase (e.g. USD)">
+        <x-card title="Currency Details" description="ISO alpha-3 codes are uppercase (e.g. USD). Dedicated Cash/Inventory GL accounts and account mappings are created automatically.">
             <form method="POST" action="{{ route('system.currencies.store') }}">
                 @csrf
 

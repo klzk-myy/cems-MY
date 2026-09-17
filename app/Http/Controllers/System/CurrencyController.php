@@ -11,6 +11,7 @@ use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Transaction;
+use App\Services\Accounting\CurrencyAccountProvisioner;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
@@ -39,6 +40,7 @@ class CurrencyController extends Controller
         protected AuditService $auditService,
         protected BranchPoolService $branchPoolService,
         protected CurrencyPositionLockService $positionLockService,
+        protected CurrencyAccountProvisioner $accountProvisioner,
     ) {}
 
     /**
@@ -81,7 +83,12 @@ class CurrencyController extends Controller
                 ->withInput();
         }
 
-        [$currency, $branches] = DB::transaction(function () use ($validated) {
+        // auth()->id() is int|string|null; the cast must not turn a missing
+        // actor into user id 0, which would violate the updated_by FK.
+        $actorId = auth()->id();
+        $actorId = $actorId === null ? null : (int) $actorId;
+
+        [$currency, $branches, $glAccounts] = DB::transaction(function () use ($validated, $actorId) {
             $currency = Currency::create([
                 ...$validated,
                 'is_active' => true,
@@ -101,12 +108,17 @@ class CurrencyController extends Controller
                 $this->positionLockService->lock((string) $branch->id, $currency->code);
             }
 
-            return [$currency, $branches];
+            // Dedicated Cash/Inventory chart accounts plus cash.{CCY} and
+            // inventory.{CCY} mapping rows so postings route to the
+            // currency's own GL accounts instead of the pooled defaults.
+            $glAccounts = $this->accountProvisioner->provision($currency, $actorId);
+
+            return [$currency, $branches, $glAccounts];
         });
 
         $this->auditService->log(
             'currency_created',
-            (int) auth()->id(),
+            $actorId,
             'Currency',
             null,
             [],
@@ -115,6 +127,7 @@ class CurrencyController extends Controller
                 'name' => $currency->name,
                 'decimal_places' => $currency->decimal_places,
                 'provisioned_branches' => $branches->count(),
+                'gl_accounts' => $glAccounts,
             ]
         );
 
@@ -247,5 +260,55 @@ class CurrencyController extends Controller
 
         return redirect()->route('system.currencies.index')
             ->with('success', "Currency {$currency->code} disabled.");
+    }
+
+    /**
+     * Re-enable a disabled currency. Provisioning runs inside the same
+     * transaction so a currency disabled before dedicated GL accounts existed
+     * (or one whose accounts were removed) gets its chart rows and mappings
+     * back on the way in.
+     */
+    public function enable(Currency $currency): RedirectResponse
+    {
+        $this->requirePermission(Permission::ManageCurrencies);
+
+        if ($currency->is_active) {
+            return redirect()->route('system.currencies.index')
+                ->with('error', "Currency {$currency->code} is already active.");
+        }
+
+        $actorId = auth()->id();
+        $actorId = $actorId === null ? null : (int) $actorId;
+
+        DB::transaction(function () use ($currency, $actorId) {
+            $currency->update(['is_active' => true]);
+
+            // Branches created while this currency was disabled never got
+            // their pool/position rows (BranchService backfills active
+            // currencies only) — re-enable restores the operational
+            // footprint too. getOrCreateForBranch/lock are idempotent for
+            // branches that already have the rows.
+            $branches = Branch::where('is_active', true)
+                ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
+                ->get();
+            foreach ($branches as $branch) {
+                $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
+                $this->positionLockService->lock((string) $branch->id, $currency->code);
+            }
+
+            $this->accountProvisioner->provision($currency, $actorId);
+
+            $this->auditService->log(
+                'currency_enabled',
+                $actorId,
+                'Currency',
+                null,
+                ['is_active' => false],
+                ['code' => $currency->code, 'is_active' => true]
+            );
+        });
+
+        return redirect()->route('system.currencies.index')
+            ->with('success', "Currency {$currency->code} re-enabled.");
     }
 }

@@ -9,6 +9,7 @@ use App\Http\Requests\Accounting\UpdateAccountMappingsRequest;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Services\Accounting\AccountMappingService;
+use App\Services\Accounting\CurrencyAccountProvisioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -28,6 +29,7 @@ class AccountMappingController extends Controller
 {
     public function __construct(
         protected AccountMappingService $accountMappingService,
+        protected CurrencyAccountProvisioner $accountProvisioner,
     ) {}
 
     public function index(): View
@@ -35,6 +37,7 @@ class AccountMappingController extends Controller
         $this->requirePermission(Permission::ManageAccountMappings);
 
         $effective = $this->accountMappingService->effectiveMappings();
+        $mappingsInstalled = $effective['installed'];
 
         $sections = collect($effective['fixed'])
             ->groupBy(fn (array $row) => $row['key']->section());
@@ -58,13 +61,62 @@ class AccountMappingController extends Controller
             ->orderBy('code')
             ->get();
 
+        // Active currencies missing either per-currency leg can be given
+        // dedicated chart accounts from this page. Provisioning is
+        // idempotent, so a currency with only one leg (e.g. a manual
+        // cash.{CCY} override) is listed to complete the pair.
+        $unprovisionedCurrencies = $mappingsInstalled
+            ? $currencies->filter(
+                fn (Currency $c) => ! $currencyRows->has("cash.{$c->code}")
+                    || ! $currencyRows->has("inventory.{$c->code}")
+            )->values()
+            : collect();
+
         return view('accounting.mappings.index', compact(
             'sections',
             'accountsByType',
             'assetAccounts',
             'currencyRows',
             'currencies',
+            'unprovisionedCurrencies',
+            'mappingsInstalled',
         ));
+    }
+
+    /**
+     * Provision dedicated Cash/Inventory chart accounts and the
+     * cash.{CCY} / inventory.{CCY} mapping rows for a currency that does
+     * not have any yet.
+     */
+    public function provision(Currency $currency): RedirectResponse
+    {
+        $this->requirePermission(Permission::ManageAccountMappings);
+
+        if (! $currency->is_active) {
+            return redirect()
+                ->route('accounting.mappings.index')
+                ->with('error', "Cannot provision {$currency->code}: the currency is disabled.");
+        }
+
+        // auth()->id() is int|string|null; the cast must not turn a missing
+        // actor into user id 0, which would violate the updated_by FK.
+        $actorId = auth()->id();
+
+        $resolved = $this->accountProvisioner->provision(
+            $currency,
+            $actorId === null ? null : (int) $actorId
+        );
+
+        if ($resolved['cash'] === null && $resolved['inventory'] === null) {
+            return redirect()
+                ->route('accounting.mappings.index')
+                ->with('success', "No dedicated accounts were needed for {$currency->code}.");
+        }
+
+        return redirect()
+            ->route('accounting.mappings.index')
+            ->with('success', "Provisioned {$currency->code} GL accounts — cash: "
+                .($resolved['cash'] ?? 'none').', inventory: '.($resolved['inventory'] ?? 'none').'.');
     }
 
     public function update(UpdateAccountMappingsRequest $request): RedirectResponse

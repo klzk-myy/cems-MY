@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Jobs\Audit;
 
+use App\Exceptions\Domain\AuditIntegrityException;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -110,5 +112,68 @@ class SealAuditHashJobTest extends TestCase
         $refreshed = $log->fresh();
         $this->assertSame('first_hash', $refreshed->entry_hash);
         $this->assertNull($refreshed->previous_hash);
+    }
+
+    #[Test]
+    public function it_retries_when_the_log_row_is_not_visible_yet(): void
+    {
+        // A pickup ahead of the writing transaction's commit (a connector
+        // without after_commit) must fail so the backoff ladder retries —
+        // returning silently would leave the committed entry unsealed.
+        $auditService = $this->mock(AuditService::class);
+        $auditService->shouldNotReceive('computeEntryHash');
+
+        $job = new SealAuditHashJob(999999);
+
+        $this->expectException(AuditIntegrityException::class);
+        $job->handle($auditService);
+    }
+
+    #[Test]
+    public function it_dispatches_after_commit_regardless_of_connection_config(): void
+    {
+        $this->assertInstanceOf(
+            ShouldQueueAfterCommit::class,
+            new SealAuditHashJob(1)
+        );
+    }
+
+    #[Test]
+    public function seal_pending_command_seals_stale_unsealed_entries_in_order(): void
+    {
+        $user = User::factory()->create();
+
+        // Rows written directly (no SealAuditHashJob dispatch) stay unsealed —
+        // the sweeper is the repair path for exactly this state. created_at is
+        // not fillable, so the stale timestamps are applied via forceFill.
+        $log1 = SystemLog::create([
+            'user_id' => $user->id,
+            'action' => 'stale_first',
+            'entry_hash' => null,
+            'previous_hash' => null,
+        ]);
+        $log2 = SystemLog::create([
+            'user_id' => $user->id,
+            'action' => 'stale_second',
+            'entry_hash' => null,
+            'previous_hash' => null,
+        ]);
+        $tooFresh = SystemLog::create([
+            'user_id' => $user->id,
+            'action' => 'in_flight',
+            'entry_hash' => null,
+            'previous_hash' => null,
+        ]);
+
+        $log1->forceFill(['created_at' => now()->subMinutes(10)])->save();
+        $log2->forceFill(['created_at' => now()->subMinutes(9)])->save();
+
+        $this->artisanCommand('audit:seal-pending')->assertSuccessful();
+
+        // Both stale rows sealed, second chained onto the first; the fresh
+        // row is left for the in-flight seal job.
+        $this->assertNotNull($log1->refresh()->entry_hash);
+        $this->assertSame($log1->entry_hash, $log2->refresh()->previous_hash);
+        $this->assertNull($tooFresh->refresh()->entry_hash);
     }
 }

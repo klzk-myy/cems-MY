@@ -16,9 +16,20 @@
             </x-alert>
         @endif
 
+        @if(! $mappingsInstalled)
+            <x-alert type="warning">
+                The account_mappings table is not installed on this database — posting paths resolve the
+                built-in defaults shown below and editing is disabled. Run
+                <code class="font-mono">php artisan accounting:install-mappings</code> to enable editing.
+            </x-alert>
+        @endif
+
+        @if($mappingsInstalled)
         <form method="POST" action="{{ route('accounting.mappings.update') }}">
             @csrf
+        @endif
             <div class="space-y-6">
+                @if($mappingsInstalled)
                 <x-card>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div class="grow">
@@ -34,6 +45,7 @@
                         <x-button type="submit" variant="primary">Save Mappings</x-button>
                     </div>
                 </x-card>
+                @endif
 
                 @php $i = 0; @endphp
 
@@ -68,13 +80,17 @@
                                                 <div class="text-xs text-ink-muted mt-0.5">{{ $key->usedBy() }}</div>
                                             </td>
                                             <td class="px-4 py-3 w-72">
-                                                <x-select
-                                                    name="mappings[{{ $index }}][account_code]"
-                                                    :options="$options"
-                                                    :value="$selected"
-                                                    placeholder="— select account —"
-                                                    inline
-                                                />
+                                                @if($mappingsInstalled)
+                                                    <x-select
+                                                        name="mappings[{{ $index }}][account_code]"
+                                                        :options="$options"
+                                                        :value="$selected"
+                                                        placeholder="— select account —"
+                                                        inline
+                                                    />
+                                                @else
+                                                    <span class="font-mono text-sm text-ink">{{ $row['account_code'] }}</span>
+                                                @endif
                                             </td>
                                             <td class="px-4 py-3">
                                                 @if($row['is_default'])
@@ -91,6 +107,7 @@
                     </x-card>
                 @endforeach
 
+                @if($mappingsInstalled)
                 <x-card>
                     <h3 class="text-sm font-semibold text-ink mb-1">Per-Currency Overrides</h3>
                     <p class="text-xs text-ink-muted mb-3 pb-2 border-b border-border">
@@ -148,7 +165,30 @@
                         </table>
                     </div>
                 </x-card>
+                @endif
             </div>
+        @if($mappingsInstalled)
         </form>
+        @endif
+
+        @if($unprovisionedCurrencies->isNotEmpty())
+            <x-card>
+                <h3 class="text-sm font-semibold text-ink mb-1">Provision Dedicated Accounts</h3>
+                <p class="text-xs text-ink-muted mb-3 pb-2 border-b border-border">
+                    These currencies have no dedicated GL accounts — postings fall back to the pooled
+                    cash.default / inventory.default mappings. Provisioning creates a Cash and an
+                    Inventory chart account plus the cash.{CCY} / inventory.{CCY} mapping rows.
+                    New currencies get these automatically on creation.
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    @foreach($unprovisionedCurrencies as $currency)
+                        <form method="POST" action="{{ route('accounting.mappings.provision', $currency) }}">
+                            @csrf
+                            <x-button type="submit" variant="secondary">Provision {{ $currency->code }}</x-button>
+                        </form>
+                    @endforeach
+                </div>
+            </x-card>
+        @endif
     </div>
 </x-app-layout>

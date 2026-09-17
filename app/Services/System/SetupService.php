@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\AccountMappingService;
+use App\Services\Accounting\CurrencyAccountProvisioner;
 use App\ValueObjects\QuoteConvention;
 use Database\Seeders\SchemaSeeder;
 use Illuminate\Database\QueryException;
@@ -34,6 +35,7 @@ class SetupService
         protected MathService $mathService,
         protected AccountingService $accountingService,
         protected AccountMappingService $accountMappingService,
+        protected CurrencyAccountProvisioner $accountProvisioner,
     ) {}
 
     /**
@@ -312,17 +314,27 @@ class SetupService
         Artisan::call('db:seed', ['--class' => 'EnhancedChartOfAccountsSeeder', '--force' => true]);
 
         // Custom "other" currencies entered in step 3 may not exist in the
-        // seeded list — create them before applying the active set.
+        // seeded list — create them before applying the active set. Newly
+        // created ones also get dedicated GL accounts + mapping rows so
+        // postings route to the currency's own accounts. A soft-deleted row
+        // with the same code would collide on insert (code is the PK), so
+        // it is restored instead of crashing the whole setup transaction.
         foreach ($this->customCurrencyRows($setupData['currencies'] ?? []) as $row) {
-            Currency::firstOrCreate(
-                ['code' => $row['code']],
-                [
+            $currency = Currency::withTrashed()->firstWhere('code', $row['code']);
+
+            if ($currency === null) {
+                $currency = Currency::create([
+                    'code' => $row['code'],
                     'name' => $row['name'] !== '' ? $row['name'] : $row['code'],
                     'symbol' => $row['symbol'] !== '' ? $row['symbol'] : $row['code'],
                     'decimal_places' => 2,
                     'is_active' => true,
-                ],
-            );
+                ]);
+
+                $this->accountProvisioner->provision($currency);
+            } elseif ($currency->trashed()) {
+                $currency->restore();
+            }
         }
 
         // Honor the step-3 selection: deactivate currencies the business did

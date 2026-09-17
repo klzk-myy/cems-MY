@@ -387,7 +387,20 @@ class AuditService implements AuditServiceInterface
     ): SystemLog {
         $log = $this->createLogEntry($action, $data, $severity);
 
-        SealAuditHashJob::dispatch($log->id);
+        try {
+            SealAuditHashJob::dispatch($log->id);
+        } catch (\Throwable $e) {
+            // On synchronous queue drivers the seal job executes inline, so a
+            // transient seal failure (e.g. an unsealed predecessor gap) would
+            // otherwise propagate and abort the business operation that merely
+            // wrote an audit entry. Queued drivers already isolate job
+            // failures; mirror that here — the entry exists and is sealed by
+            // the retry ladder or the audit:seal-pending sweeper.
+            Log::warning('SealAuditHashJob inline dispatch failed', [
+                'log_id' => $log->id,
+                'exception' => $e->getMessage(),
+            ]);
+        }
 
         return $log;
     }
@@ -430,10 +443,24 @@ class AuditService implements AuditServiceInterface
                     ['log_id' => $log->id]
                 );
 
-                SealAuditHashJob::dispatch($log->id)->onQueue('audit');
+                try {
+                    SealAuditHashJob::dispatch($log->id)->onQueue('audit');
+                } catch (\Throwable $e) {
+                    Log::warning('SealAuditHashJob inline dispatch failed', [
+                        'log_id' => $log->id,
+                        'exception' => $e->getMessage(),
+                    ]);
+                }
             }
         } else {
-            SealAuditHashJob::dispatch($log->id)->onQueue('audit');
+            try {
+                SealAuditHashJob::dispatch($log->id)->onQueue('audit');
+            } catch (\Throwable $e) {
+                Log::warning('SealAuditHashJob inline dispatch failed', [
+                    'log_id' => $log->id,
+                    'exception' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $log->fresh();

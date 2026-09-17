@@ -413,6 +413,53 @@ class SetupQuickSetupParityTest extends TestCase
     }
 
     #[Test]
+    public function wizard_completion_restores_a_soft_deleted_custom_currency(): void
+    {
+        // A soft-deleted row still owns its PK — replaying the code through
+        // the wizard must restore it, not crash the whole setup transaction
+        // on a duplicate-key insert.
+        Currency::factory()->create(['code' => 'AAA', 'is_active' => false])->delete();
+
+        $this->withSession([
+            'setup' => [
+                'business' => ['business_name' => 'Wizard Co'],
+                'admin' => [
+                    'admin_name' => 'admin',
+                    'admin_email' => 'wizard-admin@example.com',
+                    'admin_password' => 'Sup3rSecure!Pass',
+                ],
+                'currencies' => [
+                    'base_currency' => 'MYR',
+                    'active_currencies' => ['MYR', 'USD', 'AAA'],
+                    'custom_currencies' => [
+                        ['code' => 'AAA', 'name' => 'Restored Coin', 'symbol' => 'A'],
+                    ],
+                ],
+                'rates' => [
+                    'use_default_rates' => '1',
+                    'custom_rates' => ['AAA' => ['buy' => '0.25', 'sell' => '0.26']],
+                ],
+                'stock' => [
+                    'initial_myr_cash' => '1000',
+                    'initial_stock' => ['USD' => '500', 'AAA' => '100'],
+                ],
+                'opening_balance' => [
+                    'opening_balance_myr' => '1000',
+                    'opening_balance_foreign' => ['USD' => '500', 'AAA' => '100'],
+                ],
+            ],
+        ]);
+
+        $response = $this->postJson(route('setup.complete'));
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $currency = Currency::find('AAA');
+        $this->assertNotNull($currency, 'Soft-deleted currency must be restored, not re-inserted');
+        $this->assertTrue($currency->is_active);
+    }
+
+    #[Test]
     public function quick_setup_flashes_sanctions_bootstrap_notice(): void
     {
         $response = $this->postJson(route('setup.quick'), $this->validPayload());

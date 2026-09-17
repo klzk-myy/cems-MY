@@ -516,9 +516,11 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         // table. Nested inside access_accounting so every mapping editor also
         // holds accounting access; the POST steps up with password.confirm
         // like other admin mutations.
-        Route::middleware('role:manage_account_mappings')->group(function () {
+        Route::middleware(['role:manage_account_mappings', 'mfa.verified'])->group(function () {
             Route::get('/mappings', [AccountMappingController::class, 'index'])->name('mappings.index');
             Route::post('/mappings', [AccountMappingController::class, 'update'])->name('mappings.update')
+                ->middleware('password.confirm');
+            Route::post('/mappings/provision/{currency}', [AccountMappingController::class, 'provision'])->name('mappings.provision')
                 ->middleware('password.confirm');
         });
     });
@@ -589,7 +591,13 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     // Branch Closing Workflow — same surface as the API closing workflow,
-    // gated by manage_branch_closing (manager default).
+    // gated by manage_branch_closing (manager default). The sidebar links to
+    // 'closing.show' with no branch parameter, so it resolves the user's
+    // branch and forwards to the per-branch page below.
+    Route::get('/closing', [BranchClosingController::class, 'index'])
+        ->middleware('role:manage_branch_closing')
+        ->name('closing.show');
+
     Route::middleware(['role:manage_branch_closing'])->prefix('branches')->name('branches.')->group(function () {
         Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
             ->name('closing.show');
@@ -612,6 +620,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
 
         Route::post('/{currency}/disable', [CurrencyController::class, 'disable'])->name('disable');
+        Route::post('/{currency}/enable', [CurrencyController::class, 'enable'])->name('enable');
     });
 
     // Read-only chart of accounts viewer (plan WS-C3). Registered outside the

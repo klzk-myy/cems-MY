@@ -219,12 +219,14 @@ class AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function customer_policy_denies_compliance_officer_to_create(): void
+    public function customer_policy_allows_compliance_officer_to_create(): void
     {
+        // manage_customers was granted to ComplianceOfficer for KYC
+        // workflows (permission matrix), so the policy must allow create.
         $policy = new CustomerPolicy;
         $co = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
-        $this->assertFalse($policy->create($co));
+        $this->assertTrue($policy->create($co));
     }
 
     #[Test]

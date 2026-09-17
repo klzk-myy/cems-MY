@@ -182,6 +182,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/month-end-close.log'));
 
+        // Audit chain sweeper - seals system_logs rows whose SealAuditHashJob
+        // never ran (e.g. a connector without after_commit picked the job up
+        // before the writing transaction committed).
+        $schedule->command('audit:seal-pending')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/audit-seal-pending.log'));
+
         // Sanctions Rescreening Monitor - Weekly on Sunday at 02:00
         $schedule->job(new RunComplianceMonitorJob(SanctionsRescreeningMonitor::class))
             ->weeklyOn(0, '02:00')
