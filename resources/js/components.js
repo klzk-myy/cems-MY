@@ -129,6 +129,29 @@ export function registerComponents(Alpine) {
         sidebarCollapsed: false,
     }));
 
+    // Single-page transaction create form: rate unit/inverse hints.
+    // Server data arrives via data-* attributes (CSP build cannot parse
+    // inline object literals or `??` expressions).
+    Alpine.data('transactionForm', () => ({
+        currencyUnits: {},
+        currencyInverses: {},
+        currency_code: '',
+        init() {
+            try { this.currencyUnits = JSON.parse(this.$el.dataset.currencyUnits || '{}'); } catch (e) { this.currencyUnits = {}; }
+            try { this.currencyInverses = JSON.parse(this.$el.dataset.currencyInverses || '{}'); } catch (e) { this.currencyInverses = {}; }
+            this.currency_code = this.$el.dataset.initialCurrency || '';
+        },
+        get unit() {
+            return this.currencyUnits[this.currency_code] || 1;
+        },
+        get isInverse() {
+            return !!this.currencyInverses[this.currency_code];
+        },
+        get showUnitHint() {
+            return !this.currencyInverses[this.currency_code] && this.unit > 1;
+        },
+    }));
+
     Alpine.data('customerTypeahead', () => ({
         query: '',
         selectedId: '',

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Exceptions\Domain\InvalidStateException;
+use App\Http\Concerns\BranchScopedQuery;
 use App\Http\Requests\AcknowledgeHandoverWebRequest;
 use App\Http\Requests\CloseCounterRequest;
 use App\Http\Requests\EmergencyCloseRequest;
@@ -18,6 +20,7 @@ use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\EmergencyClosure;
+use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\CounterHandoverService;
@@ -33,6 +36,7 @@ use Illuminate\View\View;
 
 class CounterController extends Controller
 {
+    use BranchScopedQuery;
     use Concerns\AuthorizesBranchResource;
     use Concerns\ResolvesCloseSupervisor;
 
@@ -48,9 +52,11 @@ class CounterController extends Controller
      */
     public function index(): View
     {
-        $counters = Counter::with(['sessions' => function ($query) {
-            $query->where('status', CounterSessionStatus::Open->value);
-        }])->get();
+        $counters = $this->scopeByBranch(
+            Counter::with(['sessions' => function ($query) {
+                $query->where('status', CounterSessionStatus::Open->value);
+            }])
+        )->get();
 
         $stats = [
             'total' => $counters->count(),
@@ -278,6 +284,19 @@ class CounterController extends Controller
             ->where('id', '!=', auth()->id())
             ->get();
 
+        // Allocations transfer as part of every handover and can only land on
+        // a teller, so an operator holding active allocations may only hand
+        // over to another teller — anything else fails inside the service.
+        $requiresTellerReceiver = TellerAllocation::query()
+            ->where('user_id', $session->user_id)
+            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->whereDate('session_date', now()->toDateString())
+            ->exists();
+
+        if ($requiresTellerReceiver) {
+            $availableUsers = $availableUsers->filter(fn (User $user) => $user->isTeller())->values();
+        }
+
         $supervisors = User::select('id', 'username', 'role')
             ->where('is_active', true)
             ->where('branch_id', $counter->branch_id)
@@ -286,7 +305,7 @@ class CounterController extends Controller
 
         $currencies = $this->getActiveCurrencies();
 
-        return view('counters.handover', compact('counter', 'session', 'availableUsers', 'supervisors', 'currencies'));
+        return view('counters.handover', compact('counter', 'session', 'availableUsers', 'supervisors', 'currencies', 'requiresTellerReceiver'));
     }
 
     public function handover(HandoverCounterRequest $request, Counter $counter): RedirectResponse

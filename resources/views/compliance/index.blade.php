@@ -9,6 +9,31 @@
             <x-stat-card label="High Priority" :value="$stats['high_priority'] ?? 0" color="red" />
         </x-stat-grid>
 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <x-card title="Alerts & Cases">
+                <ul class="space-y-2">
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.alerts.index') }}">Alert Triage</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.unified.index') }}">Unified Alerts</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.cases.index') }}">Case Management</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.findings.index') }}">Findings</x-button></li>
+                </ul>
+            </x-card>
+            <x-card title="Screening & Sanctions">
+                <ul class="space-y-2">
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.sanctions.index') }}">Sanction Lists</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.screening.matches.index') }}">Screening Matches</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.pep-approvals.index') }}">PEP Approvals</x-button></li>
+                </ul>
+            </x-card>
+            <x-card title="Reporting & Review">
+                <ul class="space-y-2">
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.str.index') }}">STR Reports</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.edd-reviews.index') }}">EDD Reviews</x-button></li>
+                    <li><x-button variant="ghost" size="sm" href="{{ route('compliance.risk-dashboard.index') }}">Risk Dashboard</x-button></li>
+                </ul>
+            </x-card>
+        </div>
+
         <x-card title="Flagged Transactions">
             <x-table>
                 <x-slot:thead>

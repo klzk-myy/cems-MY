@@ -1,9 +1,15 @@
 <x-app-layout title="Transactions">
     <x-page-header title="Transactions" description="Manage all exchange transactions">
         <x-slot:actions>
-            <a href="{{ route('transactions.create') }}">
-                <x-button variant="primary">New Transaction</x-button>
-            </a>
+            @if(auth()->user()->role->canPerform(\App\Enums\Permission::ManageTransactions))
+                <x-button href="{{ route('transactions.batch-upload') }}" variant="secondary">Batch Upload</x-button>
+                <x-button href="{{ route('transactions.export.form') }}" variant="secondary">Export</x-button>
+            @endif
+            @can('create', \App\Models\Transaction::class)
+                <a href="{{ route('transactions.create') }}">
+                    <x-button variant="primary">New Transaction</x-button>
+                </a>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 

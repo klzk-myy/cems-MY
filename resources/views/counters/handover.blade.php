@@ -48,6 +48,7 @@
                             label="Select Operator"
                             :options="$operatorOptions"
                             placeholder="-- Select Operator --"
+                            :help="($requiresTellerReceiver ?? false) ? 'Active stock allocations can only transfer to a teller.' : null"
                             required
                             inline
                         />

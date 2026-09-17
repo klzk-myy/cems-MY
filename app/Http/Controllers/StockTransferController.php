@@ -89,7 +89,11 @@ class StockTransferController extends Controller
 
         $validated = $request->validated();
 
-        $transfer = $this->stockTransferService->createRequest($validated);
+        try {
+            $transfer = $this->stockTransferService->createRequest($validated);
+        } catch (DomainException $e) {
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
 
         $this->auditService->logStockTransferEvent('stock_transfer_created', $transfer->id, [
             'new' => [

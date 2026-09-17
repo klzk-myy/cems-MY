@@ -67,11 +67,11 @@
                                            class="w-full rounded-md border-border bg-surface text-ink text-sm focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3">
-                                    <input type="number" :name="'lines[' + index + '][debit]'" step="0.01" min="0" placeholder="0.00" x-model="line.debit" required
+                                    <input type="number" :name="'lines[' + index + '][debit]'" step="0.01" min="0" placeholder="0.00" x-model="line.debit"
                                            class="w-full rounded-md border-border bg-surface text-ink text-sm text-right focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3">
-                                    <input type="number" :name="'lines[' + index + '][credit]'" step="0.01" min="0" placeholder="0.00" x-model="line.credit" required
+                                    <input type="number" :name="'lines[' + index + '][credit]'" step="0.01" min="0" placeholder="0.00" x-model="line.credit"
                                            class="w-full rounded-md border-border bg-surface text-ink text-sm text-right focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3 text-center">

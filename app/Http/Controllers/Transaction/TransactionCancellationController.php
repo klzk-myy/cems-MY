@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Transaction;
 use App\Actions\Transaction\ApproveCancellationAction;
 use App\Actions\Transaction\RejectCancellationAction;
 use App\Actions\Transaction\RequestCancellationAction;
+use App\Enums\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\CancelTransactionRequest;
 use App\Http\Requests\RejectCancelRequest;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class TransactionCancellationController extends Controller
@@ -49,7 +52,10 @@ class TransactionCancellationController extends Controller
             return back()->with('error', 'This transaction is not pending cancellation.');
         }
 
-        return view('transactions.approve-cancellation', compact('transaction'));
+        return view('transactions.approve-cancellation', [
+            'transaction' => $transaction,
+            'cancellation' => $this->pendingCancellationContext($transaction),
+        ]);
     }
 
     public function approveCancel(ApproveCancelRequest $request, Transaction $transaction): RedirectResponse
@@ -80,7 +86,10 @@ class TransactionCancellationController extends Controller
             return back()->with('error', 'This transaction is not pending cancellation.');
         }
 
-        return view('transactions.reject-cancellation', compact('transaction'));
+        return view('transactions.reject-cancellation', [
+            'transaction' => $transaction,
+            'cancellation' => $this->pendingCancellationContext($transaction),
+        ]);
     }
 
     public function rejectCancel(RejectCancelRequest $request, Transaction $transaction): RedirectResponse
@@ -101,5 +110,30 @@ class TransactionCancellationController extends Controller
 
         return redirect()->route('transactions.show', $transaction)
             ->with('success', $result->message);
+    }
+
+    /**
+     * Pull the pending-cancellation request context (reason, requester,
+     * timestamp) from the transaction's transition history.
+     */
+    protected function pendingCancellationContext(Transaction $transaction): array
+    {
+        $entry = collect($transaction->transition_history ?? [])
+            ->filter(fn ($e) => ($e['to'] ?? null) === TransactionStatus::PendingCancellation->value)
+            ->last();
+
+        if (! $entry) {
+            return [];
+        }
+
+        $requester = isset($entry['user_id']) ? User::find($entry['user_id']) : null;
+
+        return [
+            'reason' => $entry['reason'] ?? null,
+            'requested_by' => $requester?->username ?? $requester?->name,
+            'requested_at' => isset($entry['timestamp'])
+                ? Carbon::parse($entry['timestamp'])->format('Y-m-d H:i')
+                : null,
+        ];
     }
 }

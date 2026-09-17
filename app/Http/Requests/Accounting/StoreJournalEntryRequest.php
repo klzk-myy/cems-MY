@@ -27,8 +27,8 @@ class StoreJournalEntryRequest extends AuthorizedFormRequest
                     ->where('allow_journal', true)
                     ->where('is_active', true),
             ],
-            'lines.*.debit' => 'required|numeric|min:0',
-            'lines.*.credit' => 'required|numeric|min:0',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
             'lines.*.description' => 'nullable|string|max:255',
         ];
     }
