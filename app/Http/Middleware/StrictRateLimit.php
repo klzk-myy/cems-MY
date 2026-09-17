@@ -30,6 +30,10 @@ class StrictRateLimit
      */
     public function handle(Request $request, Closure $next, string $limiterName = 'default'): Response
     {
+        if (! config('security.rate_limits.enabled', true)) {
+            return $next($request);
+        }
+
         // First check if IP is blocked
         if ($this->rateLimitService->isIpBlocked($request->ip())) {
             $blockInfo = $this->rateLimitService->getIpBlockInfo($request->ip());

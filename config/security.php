@@ -50,6 +50,10 @@ return [
     */
 
     'rate_limits' => [
+        // Master kill-switch: set SECURITY_RATE_LIMITING_ENABLED=false in dev
+        // to bypass every throttle middleware (named and numeric limiters).
+        'enabled' => env('SECURITY_RATE_LIMITING_ENABLED', true),
+
         // Login: 5 attempts per minute per IP
         'login' => [
             'attempts' => 5,

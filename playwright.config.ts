@@ -8,6 +8,7 @@ export default defineConfig({
   reporter: 'line',
   use: {
     channel: 'chrome',
-    headless: true,
+    headless: !process.env.PW_HEADED,
+    launchOptions: { slowMo: Number(process.env.PW_SLOWMO ?? 0) },
   },
 });

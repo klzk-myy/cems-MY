@@ -14,6 +14,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SessionTimeout;
 use App\Http\Middleware\StrictRateLimit;
 use App\Http\Middleware\TestDashboard;
+use App\Http\Middleware\ThrottleRequests;
 use App\Http\Middleware\ValidateSignature;
 use App\Jobs\Accounting\ReconcileDeferredAccountingJob;
 use App\Jobs\Compliance\LowStockAlertJob;
@@ -35,7 +36,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\Middleware\SetCacheHeaders;
-use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
