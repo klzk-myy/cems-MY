@@ -163,12 +163,14 @@ test.describe('Login and Crawl - Remove Overlay First', () => {
     const buttons = await page.locator('button').all();
     console.log(`Found ${buttons.length} buttons`);
     
-    for (let i = 0; i < Math.min(buttons.length, 3); i++) {
+    for (let i = 0; i < Math.min(buttons.length, 6); i++) {
       const btn = buttons[i];
       const text = await btn.textContent();
       const isVisible = await btn.isVisible().catch(() => false);
       
-      if (isVisible) {
+      // Logout/buttons that mutate session state would break the test's own
+      // session — probe only inert controls.
+      if (isVisible && !/logout|submit|save|delete/i.test(text ?? '')) {
         try {
           await btn.click({ timeout: 3000 });
           console.log(`✓ Clicked button: "${text?.trim()}"`);

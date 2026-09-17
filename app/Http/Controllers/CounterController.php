@@ -266,11 +266,7 @@ class CounterController extends Controller
     {
         $this->authorizeBranchResourceOrAbort($counter, 'access', 'You do not have access to counters in this branch.');
 
-        $today = now()->toDateString();
-        $session = CounterSession::where('counter_id', $counter->id)
-            ->whereDate('session_date', $today)
-            ->where('status', CounterSessionStatus::Open->value)
-            ->first();
+        $session = $this->findOpenSession($counter, now()->toDateString());
 
         if (! $session) {
             abort(404, 'No open session found for this counter today.');

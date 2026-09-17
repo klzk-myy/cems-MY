@@ -97,7 +97,7 @@ test('setup: create pending fixtures through the browser', async ({ browser }) =
       currency_code: 'MYR', requested_amount: '25000', counter_id: '8',
     });
     const allocPage = await getText(page, '/my-allocations');
-    const ids = [...allocPage.matchAll(/my-allocations\/(\d+)/g)].map(m => parseInt(m[1], 10));
+    const ids = [...allocPage.matchAll(/<td[^>]*>\s*(\d+)\s*<\/td>/g)].map(m => parseInt(m[1], 10));
     const bigAlloc = Math.max(0, ...ids);
     log.push(`big MYR alloc request id = ${bigAlloc}`);
     await ctx.close();
@@ -112,14 +112,51 @@ test('setup: create pending fixtures through the browser', async ({ browser }) =
     const ac = await post(t2.page, `/my-allocations/${bigAlloc}/accept`, {});
     log.push(`accept big alloc: ${ac.status}`);
 
+    // Transaction create needs a till row for TODAY — a stale open session
+    // blocks openSession (TillAlreadyOpen), so the branch manager closes any
+    // leftover session first, then teller2 opens today's till.
+    {
+      const m2 = await newPage('manager2');
+      const cl = await post(m2.page, '/counters/P01/close', {
+        'closing_floats[MYR]': '0', 'closing_floats[USD]': '0',
+      });
+      log.push(`close stale P01: ${cl.status}`);
+      await m2.ctx.close();
+    }
+    const op = await post(t2.page, '/counters/P01/open', {
+      'opening_floats[MYR]': '30000', 'opening_floats[USD]': '3000',
+    });
+    log.push(`open P01 today: ${op.status}`);
+
     // Small pending request — the probe target.
     await post(t2.page, '/my-allocations/request', {
       currency_code: 'MYR', requested_amount: '100', counter_id: '8',
     });
     const allocPage2 = await getText(t2.page, '/my-allocations');
-    const ids2 = [...allocPage2.matchAll(/my-allocations\/(\d+)/g)].map(x => parseInt(x[1], 10));
+    const ids2 = [...allocPage2.matchAll(/<td[^>]*>\s*(\d+)\s*<\/td>/g)].map(x => parseInt(x[1], 10));
     FX.allocId = Math.max(0, ...ids2);
     log.push(`probe allocId = ${FX.allocId}`);
+
+    // Buys validate an active per-day allocation in the TRADED currency —
+    // cycle a USD allocation before creating the Buy transactions. Pending
+    // rows render their id in the first td (no accept link until approved),
+    // so the newest allocation is the max first-column id. daily_limit_myr
+    // must cover the MYR turnover or the Buy is rejected at validation.
+    await post(t2.page, '/my-allocations/request', {
+      currency_code: 'USD', requested_amount: '4000', counter_id: '8',
+    });
+    const allocPage3 = await getText(t2.page, '/my-allocations');
+    const usdAlloc = Math.max(0, ...[...allocPage3.matchAll(/<td[^>]*>\s*(\d+)\s*<\/td>/g)].map(x => parseInt(x[1], 10)));
+    {
+      const m2 = await newPage('manager2');
+      const appr = await post(m2.page, `/allocations/${usdAlloc}/approve`, {
+        approved_amount: '4000', daily_limit_myr: '100000',
+      });
+      log.push(`USD alloc id=${usdAlloc} approve=${appr.status}`);
+      await m2.ctx.close();
+    }
+    const usdAccept = await post(t2.page, `/my-allocations/${usdAlloc}/accept`, {});
+    log.push(`USD alloc accept=${usdAccept.status}`);
 
     // Two pending Buy txns for the clean customer (id 36, created earlier).
     for (const [key, amount] of [['txA', '2200'], ['txB', '2300']] as const) {
@@ -244,6 +281,40 @@ test('manager CAN approve cancellation of a pending (non-completed) transaction'
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     await login(page, 'teller1');
+
+    // Same stale-session trap as the fixture: close C01 as the branch
+    // manager, then open today's till before creating the transaction.
+    {
+      const m1ctx = await browser.newContext();
+      const m1 = await m1ctx.newPage();
+      await login(m1, 'manager1');
+      await post(m1, '/counters/C01/close', {
+        'closing_floats[MYR]': '0', 'closing_floats[USD]': '0',
+      });
+      await m1ctx.close();
+    }
+    await post(page, '/counters/C01/open', {
+      'opening_floats[MYR]': '20000', 'opening_floats[USD]': '1000',
+    });
+
+    // Buys validate an active per-day USD allocation — request/approve/accept.
+    // KL02 USD pool is small; the daily MYR limit is what the Buy consumes.
+    await post(page, '/my-allocations/request', {
+      currency_code: 'USD', requested_amount: '500', counter_id: '4',
+    });
+    const allocPage = await getText(page, '/my-allocations');
+    const usdAlloc = Math.max(0, ...[...allocPage.matchAll(/<td[^>]*>\s*(\d+)\s*<\/td>/g)].map(x => parseInt(x[1], 10)));
+    {
+      const m1ctx = await browser.newContext();
+      const m1 = await m1ctx.newPage();
+      await login(m1, 'manager1');
+      await post(m1, `/allocations/${usdAlloc}/approve`, {
+        approved_amount: '500', daily_limit_myr: '50000',
+      });
+      await m1ctx.close();
+    }
+    await post(page, `/my-allocations/${usdAlloc}/accept`, {});
+
     const createHtml = await getText(page, '/transactions/create');
     const idem = createHtml.match(/name="idempotency_key" value="([^"]+)"/)?.[1] ?? '';
     const r = await post(page, '/transactions', {

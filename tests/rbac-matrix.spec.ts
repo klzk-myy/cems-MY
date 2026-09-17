@@ -16,8 +16,20 @@ const ALL = ['admin', 'teller', 'manager', 'compliance', 'accountant'];
 const MGR = ['admin', 'manager'];
 const COMP = ['admin', 'compliance'];
 const ACCT = ['admin', 'manager', 'accountant'];
-const TELLER_ONLY = ['teller'];
 const ADMIN_ONLY = ['admin'];
+// Permission-based routing means surfaces follow grants, not role names:
+// admin is matrix-exempt; teller holds create_transactions/request_stock/
+// operate_counters; compliance holds access_compliance/view_reports;
+// accountant holds access_accounting/view_reports.
+const TRADE = ['admin', 'teller', 'manager'];            // operate_counters|manage_counters
+const TXN_VIEW = ['admin', 'teller', 'manager', 'compliance']; // create|manage|approve_transactions
+const CUST_VIEW = ['admin', 'teller', 'manager', 'compliance']; // create_transactions|manage_customers|access_compliance
+const CREATE_TX = ['admin', 'teller'];                   // create_transactions
+const REQ_STOCK = ['admin', 'teller'];                   // request_stock
+const REPORTS = ['admin', 'manager', 'compliance', 'accountant']; // view_reports
+const RISK_DASH = ['admin', 'manager', 'compliance'];    // view_risk_dashboard
+const COA_VIEW = ['admin', 'manager', 'compliance', 'accountant']; // access_compliance|access_accounting
+const MAPPINGS = ['admin', 'accountant'];                // manage_account_mappings
 
 // [path, roles allowed (expect 200), note]
 // Denied roles are expected to get 403. Transaction 36 and counter C01 belong to KL02 (branch 8).
@@ -27,41 +39,42 @@ const MATRIX: [string, string[], string?][] = [
   ['/performance', MGR],
   ['/rates', MGR],
 
-  // Transactions
-  ['/transactions', ALL],
-  ['/transactions/wizard', TELLER_ONLY],
-  ['/transactions/create', TELLER_ONLY],
+  // Transactions — index/show accept create|manage|approve_transactions;
+  // wizard/create are create_transactions only (teller + exempt admin).
+  ['/transactions', TXN_VIEW],
+  ['/transactions/wizard', CREATE_TX],
+  ['/transactions/create', CREATE_TX],
   ['/transactions/batch-upload', MGR],
   ['/transactions/dlq', ADMIN_ONLY],
   ['/transactions/export', MGR],
-  ['/transactions/36', ['admin', 'teller', 'manager', 'compliance'], 'KL02 txn — accountant (HQ) must 403'],
+  ['/transactions/36', TXN_VIEW, 'KL02 txn — accountant (HQ) must 403'],
 
-  // Customers (company-wide)
-  ['/customers', ALL],
+  // Customers (company-wide) — index is gated; create/show are auth-only
+  ['/customers', CUST_VIEW],
   ['/customers/create', ALL],
   ['/customers/4', ALL],
 
-  // Counters — index open to all; ops split teller+manager vs manager-only
-  ['/counters', ALL],
+  // Counters — operate_counters|manage_counters on index/ops, manage on create/close
+  ['/counters', TRADE],
   ['/counters/create', MGR],
-  ['/counters/C01/open', ['admin', 'teller', 'manager'], 'KL02 counter'],
-  ['/counters/C01/status', ['admin', 'teller', 'manager']],
-  ['/counters/C01/history', ['admin', 'teller', 'manager']],
+  ['/counters/C01/open', TRADE, 'KL02 counter'],
+  ['/counters/C01/status', TRADE],
+  ['/counters/C01/history', TRADE],
   ['/counters/C01/close', MGR],
 
-  // Stock & cash — index/reconciliation gated to manager/admin inside the controller
+  // Stock & cash — manage_stock / manage_allocations / request_stock
   ['/stock-cash', MGR],
   ['/stock-cash/reconciliation', MGR],
   ['/stock-cash/till-report', MGR],
   ['/allocations', MGR],
-  ['/my-allocations', TELLER_ONLY],
-  ['/my-allocations/request', TELLER_ONLY],
+  ['/my-allocations', REQ_STOCK],
+  ['/my-allocations/request', REQ_STOCK],
   ['/branch-pools', MGR],
   ['/eod', MGR],
   ['/stock-transfers', MGR],
   ['/stock-transfers/create', MGR],
 
-  // Compliance surfaces
+  // Compliance surfaces — access_compliance; risk dashboard is view_risk_dashboard
   ['/compliance', COMP],
   ['/compliance/alerts', COMP],
   ['/compliance/cases', COMP],
@@ -71,12 +84,12 @@ const MATRIX: [string, string[], string?][] = [
   ['/compliance/findings', COMP],
   ['/compliance/edd-review', COMP],
   ['/compliance/pep-approvals', COMP],
-  ['/compliance/risk-dashboard', MGR, 'deliberately manager/admin, NOT compliance'],
-  ['/compliance/risk-dashboard/trends', MGR],
+  ['/compliance/risk-dashboard', RISK_DASH],
+  ['/compliance/risk-dashboard/trends', RISK_DASH],
   ['/compliance/unified', COMP],
   ['/str', COMP],
 
-  // Accounting — role:accounting => manager+accountant+admin
+  // Accounting — access_accounting group; mappings add manage_account_mappings
   ['/accounting', ACCT],
   ['/accounting/journal', ACCT],
   ['/accounting/journal/create', ACCT],
@@ -84,27 +97,29 @@ const MATRIX: [string, string[], string?][] = [
   ['/accounting/trial-balance', ACCT],
   ['/accounting/profit-loss', ACCT],
   ['/accounting/balance-sheet', ACCT],
-  ['/accounting/cash-flow', MGR, 'controller narrows to manager/admin'],
-  ['/accounting/ratios', MGR, 'controller narrows to manager/admin'],
+  ['/accounting/cash-flow', ACCT],
+  ['/accounting/ratios', ACCT],
   ['/accounting/periods', ACCT],
-  ['/accounting/fiscal-years', MGR, 'controller narrows to manager/admin'],
-  ['/accounting/revaluation', MGR, 'controller narrows to manager/admin'],
+  ['/accounting/fiscal-years', ACCT],
+  ['/accounting/revaluation', ACCT],
   ['/accounting/reconciliation', ACCT],
   ['/accounting/budget', ACCT],
   ['/accounting/expenses', ACCT],
-  ['/accounting/expenses/create', MGR, 'only branch managers/admins post expenses'],
-  ['/accounting/chart-of-accounts', COMP, 'COA viewer is compliance+admin only'],
+  ['/accounting/expenses/create', ACCT],
+  ['/accounting/mappings', MAPPINGS],
+  ['/closing', MGR],
+  ['/accounting/chart-of-accounts', COA_VIEW],
 
-  // Reports
-  ['/reports', MGR],
-  ['/reports/msb2', MGR],
-  ['/reports/lmca', MGR],
-  ['/reports/quarterly-lvr', MGR],
-  ['/reports/position-limit', MGR],
-  ['/reports/monthly-trends', MGR],
-  ['/reports/profitability', MGR],
-  ['/reports/customer-analysis', MGR],
-  ['/reports/compliance-summary', MGR],
+  // Reports — view_reports
+  ['/reports', REPORTS],
+  ['/reports/msb2', REPORTS],
+  ['/reports/lmca', REPORTS],
+  ['/reports/quarterly-lvr', REPORTS],
+  ['/reports/position-limit', REPORTS],
+  ['/reports/monthly-trends', REPORTS],
+  ['/reports/profitability', REPORTS],
+  ['/reports/customer-analysis', REPORTS],
+  ['/reports/compliance-summary', REPORTS],
   ['/reports/schedules', ADMIN_ONLY],
 
   // Users & admin surfaces

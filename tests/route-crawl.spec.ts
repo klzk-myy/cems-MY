@@ -31,6 +31,7 @@ const SEED_PATHS = [
   '/accounting/ratios', '/accounting/periods', '/accounting/fiscal-years',
   '/accounting/revaluation', '/accounting/reconciliation', '/accounting/budget',
   '/accounting/expenses', '/accounting/expenses/create', '/accounting/chart-of-accounts',
+  '/accounting/mappings', '/closing',
   '/reports', '/reports/msb2', '/reports/lmca', '/reports/quarterly-lvr',
   '/reports/position-limit', '/reports/monthly-trends', '/reports/profitability',
   '/reports/customer-analysis', '/reports/compliance-summary', '/reports/schedules',
@@ -44,10 +45,6 @@ const SEED_PATHS = [
 // Paths that legitimately return non-200 for admin — seeded anyway to
 // confirm the restriction holds.
 const EXPECTED_NON_200: Record<string, number> = {
-  '/transactions/wizard': 403,       // teller-only
-  '/transactions/create': 403,       // teller-only
-  '/my-allocations': 403,            // teller-only
-  '/my-allocations/request': 403,    // teller-only
   '/transactions/template': -1,      // file download aborts navigation
 };
 

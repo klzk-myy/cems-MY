@@ -56,6 +56,11 @@ class InstallAccountMappings extends Command
         (new AccountMappingsSeeder)->run();
         $this->info('Account mappings seeded (existing overrides preserved).');
 
+        // manage_account_mappings predates the role_permissions enum on
+        // pre-existing databases — widen it and apply defaults to rows no
+        // admin has customized so the matrix UI can persist the grant.
+        $this->call('permissions:sync');
+
         // Pre-install resolves cache null under the mapping tag — flush so
         // the freshly seeded rows take effect immediately.
         app(CacheInvalidationService::class)->invalidate(CacheKeys::AccountMappingsTag->value);

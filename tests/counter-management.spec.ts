@@ -78,18 +78,21 @@ test.describe('Counter Management Browser Tests', () => {
     await page.waitForTimeout(1000);
     await removeOverlay(page);
     
-    // Look for View links (counters that are open)
-    const viewLinks = page.locator('a:has-text("View")');
-    const viewCount = await viewLinks.count();
-    console.log(`Found ${viewCount} counters with View option`);
-    
-    if (viewCount > 0) {
-      await viewLinks.first().click();
+    // The counters table exposes Open/History/Close/Handover actions — click
+    // the first visible one (a stale hidden "View" link elsewhere in the
+    // shell must not be picked).
+    const action = page.locator('table a:visible').filter({ hasText: /Open|History|Close|Handover/ }).first();
+    if (await action.count() > 0) {
+      const label = (await action.textContent())?.trim();
+      await action.click();
       await page.waitForTimeout(2000);
       await removeOverlay(page);
-      
-      console.log('Current URL:', page.url());
+
+      console.log(`Clicked "${label}" -> ${page.url()}`);
+      expect(page.url()).toMatch(/\/counters\//);
       await page.screenshot({ path: 'test-results/screenshots/counter-view.png', fullPage: true });
+    } else {
+      console.log('No counter action links rendered');
     }
   });
 
