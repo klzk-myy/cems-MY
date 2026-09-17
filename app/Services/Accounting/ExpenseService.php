@@ -2,7 +2,7 @@
 
 namespace App\Services\Accounting;
 
-use App\Enums\AccountCode;
+use App\Enums\AccountMappingKey;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\InsufficientPettyCashException;
 use App\Models\Branch;
@@ -29,6 +29,7 @@ class ExpenseService
         protected AccountingService $accountingService,
         protected MathService $mathService,
         protected AuditService $auditService,
+        protected AccountMappingService $accountMappingService,
     ) {}
 
     /**
@@ -71,7 +72,7 @@ class ExpenseService
                         'description' => $description,
                     ],
                     [
-                        'account_code' => AccountCode::PETTY_CASH->value,
+                        'account_code' => $this->accountMappingService->code(AccountMappingKey::CashPetty),
                         'debit' => '0',
                         'credit' => $amount,
                         'description' => $description,
@@ -136,13 +137,13 @@ class ExpenseService
             $journal = $this->accountingService->createJournalEntry(
                 [
                     [
-                        'account_code' => AccountCode::PETTY_CASH->value,
+                        'account_code' => $this->accountMappingService->code(AccountMappingKey::CashPetty),
                         'debit' => $amount,
                         'credit' => '0',
                         'description' => $description ?? 'Petty cash funding',
                     ],
                     [
-                        'account_code' => AccountCode::CASH_MYR->value,
+                        'account_code' => $this->accountMappingService->code(AccountMappingKey::CashMyr),
                         'debit' => '0',
                         'credit' => $amount,
                         'description' => $description ?? 'Petty cash funding',

@@ -2,7 +2,7 @@
 
 namespace App\Services\Accounting;
 
-use App\Enums\AccountCode;
+use App\Enums\AccountMappingKey;
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
@@ -25,6 +25,7 @@ class TransactionAccountingService
         protected CurrencyPositionService $positionService,
         protected MathService $mathService,
         protected AuditService $auditService,
+        protected AccountMappingService $accountMappingService,
     ) {}
 
     /**
@@ -119,16 +120,19 @@ class TransactionAccountingService
      */
     protected function buildEntriesForTransaction(Transaction $transaction): array
     {
+        $inventoryAccount = $this->accountMappingService->forCurrency('inventory', $transaction->currency_code);
+        $cashAccount = $this->accountMappingService->code(AccountMappingKey::CashMyr);
+
         if ($transaction->type->isBuy()) {
             return [
                 [
-                    'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                    'account_code' => $inventoryAccount,
                     'debit' => (string) $transaction->amount_local,
                     'credit' => '0',
                     'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
                 ],
                 [
-                    'account_code' => AccountCode::CASH_MYR->value,
+                    'account_code' => $cashAccount,
                     'debit' => '0',
                     'credit' => (string) $transaction->amount_local,
                     'description' => "Payment for {$transaction->currency_code} purchase",
@@ -155,13 +159,13 @@ class TransactionAccountingService
 
         $entries = [
             [
-                'account_code' => AccountCode::CASH_MYR->value,
+                'account_code' => $cashAccount,
                 'debit' => (string) $transaction->amount_local,
                 'credit' => '0',
                 'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
             ],
             [
-                'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                'account_code' => $inventoryAccount,
                 'debit' => '0',
                 'credit' => $costBasis,
                 'description' => "Cost of {$transaction->currency_code} sold",
@@ -170,14 +174,14 @@ class TransactionAccountingService
 
         if ($isGain) {
             $entries[] = [
-                'account_code' => AccountCode::FOREX_TRADING_REVENUE->value,
+                'account_code' => $this->accountMappingService->code(AccountMappingKey::RevenueForex),
                 'debit' => '0',
                 'credit' => $revenue,
                 'description' => "Gain on {$transaction->currency_code} sale",
             ];
         } else {
             $entries[] = [
-                'account_code' => AccountCode::FOREX_LOSS->value,
+                'account_code' => $this->accountMappingService->code(AccountMappingKey::LossForex),
                 'debit' => $this->mathService->multiply($revenue, '-1'),
                 'credit' => '0',
                 'description' => "Loss on {$transaction->currency_code} sale",

@@ -2,9 +2,9 @@
 
 namespace App\Services\System;
 
-use App\Enums\AccountCode;
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountingPeriodType;
+use App\Enums\AccountMappingKey;
 use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
@@ -20,6 +20,7 @@ use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\ValueObjects\QuoteConvention;
 use Database\Seeders\SchemaSeeder;
 use Illuminate\Database\QueryException;
@@ -32,6 +33,7 @@ class SetupService
     public function __construct(
         protected MathService $mathService,
         protected AccountingService $accountingService,
+        protected AccountMappingService $accountMappingService,
     ) {}
 
     /**
@@ -438,7 +440,7 @@ class SetupService
         // Cash in MYR
         if ($this->mathService->compare((string) $balanceData['opening_balance_myr'], '0') > 0) {
             $lines[] = [
-                'account_code' => AccountCode::CASH_MYR->value,
+                'account_code' => $this->accountMappingService->code(AccountMappingKey::CashMyr),
                 'debit' => (string) $balanceData['opening_balance_myr'],
                 'credit' => '0.00',
                 'description' => 'Opening balance - MYR Cash',
@@ -458,7 +460,7 @@ class SetupService
 
         if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
             $lines[] = [
-                'account_code' => AccountCode::FOREIGN_CURRENCY_INVENTORY->value,
+                'account_code' => $this->accountMappingService->code(AccountMappingKey::InventoryDefault),
                 'debit' => $totalForeignBalance,
                 'credit' => '0.00',
                 'description' => 'Opening balance - Foreign Currency Inventory',
@@ -467,7 +469,7 @@ class SetupService
 
         // Credit side - Equity
         $lines[] = [
-            'account_code' => AccountCode::CAPITAL->value,
+            'account_code' => $this->accountMappingService->code(AccountMappingKey::EquityCapital),
             'debit' => '0.00',
             'credit' => $totalBalance,
             'description' => 'Opening balance - Owner Equity',

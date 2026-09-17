@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Accounting\AccountMappingController;
 use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\ChartOfAccountsController;
 use App\Http\Controllers\Accounting\ExpenseController;
@@ -510,6 +511,16 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/budget', [BudgetController::class, 'index'])->name('budget');
         Route::post('/budget', [BudgetController::class, 'store'])->name('budget.store');
         Route::patch('/budget/{budget}', [BudgetController::class, 'update'])->name('budget.update');
+
+        // Account Mappings — admin/accountant UI over the account_mappings
+        // table. Nested inside access_accounting so every mapping editor also
+        // holds accounting access; the POST steps up with password.confirm
+        // like other admin mutations.
+        Route::middleware('role:manage_account_mappings')->group(function () {
+            Route::get('/mappings', [AccountMappingController::class, 'index'])->name('mappings.index');
+            Route::post('/mappings', [AccountMappingController::class, 'update'])->name('mappings.update')
+                ->middleware('password.confirm');
+        });
     });
 
     Route::middleware('role:view_reports')->prefix('reports')->name('reports.')->group(function () {

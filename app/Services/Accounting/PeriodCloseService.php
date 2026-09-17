@@ -3,7 +3,7 @@
 namespace App\Services\Accounting;
 
 use App\Enums\AccountingPeriodStatus;
-use App\Exceptions\Domain\AccountingPeriodException;
+use App\Enums\AccountMappingKey;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
@@ -14,7 +14,6 @@ use App\Services\AuditService;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PeriodCloseService
@@ -35,20 +34,28 @@ class PeriodCloseService
     protected AuditService $auditService;
 
     /**
+     * Account mapping service for resolving closing accounts.
+     */
+    protected AccountMappingService $accountMappingService;
+
+    /**
      * Create a new PeriodCloseService instance.
      *
      * @param  AccountingService  $accountingService  Service for journal entry operations
      * @param  MathService  $mathService  Service for high-precision calculations
      * @param  AuditService  $auditService  Service for action logging
+     * @param  AccountMappingService  $accountMappingService  Service for resolving closing accounts
      */
     public function __construct(
         AccountingService $accountingService,
         MathService $mathService,
         AuditService $auditService,
+        AccountMappingService $accountMappingService,
     ) {
         $this->accountingService = $accountingService;
         $this->mathService = $mathService;
         $this->auditService = $auditService;
+        $this->accountMappingService = $accountMappingService;
     }
 
     /**
@@ -152,9 +159,9 @@ class PeriodCloseService
         $entries = [];
         $asOfDate = $period->end_date->toDateString();
 
-        $revenueSummaryAccount = $this->getValidatedAccountCode('accounting.revenue_summary_account');
-        $expenseSummaryAccount = $this->getValidatedAccountCode('accounting.expense_summary_account');
-        $retainedEarningsAccount = $this->getValidatedAccountCode('accounting.retained_earnings_account');
+        $revenueSummaryAccount = $this->accountMappingService->code(AccountMappingKey::CloseRevenueSummary);
+        $expenseSummaryAccount = $this->accountMappingService->code(AccountMappingKey::CloseExpenseSummary);
+        $retainedEarningsAccount = $this->accountMappingService->code(AccountMappingKey::CloseRetainedEarnings);
 
         $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
         $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
@@ -242,40 +249,6 @@ class PeriodCloseService
         $entry->update(['period_id' => $period->id]);
 
         return [$entry];
-    }
-
-    /**
-     * Get validated account code from config
-     *
-     * Retrieves account code from configuration and validates it exists
-     * and is active in the chart of accounts when validation is enabled.
-     *
-     * @param  string  $configKey  Configuration key for the account code
-     * @return string The validated account code
-     *
-     * @throws AccountingPeriodException If the account is not configured, doesn't exist, or is inactive
-     */
-    protected function getValidatedAccountCode(string $configKey): string
-    {
-        $code = Config::get($configKey);
-
-        if ($code === null || $code === '') {
-            throw new AccountingPeriodException("Account code '{$configKey}' is not configured. Set the corresponding ACCOUNT_* environment variable.");
-        }
-
-        if (Config::get('accounting.validate_accounts', true)) {
-            $account = ChartOfAccount::where('account_code', $code)->first();
-
-            if (! $account) {
-                throw new AccountingPeriodException("Configured account '{$configKey}' with code '{$code}' does not exist in chart of accounts");
-            }
-
-            if (! $account->is_active) {
-                throw new AccountingPeriodException("Configured account '{$configKey}' with code '{$code}' is not active");
-            }
-        }
-
-        return $code;
     }
 
     /**

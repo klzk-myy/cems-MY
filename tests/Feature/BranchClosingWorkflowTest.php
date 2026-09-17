@@ -302,10 +302,10 @@ class BranchClosingWorkflowTest extends TestCase
     #[Test]
     public function settle_twice_does_not_duplicate_hq_journal_entries(): void
     {
-        // Ensure settlement accounts exist for the HQ-transfer journals.
+        // Ensure settlement accounts exist for the HQ-transfer journals
+        // (defaults: suspense.hq -> 2300, cash.myr -> 1000, inventory.default -> 2000).
         foreach ([
-            ['1100', 'Foreign Currency Inventory', 'Asset'],
-            ['9000', 'HQ Suspense', 'Asset'],
+            ['2300', 'Inter-Branch Clearing', 'Asset'],
         ] as [$code, $name, $type]) {
             ChartOfAccount::firstOrCreate(
                 ['account_code' => $code],

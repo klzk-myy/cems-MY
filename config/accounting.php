@@ -3,35 +3,24 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Hardcoded Account Codes
+    | Account Mapping Seed Defaults
     |--------------------------------------------------------------------------
     |
-    | These account codes are used for specific accounting operations.
-    | They should exist in the chart_of_accounts table and be active.
-    | These were previously hardcoded in various services.
+    | Runtime posting paths resolve accounts through the account_mappings
+    | table (AccountMappingService) — these env vars are read once by
+    | AccountMappingsSeeder so an upgraded install keeps its configured
+    | accounts. After seeding, edit mappings under Accounting → Account
+    | Mappings; changing these env vars has no runtime effect.
     |
     */
 
-    // Revaluation accounts (used in RevaluationService)
     'forex_position_account' => env('ACCOUNT_FOREX_POSITION'),
     'revaluation_gain_account' => env('ACCOUNT_REVALUATION_GAIN'),
     'revaluation_loss_account' => env('ACCOUNT_REVALUATION_LOSS'),
 
-    // Period close accounts (used in PeriodCloseService)
     'revenue_summary_account' => env('ACCOUNT_REVENUE_SUMMARY'),
     'expense_summary_account' => env('ACCOUNT_EXPENSE_SUMMARY'),
     'retained_earnings_account' => env('ACCOUNT_RETAINED_EARNINGS'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Account Validation
-    |--------------------------------------------------------------------------
-    |
-    | When true, the system will validate that configured accounts exist
-    | in the chart of accounts before using them.
-    |
-    */
-    'validate_accounts' => env('ACCOUNTING_VALIDATE_ACCOUNTS', true),
 
     /*
     |--------------------------------------------------------------------------

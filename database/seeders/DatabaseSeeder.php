@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             CurrencySeeder::class,
             EnhancedChartOfAccountsSeeder::class,
+            AccountMappingsSeeder::class,
             AccountingPeriodSeeder::class,
             FiscalYearSeeder::class,
             BudgetSeeder::class,

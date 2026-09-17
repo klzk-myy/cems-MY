@@ -2,6 +2,7 @@
 
 namespace App\Services\Branch;
 
+use App\Enums\AccountMappingKey;
 use App\Enums\BranchClosureStatus;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
@@ -15,6 +16,7 @@ use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +25,8 @@ class BranchClosingService
     public function __construct(
         protected TellerAllocationService $tellerAllocationService,
         protected AuditService $auditService,
-        protected AccountingService $accountingService
+        protected AccountingService $accountingService,
+        protected AccountMappingService $accountMappingService
     ) {}
 
     public function initiateClosure(Branch $branch, User $initiator): BranchClosureWorkflow
@@ -174,13 +177,15 @@ class BranchClosingService
             if ($pool->available_balance > 0) {
                 $lines = [
                     [
-                        'account_code' => $pool->currency_code === Currency::baseCurrency() ? '1000' : '1100',
+                        'account_code' => $pool->currency_code === Currency::baseCurrency()
+                            ? $this->accountMappingService->code(AccountMappingKey::CashMyr)
+                            : $this->accountMappingService->forCurrency('inventory', $pool->currency_code),
                         'debit' => '0.00',
                         'credit' => $pool->available_balance,
                         'description' => "Branch {$branch->code} pool balance",
                     ],
                     [
-                        'account_code' => '9000', // HQ suspense account
+                        'account_code' => $this->accountMappingService->code(AccountMappingKey::SuspenseHq),
                         'debit' => $pool->available_balance,
                         'credit' => '0.00',
                         'description' => "HQ receiving {$pool->currency_code} from branch {$branch->code}",

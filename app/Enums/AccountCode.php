@@ -35,6 +35,7 @@ enum AccountCode: string
 
     case RECEIVABLES = '2100';
     case OTHER_CURRENT_ASSETS = '2200';
+    case INTER_BRANCH_CLEARING = '2300';
 
     case PAYABLES = '3000';
     case ACCRUALS = '3100';
@@ -102,7 +103,7 @@ enum AccountCode: string
             self::NOSTRO_USD, self::NOSTRO_EUR, self::NOSTRO_GBP,
             self::FOREIGN_CURRENCY_INVENTORY, self::FOREX_INVENTORY_USD, self::FOREX_INVENTORY_EUR, self::FOREX_INVENTORY_GBP,
             self::FOREX_INVENTORY_SGD, self::FOREX_INVENTORY_JPY, self::FOREX_INVENTORY_THB, self::FOREX_INVENTORY_AUD,
-            self::RECEIVABLES, self::OTHER_CURRENT_ASSETS => 'Asset',
+            self::RECEIVABLES, self::OTHER_CURRENT_ASSETS, self::INTER_BRANCH_CLEARING => 'Asset',
             self::PAYABLES, self::ACCRUALS => 'Liability',
             self::CAPITAL, self::CAPITAL_PAID_IN, self::SHARE_PREMIUM, self::STATUTORY_RESERVE,
             self::RETAINED_EARNINGS, self::RETAINED_EARNINGS_CURRENT, self::UNREALIZED_FOREX,
@@ -152,6 +153,7 @@ enum AccountCode: string
             self::FOREX_INVENTORY_AUD => 'Forex Inventory (AUD)',
             self::RECEIVABLES => 'Accounts Receivable',
             self::OTHER_CURRENT_ASSETS => 'Other Current Assets',
+            self::INTER_BRANCH_CLEARING => 'Inter-Branch Clearing',
             self::PAYABLES => 'Accounts Payable',
             self::ACCRUALS => 'Accruals',
             self::CAPITAL => 'Capital',

@@ -46,6 +46,7 @@ enum Permission: string
     case ManageAccounting = 'manage_accounting';
     case PostExpenses = 'post_expenses';
     case PostJournalEntries = 'post_journal_entries';
+    case ManageAccountMappings = 'manage_account_mappings';
     case ManageCustomers = 'manage_customers';
     case AccessBranches = 'access_branches';
     case ManageBranches = 'manage_branches';
@@ -96,6 +97,7 @@ enum Permission: string
             self::ManageAccounting => 'Manage Accounting Periods',
             self::PostExpenses => 'Post Branch Expenses',
             self::PostJournalEntries => 'Post Journal Entries',
+            self::ManageAccountMappings => 'Manage Account Mappings',
             self::ManageCustomers => 'Manage Customers',
             self::AccessBranches => 'Access Branches',
             self::ManageBranches => 'Manage Branches',
@@ -148,6 +150,7 @@ enum Permission: string
             self::ManageAccounting => 'Run month-end close and manage accounting periods (API)',
             self::PostExpenses => 'Create and post petty-cash/branch expenses',
             self::PostJournalEntries => 'Create and post manual journal entries',
+            self::ManageAccountMappings => 'Edit the business-event to chart-of-accounts mapping',
             self::ManageCustomers => 'Close customer accounts and perform customer maintenance',
             self::AccessBranches => 'View and edit own branch details',
             self::ManageBranches => 'Create, update, and deactivate branches',
@@ -194,7 +197,8 @@ enum Permission: string
             self::AccessAccounting,
             self::ManageAccounting,
             self::PostExpenses,
-            self::PostJournalEntries => 'Accounting',
+            self::PostJournalEntries,
+            self::ManageAccountMappings => 'Accounting',
             self::ManageUsers,
             self::ManageSettings,
             self::ManageAllBranches,
@@ -292,6 +296,7 @@ enum Permission: string
                 self::ManageAccounting->value,
                 self::PostExpenses->value,
                 self::PostJournalEntries->value,
+                self::ManageAccountMappings->value,
                 self::ViewReports->value,
                 self::ManageAllBranches->value,
             ],

@@ -36,6 +36,9 @@ enum CacheKeys: string
     /** Compliance flag status counts for the dashboard. */
     case ComplianceFlagStatusCounts = 'compliance_flag_status_counts';
 
+    /** Cache tag used for account-mapping resolutions. */
+    case AccountMappingsTag = 'account-mappings';
+
     /**
      * Build a wizard session cache key.
      */
@@ -84,5 +87,13 @@ enum CacheKeys: string
     public static function auditLogDistinct(string $column): string
     {
         return "audit_log_distinct_{$column}s";
+    }
+
+    /**
+     * Resolved chart account for an account_mappings key.
+     */
+    public static function accountMapping(string $key): string
+    {
+        return "account_mapping:{$key}";
     }
 }

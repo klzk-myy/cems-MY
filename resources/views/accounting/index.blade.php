@@ -29,6 +29,9 @@
                     <li><x-button variant="ghost" size="sm" href="{{ route('accounting.fiscal-years') }}">Fiscal Years</x-button></li>
                     <li><x-button variant="ghost" size="sm" href="{{ route('accounting.revaluation') }}">Currency Revaluation</x-button></li>
                     <li><x-button variant="ghost" size="sm" href="{{ route('accounting.reconciliation') }}">Bank Reconciliation</x-button></li>
+                    @if(auth()->user()?->role->canPerform(\App\Enums\Permission::ManageAccountMappings))
+                        <li><x-button variant="ghost" size="sm" href="{{ route('accounting.mappings.index') }}">Account Mappings</x-button></li>
+                    @endif
                 </ul>
             </x-card>
         </div>

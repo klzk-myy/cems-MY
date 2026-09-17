@@ -2,8 +2,8 @@
 
 namespace App\Services\Accounting;
 
-use App\Enums\AccountCode;
 use App\Enums\AccountingPeriodType;
+use App\Enums\AccountMappingKey;
 use App\Enums\Permission;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\FiscalYearClosedException;
@@ -43,6 +43,7 @@ class FiscalYearService
         protected LedgerService $ledgerService,
         protected CacheInvalidationService $cacheInvalidationService,
         protected AccountingService $accountingService,
+        protected AccountMappingService $accountMappingService,
     ) {}
 
     /**
@@ -156,8 +157,11 @@ class FiscalYearService
             // residue from an unclosed prior year is swept out too. A credit
             // balance (profit) reads positive for the credit-normal summary
             // account; closeIncomeSummaryToRetained handles either sign.
+            // The income-summary account is resolved from the revenue-summary
+            // mapping; the close.* summary keys are expected to share one
+            // income-summary account (both default to 4201).
             $incomeSummaryBalance = $this->getAccountBalance(
-                AccountCode::INCOME_SUMMARY->value,
+                $this->accountMappingService->code(AccountMappingKey::CloseRevenueSummary),
                 $yearEndDate
             );
             if ($this->mathService->compare($incomeSummaryBalance, '0') !== 0) {
@@ -328,7 +332,7 @@ class FiscalYearService
         // Credit Income Summary (debit instead when total revenue is negative)
         JournalLine::create([
             'journal_entry_id' => $entry->id,
-            'account_code' => AccountCode::INCOME_SUMMARY->value,
+            'account_code' => $this->accountMappingService->code(AccountMappingKey::CloseRevenueSummary),
             'debit' => $this->mathService->compare($postedTotal, '0') < 0 ? $this->mathService->multiply($postedTotal, '-1') : 0,
             'credit' => $this->mathService->compare($postedTotal, '0') >= 0 ? $postedTotal : 0,
             'description' => 'Income Summary',
@@ -401,7 +405,7 @@ class FiscalYearService
         // Debit Income Summary (credit instead when total expense is negative)
         JournalLine::create([
             'journal_entry_id' => $entry->id,
-            'account_code' => AccountCode::INCOME_SUMMARY->value,
+            'account_code' => $this->accountMappingService->code(AccountMappingKey::CloseExpenseSummary),
             'debit' => $this->mathService->compare($postedTotal, '0') >= 0 ? $postedTotal : 0,
             'credit' => $this->mathService->compare($postedTotal, '0') < 0 ? $this->mathService->multiply($postedTotal, '-1') : 0,
             'description' => 'Income Summary',
@@ -434,17 +438,20 @@ class FiscalYearService
 
         // Net income positive = credit retained earnings (profit)
         // Net income negative = debit retained earnings (loss)
+        $incomeSummaryAccount = $this->accountMappingService->code(AccountMappingKey::CloseRevenueSummary);
+        $retainedEarningsAccount = $this->accountMappingService->code(AccountMappingKey::CloseRetainedEarnings);
+
         if ($this->mathService->compare($netIncome, '0') >= 0) {
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
-                'account_code' => AccountCode::INCOME_SUMMARY->value,
+                'account_code' => $incomeSummaryAccount,
                 'debit' => $netIncome,
                 'credit' => 0,
                 'description' => 'Close Income Summary',
             ]);
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
-                'account_code' => AccountCode::RETAINED_EARNINGS->value,
+                'account_code' => $retainedEarningsAccount,
                 'debit' => 0,
                 'credit' => $netIncome,
                 'description' => 'Transfer to Retained Earnings',
@@ -452,14 +459,14 @@ class FiscalYearService
         } else {
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
-                'account_code' => AccountCode::INCOME_SUMMARY->value,
+                'account_code' => $incomeSummaryAccount,
                 'debit' => 0,
                 'credit' => $this->mathService->abs($netIncome),
                 'description' => 'Close Income Summary (Loss)',
             ]);
             JournalLine::create([
                 'journal_entry_id' => $entry->id,
-                'account_code' => AccountCode::RETAINED_EARNINGS->value,
+                'account_code' => $retainedEarningsAccount,
                 'debit' => $this->mathService->abs($netIncome),
                 'credit' => 0,
                 'description' => 'Transfer to Retained Earnings (Loss)',

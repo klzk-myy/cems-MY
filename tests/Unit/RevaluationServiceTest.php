@@ -8,6 +8,7 @@ use App\Models\CurrencyPosition;
 use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\AuditService;
 use App\Services\System\MathService;
@@ -109,7 +110,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             $mockAudit,
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
         try {
             $service->runRevaluationWithJournal($testDate, $this->testUser->id);
@@ -180,7 +182,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             $mockAudit,
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         // Act & Assert: Verify error message includes both successful and failed currencies
@@ -236,7 +239,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             $mockAudit,
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         // Act
@@ -286,7 +290,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             $mockAudit,
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         // Act
@@ -356,7 +361,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             $mockAudit,
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         // Act
@@ -404,7 +410,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             Mockery::mock(AuditService::class),
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         $result = $service->runRevaluationWithJournal($testDate, $this->testUser->id);
@@ -457,7 +464,8 @@ class RevaluationServiceTest extends TestCase
             $mockAccounting,
             Mockery::mock(AuditService::class),
             app(SystemAlertService::class),
-            new ThresholdService
+            new ThresholdService,
+            app(AccountMappingService::class),
         );
 
         $service->runRevaluationWithJournal($testDate, $this->testUser->id);

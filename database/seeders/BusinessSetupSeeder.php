@@ -30,6 +30,7 @@ class BusinessSetupSeeder extends Seeder
         $this->call(FiscalYearSeeder::class);
         $this->call(AccountingPeriodSeeder::class);
         $this->call(BudgetSeeder::class);
+        $this->call(AccountMappingsSeeder::class);
 
         $this->command->info('');
         $this->command->info('Phase 4: Business Operations Data');

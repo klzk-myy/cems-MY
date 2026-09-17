@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Notifications\ComplianceCaseSlaBreachedNotification;
 use App\Notifications\SystemHealthAlertNotification;
 use App\Services\Accounting\AccountingService;
+use App\Services\Accounting\AccountMappingService;
 use App\Services\Accounting\RevaluationService;
 use App\Services\AuditService;
 use App\Services\Compliance\CaseManagementService;
@@ -260,6 +261,7 @@ class ComplianceQuickWinsTest extends TestCase
             app(AuditService::class),
             app(SystemAlertService::class),
             app(ThresholdService::class),
+            app(AccountMappingService::class),
         );
     }
 

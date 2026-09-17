@@ -43,7 +43,7 @@ class EnhancedChartOfAccountsSeeder extends Seeder
         '2003' => 'Inventory', '2004' => 'Inventory', '2005' => 'Inventory',
         '2006' => 'Inventory', '2007' => 'Inventory',
         // Receivables / payables
-        '2100' => 'Receivable',
+        '2100' => 'Receivable', '2300' => 'Receivable',
         '3000' => 'Payable', '3100' => 'Payable',
         // Contributed equity (capital issuance only — retained earnings are
         // deliberately unclassified so period-close transfers are not

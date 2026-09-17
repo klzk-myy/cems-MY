@@ -41,6 +41,7 @@ class SchemaSeeder extends Seeder
             'journal_entries',
             'chart_of_accounts',
             'account_ledger',
+            'account_mappings',
             'adverse_media_entries',
             'adverse_media_import_logs',
             'compliance_findings',
@@ -178,6 +179,11 @@ class SchemaSeeder extends Seeder
         // the retired migrations inserted it; the enum seeder then upserts
         // the full AccountCode set keyed by code.
         (new EnhancedChartOfAccountsSeeder)->run();
+
+        // Same default posting-map rows a real install gets — posting
+        // services fall back to enum defaults without them, but the page and
+        // tests expect the rows to exist.
+        (new AccountMappingsSeeder)->run();
     }
 
     /**
@@ -390,6 +396,19 @@ class SchemaSeeder extends Seeder
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
             $table->foreign('journal_entry_id')->references('id')->on('journal_entries');
             $table->foreign('account_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
+        });
+
+        Schema::create('account_mappings', function (Blueprint $table) {
+            $table->id();
+            $table->string('key');
+            $table->string('account_code');
+            $table->string('description')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique('key', 'account_mappings_key_unique');
+            $table->foreign('account_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
 
         Schema::create('adverse_media_entries', function (Blueprint $table) {

@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\AccountingPeriodStatus;
+use App\Enums\AccountMappingKey;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Models\AccountingPeriod;
+use App\Models\AccountMapping;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -42,14 +44,9 @@ class MonthEndCloseTest extends TestCase
             ['name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2, 'is_active' => true]
         );
 
-        // Period close now delegates to PeriodCloseService, which requires
-        // configured P&L summary / retained earnings accounts.
-        config([
-            'accounting.revenue_summary_account' => '4201',
-            'accounting.expense_summary_account' => '4202',
-            'accounting.retained_earnings_account' => '4300',
-        ]);
-
+        // Period close resolves P&L summary / retained earnings accounts
+        // through the account_mappings table — the fixture accounts must
+        // exist first (account_mappings.account_code FKs to the chart).
         foreach (['4201', '4202', '4300'] as $code) {
             // updateOrCreate: some of these codes (e.g. 4201 INCOME_SUMMARY)
             // are already seeded from the AccountCode enum by SchemaSeeder.
@@ -62,6 +59,14 @@ class MonthEndCloseTest extends TestCase
                     'is_active' => true,
                 ]
             );
+        }
+
+        foreach ([
+            AccountMappingKey::CloseRevenueSummary->value => '4201',
+            AccountMappingKey::CloseExpenseSummary->value => '4202',
+            AccountMappingKey::CloseRetainedEarnings->value => '4300',
+        ] as $key => $code) {
+            AccountMapping::updateOrCreate(['key' => $key], ['account_code' => $code]);
         }
 
         $this->service = app(MonthEndCloseService::class);

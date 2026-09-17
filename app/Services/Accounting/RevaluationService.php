@@ -2,11 +2,11 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountMappingKey;
 use App\Enums\SystemAlertLevel;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
-use App\Models\ChartOfAccount;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Services\AuditService;
@@ -16,7 +16,6 @@ use App\Services\ThresholdService;
 use App\Services\Transaction\RateApiService;
 use App\Support\ActorContext;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -32,6 +31,7 @@ class RevaluationService
         protected AuditService $auditService,
         protected SystemAlertService $alertService,
         protected ThresholdService $thresholdService,
+        protected AccountMappingService $accountMappingService,
     ) {}
 
     /**
@@ -315,10 +315,11 @@ class RevaluationService
 
     protected function postRevaluationJournal(CurrencyPosition $position, RevaluationEntry $revaluationEntry, string $newRate, string $gainLoss, bool $isGain, string $date, int $postedBy): void
     {
-        // Validate and get configured account codes
-        $forexPositionAccount = $this->getValidatedAccountCode('accounting.forex_position_account');
-        $gainAccount = $this->getValidatedAccountCode('accounting.revaluation_gain_account');
-        $lossAccount = $this->getValidatedAccountCode('accounting.revaluation_loss_account');
+        // Resolve account codes from the account_mappings table (editable
+        // under Accounting → Account Mappings; defaults match the chart).
+        $forexPositionAccount = $this->accountMappingService->code(AccountMappingKey::RevaluationPosition);
+        $gainAccount = $this->accountMappingService->code(AccountMappingKey::RevaluationGain);
+        $lossAccount = $this->accountMappingService->code(AccountMappingKey::RevaluationLoss);
 
         $lines = [
             [
@@ -335,11 +336,15 @@ class RevaluationService
             ],
         ];
 
-        // Positions key branch_id by branch CODE ('HQ', 'BR001'), while
-        // journal_entries.branch_id is the branches.id FK — resolve the code
-        // so revaluation P&L lands on the branch's own ledger chain instead
-        // of the company-wide (null) chain.
-        $branchId = Branch::where('code', $position->branch_id)->value('id');
+        // currency_positions.branch_id is a string key — numeric keys carry
+        // the branches.id FK (see rateBranchId), non-numeric keys carry a
+        // branch code like 'HQ'. Resolve either form so revaluation P&L
+        // lands on the branch's own ledger chain instead of the
+        // company-wide (null) chain.
+        $branchKey = (string) $position->branch_id;
+        $branchId = is_numeric($branchKey)
+            ? (int) $branchKey
+            : Branch::where('code', $branchKey)->value('id');
 
         $this->accountingService->createJournalEntry(
             $lines,
@@ -422,40 +427,6 @@ class RevaluationService
             'entries_count' => $entries->count(),
             'currencies' => $entries->pluck('currency_code')->toArray(),
         ];
-    }
-
-    /**
-     * Get validated account code from configuration.
-     *
-     * Retrieves account code from configuration and validates it exists
-     * and is active in the chart of accounts when validation is enabled.
-     *
-     * @param  string  $configKey  Configuration key for the account code
-     * @return string The validated account code
-     *
-     * @throws \InvalidArgumentException If account doesn't exist or is inactive (when validation enabled)
-     */
-    protected function getValidatedAccountCode(string $configKey): string
-    {
-        $code = Config::get($configKey);
-
-        if ($code === null || $code === '') {
-            throw new AccountingPeriodException("Account code '{$configKey}' is not configured. Set the corresponding ACCOUNT_* environment variable.");
-        }
-
-        if (Config::get('accounting.validate_accounts', true)) {
-            $account = ChartOfAccount::where('account_code', $code)->first();
-
-            if (! $account) {
-                throw new AccountingPeriodException("Configured account '{$configKey}' with code '{$code}' does not exist in chart of accounts");
-            }
-
-            if (! $account->is_active) {
-                throw new AccountingPeriodException("Configured account '{$configKey}' with code '{$code}' is not active");
-            }
-        }
-
-        return $code;
     }
 
     /**
