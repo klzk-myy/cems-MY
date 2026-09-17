@@ -111,6 +111,10 @@ jobs:
               php artisan db:seed --class=SchemaSeeder --force
             fi
 
+            # Idempotent schema upgrades for live databases — each command
+            # no-ops when its column/table already exists.
+            php artisan allocations:install-loaded-balance
+
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
