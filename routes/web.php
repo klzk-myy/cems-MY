@@ -304,6 +304,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     // Branch Pools (manager/admin)
     Route::middleware('role:manage_stock')->prefix('branch-pools')->name('branch-pools.')->group(function () {
         Route::get('/', [BranchPoolController::class, 'index'])->name('index');
+        Route::post('/', [BranchPoolController::class, 'store'])->name('store');
         Route::get('/{branchPool}', [BranchPoolController::class, 'show'])->name('show');
         Route::post('/{branchPool}/fund', [BranchPoolController::class, 'fund'])->name('fund');
         Route::post('/{branchPool}/debit', [BranchPoolController::class, 'debit'])->name('debit');

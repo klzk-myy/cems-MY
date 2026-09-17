@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Models\Currency;
 use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
@@ -24,12 +25,57 @@ class BranchPoolController extends Controller
     {
         $user = $request->user();
         $branch = $user->branch;
+        $allBranches = $user->role->canManageAllBranches();
 
-        $pools = $branch instanceof Branch
-            ? $this->poolService->getAllPoolsForBranch($branch)
-            : BranchPool::with('branch')->get();
+        $pools = $allBranches
+            ? BranchPool::with('branch')->orderBy('branch_id')->orderBy('currency_code')->get()
+            : ($branch instanceof Branch
+                ? $this->poolService->getAllPoolsForBranch($branch)
+                : collect());
 
-        return view('branch.pools.index', compact('pools'));
+        $branches = $allBranches ? Branch::orderBy('name')->get() : collect();
+        $currencies = Currency::where('is_active', true)->orderBy('code')->get();
+
+        return view('branch.pools.index', compact('pools', 'branches', 'currencies', 'allBranches'));
+    }
+
+    /**
+     * Create an empty pool for a branch/currency pair. Any manage_stock user
+     * may create one for their own branch; cross-branch creation requires the
+     * manage_all_branches grant.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $allBranches = $user->role->canManageAllBranches();
+
+        $validated = $request->validate([
+            'branch_id' => [$allBranches ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
+            'currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code'],
+        ]);
+
+        $branchId = $allBranches ? (int) $validated['branch_id'] : (int) $user->branch_id;
+
+        if ($branchId <= 0) {
+            return back()->with('error', 'Your account is not assigned to a branch.');
+        }
+
+        $exists = BranchPool::where('branch_id', $branchId)
+            ->where('currency_code', $validated['currency_code'])
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'A pool already exists for this branch and currency.');
+        }
+
+        BranchPool::create([
+            'branch_id' => $branchId,
+            'currency_code' => $validated['currency_code'],
+            'available_balance' => '0.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        return back()->with('success', 'Pool created. Use Fund to add balance.');
     }
 
     /**

@@ -3,6 +3,33 @@
         <x-page-header title="Branch Pools" description="Central pool funding and balances" />
 
         <x-card>
+            <form method="POST" action="{{ route('branch-pools.store') }}" class="flex flex-wrap items-end gap-4">
+                @csrf
+                @if($allBranches)
+                    <x-select
+                        name="branch_id"
+                        label="Branch"
+                        :options="$branches->mapWithKeys(fn ($b) => [$b->id => $b->name])->toArray()"
+                        placeholder="Select a branch"
+                        class="w-64"
+                        inline
+                        required
+                    />
+                @endif
+                <x-select
+                    name="currency_code"
+                    label="Currency"
+                    :options="$currencies->mapWithKeys(fn ($c) => [$c->code => $c->code])->toArray()"
+                    placeholder="Select a currency"
+                    class="w-48"
+                    inline
+                    required
+                />
+                <x-button type="submit">Create Pool</x-button>
+            </form>
+        </x-card>
+
+        <x-card>
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
