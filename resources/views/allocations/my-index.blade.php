@@ -53,7 +53,12 @@
                             <td class="px-4 py-3">{{ $allocation->currency?->code ?? $allocation->currency_code }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_amount, 4) }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_amount, 4) }}</td>
-                            <td class="px-4 py-3 text-right">{{ $allocation->current_balance !== null ? number_format((float) $allocation->current_balance, 4) : '—' }}</td>
+                            <td class="px-4 py-3 text-right">
+                                {{ $allocation->current_balance !== null ? number_format((float) $allocation->current_balance, 4) : '—' }}
+                                @if((float) ($allocation->loaded_balance ?? 0) > 0)
+                                    <div class="text-xs text-ink-muted">in till: {{ number_format((float) $allocation->loaded_balance, 4) }}</div>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 @if($allocation->daily_limit_myr !== null)
                                     {{ number_format((float) $allocation->daily_used_myr, 2) }} / {{ number_format((float) $allocation->daily_limit_myr, 2) }}

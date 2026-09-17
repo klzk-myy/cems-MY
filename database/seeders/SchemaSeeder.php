@@ -982,6 +982,7 @@ class SchemaSeeder extends Seeder
             $table->string('currency_code');
             $table->decimal('allocated_amount', 20, 4);
             $table->decimal('current_balance', 20, 4);
+            $table->decimal('loaded_balance', 20, 4)->default(0);
             $table->decimal('requested_amount', 20, 4);
             $table->decimal('daily_limit_myr', 20, 4)->default(0);
             $table->decimal('daily_used_myr', 20, 4)->default(0);

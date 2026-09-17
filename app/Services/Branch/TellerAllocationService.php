@@ -168,6 +168,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
                 $till->opening_balance = $this->mathService->add((string) $till->opening_balance, $amount);
                 $locked->current_balance = $this->mathService->subtract((string) $locked->current_balance, $amount);
+                $locked->loaded_balance = $this->mathService->add((string) ($locked->loaded_balance ?? '0'), $amount);
             } else {
                 if (! $till) {
                     throw new AllocationValidationException(
@@ -185,6 +186,13 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
                 $till->opening_balance = $this->mathService->subtract((string) $till->opening_balance, $amount);
                 $locked->current_balance = $this->mathService->add((string) $locked->current_balance, $amount);
+                // Unloading more than was loaded converts plain drawer cash
+                // into custody, so the loaded tracker clamps at zero rather
+                // than going negative.
+                $loaded = (string) ($locked->loaded_balance ?? '0');
+                $locked->loaded_balance = $this->mathService->compare($amount, $loaded) < 0
+                    ? $this->mathService->subtract($loaded, $amount)
+                    : '0';
             }
 
             $till->save();
@@ -287,12 +295,20 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 throw new InvalidAllocationStateException(TellerAllocationStatus::ACTIVE->value);
             }
 
-            $returnAmount = $locked->current_balance;
+            // The pool earmark releases for BOTH the unspent balance and any
+            // stock still loaded into a till — once custody returns, loaded
+            // cash is ordinary drawer/branch stock again, no longer earmarked
+            // to this teller.
+            $returnAmount = $this->mathService->add(
+                (string) $locked->current_balance,
+                (string) ($locked->loaded_balance ?? '0')
+            );
 
             if ($this->mathService->compare($returnAmount, '0') > 0) {
                 $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, $returnAmount);
             }
 
+            $locked->loaded_balance = '0';
             $locked->returnToPool();
 
             return $locked;

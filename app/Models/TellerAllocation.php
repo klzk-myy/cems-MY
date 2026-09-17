@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $currency_code
  * @property string $allocated_amount
  * @property string $current_balance
+ * @property string $loaded_balance
  * @property string $requested_amount
  * @property string $daily_limit_myr
  * @property string $daily_used_myr
@@ -54,6 +55,7 @@ class TellerAllocation extends BaseModel
         'currency_code',
         'allocated_amount',
         'current_balance',
+        'loaded_balance',
         'requested_amount',
         'daily_limit_myr',
         'daily_used_myr',
@@ -71,6 +73,7 @@ class TellerAllocation extends BaseModel
     protected $casts = [
         'allocated_amount' => MoneyCast::class,
         'current_balance' => MoneyCast::class,
+        'loaded_balance' => MoneyCast::class,
         'requested_amount' => MoneyCast::class,
         'daily_limit_myr' => MoneyCast::class,
         'daily_used_myr' => MoneyCast::class,

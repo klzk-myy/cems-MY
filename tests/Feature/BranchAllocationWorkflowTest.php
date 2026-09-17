@@ -310,4 +310,72 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals('100000.0000', $this->pool->available_balance);
         $this->assertEquals('0.0000', $this->pool->allocated_balance);
     }
+
+    #[Test]
+    public function close_session_releases_stock_still_loaded_in_till(): void
+    {
+        $approvedAmount = '40000.0000';
+
+        $this->workflowService->initiateOpeningRequest(
+            $this->tellerA,
+            $this->counter,
+            ['USD' => '50000.0000']
+        );
+
+        $session = $this->workflowService->approveAndOpen(
+            $this->manager,
+            $this->counter,
+            $this->tellerA,
+            ['USD' => $approvedAmount],
+            ['USD' => '150000.0000']
+        );
+
+        $allocation = TellerAllocation::where('user_id', $this->tellerA->id)
+            ->where('currency_code', 'USD')
+            ->first();
+
+        // Teller parks part of their custody in the drawer. The session's
+        // till opened with the approved float, so the drawer now holds
+        // 40,000 float + 10,000 loaded = 50,000 expected at close.
+        $this->tellerAllocationService->moveBetweenTillAndAllocation(
+            $allocation,
+            $session,
+            '10000.0000',
+            true
+        );
+
+        $allocation->refresh();
+        $this->assertEquals('30000.0000', $allocation->current_balance);
+        $this->assertEquals('10000.0000', $allocation->loaded_balance);
+
+        // A second teller's custody on the same branch must survive the close.
+        /** @var TellerAllocation $allocationB */
+        $allocationB = TellerAllocation::factory()->create([
+            'user_id' => $this->tellerB->id,
+            'branch_id' => $this->branch->id,
+            'currency_code' => 'USD',
+            'status' => TellerAllocationStatus::ACTIVE,
+            'allocated_amount' => '5000.0000',
+            'current_balance' => '5000.0000',
+            'requested_amount' => '5000.0000',
+        ]);
+
+        $this->counterService->closeSession(
+            $session,
+            $this->tellerA,
+            [['currency_id' => 'USD', 'amount' => '50000.0000']]
+        );
+
+        $allocation->refresh();
+        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals('0.0000', $allocation->loaded_balance);
+
+        // Custody (30,000) + loaded stock (10,000) both released the earmark.
+        $this->pool->refresh();
+        $this->assertEquals('100000.0000', $this->pool->available_balance);
+        $this->assertEquals('0.0000', $this->pool->allocated_balance);
+
+        $allocationB->refresh();
+        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocationB->status);
+    }
 }

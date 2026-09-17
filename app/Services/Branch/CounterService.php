@@ -252,6 +252,16 @@ class CounterService
                 ]);
             }
 
+            // Closing counts the drawer back into branch holdings, so the
+            // session teller's remaining allocation custody — including any
+            // stock still loaded into this till — returns to the pool here.
+            // Without this the loaded portion would stay earmarked to a
+            // teller who no longer holds it.
+            TellerAllocation::where('user_id', $session->user_id)
+                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->get()
+                ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->returnToPool($allocation));
+
             return $session;
         });
     }
@@ -268,11 +278,9 @@ class CounterService
     /**
      * Close a counter session and return teller allocation to branch pool.
      *
-     * This is the EOD workflow that:
-     * 1. Gets the teller allocation linked to this session
-     * 2. Calls closeSession() to perform variance calculation
-     * 3. Returns the allocation to the branch pool
-     * 4. Returns the closed session
+     * Kept for the explicit EOD workflow name: closeSession() already
+     * returns every active allocation of the session teller to the pool
+     * (including stock loaded into the till), so this simply delegates.
      */
     public function closeSessionAndReturnToPool(
         CounterSession $session,
@@ -281,23 +289,7 @@ class CounterService
         ?string $notes = null,
         ?User $supervisor = null
     ): CounterSession {
-        return DB::transaction(function () use ($session, $user, $closingFloats, $notes, $supervisor) {
-            $closedSession = $this->closeSession($session, $user, $closingFloats, $notes, $supervisor);
-
-            // Return teller allocation to pool if one exists for this session
-            $allocation = TellerAllocation::where('user_id', $user->id)
-                ->where('counter_id', $session->counter_id)
-                ->where('status', TellerAllocationStatus::ACTIVE)
-                ->first();
-
-            if ($allocation) {
-                // Use the service (not the model method) so the branch pool is
-                // actually credited — the model method only flips the status.
-                $this->tellerAllocationService->returnToPool($allocation);
-            }
-
-            return $closedSession;
-        });
+        return $this->closeSession($session, $user, $closingFloats, $notes, $supervisor);
     }
 
     /**
