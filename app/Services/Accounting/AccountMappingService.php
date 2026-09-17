@@ -12,6 +12,7 @@ use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Account Mapping Service
@@ -202,10 +203,15 @@ class AccountMappingService
 
     /**
      * Cached table lookup returning the stored code or null when unmapped.
+     * The hasTable check inside the callback keeps posting paths alive on
+     * databases where `accounting:install-mappings` has not run yet —
+     * resolution silently falls back to the enum defaults.
      */
     protected function resolve(string $key): ?string
     {
-        $callback = fn () => AccountMapping::where('key', $key)->value('account_code');
+        $callback = fn () => Schema::hasTable('account_mappings')
+            ? AccountMapping::where('key', $key)->value('account_code')
+            : null;
 
         return $this->cacheInvalidationService->supportsTags()
             ? Cache::tags([CacheKeys::AccountMappingsTag->value])

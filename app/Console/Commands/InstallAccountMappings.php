@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Services\System\CacheInvalidationService;
+use App\Services\System\CacheKeys;
 use Database\Seeders\AccountMappingsSeeder;
 use Database\Seeders\EnhancedChartOfAccountsSeeder;
 use Illuminate\Console\Command;
@@ -53,6 +55,10 @@ class InstallAccountMappings extends Command
 
         (new AccountMappingsSeeder)->run();
         $this->info('Account mappings seeded (existing overrides preserved).');
+
+        // Pre-install resolves cache null under the mapping tag — flush so
+        // the freshly seeded rows take effect immediately.
+        app(CacheInvalidationService::class)->invalidate(CacheKeys::AccountMappingsTag->value);
 
         return self::SUCCESS;
     }
