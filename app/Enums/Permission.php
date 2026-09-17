@@ -290,6 +290,10 @@ enum Permission: string
                 self::ViewReports->value,
                 self::RequestCancellation->value,
                 self::ViewEodReconciliation->value,
+                self::ViewRiskDashboard->value,
+                self::ManageRiskScreening->value,
+                self::ManageSanctions->value,
+                self::ManageCustomers->value,
             ],
             UserRole::Accountant->value => [
                 self::AccessAccounting->value,
