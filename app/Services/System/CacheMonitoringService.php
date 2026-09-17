@@ -46,12 +46,20 @@ class CacheMonitoringService
 
     public function recordHit(): void
     {
-        Redis::incr(self::HITS_KEY);
+        try {
+            Redis::incr(self::HITS_KEY);
+        } catch (\Throwable) {
+            // Instrumentation must never break a cache read.
+        }
     }
 
     public function recordMiss(): void
     {
-        Redis::incr(self::MISSES_KEY);
+        try {
+            Redis::incr(self::MISSES_KEY);
+        } catch (\Throwable) {
+            // Instrumentation must never break a cache read.
+        }
     }
 
     public function resetCounters(): void
@@ -66,7 +74,10 @@ class CacheMonitoringService
         try {
             $info = Redis::info('memory');
 
-            return $info['used_memory_human'] ?? '0B';
+            return $info['Memory']['used_memory_human']
+                ?? $info['memory']['used_memory_human']
+                ?? $info['used_memory_human']
+                ?? '0B';
         } catch (\Exception $e) {
             return 'N/A';
         }

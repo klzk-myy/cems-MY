@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Services\System\CacheMonitoringService;
 use App\Services\System\QueryLoggingService;
+use App\Services\System\SystemHealthService;
 use Illuminate\View\View;
 
 class PerformanceMonitoringController extends Controller
 {
     public function __construct(
         protected CacheMonitoringService $cacheMonitoringService,
-        protected QueryLoggingService $queryLoggingService
+        protected QueryLoggingService $queryLoggingService,
+        protected SystemHealthService $systemHealthService
     ) {}
 
     public function index(): View
@@ -23,6 +25,7 @@ class PerformanceMonitoringController extends Controller
             'slow_query_count' => $querySummary['slow_count'],
             'n_plus_one_count' => $querySummary['n_plus_one_count'],
             'total_query_time_ms' => $querySummary['total_time_ms'],
+            'health' => $this->systemHealthService->probe(),
         ];
 
         return view('performance.index', compact('metrics'));

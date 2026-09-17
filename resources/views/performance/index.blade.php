@@ -11,7 +11,7 @@
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-border">
                         <span class="text-sm text-ink-muted">Hit Rate</span>
-                        <span class="text-sm font-medium text-ink">{{ $metrics['cache_stats']['hit_rate'] ?? 'N/A' }}</span>
+                        <span class="text-sm font-medium text-ink">{{ $metrics['cache_stats']['hit_rate'] !== null ? number_format($metrics['cache_stats']['hit_rate'], 1) . '%' : 'N/A' }}</span>
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-border">
                         <span class="text-sm text-ink-muted">Total Keys</span>
@@ -52,18 +52,26 @@
 
         <x-card title="System Health">
             <x-stat-grid cols="4">
-                <x-stat-card label="Total Queries" :value="number_format($metrics['query_count'])" />
                 <x-stat-card
-                    label="Slow Queries"
-                    :value="$metrics['slow_query_count']"
-                    :color="$metrics['slow_query_count'] > 0 ? 'yellow' : 'green'"
+                    label="DB Ping"
+                    :value="$metrics['health']['db_ping_ms'] !== null ? $metrics['health']['db_ping_ms'] . 'ms' : 'down'"
+                    :color="$metrics['health']['db_ping_ms'] !== null ? 'green' : 'red'"
                 />
                 <x-stat-card
-                    label="N+1 Queries"
-                    :value="$metrics['n_plus_one_count']"
-                    :color="$metrics['n_plus_one_count'] > 0 ? 'red' : 'green'"
+                    label="Redis Ping"
+                    :value="$metrics['health']['redis_ping_ms'] !== null ? $metrics['health']['redis_ping_ms'] . 'ms' : 'down'"
+                    :color="$metrics['health']['redis_ping_ms'] !== null ? 'green' : 'red'"
                 />
-                <x-stat-card label="Total Time" :value="number_format($metrics['total_query_time_ms'], 0) . 'ms'" />
+                <x-stat-card
+                    label="Queue Depth"
+                    :value="$metrics['health']['queue_depth'] !== null ? number_format($metrics['health']['queue_depth']) : 'N/A'"
+                    :color="$metrics['health']['queue_depth'] !== null && $metrics['health']['queue_depth'] > 100 ? 'yellow' : 'green'"
+                />
+                <x-stat-card
+                    label="Failed Jobs"
+                    :value="$metrics['health']['failed_jobs'] !== null ? number_format($metrics['health']['failed_jobs']) : 'N/A'"
+                    :color="$metrics['health']['failed_jobs'] ? 'red' : 'green'"
+                />
             </x-stat-grid>
         </x-card>
     </div>

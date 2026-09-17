@@ -19,6 +19,9 @@ use App\Listeners\TransactionApprovedListener;
 use App\Listeners\TransactionCancelledListener;
 use App\Listeners\TransactionCreatedListener;
 use App\Listeners\TriggerSanctionsRescreening;
+use App\Services\System\CacheMonitoringService;
+use Illuminate\Cache\Events\CacheHit;
+use Illuminate\Cache\Events\CacheMissed;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
@@ -94,6 +97,13 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        // Feed the /performance cache hit-rate counters — recordHit/recordMiss
+        // swallow their own errors, so a Redis blip cannot break a cache read.
+        Event::listen(CacheHit::class,
+            fn () => app(CacheMonitoringService::class)->recordHit());
+        Event::listen(CacheMissed::class,
+            fn () => app(CacheMonitoringService::class)->recordMiss());
 
         // Queue event listeners for monitoring
         Queue::before(function (JobProcessing $event) {

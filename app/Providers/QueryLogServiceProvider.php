@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\SystemLog;
+use App\Services\System\QueryLoggingService;
 use App\Services\System\QueryOptimizerService;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -11,6 +13,15 @@ use Illuminate\Support\ServiceProvider;
 class QueryLogServiceProvider extends ServiceProvider
 {
     private array $requestQueries = [];
+
+    /**
+     * QueryExecuted events seen this request, folded into the cumulative
+     * perf:queries:* Redis counters at terminate. Always collected (unlike
+     * $requestQueries, which is gated) — it feeds /performance.
+     *
+     * @var array<int, QueryExecuted>
+     */
+    private array $statsQueries = [];
 
     private float $slowQueryThreshold = 1000;
 
@@ -41,6 +52,7 @@ class QueryLogServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->determineEnvironment();
+        $this->registerStatsCollector();
 
         if (! $this->shouldMonitor()) {
             return;
@@ -114,6 +126,32 @@ class QueryLogServiceProvider extends ServiceProvider
     {
         DB::listen(function ($query) {
             $this->logQuery($query);
+        });
+    }
+
+    /**
+     * Always-on cumulative query stats for the /performance dashboard —
+     * independent of $monitoringEnabled (which gates debug/persist logging).
+     * Collection is just object refs; the Redis flush happens once at
+     * terminate via QueryLoggingService::recordRequestStats().
+     */
+    private function registerStatsCollector(): void
+    {
+        DB::listen(function ($query): void {
+            $this->statsQueries[] = $query;
+        });
+
+        $this->app->terminating(function (): void {
+            if ($this->statsQueries === []) {
+                return;
+            }
+
+            try {
+                $this->app->make(QueryLoggingService::class)
+                    ->recordRequestStats($this->statsQueries);
+            } catch (\Throwable) {
+                // Instrumentation must never break the request.
+            }
         });
     }
 
