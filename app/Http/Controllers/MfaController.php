@@ -9,10 +9,10 @@ use App\Http\Requests\Mfa\VerifyRecoveryCodeRequest;
 use App\Models\MfaRecoveryCode;
 use App\Services\AuditService;
 use App\Services\System\MfaService;
+use App\Support\PasswordHash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
@@ -293,7 +293,7 @@ class MfaController extends Controller
             return redirect()->route('mfa.setup');
         }
 
-        if (! Hash::check((string) $request->input('current_password'), (string) $user->password_hash)) {
+        if (! PasswordHash::check((string) $request->input('current_password'), (string) $user->password_hash)) {
             return redirect()->back()
                 ->withErrors(['current_password' => 'The provided password is incorrect.']);
         }

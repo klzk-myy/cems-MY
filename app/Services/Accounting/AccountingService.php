@@ -106,6 +106,16 @@ class AccountingService implements AccountingServiceInterface
         }
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy, $branchId) {
+            // Re-check the freeze inside the transaction under a lock on
+            // the branch's workflow rows: a day close finalizing
+            // concurrently cannot slip between the fast-path check above
+            // and this entry's commit.
+            if ($branchId !== null && BranchClosureWorkflow::freezesDateForUpdate($branchId, $entryDate)) {
+                $branchCode = Branch::whereKey($branchId)->value('code') ?? (string) $branchId;
+
+                throw new BusinessDateFrozenException($branchCode, $entryDate);
+            }
+
             if (count($lines) < 2) {
                 throw new AccountingPeriodException('Journal entry requires at least two lines');
             }

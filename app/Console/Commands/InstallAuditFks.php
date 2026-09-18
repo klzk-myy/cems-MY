@@ -24,9 +24,12 @@ class InstallAuditFks extends Command
 
     /**
      * [ table, column, referencedTable, referencedColumn, onDelete,
-     *   constraintName, supportingIndexName ]
+     *   constraintName, supportingIndexName, supportingIndexColumns? ]
      *
-     * @var array<int, array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string}>
+     * supportingIndexColumns defaults to the FK column; set it when the
+     * supporting index is a composite defined in SchemaSeeder.
+     *
+     * @var array<int, array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string, 7?: string}>
      */
     private const FKS = [
         ['transactions', 'counter_id', 'counters', 'id', 'SET NULL', 'transactions_counter_id_foreign', 'transactions_counter_id_index'],
@@ -34,9 +37,10 @@ class InstallAuditFks extends Command
         ['transactions', 'rate_override_approved_by', 'users', 'id', 'SET NULL', 'transactions_rate_override_approved_by_foreign', 'transactions_rate_override_approved_by_index'],
         ['stock_reservations', 'transaction_id', 'transactions', 'id', 'RESTRICT', 'stock_reservations_transaction_id_foreign', 'stock_reservations_transaction_id_index'],
         ['stock_reservations', 'created_by', 'users', 'id', 'RESTRICT', 'stock_reservations_created_by_foreign', 'stock_reservations_created_by_index'],
-        ['stock_reservations', 'currency_code', 'currencies', 'code', 'RESTRICT', 'stock_reservations_currency_code_foreign', 'stock_reservations_currency_code_till_id_status_index'],
+        ['stock_reservations', 'currency_code', 'currencies', 'code', 'RESTRICT', 'stock_reservations_currency_code_foreign', 'stock_reservations_currency_code_till_id_status_index', 'currency_code, till_id, status'],
         ['pool_remittances', 'out_journal_entry_id', 'journal_entries', 'id', 'RESTRICT', 'pool_remittances_out_journal_entry_id_foreign', 'pool_remittances_out_journal_entry_id_index'],
         ['pool_remittances', 'ack_journal_entry_id', 'journal_entries', 'id', 'RESTRICT', 'pool_remittances_ack_journal_entry_id_foreign', 'pool_remittances_ack_journal_entry_id_index'],
+        ['pool_remittances', 'cancel_journal_entry_id', 'journal_entries', 'id', 'RESTRICT', 'pool_remittances_cancel_journal_entry_id_foreign', 'pool_remittances_cancel_journal_entry_id_index'],
         ['pool_remittances', 'currency_code', 'currencies', 'code', 'RESTRICT', 'pool_remittances_currency_code_foreign', 'pool_remittances_currency_code_index'],
         ['currency_positions', 'branch_id', 'branches', 'id', 'RESTRICT', 'currency_positions_branch_id_foreign', 'currency_positions_branch_id_index'],
         ['branch_pools', 'currency_code', 'currencies', 'code', 'RESTRICT', 'branch_pools_currency_code_foreign', 'branch_pools_currency_code_index'],
@@ -65,7 +69,10 @@ class InstallAuditFks extends Command
 
         $this->ensureIndex('transactions', 'transactions_till_created_idx', 'ADD INDEX transactions_till_created_idx (till_id, created_at)');
 
-        foreach (self::FKS as [$table, $column, $refTable, $refColumn, $onDelete, $fkName, $indexName]) {
+        foreach (self::FKS as $fk) {
+            [$table, $column, $refTable, $refColumn, $onDelete, $fkName, $indexName] = $fk;
+            $indexColumns = $fk[7] ?? $column;
+
             if ($this->fkExists($table, $column, $refTable)) {
                 continue;
             }
@@ -74,7 +81,7 @@ class InstallAuditFks extends Command
                 return self::FAILURE;
             }
 
-            $this->ensureIndex($table, $indexName, "ADD INDEX {$indexName} ({$column})");
+            $this->ensureIndex($table, $indexName, "ADD INDEX {$indexName} ({$indexColumns})");
             $this->runDdl("ALTER TABLE {$table} ADD CONSTRAINT {$fkName} FOREIGN KEY ({$column}) REFERENCES {$refTable} ({$refColumn}) ON DELETE {$onDelete}");
             $this->line("{$table}.{$column} -> {$refTable}({$refColumn}) ON DELETE {$onDelete}");
         }

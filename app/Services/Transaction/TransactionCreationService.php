@@ -9,6 +9,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCreated;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\CustomerBlockedException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
@@ -18,6 +19,7 @@ use App\Exceptions\Domain\PositionLimitExceededException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
+use App\Models\BranchClosureWorkflow;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -205,6 +207,19 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         // record must survive booking failures so the transaction can be marked
         // Failed and retried (or parked in the DLQ) instead of disappearing.
         $transaction = DB::transaction(function () use ($context, $data, $userId) {
+            // A finalized day close freezes the branch's books for that
+            // business date — no new transactions can be booked on it.
+            // Checked inside the transaction under the workflow-row lock so
+            // a racing finalize serializes against the booking.
+            $today = now()->toDateString();
+            $txnBranchId = (int) $context->tillBalance->branch_id;
+
+            if (BranchClosureWorkflow::freezesDateForUpdate($txnBranchId, $today)) {
+                $branchCode = Branch::whereKey($txnBranchId)->value('code') ?? (string) $txnBranchId;
+
+                throw new BusinessDateFrozenException($branchCode, $today);
+            }
+
             // Acquire position lock FIRST for both Buy and Sell to prevent race conditions
             // This ensures stock check, idempotency check, and transaction creation happen atomically
             $lockedPosition = $this->acquirePositionLock($data, $context->tillBalance);

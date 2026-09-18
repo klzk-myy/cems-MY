@@ -6,6 +6,7 @@ use App\Enums\BranchClosureStatus;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
@@ -27,6 +28,15 @@ class BranchClosingService
 
     public function initiateClosure(Branch $branch, User $initiator): BranchClosureWorkflow
     {
+        // Service-level guard so every entry point (web and API) is covered:
+        // a new closure for an already-finalized business date is
+        // meaningless — the day must be reopened first.
+        $today = now()->toDateString();
+
+        if (BranchClosureWorkflow::freezesDate($branch->id, $today)) {
+            throw new BusinessDateFrozenException($branch->code ?? (string) $branch->id, $today);
+        }
+
         $workflow = BranchClosureWorkflow::create([
             'branch_id' => $branch->id,
             'initiated_by' => $initiator->id,
@@ -53,6 +63,12 @@ class BranchClosingService
 
     public function canFinalize(BranchClosureWorkflow $workflow): bool
     {
+        // Finalize only unlocks after settlement — the settle step owns the
+        // allocation returns and stale-request cancellations.
+        if (! $workflow->isSettled()) {
+            return false;
+        }
+
         $checklist = $this->getChecklist($workflow);
 
         return $checklist['counters_closed']
@@ -70,6 +86,16 @@ class BranchClosingService
             // Idempotent: re-finalizing a finalized workflow is a no-op.
             if ($lockedWorkflow->status === BranchClosureStatus::Finalized) {
                 return;
+            }
+
+            // Settlement must run first: it force-returns allocations and
+            // cancels stale pending/approved requests — finalizing straight
+            // from Initiated would skip that cleanup even when the
+            // checklist reads green.
+            if ($lockedWorkflow->status !== BranchClosureStatus::Settled) {
+                throw new InvalidStateException(
+                    "Closure workflow {$lockedWorkflow->id} cannot be finalized from status '{$lockedWorkflow->status->value}' — settle it first."
+                );
             }
 
             $checklist = $this->getChecklist($lockedWorkflow);
@@ -102,10 +128,14 @@ class BranchClosingService
                 [
                     'branch_id' => $branch->id,
                     'branch_code' => $branch->code,
-                    'business_date' => $lockedWorkflow->created_at?->toDateString(),
+                    'business_date' => now()->toDateString(),
                 ]
             );
         });
+
+        // Keep the caller's instance in sync with the row the transaction
+        // locked and mutated — status helpers are read off this model.
+        $workflow->refresh();
     }
 
     /**
@@ -126,6 +156,10 @@ class BranchClosingService
                 );
             }
 
+            // The frozen business date is the day the workflow finalized —
+            // capture it before the stamp is cleared.
+            $frozenDate = $lockedWorkflow->finalized_at?->toDateString();
+
             $lockedWorkflow->update([
                 'status' => 'settled',
                 'finalized_at' => null,
@@ -139,10 +173,12 @@ class BranchClosingService
                 [],
                 [
                     'branch_id' => $lockedWorkflow->branch_id,
-                    'business_date' => $lockedWorkflow->created_at?->toDateString(),
+                    'business_date' => $frozenDate,
                 ]
             );
         });
+
+        $workflow->refresh();
     }
 
     /**
@@ -279,6 +315,8 @@ class BranchClosingService
                 'settlement_at' => now(),
             ]);
         });
+
+        $workflow->refresh();
     }
 
     protected function checkCountersClosed(Branch $branch): bool

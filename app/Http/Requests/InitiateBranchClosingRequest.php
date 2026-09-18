@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\UserRole;
+use App\Enums\Permission;
 use Illuminate\Foundation\Http\FormRequest;
 
 class InitiateBranchClosingRequest extends FormRequest
@@ -11,9 +11,10 @@ class InitiateBranchClosingRequest extends FormRequest
     {
         $user = auth()->user();
 
-        return $user !== null
-            && ($user->role->value === UserRole::Admin->value
-                || $user->role->value === UserRole::Manager->value);
+        // Matrix check, matching the route's role:manage_branch_closing
+        // middleware — an identity check here would override the matrix so
+        // a granted role could never reach the action.
+        return $user !== null && $user->role->canPerform(Permission::ManageBranchClosing);
     }
 
     public function rules(): array

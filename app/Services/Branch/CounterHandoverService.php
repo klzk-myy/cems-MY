@@ -57,18 +57,20 @@ class CounterHandoverService
 
         $now = now();
         $today = $now->toDateString();
-
-        // A finalized day close freezes the branch's books — a successor
-        // session cannot be minted on a frozen business date.
         $sessionBranchId = $session->counter?->branch_id;
-        if ($sessionBranchId !== null && BranchClosureWorkflow::freezesDate($sessionBranchId, $today)) {
-            throw new BusinessDateFrozenException(
-                $session->counter->branch->code ?? (string) $sessionBranchId,
-                $today
-            );
-        }
 
-        return DB::transaction(function () use ($session, $fromUser, $toUser, $supervisor, $physicalCounts, $now, $today) {
+        return DB::transaction(function () use ($session, $fromUser, $toUser, $supervisor, $physicalCounts, $now, $today, $sessionBranchId) {
+            // A finalized day close freezes the branch's books — a
+            // successor session cannot be minted on a frozen business
+            // date. Checked under the workflow-row lock so a racing
+            // finalize serializes against the handover.
+            if ($sessionBranchId !== null && BranchClosureWorkflow::freezesDateForUpdate($sessionBranchId, $today)) {
+                throw new BusinessDateFrozenException(
+                    $session->counter->branch->code ?? (string) $sessionBranchId,
+                    $today
+                );
+            }
+
             $this->assertRecipientIsFree($session, $toUser);
 
             $currencies = $this->resolveCurrenciesForCounts($physicalCounts);

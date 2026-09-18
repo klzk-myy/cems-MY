@@ -7,6 +7,7 @@ use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Exceptions\Domain\BusinessDateFrozenException;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
 use App\Models\BranchPool;
@@ -129,6 +130,11 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
+        // Finalize only unlocks after settlement.
+        $this->assertFalse($this->branchClosingService->canFinalize($workflow));
+
+        $this->branchClosingService->settle($workflow, $this->manager);
+
         $this->assertTrue($this->branchClosingService->canFinalize($workflow));
     }
 
@@ -137,6 +143,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $workflow->refresh();
@@ -145,25 +152,25 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function finalize_throws_when_branch_has_pending_items(): void
+    public function finalize_requires_settlement_first(): void
     {
-        $mathService = new MathService;
-        $branchPoolService = new BranchPoolService(new AuditService, $mathService);
-        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
-
-        $allocation = $tellerAllocationService->requestAllocation(
-            $this->tellerA,
-            $this->manager,
-            'USD',
-            '10000.0000'
-        );
-
-        $tellerAllocationService->approveAllocation($allocation, $this->manager, '10000.0000');
-        $tellerAllocationService->activateAllocation($allocation);
-
+        // Finalizing straight from Initiated must be rejected even when the
+        // checklist would read green — settle() owns the allocation returns
+        // and stale-request cancellations and cannot be skipped.
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
-        $this->assertFalse($this->branchClosingService->canFinalize($workflow));
+        $this->expectException(InvalidStateException::class);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+    }
+
+    #[Test]
+    public function finalize_throws_when_another_workflow_is_pending(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
+
+        // A second open workflow for the branch fails documents_finalized.
+        $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
         $this->expectException(BranchClosingChecklistIncompleteException::class);
         $this->branchClosingService->finalize($workflow, $this->manager);
@@ -262,11 +269,12 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function api_finalize_with_incomplete_checklist_fails(): void
+    public function api_finalize_requires_settlement_then_succeeds(): void
     {
         $user = $this->manager;
 
-        // Create an active teller allocation that should be returned before finalization
+        // Create an active teller allocation that settlement must return
+        // before finalization.
         $allocation = TellerAllocation::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->tellerA->id,
@@ -279,11 +287,25 @@ class BranchClosingWorkflowTest extends TestCase
 
         $response->assertStatus(201);
 
+        // Finalize straight from Initiated is rejected — settlement is a
+        // required step, not optional.
         $response = $this->actingAs($user, 'sanctum')
             ->postJson("/api/v1/branches/{$this->branch->id}/closing/finalize");
 
         $response->assertStatus(400);
         $response->assertJson(['success' => false]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/branches/{$this->branch->id}/closing/settle");
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/branches/{$this->branch->id}/closing/finalize");
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
     }
 
     #[Test]
@@ -291,6 +313,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
         $finalizedAt = $workflow->fresh()->finalized_at;
 
@@ -306,6 +329,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
 
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $workflow->refresh();
@@ -407,6 +431,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $otherBranch = Branch::factory()->create();
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
@@ -420,6 +445,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $counterService = app(CounterService::class);
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         try {
@@ -453,6 +479,7 @@ class BranchClosingWorkflowTest extends TestCase
     {
         $accountingService = app(AccountingService::class);
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         ChartOfAccount::firstOrCreate(
@@ -489,6 +516,7 @@ class BranchClosingWorkflowTest extends TestCase
     public function reopen_unfreezes_the_date_and_allows_trading_again(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
         $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
 
@@ -516,6 +544,7 @@ class BranchClosingWorkflowTest extends TestCase
     public function reopen_route_is_limited_to_cross_branch_users(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $this->actingAs($this->manager)
@@ -547,6 +576,7 @@ class BranchClosingWorkflowTest extends TestCase
     public function frozen_date_blocks_a_new_closure_workflow(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
         $this->branchClosingService->finalize($workflow, $this->manager);
 
         $this->actingAs($this->manager)

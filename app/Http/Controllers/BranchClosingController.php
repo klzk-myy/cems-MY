@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Http\Requests\FinalizeBranchClosingRequest;
 use App\Http\Requests\InitiateBranchClosingRequest;
 use App\Http\Requests\SettleBranchClosingRequest;
 use App\Models\Branch;
-use App\Models\BranchClosureWorkflow;
 use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,17 +56,17 @@ class BranchClosingController extends Controller
 
     public function initiate(InitiateBranchClosingRequest $request, Branch $branch): RedirectResponse
     {
-        if (BranchClosureWorkflow::freezesDate($branch->id, now()->toDateString())) {
-            return redirect()->back()->with('error', 'This business date is already finalized — reopen the day before starting a new closure.');
-        }
-
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
 
         if ($existingWorkflow) {
             return redirect()->back()->with('error', 'An active closure workflow already exists for this branch.');
         }
 
-        $workflow = $this->branchClosingService->initiateClosure($branch, auth()->user());
+        try {
+            $this->branchClosingService->initiateClosure($branch, auth()->user());
+        } catch (BusinessDateFrozenException) {
+            return redirect()->back()->with('error', 'This business date is already finalized — reopen the day before starting a new closure.');
+        }
 
         return redirect()->route('branches.closing.show', $branch)
             ->with('success', 'Branch closure workflow initiated.');
@@ -80,10 +80,16 @@ class BranchClosingController extends Controller
             return redirect()->back()->with('error', 'No active closure workflow found for this branch.');
         }
 
-        $this->branchClosingService->settle($workflow, auth()->user());
+        try {
+            $this->branchClosingService->settle($workflow, auth()->user());
 
-        return redirect()->route('branches.closing.show', $branch)
-            ->with('success', 'Branch settlement completed. Cash and allocations returned to pool.');
+            return redirect()->route('branches.closing.show', $branch)
+                ->with('success', 'Branch settlement completed. Cash and allocations returned to pool.');
+        } catch (BranchClosingChecklistIncompleteException $e) {
+            return redirect()->back()->with('error', 'Cannot settle branch closure: counters must be closed first.');
+        } catch (InvalidStateException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function finalize(FinalizeBranchClosingRequest $request, Branch $branch): RedirectResponse
@@ -101,6 +107,8 @@ class BranchClosingController extends Controller
                 ->with('success', 'Branch closure finalized successfully.');
         } catch (BranchClosingChecklistIncompleteException $e) {
             return redirect()->back()->with('error', 'Cannot finalize branch closure: incomplete checklist items must be resolved first.');
+        } catch (InvalidStateException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -118,11 +126,15 @@ class BranchClosingController extends Controller
             return redirect()->back()->with('error', 'No finalized closure workflow found for this branch.');
         }
 
+        // The frozen business date is the day the workflow finalized —
+        // captured before reopen() clears the stamp.
+        $frozenDate = $workflow->finalized_at?->toDateString();
+
         try {
             $this->branchClosingService->reopen($workflow, auth()->user());
 
             return redirect()->route('branches.closing.show', $branch)
-                ->with('success', "Business date {$workflow->created_at?->toDateString()} reopened — the branch may post and trade again.");
+                ->with('success', "Business date {$frozenDate} reopened — the branch may post and trade again.");
         } catch (InvalidStateException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

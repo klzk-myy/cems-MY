@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\PasswordHash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 /**
@@ -29,7 +29,7 @@ class ConfirmablePasswordController extends Controller
 
         $user = $request->user();
 
-        if (! $user || ! Hash::check($request->password, $user->password_hash)) {
+        if (! $user || ! PasswordHash::check($request->password, $user->password_hash)) {
             return back()->withErrors(['password' => __('The provided password does not match our records.')]);
         }
 

@@ -157,17 +157,17 @@
                         @csrf
                         <x-button variant="primary" type="submit">Finalize Closure</x-button>
                     </form>
-                @else
+                @elseif($workflow->isSettled())
                     <p class="text-sm text-ink-muted">Complete all checklist items to finalize.</p>
                 @endif
             </div>
         @else
-            @if($finalizedWorkflow && $finalizedWorkflow->created_at?->isToday())
+            @if($finalizedWorkflow && $finalizedWorkflow->finalized_at?->isToday())
                 <x-card title="Business Date Closed">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-ink">
-                                {{ $branch->name }} is closed for {{ $finalizedWorkflow->created_at->toDateString() }} — no new sessions, transactions, or journal entries can be posted for this date.
+                                {{ $branch->name }} is closed for {{ $finalizedWorkflow->finalized_at->toDateString() }} — no new sessions, transactions, or journal entries can be posted for this date.
                             </p>
                             <p class="text-sm text-ink-muted mt-1">
                                 Finalized {{ $finalizedWorkflow->finalized_at?->format('Y-m-d H:i') }}

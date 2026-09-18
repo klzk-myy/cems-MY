@@ -111,8 +111,10 @@ trait AuthorizesBranchResource
 
     /**
      * Gate on the user's own branch assignment rather than a resource's
-     * branch — for company-wide resources (e.g. customers). Users with no
-     * branch assignment fail closed; all-branch roles pass.
+     * branch — for company-wide resources (e.g. customers). Branch
+     * operating roles (teller, manager) with no assignment fail closed;
+     * office roles legitimately operate without a branch and pass —
+     * downstream checks (till, session, permission matrix) still apply.
      */
     protected function authorizeAssignedBranch(
         string $message = 'You are not authorized for this action.'
@@ -127,7 +129,7 @@ trait AuthorizesBranchResource
             return null;
         }
 
-        if ($user->branch_id === null) {
+        if ($user->role->requiresBranch() && $user->branch_id === null) {
             return $this->denyResponse($message, 403);
         }
 

@@ -4,9 +4,9 @@ namespace App\Rules;
 
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Support\PasswordHash;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Rejects passwords that match any of the user's most recently used
@@ -44,7 +44,7 @@ class PasswordNotRecentlyUsed implements ValidationRule
         }
 
         foreach ($hashes as $hash) {
-            if (is_string($hash) && Hash::check((string) $value, $hash)) {
+            if (is_string($hash) && PasswordHash::check((string) $value, $hash)) {
                 $fail("The {$attribute} was recently used.");
 
                 return;

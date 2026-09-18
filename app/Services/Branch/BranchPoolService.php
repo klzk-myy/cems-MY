@@ -2,6 +2,7 @@
 
 namespace App\Services\Branch;
 
+use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Services\AuditService;
@@ -162,6 +163,46 @@ class BranchPoolService
             );
 
             return $covered;
+        });
+    }
+
+    /**
+     * Debit the full requested amount or fail — unlike debit(), which
+     * clamps at the pool balance for transfer dispatch, a manual pool
+     * adjustment must either move the requested amount in full or error.
+     * Runs the balance check under the row lock inside a transaction and
+     * writes a branch_pool_debited audit event.
+     */
+    public function debitOrFail(Branch $branch, string $currencyCode, float|string $amount, ?int $userId = null): void
+    {
+        $amount = (string) $amount;
+
+        DB::transaction(function () use ($branch, $currencyCode, $amount, $userId) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pool || $this->mathService->compare($pool->available_balance, $amount) < 0) {
+                throw new TransactionValidationException(
+                    message: "Insufficient available balance in the {$currencyCode} pool"
+                );
+            }
+
+            $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amount);
+            $pool->save();
+
+            $this->auditService->logBranchEvent(
+                'branch_pool_debited',
+                $branch->id,
+                [
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                    'debited' => $amount,
+                    'pool_id' => $pool->id,
+                    'user_id' => $userId,
+                ]
+            );
         });
     }
 

@@ -87,7 +87,7 @@ class CounterService
         return DB::transaction(function () use ($counter, $user, $openingFloats, $now, $today) {
             // A finalized day close freezes the branch's books for that
             // business date — no new sessions can open on a frozen date.
-            if (BranchClosureWorkflow::freezesDate($counter->branch_id, $today)) {
+            if (BranchClosureWorkflow::freezesDateForUpdate($counter->branch_id, $today)) {
                 throw new BusinessDateFrozenException($counter->branch->code ?? (string) $counter->branch_id, $today);
             }
 

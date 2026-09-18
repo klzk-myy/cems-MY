@@ -882,12 +882,14 @@ class SchemaSeeder extends Seeder
             $table->text('notes')->nullable();
             $table->unsignedBigInteger('out_journal_entry_id')->nullable();
             $table->unsignedBigInteger('ack_journal_entry_id')->nullable();
+            $table->unsignedBigInteger('cancel_journal_entry_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique('remittance_number', 'pool_remittances_remittance_number_unique');
             $table->index(['status', 'to_branch_id'], 'pool_remittances_status_to_branch_index');
             $table->index('out_journal_entry_id', 'pool_remittances_out_journal_entry_id_index');
             $table->index('ack_journal_entry_id', 'pool_remittances_ack_journal_entry_id_index');
+            $table->index('cancel_journal_entry_id', 'pool_remittances_cancel_journal_entry_id_index');
             $table->index('currency_code', 'pool_remittances_currency_code_index');
             $table->foreign('from_branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('to_branch_id')->references('id')->on('branches')->cascadeOnDelete();
@@ -896,6 +898,7 @@ class SchemaSeeder extends Seeder
             $table->foreign('cancelled_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('out_journal_entry_id')->references('id')->on('journal_entries')->restrictOnDelete();
             $table->foreign('ack_journal_entry_id')->references('id')->on('journal_entries')->restrictOnDelete();
+            $table->foreign('cancel_journal_entry_id')->references('id')->on('journal_entries')->restrictOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 

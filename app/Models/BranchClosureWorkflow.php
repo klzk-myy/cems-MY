@@ -88,14 +88,30 @@ class BranchClosureWorkflow extends BaseModel
 
     /**
      * Whether the branch's books are frozen for a business date: once a
-     * workflow finalizes, its initiation date and every earlier date are
-     * closed to new postings for that branch only.
+     * workflow finalizes, the date it finalized and every earlier date are
+     * closed to new postings for that branch only. The anchor is
+     * finalized_at — the same business date whose reconciliation snapshot
+     * is archived on the workflow — so the freeze boundary and the
+     * archived recon always agree.
      */
     public static function freezesDate(int $branchId, string $date): bool
     {
         return static::where('branch_id', $branchId)
             ->where('status', BranchClosureStatus::Finalized->value)
-            ->whereDate('created_at', '>=', $date)
+            ->whereDate('finalized_at', '>=', $date)
             ->exists();
+    }
+
+    /**
+     * freezesDate() for callers inside a transaction: locks every workflow
+     * row for the branch first so a concurrent settle→finalize cannot
+     * commit between the check and the posting's commit. Finalize takes a
+     * row lock before stamping its status, so this serializes the two.
+     */
+    public static function freezesDateForUpdate(int $branchId, string $date): bool
+    {
+        static::where('branch_id', $branchId)->lockForUpdate()->exists();
+
+        return static::freezesDate($branchId, $date);
     }
 }

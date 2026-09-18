@@ -4,6 +4,7 @@ namespace App\Services\Branch;
 
 use App\Enums\AccountMappingKey;
 use App\Enums\PoolRemittanceStatus;
+use App\Enums\RemittanceGlLeg;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\BranchPool;
@@ -84,7 +85,7 @@ class PoolRemittanceService
                 'notes' => $notes,
             ]);
 
-            $remittance->out_journal_entry_id = $this->postRemittanceGl($remittance, $from, 'dispatch')->id;
+            $remittance->out_journal_entry_id = $this->postRemittanceGl($remittance, $from, RemittanceGlLeg::Dispatch, $initiatedBy)->id;
             $remittance->save();
 
             Log::info('Pool remittance initiated', [
@@ -129,7 +130,7 @@ class PoolRemittanceService
             $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount);
             $pool->save();
 
-            $remittance->ack_journal_entry_id = $this->postRemittanceGl($remittance, $to, 'receipt')->id;
+            $remittance->ack_journal_entry_id = $this->postRemittanceGl($remittance, $to, RemittanceGlLeg::Receipt, $acknowledgedBy)->id;
             $remittance->status = PoolRemittanceStatus::Acknowledged;
             $remittance->acknowledged_by = $acknowledgedBy;
             $remittance->acknowledged_at = now();
@@ -176,7 +177,7 @@ class PoolRemittanceService
             $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount);
             $pool->save();
 
-            $remittance->ack_journal_entry_id = $this->postRemittanceGl($remittance, $from, 'receipt')->id;
+            $remittance->cancel_journal_entry_id = $this->postRemittanceGl($remittance, $from, RemittanceGlLeg::Reversal, $cancelledBy)->id;
             $remittance->status = PoolRemittanceStatus::Cancelled;
             $remittance->cancelled_by = $cancelledBy;
             $remittance->cancelled_at = now();
@@ -216,8 +217,10 @@ class PoolRemittanceService
      * debits clearing; acknowledgement (and cancellation's reversal)
      * debit cash/inventory on the branch where the cash landed and
      * credit clearing. Same convention as StockTransferService::postTransferGl.
+     * The entry is authored by the user performing THIS leg — the
+     * initiator on dispatch, the acknowledger/canceller on the inbound legs.
      */
-    private function postRemittanceGl(PoolRemittance $remittance, Branch $branch, string $direction): JournalEntry
+    private function postRemittanceGl(PoolRemittance $remittance, Branch $branch, RemittanceGlLeg $leg, int $actorId): JournalEntry
     {
         $clearingAccount = $this->accountMappingService->code(AccountMappingKey::SuspenseHq);
         $amount = (string) $remittance->amount;
@@ -227,21 +230,21 @@ class PoolRemittanceService
             : $this->accountMappingService->forCurrency('inventory', $remittance->currency_code);
 
         $lines = [
-            $direction === 'dispatch'
-                ? ['account_code' => $accountCode, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} dispatched"]
-                : ['account_code' => $accountCode, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} received"],
-            $direction === 'dispatch'
-                ? ['account_code' => $clearingAccount, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"]
-                : ['account_code' => $clearingAccount, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"],
+            $leg->isInbound()
+                ? ['account_code' => $accountCode, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"]
+                : ['account_code' => $accountCode, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"],
+            $leg->isInbound()
+                ? ['account_code' => $clearingAccount, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"]
+                : ['account_code' => $clearingAccount, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"],
         ];
 
         return $this->accountingService->createJournalEntry(
             $lines,
             'PoolRemittance',
             (int) $remittance->id,
-            "Pool remittance {$remittance->remittance_number} ({$direction})",
+            "Pool remittance {$remittance->remittance_number} ({$leg->name})",
             null,
-            $remittance->initiated_by,
+            $actorId,
             $branch->id
         );
     }

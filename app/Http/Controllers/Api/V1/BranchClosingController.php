@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
@@ -38,7 +40,11 @@ class BranchClosingController extends Controller
             ]);
         }
 
-        $workflow = $this->branchClosingService->initiateClosure($branch, $user);
+        try {
+            $workflow = $this->branchClosingService->initiateClosure($branch, $user);
+        } catch (BusinessDateFrozenException $e) {
+            return $this->errorResponse('This business date is already finalized — reopen the day before starting a new closure.', [], 400);
+        }
 
         return $this->successResponse($workflow, 'Branch closure workflow initiated', 201);
     }
@@ -66,6 +72,33 @@ class BranchClosingController extends Controller
         ]);
     }
 
+    public function settle(BranchClosingRequest $request, int $branchId): JsonResponse
+    {
+        $branch = Branch::findOrFail($branchId);
+
+        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
+            return $unauthorized;
+        }
+
+        $workflow = $this->branchClosingService->getActiveWorkflow($branch);
+
+        if (! $workflow) {
+            return $this->notFoundResponse('No active closure workflow found for this branch');
+        }
+
+        $user = Auth::user();
+
+        try {
+            $this->branchClosingService->settle($workflow, $user);
+
+            return $this->successResponse($workflow->fresh(), 'Branch settlement completed');
+        } catch (BranchClosingChecklistIncompleteException $e) {
+            return $this->errorResponse('Cannot settle branch closure: counters must be closed first.', [], 400);
+        } catch (InvalidStateException $e) {
+            return $this->errorResponse($e->getMessage(), [], 400);
+        }
+    }
+
     public function finalize(BranchClosingRequest $request, int $branchId): JsonResponse
     {
         $branch = Branch::findOrFail($branchId);
@@ -88,6 +121,8 @@ class BranchClosingController extends Controller
             return $this->successResponse($workflow->fresh(), 'Branch closure finalized successfully');
         } catch (BranchClosingChecklistIncompleteException $e) {
             return $this->errorResponse('Cannot finalize branch closure: incomplete checklist items must be resolved first.', [], 400);
+        } catch (InvalidStateException $e) {
+            return $this->errorResponse($e->getMessage(), [], 400);
         }
     }
 

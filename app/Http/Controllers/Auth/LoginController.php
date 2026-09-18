@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AuditService;
 use App\Services\System\RateLimitService;
+use App\Support\PasswordHash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,18 +36,10 @@ class LoginController extends Controller
         $user = User::where('username', $validated['username'])->first();
 
         // A hash stored in a foreign format (e.g. bcrypt under the Argon2id
-        // driver) makes Hash::check throw — that must fail closed as invalid
-        // credentials, not a 500 on the login page.
-        try {
-            $passwordValid = $user !== null
-                && Hash::check($validated['password'], $user->password_hash);
-        } catch (\RuntimeException $e) {
-            Log::warning('Login rejected: unrecognised password hash format', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
-            $passwordValid = false;
-        }
+        // driver) makes Hash::check throw — PasswordHash fails closed as
+        // invalid credentials rather than a 500 on the login page.
+        $passwordValid = $user !== null
+            && PasswordHash::check($validated['password'], $user->password_hash);
 
         if ($user && $user->is_active && $passwordValid) {
             try {
@@ -143,7 +136,7 @@ class LoginController extends Controller
             'password.different' => 'The new password must be different from the current password.',
         ]);
 
-        if (! Hash::check($validated['current_password'], $user->password_hash)) {
+        if (! PasswordHash::check($validated['current_password'], $user->password_hash)) {
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
@@ -180,7 +173,7 @@ class LoginController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (! Hash::check($validated['current_password'], $user->password_hash)) {
+        if (! PasswordHash::check($validated['current_password'], $user->password_hash)) {
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 

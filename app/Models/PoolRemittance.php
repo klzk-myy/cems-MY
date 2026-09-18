@@ -34,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property int|null $out_journal_entry_id
  * @property int|null $ack_journal_entry_id
+ * @property int|null $cancel_journal_entry_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Branch $fromBranch
@@ -63,6 +64,7 @@ class PoolRemittance extends Model
         'notes',
         'out_journal_entry_id',
         'ack_journal_entry_id',
+        'cancel_journal_entry_id',
     ];
 
     protected function casts(): array

@@ -9,6 +9,7 @@ use App\Models\MfaRecoveryCode;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Support\ActorContext;
+use App\Support\PasswordHash;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -210,7 +211,7 @@ class MfaService
             ->get();
 
         foreach ($recoveryCodes as $recoveryCode) {
-            if (Hash::check($code, $recoveryCode->code_hash)) {
+            if (PasswordHash::check($code, $recoveryCode->code_hash)) {
                 // Mark as used
                 $recoveryCode->update([
                     'used' => true,

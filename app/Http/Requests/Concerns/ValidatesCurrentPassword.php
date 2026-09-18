@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Models\User;
+use App\Support\PasswordHash;
 use Closure;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Shared rule for re-authenticating the current user by password before
@@ -27,7 +27,7 @@ trait ValidatesCurrentPassword
             function (string $attribute, mixed $value, Closure $fail): void {
                 $user = $this->user();
 
-                if (! $user instanceof User || ! Hash::check((string) $value, $user->password_hash)) {
+                if (! $user instanceof User || ! PasswordHash::check((string) $value, $user->password_hash)) {
                     $fail('The provided password is incorrect.');
                 }
             },

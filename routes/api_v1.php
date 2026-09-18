@@ -455,6 +455,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.branches.closing.initiate');
             Route::get('/checklist', [BranchClosingController::class, 'checklist'])
                 ->name('api.v1.branches.closing.checklist');
+            Route::post('/settle', [BranchClosingController::class, 'settle'])
+                ->name('api.v1.branches.closing.settle');
             Route::post('/finalize', [BranchClosingController::class, 'finalize'])
                 ->name('api.v1.branches.closing.finalize');
             Route::get('/', [BranchClosingController::class, 'show'])

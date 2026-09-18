@@ -16,10 +16,13 @@ class EnsureBranchScope
         if ($user) {
             $isAdmin = $user->role?->canManageAllBranches() ?? false;
 
-            // Deny-by-default: an authenticated non-admin without a branch
-            // assignment cannot prove which branch's data they may touch,
-            // so they must not pass through unchecked.
-            if (! $isAdmin && ! $user->branch_id) {
+            // Deny-by-default only for branch operating roles: a teller or
+            // manager without a home branch cannot prove which branch's data
+            // they may touch, so they must not pass through unchecked.
+            // Office roles (compliance officer, accountant, admin)
+            // legitimately operate without a branch assignment — downstream
+            // policies and the {branch} check below still constrain them.
+            if ($user->role->requiresBranch() && ! $user->branch_id) {
                 abort(403, 'You do not have permission to access resources for this branch.');
             }
 

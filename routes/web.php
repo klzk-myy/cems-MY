@@ -303,16 +303,17 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/{allocation}/till', [AllocationController::class, 'transferTill'])->name('till-transfer');
     });
 
-    // Branch Pools (manager/admin)
+    // Branch Pools (manager/admin). Reads stay on the group middleware;
+    // every balance-moving POST steps up with mfa.verified per §11.
     Route::middleware(['role:manage_stock', 'branch.scope'])->prefix('branch-pools')->name('branch-pools.')->group(function () {
         Route::get('/', [BranchPoolController::class, 'index'])->name('index');
-        Route::post('/', [BranchPoolController::class, 'store'])->name('store');
         Route::get('/{branchPool}', [BranchPoolController::class, 'show'])->name('show');
-        Route::post('/{branchPool}/fund', [BranchPoolController::class, 'fund'])->name('fund');
-        Route::post('/{branchPool}/debit', [BranchPoolController::class, 'debit'])->name('debit');
-        Route::post('/{branchPool}/remit', [BranchPoolController::class, 'remit'])->name('remit');
-        Route::post('/remittances/{poolRemittance}/acknowledge', [BranchPoolController::class, 'acknowledgeRemittance'])->name('remittances.acknowledge');
-        Route::post('/remittances/{poolRemittance}/cancel', [BranchPoolController::class, 'cancelRemittance'])->name('remittances.cancel');
+        Route::post('/', [BranchPoolController::class, 'store'])->name('store')->middleware('mfa.verified');
+        Route::post('/{branchPool}/fund', [BranchPoolController::class, 'fund'])->name('fund')->middleware('mfa.verified');
+        Route::post('/{branchPool}/debit', [BranchPoolController::class, 'debit'])->name('debit')->middleware('mfa.verified');
+        Route::post('/{branchPool}/remit', [BranchPoolController::class, 'remit'])->name('remit')->middleware('mfa.verified');
+        Route::post('/remittances/{poolRemittance}/acknowledge', [BranchPoolController::class, 'acknowledgeRemittance'])->name('remittances.acknowledge')->middleware('mfa.verified');
+        Route::post('/remittances/{poolRemittance}/cancel', [BranchPoolController::class, 'cancelRemittance'])->name('remittances.cancel')->middleware('mfa.verified');
     });
 
     // EOD Dashboard (manager/admin)
@@ -616,13 +617,19 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     Route::middleware(['role:manage_branch_closing', 'branch.scope'])->prefix('branches')->name('branches.')->group(function () {
         Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
             ->name('closing.show');
+        // Every workflow step moves allocations or freezes/unfreezes the
+        // branch's books — all POSTs step up with mfa.verified per §11.
         Route::post('/{branch}/closing/initiate', [BranchClosingController::class, 'initiate'])
+            ->middleware('mfa.verified')
             ->name('closing.initiate');
         Route::post('/{branch}/closing/settle', [BranchClosingController::class, 'settle'])
+            ->middleware('mfa.verified')
             ->name('closing.settle');
         Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
+            ->middleware('mfa.verified')
             ->name('closing.finalize');
         Route::post('/{branch}/closing/reopen', [BranchClosingController::class, 'reopen'])
+            ->middleware('mfa.verified')
             ->name('closing.reopen');
     });
 

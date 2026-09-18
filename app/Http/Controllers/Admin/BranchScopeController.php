@@ -97,7 +97,7 @@ class BranchScopeController extends Controller
                 'domain' => 'Stock transfers',
                 'description' => 'Direct branch ↔ branch movement via the stock-transfer workflow.',
                 'branch' => 'Operate',
-                'hq' => 'Same workflow',
+                'hq' => 'Excluded — non-trading',
                 'cross' => 'Same workflow',
             ],
             [
