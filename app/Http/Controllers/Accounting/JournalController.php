@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\DomainException;
+use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\JournalIndexRequest;
 use App\Http\Requests\Accounting\ReverseJournalEntryRequest;
@@ -19,6 +20,8 @@ use Illuminate\View\View;
 
 class JournalController extends Controller
 {
+    use ResolvesBranchScope;
+
     public function __construct(
         protected AccountingService $accountingService,
     ) {}
@@ -80,11 +83,9 @@ class JournalController extends Controller
 
         // Branch journals are stamped with the poster's own branch;
         // cross-branch roles may post a company-wide (null) or
-        // branch-scoped entry.
-        $user = $request->user();
-        $branchId = $user->role->canManageAllBranches()
-            ? ($validated['branch_id'] ?? null)
-            : $user->branch_id;
+        // branch-scoped entry. An unassigned branch user 403s rather than
+        // silently writing to the company book.
+        $branchId = $this->resolveReportBranchId($request->user(), $request);
 
         try {
             $entry = $this->accountingService->createJournalEntry(

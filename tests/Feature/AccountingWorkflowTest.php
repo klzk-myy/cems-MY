@@ -388,6 +388,32 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function unassigned_branch_user_cannot_post_to_the_company_book(): void
+    {
+        // Without a home branch a branch-scoped poster cannot be pinned —
+        // the company-wide (null) book is HQ business, not a fallback.
+        $orphan = User::factory()->create([
+            'username' => 'orphan'.substr(uniqid(), -6),
+            'email' => 'orphan-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($orphan)
+            ->post('/accounting/journal', [
+                'entry_date' => now()->format('Y-m-d'),
+                'description' => 'Orphan entry',
+                'lines' => [
+                    ['account_code' => $this->cashAccount->account_code, 'debit' => '10.00', 'credit' => '0.00'],
+                    ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '10.00'],
+                ],
+            ])
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function accountant_can_post_an_expense_for_another_branch(): void
     {
         $accountant = User::factory()->create([

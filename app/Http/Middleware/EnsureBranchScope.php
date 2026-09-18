@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,10 +23,16 @@ class EnsureBranchScope
                 abort(403, 'You do not have permission to access resources for this branch.');
             }
 
-            $requestedBranchId = $request->route('branch')
+            $requestedBranch = $request->route('branch')
                 ?? $request->route('branchId')
                 ?? $request->route('branch_id')
                 ?? $request->input('branch_id');
+
+            // Web routes model-bind {branch} to a Branch instance; API
+            // routes carry the raw id. Normalise both to an int.
+            $requestedBranchId = $requestedBranch instanceof Model
+                ? $requestedBranch->getKey()
+                : $requestedBranch;
 
             if ($requestedBranchId !== null
                 && ! $isAdmin

@@ -306,6 +306,20 @@ enum UserRole: string
     }
 
     /**
+     * Branch operating roles — every screen and posting for a teller or
+     * manager is branch-scoped, so the account is meaningless without a
+     * home branch. Office roles (admin, accountant, compliance officer)
+     * legitimately operate without a branch assignment.
+     */
+    public function requiresBranch(): bool
+    {
+        return match ($this) {
+            self::Teller, self::Manager => true,
+            self::ComplianceOfficer, self::Accountant, self::Admin => false,
+        };
+    }
+
+    /**
      * Whether the admin-managed role_permissions matrix grants this
      * permission to the role. Admin is exempt — it operates the matrix and
      * BNM requires an always-capable principal officer.

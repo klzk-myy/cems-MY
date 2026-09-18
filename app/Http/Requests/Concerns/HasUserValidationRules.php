@@ -26,9 +26,18 @@ trait HasUserValidationRules
             'username' => ['required', 'string', 'max:50', $unique('username')],
             'email' => ['required', 'email', 'max:255', $unique('email')],
             'role' => ['required', 'string', Rule::in($this->assignableRoleValues())],
-            // Branch scope for the user. NULL keeps the account unrestricted;
-            // only admins may operate without a branch assignment.
-            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')],
+            // Branch scope for the user. Branch operating roles (teller,
+            // manager) require a home branch — enforced for admins, who are
+            // the only actors able to leave the field empty; non-admin
+            // actors always have their own branch forced downstream. NULL
+            // stays valid for office roles (accountant, compliance).
+            'branch_id' => [
+                Rule::requiredIf(fn () => $this->user()?->isAdmin()
+                    && (UserRole::tryFrom((string) $this->input('role'))?->requiresBranch() ?? false)),
+                'nullable',
+                'integer',
+                Rule::exists('branches', 'id'),
+            ],
         ];
     }
 

@@ -127,6 +127,43 @@ class UserManagementRoleAssignmentTest extends TestCase
     }
 
     #[Test]
+    public function admin_cannot_create_a_branch_role_without_a_branch(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $response = $this->actingAs($admin)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
+            'username' => 'orphanteller',
+            'email' => 'orphanteller@example.com',
+            'password' => 'StrongPass123!',
+            'password_confirmation' => 'StrongPass123!',
+            'role' => UserRole::Teller->value,
+        ]);
+
+        // A teller without a home branch is a misconfigured account — it
+        // would 403 on every branch-scoped page.
+        $response->assertSessionHasErrors('branch_id');
+        $this->assertDatabaseMissing('users', ['username' => 'orphanteller']);
+    }
+
+    #[Test]
+    public function admin_can_create_an_office_role_without_a_branch(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $response = $this->actingAs($admin)->withSession($this->passwordConfirmedSession())->post(route('users.store'), [
+            'username' => 'hqaccountant',
+            'email' => 'hqaccountant@example.com',
+            'password' => 'StrongPass123!',
+            'password_confirmation' => 'StrongPass123!',
+            'role' => UserRole::Accountant->value,
+        ]);
+
+        // Office roles legitimately operate without a branch assignment.
+        $response->assertSessionDoesntHaveErrors();
+        $this->assertNull(User::where('username', 'hqaccountant')->firstOrFail()->branch_id);
+    }
+
+    #[Test]
     public function manager_cannot_promote_a_teller_to_admin(): void
     {
         $teller = User::factory()->create([

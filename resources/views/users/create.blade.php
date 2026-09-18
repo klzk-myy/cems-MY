@@ -25,7 +25,8 @@
                             name="branch_id"
                             label="Branch"
                             :options="($branches ?? collect())->pluck('name', 'id')->toArray()"
-                            placeholder="Select a branch (optional)"
+                            placeholder="Select a branch (required for teller/manager)"
+                            help="Teller and manager accounts must belong to a branch; office roles may be left unassigned."
                         />
 
                         <x-checkbox

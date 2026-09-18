@@ -17,12 +17,23 @@ class RatesPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Branch $branch;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->branch = Branch::factory()->create();
+    }
+
     protected function createUser(UserRole $role): User
     {
         return User::factory()->create([
             'role' => $role,
-            // Head-office view: no branch scoping so seeded rates are visible.
-            'branch_id' => null,
+            // Branch operating roles need a home branch — they inherit the
+            // seeded company card plus their branch overrides. Office roles
+            // may operate unassigned (head-office view).
+            'branch_id' => $role->requiresBranch() ? $this->branch->id : null,
             'is_active' => true,
         ]);
     }
@@ -109,9 +120,12 @@ class RatesPageTest extends TestCase
             'effective_date' => now()->subDay()->toDateString(),
         ]);
 
-        $manager = $this->createUser(UserRole::Manager);
+        // A company-card copy: branch-scoped copies only refresh existing
+        // branch rows, so the spread re-derivation is exercised through the
+        // cross-branch path.
+        $admin = $this->createUser(UserRole::Admin);
 
-        $response = $this->actingAs($manager)
+        $response = $this->actingAs($admin)
             ->post(route('rates.copy-previous'), [
                 'date' => now()->subDay()->toDateString(),
             ]);

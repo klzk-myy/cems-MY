@@ -139,7 +139,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::delete('/trusted-devices/{deviceId}', [MfaController::class, 'removeDevice'])->name('trusted-devices.remove');
     });
 
-    Route::middleware(['role:access_rates'])->prefix('rates')->name('rates.')->group(function () {
+    Route::middleware(['role:access_rates', 'branch.scope'])->prefix('rates')->name('rates.')->group(function () {
         Route::get('/', [RateController::class, 'index'])->name('index');
         Route::get('/units', [RateController::class, 'units'])->name('units');
         Route::post('/units', [RateController::class, 'updateUnits'])->name('units.update');
@@ -147,7 +147,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/copy-previous', [RateController::class, 'copyPrevious'])->name('copy-previous');
     });
 
-    Route::prefix('transactions')->name('transactions.')->group(function () {
+    Route::middleware('branch.scope')->prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index')
             ->middleware('role:create_transactions,manage_transactions,approve_transactions');
 
@@ -236,7 +236,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         });
     });
 
-    Route::prefix('counters')->name('counters.')->group(function () {
+    Route::middleware('branch.scope')->prefix('counters')->name('counters.')->group(function () {
         Route::get('/', [CounterController::class, 'index'])->name('index')
             ->middleware('role:operate_counters,manage_counters');
 
@@ -267,7 +267,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         });
     });
 
-    Route::prefix('stock-cash')->name('stock-cash.')->group(function () {
+    Route::middleware('branch.scope')->prefix('stock-cash')->name('stock-cash.')->group(function () {
         Route::get('/', [StockCashController::class, 'index'])->name('index')
             ->middleware('role:manage_stock');
         Route::get('/position/{position}', [StockCashController::class, 'showPosition'])->name('position')
@@ -282,7 +282,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     // Allocations (manager/admin)
-    Route::middleware('role:manage_allocations')->prefix('allocations')->name('allocations.')->group(function () {
+    Route::middleware(['role:manage_allocations', 'branch.scope'])->prefix('allocations')->name('allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'index'])->name('index');
         Route::get('/create', [AllocationController::class, 'create'])->name('create');
         Route::post('/', [AllocationController::class, 'store'])->name('store');
@@ -294,7 +294,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     // Teller self-service stock requests
-    Route::middleware(['role:request_stock', 'mfa.verified'])->prefix('my-allocations')->name('my-allocations.')->group(function () {
+    Route::middleware(['role:request_stock', 'mfa.verified', 'branch.scope'])->prefix('my-allocations')->name('my-allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'myIndex'])->name('index');
         Route::get('/request', [AllocationController::class, 'requestForm'])->name('request');
         Route::post('/request', [AllocationController::class, 'submitRequest'])->name('request.store');
@@ -304,7 +304,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     // Branch Pools (manager/admin)
-    Route::middleware('role:manage_stock')->prefix('branch-pools')->name('branch-pools.')->group(function () {
+    Route::middleware(['role:manage_stock', 'branch.scope'])->prefix('branch-pools')->name('branch-pools.')->group(function () {
         Route::get('/', [BranchPoolController::class, 'index'])->name('index');
         Route::post('/', [BranchPoolController::class, 'store'])->name('store');
         Route::get('/{branchPool}', [BranchPoolController::class, 'show'])->name('show');
@@ -313,11 +313,11 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     });
 
     // EOD Dashboard (manager/admin)
-    Route::middleware('role:manage_eod')->prefix('eod')->name('eod.')->group(function () {
+    Route::middleware(['role:manage_eod', 'branch.scope'])->prefix('eod')->name('eod.')->group(function () {
         Route::get('/', [DashboardController::class, 'eod'])->name('dashboard');
     });
 
-    Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
+    Route::middleware('branch.scope')->prefix('stock-transfers')->name('stock-transfers.')->group(function () {
         Route::get('/', [StockTransferController::class, 'index'])->name('index')
             ->middleware('role:manage_stock_transfers');
         Route::get('/create', [StockTransferController::class, 'create'])->name('create')
@@ -607,10 +607,10 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     // 'closing.show' with no branch parameter, so it resolves the user's
     // branch and forwards to the per-branch page below.
     Route::get('/closing', [BranchClosingController::class, 'index'])
-        ->middleware('role:manage_branch_closing')
+        ->middleware(['role:manage_branch_closing', 'branch.scope'])
         ->name('closing.show');
 
-    Route::middleware(['role:manage_branch_closing'])->prefix('branches')->name('branches.')->group(function () {
+    Route::middleware(['role:manage_branch_closing', 'branch.scope'])->prefix('branches')->name('branches.')->group(function () {
         Route::get('/{branch}/closing', [BranchClosingController::class, 'show'])
             ->name('closing.show');
         Route::post('/{branch}/closing/initiate', [BranchClosingController::class, 'initiate'])

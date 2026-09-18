@@ -567,11 +567,14 @@ class BranchClosingWorkflowTest extends TestCase
     #[Test]
     public function sidebar_closing_route_falls_back_to_an_active_trading_branch_for_hq_users(): void
     {
+        // Cross-branch users may legitimately have no home branch — the
+        // redirect falls back to the first active trading branch so they
+        // can inspect a close workflow.
         $hqUser = User::factory()->create([
             'username' => 'hq'.substr(uniqid(), -6),
             'email' => 'hq-'.uniqid().'@test.com',
             'password_hash' => bcrypt('password'),
-            'role' => UserRole::Manager,
+            'role' => UserRole::Admin,
             'branch_id' => null,
             'is_active' => true,
         ]);
@@ -584,5 +587,24 @@ class BranchClosingWorkflowTest extends TestCase
         $this->actingAs($hqUser)
             ->get(route('closing.show'))
             ->assertRedirect(route('branches.closing.show', $expected));
+    }
+
+    #[Test]
+    public function sidebar_closing_route_forbids_a_branch_role_with_no_branch(): void
+    {
+        // A manager is a branch operating role — an unassigned account is a
+        // misconfiguration, so it 403s rather than routing to another branch.
+        $orphan = User::factory()->create([
+            'username' => 'orphan'.substr(uniqid(), -6),
+            'email' => 'orphan-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($orphan)
+            ->get(route('closing.show'))
+            ->assertForbidden();
     }
 }
