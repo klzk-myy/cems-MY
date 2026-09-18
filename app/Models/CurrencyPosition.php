@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $currency_code
- * @property string $branch_id Branch code string (legacy numeric ids were converted to codes)
+ * @property int|null $branch_id Owning branch id; null tracks the company-wide position
  * @property numeric-string $quantity
  * @property numeric-string $average_cost
  * @property numeric-string $total_cost
@@ -53,6 +53,7 @@ class CurrencyPosition extends BaseModel
     ];
 
     protected $casts = [
+        'branch_id' => 'integer',
         'quantity' => MoneyCast::class,
         'average_cost' => MoneyCast::class.':8',
         'total_cost' => MoneyCast::class,
@@ -236,13 +237,5 @@ class CurrencyPosition extends BaseModel
     public function setLastValuationAtAttribute($value): void
     {
         $this->attributes['last_revalued_at'] = $value;
-    }
-
-    public function setTillIdAttribute($value): void
-    {
-        // Only set branch_id if not already set explicitly
-        if (! isset($this->attributes['branch_id'])) {
-            $this->attributes['branch_id'] = $value;
-        }
     }
 }

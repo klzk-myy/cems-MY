@@ -20,7 +20,7 @@ class CurrencyPositionLockServiceTest extends TestCase
         $position = CurrencyPosition::factory()->create();
         $service = new CurrencyPositionLockService(new MathService);
 
-        $locked = $service->lock($position->branch_id, $position->currency_code);
+        $locked = $service->lock((string) $position->branch_id, $position->currency_code);
 
         $this->assertEquals($position->id, $locked->id);
     }
@@ -44,7 +44,7 @@ class CurrencyPositionLockServiceTest extends TestCase
         $position = CurrencyPosition::factory()->create();
         $service = new CurrencyPositionLockService(new MathService);
 
-        $locked = DB::transaction(fn () => $service->findForUpdate($position->branch_id, $position->currency_code));
+        $locked = DB::transaction(fn () => $service->findForUpdate((string) $position->branch_id, $position->currency_code));
 
         $this->assertInstanceOf(CurrencyPosition::class, $locked);
         $this->assertEquals($position->id, $locked->id);

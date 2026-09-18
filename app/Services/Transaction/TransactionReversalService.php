@@ -209,7 +209,7 @@ class TransactionReversalService
     public function reversePositions(Transaction $transaction): void
     {
         $position = $this->positionLockService->findForUpdate(
-            $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : null,
             $transaction->currency_code
         );
 

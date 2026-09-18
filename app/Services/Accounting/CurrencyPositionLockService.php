@@ -11,9 +11,13 @@ class CurrencyPositionLockService
 {
     public function __construct(protected MathService $mathService) {}
 
-    public function findForUpdate(string $branchId, string $currencyCode): ?CurrencyPosition
+    public function findForUpdate(?string $branchId, string $currencyCode): ?CurrencyPosition
     {
-        return CurrencyPosition::where('branch_id', $branchId)
+        return CurrencyPosition::when(
+            $branchId === null,
+            fn ($query) => $query->whereNull('branch_id'),
+            fn ($query) => $query->where('branch_id', $branchId)
+        )
             ->where('currency_code', $currencyCode)
             ->lockForUpdate()
             ->first();
@@ -26,11 +30,11 @@ class CurrencyPositionLockService
      * locking. It runs within a database transaction to ensure the lock is held
      * for the duration of the caller's transaction.
      *
-     * @param  string  $branchId  Branch identifier
+     * @param  string|null  $branchId  Owning branch id; null locks the company-wide position
      * @param  string  $currencyCode  Currency code (e.g., 'USD')
      * @return CurrencyPosition The locked or freshly created position
      */
-    public function lock(string $branchId, string $currencyCode): CurrencyPosition
+    public function lock(?string $branchId, string $currencyCode): CurrencyPosition
     {
         return DB::transaction(function () use ($branchId, $currencyCode) {
             $position = $this->findForUpdate($branchId, $currencyCode);
@@ -52,10 +56,7 @@ class CurrencyPositionLockService
                     'last_revalued_at' => null,
                 ]);
             } catch (UniqueConstraintViolationException $e) {
-                return CurrencyPosition::where('branch_id', $branchId)
-                    ->where('currency_code', $currencyCode)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                return $this->findForUpdate($branchId, $currencyCode) ?? throw $e;
             }
         });
     }

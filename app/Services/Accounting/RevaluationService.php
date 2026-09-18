@@ -6,7 +6,6 @@ use App\Enums\AccountMappingKey;
 use App\Enums\SystemAlertLevel;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
-use App\Models\Branch;
 use App\Models\CurrencyPosition;
 use App\Models\RevaluationEntry;
 use App\Services\AuditService;
@@ -74,15 +73,12 @@ class RevaluationService
     /**
      * Branch rate card that prices a position.
      *
-     * currency_positions.branch_id is a string key ('HQ' or the branch id)
-     * while exchange_rates.branch_id is an integer, so only a numeric key maps
-     * to a branch card; 'HQ' resolves to the company-wide card.
+     * currency_positions.branch_id is a nullable branch id — a value maps to
+     * that branch's card while null resolves to the company-wide card.
      */
     protected function rateBranchId(CurrencyPosition $position): ?int
     {
-        $branchId = $position->branch_id;
-
-        return is_numeric($branchId) ? (int) $branchId : null;
+        return $position->branch_id;
     }
 
     /**
@@ -196,7 +192,7 @@ class RevaluationService
      * thrown failure into an error descriptor so the caller can accumulate
      * and summarize failures after the loop.
      *
-     * @return array{result: ?array{currency_code: string, branch_id: string, quantity: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
+     * @return array{result: ?array{currency_code: string, branch_id: int|null, quantity: string, gain_loss: string, is_gain: bool}, error: ?array{currency_code: string, error: string}}
      */
     protected function revaluePositionForJournal(CurrencyPosition $position, string $date, int $postedBy): array
     {
@@ -233,7 +229,7 @@ class RevaluationService
      * cannot double-book the same revaluation.
      *
      * @param  numeric-string  $newRate
-     * @return array{currency_code: string, branch_id: string, quantity: string, gain_loss: string, is_gain: bool}|null
+     * @return array{currency_code: string, branch_id: int|null, quantity: string, gain_loss: string, is_gain: bool}|null
      */
     protected function revaluePositionUnderLock(CurrencyPosition $position, string $newRate, string $date, int $postedBy): ?array
     {
@@ -336,15 +332,9 @@ class RevaluationService
             ],
         ];
 
-        // currency_positions.branch_id is a string key — numeric keys carry
-        // the branches.id FK (see rateBranchId), non-numeric keys carry a
-        // branch code like 'HQ'. Resolve either form so revaluation P&L
-        // lands on the branch's own ledger chain instead of the
-        // company-wide (null) chain.
-        $branchKey = (string) $position->branch_id;
-        $branchId = is_numeric($branchKey)
-            ? (int) $branchKey
-            : Branch::where('code', $branchKey)->value('id');
+        // Positions carry the branch id directly; a null (company-wide)
+        // position books its revaluation P&L on the company-wide chain.
+        $branchId = $position->branch_id;
 
         $this->accountingService->createJournalEntry(
             $lines,
@@ -439,7 +429,7 @@ class RevaluationService
      *
      * @param  array  $result  Revaluation result containing currency and position quantity
      */
-    protected function checkPositionLimitBreach(array $result, ?string $branchId = null): void
+    protected function checkPositionLimitBreach(array $result, int|string|null $branchId = null): void
     {
         $currencyCode = $result['currency'] ?? null;
         $positionAmount = $result['quantity'] ?? '0';

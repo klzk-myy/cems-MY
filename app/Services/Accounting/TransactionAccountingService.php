@@ -143,10 +143,12 @@ class TransactionAccountingService
         // Positions are keyed by branch, not by till (counter) code. Looking up
         // with till_id silently returns null, which falls back to the sale rate
         // and books zero forex gain/loss on every Sell.
-        $position = $this->positionService->getPosition(
-            $transaction->currency_code,
-            $transaction->branch_id ? (string) $transaction->branch_id : 'HQ'
-        );
+        $position = $transaction->branch_id !== null
+            ? $this->positionService->getPosition(
+                $transaction->currency_code,
+                (string) $transaction->branch_id
+            )
+            : null;
         $avgCost = $position ? $position->avg_cost_rate : $transaction->rate;
 
         if ($avgCost === null) {

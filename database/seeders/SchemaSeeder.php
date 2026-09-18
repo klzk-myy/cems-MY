@@ -372,8 +372,8 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->string('account_class')->nullable();
             $table->boolean('allow_journal')->default(true);
-            $table->integer('cost_center_id')->nullable();
-            $table->integer('department_id')->nullable();
+            $table->unsignedBigInteger('cost_center_id')->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
             $table->string('normal_balance')->nullable();
             $table->index('account_type', 'chart_of_accounts_account_type_index');
             $table->foreign('parent_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
@@ -572,7 +572,7 @@ class SchemaSeeder extends Seeder
             $table->integer('version')->default(0);
             $table->decimal('base_rate', 18, 8)->nullable();
             $table->boolean('rate_override')->default(false);
-            $table->integer('rate_override_approved_by')->nullable();
+            $table->unsignedBigInteger('rate_override_approved_by')->nullable();
             $table->timestamp('rate_override_approved_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->unsignedBigInteger('branch_id')->nullable();
@@ -588,7 +588,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('approval_sync_failed_at')->nullable();
             $table->text('approval_sync_error')->nullable();
             $table->string('counterparty_country')->nullable();
-            $table->integer('counter_id')->nullable();
+            $table->unsignedBigInteger('counter_id')->nullable();
             $table->string('source_of_wealth')->nullable();
             $table->boolean('is_dlq')->default(false);
             // Position-state snapshot captured when the position mutation is applied,
@@ -603,6 +603,7 @@ class SchemaSeeder extends Seeder
             $table->index('approval_sync_failed', 'transactions_approval_sync_failed_index');
             $table->index('approved_by', 'transactions_approved_by_index');
             $table->index('compliance_cleared_by', 'transactions_compliance_cleared_by_index');
+            $table->index('counter_id', 'transactions_counter_id_index');
             $table->index(['branch_id', 'created_at'], 'transactions_branch_created_idx');
             $table->index('cancelled_at', 'transactions_cancelled_at_index');
             $table->index('created_at', 'transactions_created_at_index');
@@ -740,7 +741,7 @@ class SchemaSeeder extends Seeder
             $table->string('rule_type')->nullable();
             $table->string('action')->default('flag');
             $table->integer('risk_score')->default(0);
-            $table->integer('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index('is_active', 'aml_rules_is_active_index');
@@ -1024,7 +1025,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('rejected_at')->nullable();
-            $table->integer('rejected_by')->nullable();
+            $table->unsignedBigInteger('rejected_by')->nullable();
             $table->string('rejection_reason')->nullable();
             $table->index(['user_id', 'currency_code', 'session_date', 'status'], 'teller_alloc_user_currency_date_status_idx');
             $table->index(['counter_id', 'session_date'], 'teller_alloc_counter_date_idx');
@@ -1102,7 +1103,8 @@ class SchemaSeeder extends Seeder
         Schema::create('currency_positions', function (Blueprint $table) {
             $table->id();
             $table->string('currency_code');
-            $table->string('branch_id')->default('HQ');
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
             $table->decimal('quantity', 18, 4)->default(0);
             $table->decimal('average_cost', 18, 8)->default(0);
             $table->decimal('total_cost', 18, 4)->default(0);
@@ -1112,7 +1114,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('last_revalued_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->unique(['currency_code', 'branch_id'], 'currency_positions_currency_code_branch_id_unique');
+            $table->unique(['currency_code', 'branch_key'], 'currency_positions_currency_code_branch_key_unique');
             $table->index('branch_id', 'currency_positions_branch_id_index');
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
@@ -1223,7 +1225,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('next_scheduled_recalculation')->nullable();
             $table->string('recalculation_trigger')->nullable();
             $table->timestamp('locked_until')->nullable();
-            $table->integer('locked_by')->nullable();
+            $table->unsignedBigInteger('locked_by')->nullable();
             $table->string('lock_reason')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -1311,7 +1313,7 @@ class SchemaSeeder extends Seeder
             $table->text('rejection_reason')->nullable();
             $table->timestamp('uploaded_at')->nullable();
             $table->timestamp('verified_at')->nullable();
-            $table->integer('verified_by')->nullable();
+            $table->unsignedBigInteger('verified_by')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index('edd_record_id', 'idx_18d041a74a1b');
@@ -1801,13 +1803,13 @@ class SchemaSeeder extends Seeder
 
         Schema::create('stock_reservations', function (Blueprint $table) {
             $table->id();
-            $table->integer('transaction_id');
+            $table->unsignedBigInteger('transaction_id');
             $table->string('currency_code');
             $table->string('till_id');
             $table->decimal('amount_foreign', 18, 4);
             $table->string('status')->default('pending');
             $table->timestamp('expires_at')->nullable();
-            $table->integer('created_by');
+            $table->unsignedBigInteger('created_by');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index('transaction_id', 'stock_reservations_transaction_id_index');
@@ -2027,8 +2029,8 @@ class SchemaSeeder extends Seeder
         Schema::create('transaction_confirmations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('transaction_id');
-            $table->integer('user_id');
-            $table->integer('confirmed_by')->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('confirmed_by')->nullable();
             $table->timestamp('confirmed_at')->nullable();
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'expired'])->default('pending');
             $table->string('confirmation_token')->nullable();
@@ -2069,7 +2071,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('transaction_imports', function (Blueprint $table) {
             $table->id();
-            $table->integer('imported_by');
+            $table->unsignedBigInteger('imported_by');
             $table->text('filename');
             $table->text('original_filename');
             $table->integer('total_rows');

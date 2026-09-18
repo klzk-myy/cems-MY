@@ -86,7 +86,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * @param  string  $amount  Transaction amount as string
      * @param  string  $rate  Exchange rate for this transaction
      * @param  string  $type  Transaction type: 'Buy' or 'Sell'
-     * @param  string  $branchId  Branch identifier (default: 'HQ')
+     * @param  string|null  $branchId  Owning branch id; null tracks the company-wide position
      * @return CurrencyPosition Updated position model
      *
      * @throws \InvalidArgumentException If selling with insufficient or zero balance
@@ -96,7 +96,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
         string $amount,
         string $rate,
         string $type,
-        string $branchId = 'HQ',
+        ?string $branchId = null,
         ?Transaction $snapshotFor = null,
     ): CurrencyPosition {
         $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId, $snapshotFor) {
@@ -373,12 +373,16 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     /**
      * Get all positions for a specific branch.
      *
-     * @param  string  $branchId  Branch identifier (default: 'HQ')
+     * @param  string|null  $branchId  Branch identifier; null returns the company-wide positions
      * @return Collection Collection of position models
      */
-    public function getAllPositions(string $branchId = 'HQ'): Collection
+    public function getAllPositions(?string $branchId = null): Collection
     {
-        return CurrencyPosition::where('branch_id', $branchId)
+        return CurrencyPosition::when(
+            $branchId === null,
+            fn ($query) => $query->whereNull('branch_id'),
+            fn ($query) => $query->where('branch_id', $branchId)
+        )
             ->with('currency')
             ->get();
     }
@@ -388,10 +392,10 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      *
      * Uses MathService for high-precision addition of position P&L values.
      *
-     * @param  string  $branchId  Branch identifier (default: 'HQ')
+     * @param  string|null  $branchId  Branch identifier; null sums the company-wide positions
      * @return string Total unrealized P&L as string
      */
-    public function getTotalPnl(string $branchId = 'HQ'): string
+    public function getTotalPnl(?string $branchId = null): string
     {
         $positions = $this->getAllPositions($branchId);
         $totalUnrealized = '0';

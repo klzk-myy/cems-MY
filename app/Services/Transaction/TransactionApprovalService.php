@@ -414,7 +414,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
                 (string) $transaction->amount_foreign,
                 (string) $transaction->rate,
                 $transaction->type->value,
-                $transaction->branch_id !== null ? (string) $transaction->branch_id : 'HQ',
+                $transaction->branch_id !== null ? (string) $transaction->branch_id : null,
                 $transaction
             );
 

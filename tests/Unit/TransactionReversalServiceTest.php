@@ -302,7 +302,6 @@ class TransactionReversalServiceTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',

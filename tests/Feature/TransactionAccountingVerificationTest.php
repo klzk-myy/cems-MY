@@ -223,7 +223,6 @@ class TransactionAccountingVerificationTest extends TestCase
             // Create USD position for this counter
             CurrencyPosition::factory()->create([
                 'currency_code' => 'USD',
-                'till_id' => (string) $counter->id,
                 'branch_id' => $branch->id,
                 'balance' => '50000.0000',
                 'avg_cost_rate' => '4.50',

@@ -220,7 +220,7 @@ trait ParitySteps
     private function positionSnapshot(): array
     {
         $rows = $this->state->oracle->query(
-            "SELECT currency_code, quantity FROM currency_positions WHERE branch_id = 'HQ'"
+            'SELECT currency_code, quantity FROM currency_positions WHERE branch_id IS NULL'
         );
 
         $snapshot = [];

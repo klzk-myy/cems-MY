@@ -19,7 +19,7 @@ class CurrencyPositionFactory extends Factory
     {
         return [
             'currency_code' => 'USD',
-            'branch_id' => '1',
+            'branch_id' => 1,
             'quantity' => $this->faker->randomNumber(5) * 1000,
             'average_cost' => '4.5000',
             'total_cost' => '0.0000',

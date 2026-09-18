@@ -26,7 +26,7 @@ class ReservationExpireCommandTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TILL1',
+            'branch_id' => $teller->branch_id ?? $this->createTestBranch()->id,
             'balance' => '1000.00',
             'avg_cost_rate' => '4.2000',
             'last_valuation_rate' => '4.2000',

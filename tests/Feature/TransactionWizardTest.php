@@ -66,7 +66,6 @@ class TransactionWizardTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
             'branch_id' => (string) $this->teller->branch_id,
-            'till_id' => $this->counter->code,
             'quantity' => '10000.00',
         ]);
     }

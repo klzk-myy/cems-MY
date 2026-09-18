@@ -45,7 +45,6 @@ class TransactionCancellationServiceTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -56,7 +55,6 @@ class TransactionCancellationServiceTest extends TestCase
             'id' => 99901,
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '1000.00',
             'rate' => '4.50',
@@ -70,7 +68,6 @@ class TransactionCancellationServiceTest extends TestCase
             'id' => 99902,
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '1000.00',
             'rate' => '4.50',
@@ -100,7 +97,6 @@ class TransactionCancellationServiceTest extends TestCase
         CurrencyPosition::factory()->create([
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'balance' => '3000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -111,7 +107,6 @@ class TransactionCancellationServiceTest extends TestCase
             'id' => 99903,
             'currency_code' => $currencyCode,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'type' => TransactionType::Buy,
             'amount_foreign' => '500.00',
             'rate' => '4.50',
@@ -168,9 +163,7 @@ class TransactionCancellationServiceTest extends TestCase
 
         // Create a currency position for the reversal
         CurrencyPosition::factory()->create([
-            'currency_code' => 'USD',
-            'till_id' => $transaction->till_id,
-            'branch_id' => $transaction->branch_id,
+            'currency_code' => 'USD', 'branch_id' => $transaction->branch_id,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -205,9 +198,7 @@ class TransactionCancellationServiceTest extends TestCase
 
         // Create a currency position for the reversal
         CurrencyPosition::factory()->create([
-            'currency_code' => 'USD',
-            'till_id' => $transaction->till_id,
-            'branch_id' => $transaction->branch_id,
+            'currency_code' => 'USD', 'branch_id' => $transaction->branch_id,
             'balance' => '5000.00',
             'avg_cost_rate' => '4.50',
             'last_valuation_rate' => '4.50',
@@ -345,7 +336,6 @@ class TransactionCancellationServiceTest extends TestCase
         $transaction = Transaction::factory()->create([
             'user_id' => $requester->id,
             'branch_id' => $branch->id,
-            'till_id' => $tillId,
             'type' => TransactionType::Sell,
             'currency_code' => 'USD',
             'amount_foreign' => '100.00',

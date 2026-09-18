@@ -182,7 +182,7 @@ class CurrencyPositionServiceTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TILL1',
+            'branch_id' => $this->createTestBranch()->id,
             'balance' => '1000.00',
             'avg_cost_rate' => '4.2000',
             'last_valuation_rate' => '4.2000',
@@ -229,7 +229,7 @@ class CurrencyPositionServiceTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TILL1',
+            'branch_id' => $this->createTestBranch()->id,
             'balance' => '1000.00',
             'avg_cost_rate' => '4.2000',
             'last_valuation_rate' => '4.2000',
@@ -318,7 +318,7 @@ class CurrencyPositionServiceTest extends TestCase
         // Branch A: 100 @ 4.00, revalued earliest
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'BR-A',
+            'branch_id' => $this->createTestBranch()->id,
             'quantity' => '100.00',
             'average_cost' => '4.00',
             'current_rate' => '4.20',
@@ -329,7 +329,7 @@ class CurrencyPositionServiceTest extends TestCase
         // Branch B: 100 @ 4.20, revalued latest (its current_rate is representative)
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'BR-B',
+            'branch_id' => $this->createTestBranch()->id,
             'quantity' => '100.00',
             'average_cost' => '4.20',
             'current_rate' => '4.40',

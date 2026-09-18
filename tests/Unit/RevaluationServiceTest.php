@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\AccountingPeriod;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\JournalEntry;
@@ -34,6 +35,8 @@ class RevaluationServiceTest extends TestCase
 
     protected Currency $testCurrency;
 
+    protected Branch $testBranch;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -52,6 +55,8 @@ class RevaluationServiceTest extends TestCase
             'role' => 'admin',
             'is_active' => true,
         ]);
+
+        $this->testBranch = $this->createTestBranch();
 
         // Disable account validation for this test
         Config::set('accounting.validate_accounts', false);
@@ -82,7 +87,7 @@ class RevaluationServiceTest extends TestCase
         // Create a currency position with balance
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
@@ -133,7 +138,7 @@ class RevaluationServiceTest extends TestCase
         // Create multiple currency positions (USD and EUR)
         $usdPosition = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
@@ -141,7 +146,7 @@ class RevaluationServiceTest extends TestCase
 
         $eurPosition = CurrencyPosition::factory()->create([
             'currency_code' => 'EUR',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '500.00',
             'average_cost' => '5.00',
             'current_rate' => '5.00',
@@ -211,7 +216,7 @@ class RevaluationServiceTest extends TestCase
         /** @var CurrencyPosition $position */
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
@@ -266,7 +271,7 @@ class RevaluationServiceTest extends TestCase
         // Create a currency position with zero balance
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '0.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
@@ -333,7 +338,7 @@ class RevaluationServiceTest extends TestCase
         // delta on top, otherwise repeated revaluations double-count P&L.
         $position = CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '100.00',
             'average_cost' => '4.00',
             'current_rate' => '4.20',
@@ -390,7 +395,7 @@ class RevaluationServiceTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.60',
@@ -431,14 +436,14 @@ class RevaluationServiceTest extends TestCase
         // EUR loses: rate moves 5.00 → 4.90 on 500 units => -50.
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
         ]);
         CurrencyPosition::factory()->create([
             'currency_code' => 'EUR',
-            'branch_id' => 'TEST-BRANCH',
+            'branch_id' => $this->testBranch->id,
             'quantity' => '500.00',
             'average_cost' => '5.00',
             'current_rate' => '5.00',

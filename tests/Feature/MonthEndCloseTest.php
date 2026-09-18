@@ -148,7 +148,7 @@ class MonthEndCloseTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'till_id' => 'TEST',
+            'branch_id' => $this->createTestBranch()->id,
             'balance' => '1000.00',
         ]);
 
