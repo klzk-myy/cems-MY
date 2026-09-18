@@ -6,12 +6,14 @@ use App\Enums\CounterSessionStatus;
 use App\Enums\CounterStatus;
 use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
 use App\Exceptions\Domain\VarianceThresholdException;
 use App\Models\Branch;
+use App\Models\BranchClosureWorkflow;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\Currency;
@@ -83,6 +85,12 @@ class CounterService
         $today = $now->toDateString();
 
         return DB::transaction(function () use ($counter, $user, $openingFloats, $now, $today) {
+            // A finalized day close freezes the branch's books for that
+            // business date — no new sessions can open on a frozen date.
+            if (BranchClosureWorkflow::freezesDate($counter->branch_id, $today)) {
+                throw new BusinessDateFrozenException($counter->branch->code ?? (string) $counter->branch_id, $today);
+            }
+
             // Lock and check if counter is already open (prevents race condition)
             $existingSession = CounterSession::where('counter_id', $counter->id)
                 ->where('status', CounterSessionStatus::Open->value)

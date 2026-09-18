@@ -612,6 +612,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             ->name('closing.settle');
         Route::post('/{branch}/closing/finalize', [BranchClosingController::class, 'finalize'])
             ->name('closing.finalize');
+        Route::post('/{branch}/closing/reopen', [BranchClosingController::class, 'reopen'])
+            ->name('closing.reopen');
     });
 
     // Currency management (plan WS-C1). Currencies are seeded during setup;

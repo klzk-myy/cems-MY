@@ -109,6 +109,54 @@ class BranchClosingService
     }
 
     /**
+     * Reopen a finalized day for corrections — a privileged, audited escape
+     * hatch. Reverting to settled un-freezes the business date; the workflow
+     * can be finalized again once corrections are posted.
+     */
+    public function reopen(BranchClosureWorkflow $workflow, User $user): void
+    {
+        DB::transaction(function () use ($workflow, $user) {
+            $lockedWorkflow = BranchClosureWorkflow::whereKey($workflow->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedWorkflow->status !== BranchClosureStatus::Finalized) {
+                throw new InvalidStateException(
+                    "Closure workflow {$lockedWorkflow->id} cannot be reopened from status '{$lockedWorkflow->status->value}'."
+                );
+            }
+
+            $lockedWorkflow->update([
+                'status' => 'settled',
+                'finalized_at' => null,
+            ]);
+
+            $this->auditService->log(
+                'branch_closure_reopened',
+                $user->id,
+                'BranchClosureWorkflow',
+                $lockedWorkflow->id,
+                [],
+                [
+                    'branch_id' => $lockedWorkflow->branch_id,
+                    'business_date' => $lockedWorkflow->created_at?->toDateString(),
+                ]
+            );
+        });
+    }
+
+    /**
+     * The latest finalized workflow for a branch — the candidate for reopen.
+     */
+    public function getLatestFinalizedWorkflow(Branch $branch): ?BranchClosureWorkflow
+    {
+        return BranchClosureWorkflow::where('branch_id', $branch->id)
+            ->where('status', BranchClosureStatus::Finalized->value)
+            ->latest('id')
+            ->first();
+    }
+
+    /**
      * Today's reconciliation for the branch — sessions, expected-vs-counted
      * totals, and per-counter variances — trimmed to the lightweight payload
      * shown on the close page and archived at finalize.

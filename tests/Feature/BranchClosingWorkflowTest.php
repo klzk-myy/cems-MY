@@ -6,13 +6,17 @@ use App\Enums\BranchClosureStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Models\Branch;
+use App\Models\BranchClosureWorkflow;
 use App\Models\BranchPool;
+use App\Models\ChartOfAccount;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\TellerAllocation;
 use App\Models\User;
+use App\Services\Accounting\AccountingService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchClosingService;
 use App\Services\Branch\BranchPoolService;
@@ -396,6 +400,158 @@ class BranchClosingWorkflowTest extends TestCase
         $this->pool->refresh();
         $this->assertEquals('0.0000', $this->pool->allocated_balance);
         $this->assertEquals('100000.0000', $this->pool->available_balance);
+    }
+
+    #[Test]
+    public function finalize_freezes_the_business_date_for_that_branch_only(): void
+    {
+        $otherBranch = Branch::factory()->create();
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->subDay()->toDateString()));
+        $this->assertFalse(BranchClosureWorkflow::freezesDate($this->branch->id, now()->addDay()->toDateString()));
+        $this->assertFalse(BranchClosureWorkflow::freezesDate($otherBranch->id, now()->toDateString()));
+    }
+
+    #[Test]
+    public function frozen_date_blocks_counter_sessions_for_that_branch(): void
+    {
+        $counterService = app(CounterService::class);
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        try {
+            $counterService->openSession($this->counter, $this->tellerA, []);
+            $this->fail('openSession should reject a frozen business date');
+        } catch (BusinessDateFrozenException $e) {
+            $this->assertStringContainsString('business date is closed', $e->getMessage());
+        }
+
+        // Another branch is unaffected — standalone operation.
+        $otherBranch = Branch::factory()->create();
+        $otherCounter = Counter::factory()->create([
+            'code' => 'CTR'.substr(uniqid(), -4),
+            'branch_id' => $otherBranch->id,
+        ]);
+        $otherTeller = User::factory()->create([
+            'username' => 'tellerB'.substr(uniqid(), -6),
+            'email' => 'tellerB-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Teller,
+            'branch_id' => $otherBranch->id,
+            'is_active' => true,
+        ]);
+
+        $session = $counterService->openSession($otherCounter, $otherTeller, []);
+        $this->assertNotNull($session);
+    }
+
+    #[Test]
+    public function frozen_date_blocks_branch_journals_but_not_company_wide(): void
+    {
+        $accountingService = app(AccountingService::class);
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        ChartOfAccount::firstOrCreate(
+            ['account_code' => '1000'],
+            ['account_name' => 'Cash', 'account_type' => 'Asset', 'is_active' => true]
+        );
+        ChartOfAccount::firstOrCreate(
+            ['account_code' => '4000'],
+            ['account_name' => 'Revenue', 'account_type' => 'Revenue', 'is_active' => true]
+        );
+
+        $lines = [
+            ['account_code' => '1000', 'debit' => '10.00', 'credit' => '0.00'],
+            ['account_code' => '4000', 'debit' => '0.00', 'credit' => '10.00'],
+        ];
+
+        try {
+            $accountingService->createJournalEntry(
+                $lines, 'Manual', null, 'Frozen date entry', now()->toDateString(), $this->manager->id, $this->branch->id
+            );
+            $this->fail('createJournalEntry should reject a frozen business date');
+        } catch (BusinessDateFrozenException $e) {
+            $this->assertStringContainsString('business date is closed', $e->getMessage());
+        }
+
+        // Company-wide entries are HQ business — they bypass the freeze.
+        $entry = $accountingService->createJournalEntry(
+            $lines, 'Manual', null, 'HQ entry', now()->toDateString(), $this->manager->id, null
+        );
+        $this->assertNotNull($entry);
+    }
+
+    #[Test]
+    public function reopen_unfreezes_the_date_and_allows_trading_again(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+
+        $admin = User::factory()->create([
+            'username' => 'admin'.substr(uniqid(), -6),
+            'email' => 'admin-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Admin,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        $this->branchClosingService->reopen($workflow, $admin);
+
+        $workflow->refresh();
+        $this->assertEquals(BranchClosureStatus::Settled, $workflow->status);
+        $this->assertNull($workflow->finalized_at);
+        $this->assertFalse(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+
+        $session = app(CounterService::class)->openSession($this->counter, $this->tellerA, []);
+        $this->assertNotNull($session);
+    }
+
+    #[Test]
+    public function reopen_route_is_limited_to_cross_branch_users(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $this->actingAs($this->manager)
+            ->post(route('branches.closing.reopen', $this->branch))
+            ->assertForbidden();
+
+        $admin = User::factory()->create([
+            'username' => 'admin'.substr(uniqid(), -6),
+            'email' => 'admin-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Admin,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        // auth.session stored the manager's password_hash_web on the first
+        // request — flush before switching users or AuthenticateSession
+        // logs the second user out.
+        $this->flushSession();
+
+        $this->actingAs($admin)
+            ->post(route('branches.closing.reopen', $this->branch))
+            ->assertRedirect();
+
+        $this->assertEquals(BranchClosureStatus::Settled, $workflow->fresh()->status);
+    }
+
+    #[Test]
+    public function frozen_date_blocks_a_new_closure_workflow(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $this->actingAs($this->manager)
+            ->post(route('branches.closing.initiate', $this->branch))
+            ->assertSessionHas('error');
     }
 
     #[Test]

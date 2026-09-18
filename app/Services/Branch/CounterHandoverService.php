@@ -5,6 +5,7 @@ namespace App\Services\Branch;
 use App\Enums\CounterSessionStatus;
 use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\SessionOwnershipException;
@@ -12,6 +13,7 @@ use App\Exceptions\Domain\SupervisorRequiredException;
 use App\Exceptions\Domain\UnauthorizedException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
 use App\Exceptions\Domain\VarianceThresholdException;
+use App\Models\BranchClosureWorkflow;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
 use App\Models\Currency;
@@ -55,6 +57,16 @@ class CounterHandoverService
 
         $now = now();
         $today = $now->toDateString();
+
+        // A finalized day close freezes the branch's books — a successor
+        // session cannot be minted on a frozen business date.
+        $sessionBranchId = $session->counter?->branch_id;
+        if ($sessionBranchId !== null && BranchClosureWorkflow::freezesDate($sessionBranchId, $today)) {
+            throw new BusinessDateFrozenException(
+                $session->counter->branch->code ?? (string) $sessionBranchId,
+                $today
+            );
+        }
 
         return DB::transaction(function () use ($session, $fromUser, $toUser, $supervisor, $physicalCounts, $now, $today) {
             $this->assertRecipientIsFree($session, $toUser);

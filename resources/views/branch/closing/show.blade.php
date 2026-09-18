@@ -162,14 +162,35 @@
                 @endif
             </div>
         @else
-            <x-empty-state message="No active closure workflow for this branch.">
-                <x-slot:actions>
-                    <form method="POST" action="{{ route('branches.closing.initiate', $branch) }}" class="inline">
-                        @csrf
-                        <x-button variant="primary" type="submit">Initiate Closure Workflow</x-button>
-                    </form>
-                </x-slot:actions>
-            </x-empty-state>
+            @if($finalizedWorkflow && $finalizedWorkflow->created_at?->isToday())
+                <x-card title="Business Date Closed">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-ink">
+                                {{ $branch->name }} is closed for {{ $finalizedWorkflow->created_at->toDateString() }} — no new sessions, transactions, or journal entries can be posted for this date.
+                            </p>
+                            <p class="text-sm text-ink-muted mt-1">
+                                Finalized {{ $finalizedWorkflow->finalized_at?->format('Y-m-d H:i') }}
+                            </p>
+                        </div>
+                        @if($canReopen)
+                            <form method="POST" action="{{ route('branches.closing.reopen', $branch) }}" class="inline">
+                                @csrf
+                                <x-button variant="secondary" type="submit">Reopen Day</x-button>
+                            </form>
+                        @endif
+                    </div>
+                </x-card>
+            @else
+                <x-empty-state message="No active closure workflow for this branch.">
+                    <x-slot:actions>
+                        <form method="POST" action="{{ route('branches.closing.initiate', $branch) }}" class="inline">
+                            @csrf
+                            <x-button variant="primary" type="submit">Initiate Closure Workflow</x-button>
+                        </form>
+                    </x-slot:actions>
+                </x-empty-state>
+            @endif
         @endif
     </div>
 </x-app-layout>

@@ -6,8 +6,11 @@ use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\AccountNotFoundException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
+use App\Models\Branch;
+use App\Models\BranchClosureWorkflow;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
@@ -93,6 +96,14 @@ class AccountingService implements AccountingServiceInterface
     ): JournalEntry {
         $createdBy = $createdBy ?? ActorContext::capture()->userId;
         $entryDate = $entryDate ?? now()->toDateString();
+
+        // A finalized day close freezes that branch's books — company-wide
+        // (null branch) entries are HQ business and bypass the freeze.
+        if ($branchId !== null && BranchClosureWorkflow::freezesDate($branchId, $entryDate)) {
+            $branchCode = Branch::whereKey($branchId)->value('code') ?? (string) $branchId;
+
+            throw new BusinessDateFrozenException($branchCode, $entryDate);
+        }
 
         return DB::transaction(function () use ($lines, $referenceType, $referenceId, $description, $entryDate, $createdBy, $branchId) {
             if (count($lines) < 2) {

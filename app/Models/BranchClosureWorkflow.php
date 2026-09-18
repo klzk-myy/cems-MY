@@ -85,4 +85,17 @@ class BranchClosureWorkflow extends BaseModel
             'finalized_at' => now(),
         ]);
     }
+
+    /**
+     * Whether the branch's books are frozen for a business date: once a
+     * workflow finalizes, its initiation date and every earlier date are
+     * closed to new postings for that branch only.
+     */
+    public static function freezesDate(int $branchId, string $date): bool
+    {
+        return static::where('branch_id', $branchId)
+            ->where('status', BranchClosureStatus::Finalized->value)
+            ->whereDate('created_at', '>=', $date)
+            ->exists();
+    }
 }
