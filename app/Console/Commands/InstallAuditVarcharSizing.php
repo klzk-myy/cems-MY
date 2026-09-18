@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserRole;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -13,9 +14,12 @@ use Illuminate\Support\Facades\DB;
  *
  * Column definitions (nullability, default, collation) are read from
  * information_schema and restated in the MODIFY so no attribute is lost.
- * Foreign-key checks are disabled for the duration because
- * currencies.code / currency_code is resized as one coordinated set —
- * MySQL requires FK-referenced types to match exactly.
+ *
+ * MariaDB blocks MODIFY on an FK-referenced column even with
+ * FOREIGN_KEY_CHECKS=0 (error 1833), so the currencies.code group is
+ * resized inside a drop/re-add window for its referencing FKs — but only
+ * when a member of that group actually still needs resizing, so re-runs
+ * stay true no-ops.
  */
 class InstallAuditVarcharSizing extends Command
 {
@@ -24,12 +28,12 @@ class InstallAuditVarcharSizing extends Command
     protected $description = 'Right-size semantic varchar(255) columns to their real domain width';
 
     /**
-     * table.column => target type.
+     * ISO-4217 currency-code columns — FK group resized inside the
+     * drop/re-add window. table.column => target type.
      *
      * @var array<string, string>
      */
-    private const TARGETS = [
-        // ISO-4217 currency codes (FK group — all resized together)
+    private const CURRENCY_TARGETS = [
         'currencies.code' => 'varchar(8)',
         'transactions.currency_code' => 'varchar(8)',
         'branch_pools.currency_code' => 'varchar(8)',
@@ -42,6 +46,14 @@ class InstallAuditVarcharSizing extends Command
         'stock_reservations.currency_code' => 'varchar(8)',
         'stock_transfer_items.currency_code' => 'varchar(8)',
         'till_balances.currency_code' => 'varchar(8)',
+    ];
+
+    /**
+     * table.column => target type.
+     *
+     * @var array<string, string>
+     */
+    private const TARGETS = [
         // Branch/entity codes
         'branches.code' => 'varchar(16)',
         'counters.code' => 'varchar(16)',
@@ -107,9 +119,45 @@ class InstallAuditVarcharSizing extends Command
             return self::FAILURE;
         }
 
-        // MariaDB blocks MODIFY on an FK-referenced column even with
-        // FOREIGN_KEY_CHECKS=0 (error 1833), so the currencies.code group
-        // is resized inside a drop/re-add window for its referencing FKs.
+        if ($this->currencyGroupNeedsResize()) {
+            $this->resizeCurrencyGroup();
+        }
+
+        foreach (self::TARGETS as $key => $type) {
+            [$table, $column] = explode('.', $key);
+            $this->modifyColumn($table, $column, $type);
+        }
+
+        $this->alignRoleEnums();
+
+        $this->info('Audit varchar sizing complete.');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * True when any column in the currency-code FK group still differs
+     * from its target type — the drop/re-add window only opens then.
+     */
+    private function currencyGroupNeedsResize(): bool
+    {
+        foreach (self::CURRENCY_TARGETS as $key => $type) {
+            [$table, $column] = explode('.', $key);
+
+            if ($this->currentType($table, $column) !== $type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resize the currency-code group inside a drop/re-add window for the
+     * FKs that reference currencies.code.
+     */
+    private function resizeCurrencyGroup(): void
+    {
         $fks = $this->currencyCodeFks();
 
         foreach ($fks as $fk) {
@@ -117,25 +165,19 @@ class InstallAuditVarcharSizing extends Command
         }
 
         try {
-            foreach (self::TARGETS as $key => $type) {
+            foreach (self::CURRENCY_TARGETS as $key => $type) {
                 [$table, $column] = explode('.', $key);
                 $this->modifyColumn($table, $column, $type);
             }
-
-            $this->alignRoleEnums();
         } finally {
             foreach ($fks as $fk) {
                 DB::statement(
                     "ALTER TABLE `{$fk->TABLE_NAME}` ADD CONSTRAINT `{$fk->CONSTRAINT_NAME}` "
-                    .'FOREIGN KEY (`currency_code`) REFERENCES `currencies` (`code`) '
+                    ."FOREIGN KEY (`{$fk->COLUMN_NAME}`) REFERENCES `currencies` (`code`) "
                     ."ON DELETE {$fk->DELETE_RULE} ON UPDATE {$fk->UPDATE_RULE}"
                 );
             }
         }
-
-        $this->info('Audit varchar sizing complete.');
-
-        return self::SUCCESS;
     }
 
     /**
@@ -145,7 +187,10 @@ class InstallAuditVarcharSizing extends Command
      */
     private function alignRoleEnums(): void
     {
-        $enum = "enum('teller','manager','compliance_officer','accountant','admin')";
+        $enum = 'enum('.implode(',', array_map(
+            fn (UserRole $role) => "'{$role->value}'",
+            UserRole::cases()
+        )).')';
 
         foreach (['users.role', 'role_permissions.role'] as $key) {
             [$table, $column] = explode('.', $key);
@@ -157,12 +202,12 @@ class InstallAuditVarcharSizing extends Command
      * FK constraints that reference currencies.code, with their delete/
      * update rules for re-creation after the resize.
      *
-     * @return array<int, object{TABLE_NAME: string, CONSTRAINT_NAME: string, DELETE_RULE: string, UPDATE_RULE: string}>
+     * @return array<int, object{TABLE_NAME: string, COLUMN_NAME: string, CONSTRAINT_NAME: string, DELETE_RULE: string, UPDATE_RULE: string}>
      */
     private function currencyCodeFks(): array
     {
         return DB::select(
-            'SELECT k.TABLE_NAME, k.CONSTRAINT_NAME, r.DELETE_RULE, r.UPDATE_RULE '
+            'SELECT k.TABLE_NAME, k.COLUMN_NAME, k.CONSTRAINT_NAME, r.DELETE_RULE, r.UPDATE_RULE '
             .'FROM information_schema.KEY_COLUMN_USAGE k '
             .'JOIN information_schema.REFERENTIAL_CONSTRAINTS r '
             .'ON r.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME = k.CONSTRAINT_NAME '
@@ -173,8 +218,25 @@ class InstallAuditVarcharSizing extends Command
         );
     }
 
+    /**
+     * Lowercase COLUMN_TYPE of the column, or null when it does not exist.
+     */
+    private function currentType(string $table, string $column): ?string
+    {
+        $row = DB::selectOne(
+            'SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+            [DB::getDatabaseName(), $table, $column]
+        );
+
+        return $row === null ? null : strtolower($row->COLUMN_TYPE);
+    }
+
     private function modifyColumn(string $table, string $column, string $type): void
     {
+        if ($this->currentType($table, $column) === $type) {
+            return;
+        }
+
         $meta = DB::selectOne(
             'SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, CHARACTER_SET_NAME, COLLATION_NAME '
             .'FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
@@ -184,10 +246,6 @@ class InstallAuditVarcharSizing extends Command
         if ($meta === null) {
             $this->warn("{$table}.{$column}: not found — skipped");
 
-            return;
-        }
-
-        if (strtolower($meta->COLUMN_TYPE) === $type) {
             return;
         }
 

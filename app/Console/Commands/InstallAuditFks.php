@@ -23,8 +23,8 @@ class InstallAuditFks extends Command
     protected $description = 'Add missing foreign keys and supporting indexes on an existing database';
 
     /**
-     * table => [ column, referencedTable, referencedColumn, onDelete,
-     *            constraintName, supportingIndexName ]
+     * [ table, column, referencedTable, referencedColumn, onDelete,
+     *   constraintName, supportingIndexName ]
      *
      * @var array<int, array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string}>
      */

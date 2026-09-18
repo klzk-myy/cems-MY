@@ -15,18 +15,19 @@ interface CurrencyPositionServiceInterface
         string $amount,
         string $rate,
         string $type,
-        string $tillId = 'MAIN'
+        ?string $branchId = null,
+        ?Transaction $snapshotFor = null
     ): CurrencyPosition;
 
-    public function getPositionWithLock(string $currencyCode, string $tillId): ?CurrencyPosition;
+    public function getPositionWithLock(string $currencyCode, string $branchId): ?CurrencyPosition;
 
-    public function getPosition(string $currencyCode, ?string $tillId = null): ?CurrencyPosition;
+    public function getPosition(string $currencyCode, ?string $branchId = null): ?CurrencyPosition;
 
-    public function getPositionForTransaction(string $currencyCode, string $tillId): ?CurrencyPosition;
+    public function getPositionForTransaction(string $currencyCode, string $branchId): ?CurrencyPosition;
 
-    public function getAllPositions(string $tillId = 'MAIN'): Collection;
+    public function getAllPositions(?string $branchId = null): Collection;
 
-    public function getTotalPnl(string $tillId = 'MAIN'): string;
+    public function getTotalPnl(?string $branchId = null): string;
 
     public function getVisiblePositionsForUser(User $user): Collection;
 

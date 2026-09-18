@@ -46,6 +46,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `cems_my_staging`.* TO 'cems_app'@'local
 CREATE USER IF NOT EXISTS 'cems_ddl'@'localhost' IDENTIFIED BY 'CHANGE_ME_strong_password2';
 GRANT ALL PRIVILEGES ON `cems_my_staging`.* TO 'cems_ddl'@'localhost';
 
+-- IMPORTANT: once .env points at DML-only cems_app, every deploy-time
+-- installer (pools:install-remittances-table, db:install-audit-*, etc.)
+-- fails on ALTER. Deploy must invoke those commands under the cems_ddl
+-- credentials — e.g. a separate env file / secret on the deploy target:
+--   DB_USERNAME=cems_ddl DB_PASSWORD=... php artisan db:install-audit-fks --force
+-- Update the deploy workflow to inject those credentials for the
+-- installer steps only, keep the runtime .env on cems_app.
+
 -- After .env is switched to cems_app and deploy uses cems_ddl:
 -- DROP USER 'cems_staging'@'localhost';
 

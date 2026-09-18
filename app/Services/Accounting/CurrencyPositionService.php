@@ -211,7 +211,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         DB::transaction(function () use ($transaction) {
             $position = $this->lockService->findForUpdate(
-                (string) $transaction->branch_id,
+                $transaction->branch_id !== null ? (string) $transaction->branch_id : null,
                 $transaction->currency_code
             );
 
@@ -290,7 +290,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
         // Invalidate cache for available balance
         $this->cacheInvalidationService->forgetPosition(
-            (string) $transaction->branch_id,
+            $transaction->branch_id !== null ? (string) $transaction->branch_id : null,
             $transaction->currency_code
         );
     }
@@ -447,7 +447,11 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             // up with the counter code (e.g. 'C01') always returned empty.
             $activeSession->loadMissing('counter');
 
-            return $this->getAllPositions((string) $activeSession->counter?->branch_id);
+            return $this->getAllPositions(
+                $activeSession->counter?->branch_id !== null
+                    ? (string) $activeSession->counter->branch_id
+                    : null
+            );
         }
 
         return new Collection;
