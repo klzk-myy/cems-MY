@@ -131,6 +131,8 @@ php artisan serve
 
 The project is migration-free: `database/seeders/SchemaSeeder.php` is the single source of truth for schema creation. It drops and recreates every table, so run it only on an empty database or through the guarded setup/reset flows.
 
+Schema changes on an **already-seeded** database ship as idempotent Artisan installers that the deploy workflow runs automatically — never hand-edited SQL. The DB-audit family: `db:install-audit-type-fixes` (bigint normalization), `db:install-audit-fks` (foreign keys + supporting indexes, with orphan pre-scan), `db:install-audit-index-cleanup` (guarded duplicate drops), `db:install-audit-varchar-sizing` (semantic column right-sizing). Server-level hardening that needs root is packaged in `scripts/db-sysadmin-hardening.sql`.
+
 ## Deployment (Production)
 
 Step-by-step for a bare server. Supported targets: **Ubuntu** (20.04+), **AlmaLinux** and **Oracle Linux** (8/9), on **x86_64 or aarch64/ARM** — detected automatically.
