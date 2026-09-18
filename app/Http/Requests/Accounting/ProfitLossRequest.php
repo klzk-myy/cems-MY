@@ -28,6 +28,7 @@ class ProfitLossRequest extends AuthorizedFormRequest
         return [
             'from' => 'nullable|date',
             'to' => 'nullable|date',
+            'branch_id' => 'nullable|integer|exists:branches,id',
         ];
     }
 }

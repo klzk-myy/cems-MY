@@ -3,6 +3,18 @@
         <x-page-header title="General Ledger" description="View account ledger entries" />
 
         <x-filter-bar method="GET">
+            @if ($canSelectBranch)
+                <x-select
+                    name="branch_id"
+                    label="Branch"
+                    :options="$branches->pluck('name', 'id')->toArray()"
+                    :selected="$currentBranch?->id"
+                    placeholder="All branches"
+                    inline
+                />
+            @elseif ($currentBranch)
+                <span class="self-center text-sm text-ink-muted">Branch: <span class="font-medium text-ink">{{ $currentBranch->name }}</span></span>
+            @endif
             <x-select
                 name="account_code"
                 label="Account"

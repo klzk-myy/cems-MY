@@ -28,6 +28,7 @@ class LedgerRequest extends AuthorizedFormRequest
         return [
             'from' => 'nullable|date',
             'to' => 'nullable|date',
+            'branch_id' => 'nullable|integer|exists:branches,id',
             'account_code' => 'nullable|string|exists:chart_of_accounts,account_code',
         ];
     }

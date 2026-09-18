@@ -3,6 +3,11 @@
         <x-page-header title="Trial Balance" description="As of {{ $asOfDate }}">
             <x-slot:actions>
                 <form method="GET" class="flex items-center gap-3">
+                    @if ($canSelectBranch)
+                        <x-select name="branch_id" :options="['' => 'All branches'] + $branches->pluck('name', 'id')->toArray()" :selected="$currentBranch?->id" inline />
+                    @elseif ($currentBranch)
+                        <span class="text-sm text-ink-muted">Branch: <span class="font-medium text-ink">{{ $currentBranch->name }}</span></span>
+                    @endif
                     <x-input type="date" name="as_of_date" :value="$asOfDate" inline />
                     <x-button type="submit" variant="primary">Refresh</x-button>
                 </form>

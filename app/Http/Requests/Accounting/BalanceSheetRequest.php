@@ -27,6 +27,7 @@ class BalanceSheetRequest extends AuthorizedFormRequest
     {
         return [
             'as_of_date' => 'nullable|date',
+            'branch_id' => 'nullable|integer|exists:branches,id',
         ];
     }
 }

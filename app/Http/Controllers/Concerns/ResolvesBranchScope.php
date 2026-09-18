@@ -23,4 +23,22 @@ trait ResolvesBranchScope
         // branch's rates; an unassigned user falls back to company-wide.
         return $user?->branch_id;
     }
+
+    /**
+     * Branch scope for accounting reports: privileged users default to the
+     * consolidated all-branch view (null) and may pick a single branch via
+     * branch_id; every other role is pinned to its own branch and must have
+     * one assigned — an unassigned branch user gets 403, never a silent
+     * consolidated view.
+     */
+    protected function resolveReportBranchId(?User $user, Request $request): ?int
+    {
+        if ($user?->role->canManageAllBranches()) {
+            return $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
+        }
+
+        abort_if($user?->branch_id === null, 403, 'Your account is not assigned to a branch.');
+
+        return $user->branch_id;
+    }
 }

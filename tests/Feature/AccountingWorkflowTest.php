@@ -274,6 +274,120 @@ class AccountingWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function branch_scoped_report_is_pinned_to_own_branch(): void
+    {
+        $otherBranch = Branch::factory()->create();
+        $otherManager = User::factory()->create([
+            'username' => 'mgr'.substr(uniqid(), -6),
+            'email' => 'mgr-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => $otherBranch->id,
+            'is_active' => true,
+        ]);
+
+        // Ledger activity exists only in the other branch.
+        $this->accountingService->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '42.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '42.00'],
+            ],
+            'Manual',
+            null,
+            'Other branch entry',
+            now()->toDateString(),
+            $otherManager->id,
+            $otherBranch->id
+        );
+
+        // A forged branch_id is ignored — the manager stays pinned to its
+        // own branch and the other branch's posting is excluded.
+        $response = $this->actingAs($this->manager)
+            ->get('/accounting/trial-balance?branch_id='.$otherBranch->id);
+
+        $response->assertOk();
+        $response->assertViewHas('canSelectBranch', false);
+        $response->assertViewHas('currentBranch', fn ($branch) => $branch?->id === $this->branch->id);
+
+        /** @var array<int, array{account_code: string, balance: string}> $accounts */
+        $accounts = $response->viewData('trialBalance')['accounts'];
+        $cash = collect($accounts)->firstWhere('account_code', $this->cashAccount->account_code);
+        $this->assertSame(0.0, (float) $cash['balance']);
+    }
+
+    #[Test]
+    public function cross_branch_report_user_can_select_branch_or_consolidated(): void
+    {
+        $accountant = User::factory()->create([
+            'username' => 'acct'.substr(uniqid(), -6),
+            'email' => 'acct-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Accountant,
+            'branch_id' => $this->branch->id,
+            'is_active' => true,
+        ]);
+
+        $otherBranch = Branch::factory()->create();
+        $otherManager = User::factory()->create([
+            'username' => 'mgr'.substr(uniqid(), -6),
+            'email' => 'mgr-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => $otherBranch->id,
+            'is_active' => true,
+        ]);
+
+        $this->accountingService->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => '42.00', 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => '42.00'],
+            ],
+            'Manual',
+            null,
+            'Other branch entry',
+            now()->toDateString(),
+            $otherManager->id,
+            $otherBranch->id
+        );
+
+        // Explicit branch selection scopes the report to that branch.
+        $response = $this->actingAs($accountant)
+            ->get('/accounting/trial-balance?branch_id='.$otherBranch->id);
+
+        $response->assertOk();
+        $response->assertViewHas('canSelectBranch', true);
+        $response->assertViewHas('currentBranch', fn ($branch) => $branch?->id === $otherBranch->id);
+
+        /** @var array<int, array{account_code: string, balance: string}> $accounts */
+        $accounts = $response->viewData('trialBalance')['accounts'];
+        $cash = collect($accounts)->firstWhere('account_code', $this->cashAccount->account_code);
+        $this->assertSame(42.0, (float) $cash['balance']);
+
+        // No branch_id means the consolidated all-branch view.
+        $response = $this->actingAs($accountant)->get('/accounting/trial-balance');
+
+        $response->assertOk();
+        $response->assertViewHas('currentBranch', null);
+    }
+
+    #[Test]
+    public function unassigned_branch_user_cannot_view_branch_reports(): void
+    {
+        $orphan = User::factory()->create([
+            'username' => 'orphan'.substr(uniqid(), -6),
+            'email' => 'orphan-'.uniqid().'@test.com',
+            'password_hash' => bcrypt('password'),
+            'role' => UserRole::Manager,
+            'branch_id' => null,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($orphan)
+            ->get('/accounting/trial-balance')
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function accountant_can_post_an_expense_for_another_branch(): void
     {
         $accountant = User::factory()->create([

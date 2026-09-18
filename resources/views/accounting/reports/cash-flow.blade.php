@@ -8,6 +8,11 @@
 
         <x-filter-bar>
             <form method="GET" class="flex flex-wrap items-end gap-3">
+                @if ($canSelectBranch)
+                    <x-select name="branch_id" label="Branch" :options="['' => 'All branches'] + $branches->pluck('name', 'id')->toArray()" :selected="$currentBranch?->id" inline />
+                @elseif ($currentBranch)
+                    <span class="self-center text-sm text-ink-muted">Branch: <span class="font-medium text-ink">{{ $currentBranch->name }}</span></span>
+                @endif
                 <x-input name="from" label="From" type="date" :value="$from" inline />
                 <x-input name="to" label="To" type="date" :value="$to" inline />
                 <x-button variant="secondary" type="submit">Apply</x-button>
