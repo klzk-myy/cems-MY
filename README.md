@@ -38,6 +38,11 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - Float management and reconciliation
   - Real-time till status monitoring
   - End-of-day (EOD) reconciliation per counter and per date
+  - Merged **Day Close** on the branch-closing page: inline reconciliation → settle → finalize, which freezes the branch's business date (audited reopen for cross-branch users)
+
+- **Branch Pools**
+  - Per-branch, per-currency pools feeding teller allocations
+  - Two-step **pool remittance** for MYR capital between a branch and HQ: initiate → value held in inter-branch clearing (`2300`) → receiver acknowledges → pool credited
 
 - **Double-Entry Accounting**
   - Complete ledger system with trial balance, P&L, balance sheet
@@ -447,6 +452,10 @@ See `.gitnexus/` for index data. GitNexus enables:
 - **Stock transfers** are maker/taker: source branch manager creates, destination branch manager approves — no HQ approval step
 - **Petty cash**: per-branch MYR float for branch expenses, posted by the branch manager
 - **Rates**: each branch has its own rate card, set by its manager with no approval requirement
+- **Branch scope**: the `branch.scope` middleware confines branch users to their own branch (403 otherwise); branch-role users with no assigned branch can log in but get 403 on branch-scoped pages
+- **Branch reports**: branch users see only their own branch on all accounting reports; admin/accountant get a per-branch selector plus consolidated view
+- **Day close freeze**: finalizing a branch's Day Close freezes that branch's business date — no sessions, transactions, journals, or expenses can be posted on or before it (branch-local; other branches keep trading; audited reopen for cross-branch users)
+- **Pool remittance**: MYR capital moves branch↔HQ through a two-step acknowledge via the inter-branch clearing account `2300`; foreign currency moves branch↔branch via stock transfers only
 - **Fiscal year-end**: 31 December (configurable via `FISCAL_YEAR_END_MONTH`/`FISCAL_YEAR_END_DAY`)
 
 ## Security
