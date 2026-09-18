@@ -243,7 +243,7 @@ abstract class TestCase extends BaseTestCase
             'requested_amount' => $openingBalance,
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => now()->toDateString(),
         ]);
 

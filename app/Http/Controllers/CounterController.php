@@ -291,7 +291,7 @@ class CounterController extends Controller
         // over to another teller — anything else fails inside the service.
         $requiresTellerReceiver = TellerAllocation::query()
             ->where('user_id', $session->user_id)
-            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->where('status', TellerAllocationStatus::Active->value)
             ->whereDate('session_date', now()->toDateString())
             ->exists();
 

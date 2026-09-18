@@ -136,7 +136,7 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $this->assertCount(1, $requests);
         $allocation = $requests[0];
-        $this->assertEquals(TellerAllocationStatus::PENDING, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Pending, $allocation->status);
         $this->assertEquals($this->tellerA->id, $allocation->user_id);
 
         $approvedAmount = '45000.0000';
@@ -156,7 +156,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals($this->counter->id, $session->counter_id);
 
         $allocation->refresh();
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
         $this->assertEquals($this->counter->id, $allocation->counter_id);
 
         $this->pool->refresh();
@@ -194,7 +194,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->tellerAllocationService->returnToPool($allocation);
 
         $allocation->refresh();
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
         $this->assertNotNull($allocation->closed_at);
 
         $this->pool->refresh();
@@ -225,7 +225,7 @@ class BranchAllocationWorkflowTest extends TestCase
             ->where('currency_code', 'USD')
             ->first();
 
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
         $this->assertEquals($this->tellerA->id, $allocation->user_id);
 
         $result = $this->counterHandoverService->initiateHandover(
@@ -243,7 +243,7 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $allocation->refresh();
         $this->assertEquals($this->tellerB->id, $allocation->user_id);
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
     }
 
     #[Test]
@@ -305,7 +305,7 @@ class BranchAllocationWorkflowTest extends TestCase
             ->where('currency_code', 'USD')
             ->first();
 
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->fresh()->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->fresh()->status);
 
         $this->pool->refresh();
         $this->assertEquals('100000.0000', $this->pool->available_balance);
@@ -355,7 +355,7 @@ class BranchAllocationWorkflowTest extends TestCase
             'user_id' => $this->tellerB->id,
             'branch_id' => $this->branch->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'allocated_amount' => '5000.0000',
             'current_balance' => '5000.0000',
             'requested_amount' => '5000.0000',
@@ -368,7 +368,7 @@ class BranchAllocationWorkflowTest extends TestCase
         );
 
         $allocation->refresh();
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
         $this->assertEquals('0.0000', $allocation->loaded_balance);
 
         // Custody (30,000) + loaded stock (10,000) both released the earmark.
@@ -377,7 +377,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->assertEquals('0.0000', $this->pool->allocated_balance);
 
         $allocationB->refresh();
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocationB->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocationB->status);
     }
 
     #[Test]

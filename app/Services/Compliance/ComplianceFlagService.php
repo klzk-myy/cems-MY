@@ -99,11 +99,11 @@ class ComplianceFlagService
                 return [
                     'open' => $counts->get('Open', 0),
                     'under_review' => $counts->get('Under_Review', 0),
-                    'resolved_today' => FlaggedTransaction::where('status', 'Resolved')
+                    'resolved_today' => FlaggedTransaction::where('status', FlagStatus::Resolved->value)
                         ->whereBetween('resolved_at', [today()->startOfDay(), today()->endOfDay()])
                         ->count(),
                     'high_priority' => FlaggedTransaction::whereIn('flag_type', ['Sanction_Match', 'Structuring', 'Velocity'])
-                        ->where('status', '!=', 'Resolved')
+                        ->where('status', '!=', FlagStatus::Resolved->value)
                         ->count(),
                 ];
             }

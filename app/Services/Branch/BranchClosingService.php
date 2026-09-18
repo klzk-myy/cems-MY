@@ -40,7 +40,7 @@ class BranchClosingService
         $workflow = BranchClosureWorkflow::create([
             'branch_id' => $branch->id,
             'initiated_by' => $initiator->id,
-            'status' => 'initiated',
+            'status' => BranchClosureStatus::Initiated->value,
         ]);
 
         return $workflow;
@@ -111,7 +111,7 @@ class BranchClosingService
             // Archive the day's proof on the workflow row: the checklist that
             // passed plus a snapshot of the reconciliation the manager saw.
             $lockedWorkflow->update([
-                'status' => 'finalized',
+                'status' => BranchClosureStatus::Finalized->value,
                 'finalized_at' => now(),
                 'checklist' => [
                     'results' => $checklist,
@@ -161,7 +161,7 @@ class BranchClosingService
             $frozenDate = $lockedWorkflow->finalized_at?->toDateString();
 
             $lockedWorkflow->update([
-                'status' => 'settled',
+                'status' => BranchClosureStatus::Settled->value,
                 'finalized_at' => null,
             ]);
 
@@ -230,7 +230,7 @@ class BranchClosingService
     public function getActiveWorkflow(Branch $branch): ?BranchClosureWorkflow
     {
         return BranchClosureWorkflow::where('branch_id', $branch->id)
-            ->whereIn('status', ['initiated', 'settled'])
+            ->whereIn('status', [BranchClosureStatus::Initiated->value, BranchClosureStatus::Settled->value])
             ->latest()
             ->first();
     }
@@ -269,7 +269,7 @@ class BranchClosingService
             $activeAllocations = TellerAllocation::query()
                 ->with(['counter', 'user', 'branch'])
                 ->where('branch_id', $branch->id)
-                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->where('status', TellerAllocationStatus::Active->value)
                 ->get();
 
             foreach ($activeAllocations as $allocation) {
@@ -283,8 +283,8 @@ class BranchClosingService
             $cancelledRequests = TellerAllocation::query()
                 ->where('branch_id', $branch->id)
                 ->whereIn('status', [
-                    TellerAllocationStatus::PENDING->value,
-                    TellerAllocationStatus::APPROVED->value,
+                    TellerAllocationStatus::Pending->value,
+                    TellerAllocationStatus::Approved->value,
                 ])
                 ->get()
                 ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->cancelAllocation(
@@ -311,7 +311,7 @@ class BranchClosingService
             );
 
             $lockedWorkflow->update([
-                'status' => 'settled',
+                'status' => BranchClosureStatus::Settled->value,
                 'settlement_at' => now(),
             ]);
         });
@@ -333,7 +333,7 @@ class BranchClosingService
     protected function checkAllocationsReturned(Branch $branch): bool
     {
         $activeAllocations = TellerAllocation::where('branch_id', $branch->id)
-            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->where('status', TellerAllocationStatus::Active->value)
             ->count();
 
         return $activeAllocations === 0;

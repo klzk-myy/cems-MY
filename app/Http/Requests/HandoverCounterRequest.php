@@ -43,7 +43,7 @@ class HandoverCounterRequest extends AuthorizedFormRequest
             // teller — surface that as a field error instead of a 500-flash.
             $hasActiveAllocations = TellerAllocation::query()
                 ->where('user_id', $this->input('from_user_id'))
-                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->where('status', TellerAllocationStatus::Active->value)
                 ->whereDate('session_date', now()->toDateString())
                 ->exists();
 

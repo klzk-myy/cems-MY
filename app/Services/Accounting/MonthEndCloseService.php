@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountingPeriodStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\ReportType;
 use App\Exceptions\Domain\AccountingPeriodException;
@@ -99,7 +100,7 @@ class MonthEndCloseService
 
         if ($period) {
             $openPeriods = AccountingPeriod::forDate($date->toDateString())
-                ->where('status', 'Open')
+                ->where('status', AccountingPeriodStatus::Open->value)
                 ->where('id', '!=', $period->id)
                 ->count();
 
@@ -194,7 +195,7 @@ class MonthEndCloseService
                     'start_date' => $nextMonth->startOfMonth()->toDateString(),
                     'end_date' => $nextMonth->endOfMonth()->toDateString(),
                     'period_type' => 'month',
-                    'status' => 'Open',
+                    'status' => AccountingPeriodStatus::Open->value,
                     'fiscal_year_id' => $nextFiscalYear?->id,
                 ]);
             }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\EddStatus;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
@@ -476,7 +477,7 @@ class ReportSchedulingService
         }
 
         $completedEdds = EnhancedDiligenceRecord::where('created_at', '>=', now()->subDays(30))
-            ->whereIn('status', ['approved', 'rejected'])
+            ->whereIn('status', [EddStatus::Approved->value, EddStatus::Rejected->value])
             ->count();
 
         return ($completedEdds / $totalEdds) * 100;

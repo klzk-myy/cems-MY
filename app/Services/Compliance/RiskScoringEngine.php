@@ -3,6 +3,7 @@
 namespace App\Services\Compliance;
 
 use App\Enums\EddStatus;
+use App\Enums\FindingStatus;
 use App\Enums\FindingType;
 use App\Enums\RecalculationTrigger;
 use App\Enums\TransactionStatus;
@@ -165,7 +166,7 @@ class RiskScoringEngine
                             'delta' => $scoreDelta,
                             'trigger' => $trigger->value,
                         ],
-                        'status' => 'New',
+                        'status' => FindingStatus::New->value,
                         'generated_at' => now(),
                     ]);
                 }

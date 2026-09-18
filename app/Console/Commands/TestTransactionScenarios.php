@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\CounterSessionStatus;
 use App\Enums\RiskRating;
+use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -115,7 +117,7 @@ class TestTransactionScenarios extends Command
                     'user_id' => $teller->id,
                     'session_date' => now()->toDateString(),
                     'opened_at' => now(),
-                    'status' => 'open',
+                    'status' => CounterSessionStatus::Open->value,
                     'opened_by' => $teller->id,
                 ]);
 
@@ -134,7 +136,7 @@ class TestTransactionScenarios extends Command
                         'daily_used_myr' => '0',
                         'session_date' => now()->toDateString(),
                         'opened_at' => now(),
-                        'status' => 'active',
+                        'status' => TellerAllocationStatus::Active->value,
                     ]
                 );
             }

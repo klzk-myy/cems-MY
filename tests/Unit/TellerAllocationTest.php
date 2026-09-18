@@ -28,7 +28,7 @@ class TellerAllocationTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => $currency->code,
             'session_date' => now()->toDateString(),
-            'status' => TellerAllocationStatus::PENDING,
+            'status' => TellerAllocationStatus::Pending,
         ]);
 
         $this->assertDatabaseHas('teller_allocations', [
@@ -142,7 +142,7 @@ class TellerAllocationTest extends TestCase
 
         $allocation->approve($approver, '50000.0000', '100000.0000');
 
-        $this->assertEquals(TellerAllocationStatus::APPROVED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Approved, $allocation->status);
         $this->assertEquals('50000.0000', $allocation->allocated_amount);
         $this->assertEquals('50000.0000', $allocation->current_balance);
         $this->assertEquals('100000.0000', $allocation->daily_limit_myr);
@@ -158,7 +158,7 @@ class TellerAllocationTest extends TestCase
 
         $allocation->activate();
 
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
         $this->assertNotNull($allocation->opened_at);
     }
 
@@ -170,7 +170,7 @@ class TellerAllocationTest extends TestCase
 
         $allocation->returnToPool();
 
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
         $this->assertNotNull($allocation->closed_at);
     }
 
@@ -222,7 +222,7 @@ class TellerAllocationTest extends TestCase
     {
         $allocation = TellerAllocation::factory()->pending()->create();
 
-        $this->assertEquals(TellerAllocationStatus::PENDING, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Pending, $allocation->status);
         $this->assertNull($allocation->approved_by);
         $this->assertNull($allocation->opened_at);
         $this->assertNull($allocation->closed_at);
@@ -233,7 +233,7 @@ class TellerAllocationTest extends TestCase
     {
         $allocation = TellerAllocation::factory()->active()->create();
 
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
         $this->assertNotNull($allocation->approved_by);
         $this->assertNotNull($allocation->approved_at);
         $this->assertNotNull($allocation->opened_at);
@@ -245,7 +245,7 @@ class TellerAllocationTest extends TestCase
     {
         $allocation = TellerAllocation::factory()->returned()->create();
 
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
         $this->assertNotNull($allocation->approved_by);
         $this->assertNotNull($allocation->approved_at);
         $this->assertNotNull($allocation->opened_at);

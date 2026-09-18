@@ -149,7 +149,7 @@ class TransactionServiceTest extends TestCase
             'requested_amount' => '60000.0000',
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
             'approved_by' => $this->manager->id,
             'approved_at' => now(),

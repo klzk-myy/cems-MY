@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CustomerDocumentStatus;
 use App\Enums\DocumentType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $verified_at
  * @property Carbon|null $expiry_date
  * @property string|null $rejection_reason
+ * @property CustomerDocumentStatus|null $status
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -57,7 +59,7 @@ class CustomerDocument extends BaseModel
         'expiry_date' => 'date',
         'file_size' => 'integer',
         'document_type' => DocumentType::class,
-        'status' => 'string',
+        'status' => CustomerDocumentStatus::class,
     ];
 
     /**

@@ -5,6 +5,8 @@ namespace App\Services\System;
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountingPeriodType;
 use App\Enums\AccountMappingKey;
+use App\Enums\CounterStatus;
+use App\Enums\FiscalYearStatus;
 use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\Branch;
@@ -290,7 +292,7 @@ class SetupService
             // CRUD UI, so create a default counter bound to HQ.
             Counter::firstOrCreate(
                 ['code' => 'C01'],
-                ['name' => 'Counter 1', 'status' => 'active', 'branch_id' => $hqBranch->id],
+                ['name' => 'Counter 1', 'status' => CounterStatus::Active->value, 'branch_id' => $hqBranch->id],
             );
         }
 
@@ -424,8 +426,8 @@ class SetupService
      */
     public function createOpeningBalance(array $balanceData): void
     {
-        $fiscalYear = FiscalYear::where('status', 'Open')->first();
-        $period = AccountingPeriod::where('status', 'Open')->first();
+        $fiscalYear = FiscalYear::where('status', FiscalYearStatus::Open->value)->first();
+        $period = AccountingPeriod::where('status', AccountingPeriodStatus::Open->value)->first();
         $adminUser = User::where('role', 'admin')->first();
 
         if (! $fiscalYear || ! $period || ! $adminUser) {

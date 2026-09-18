@@ -51,7 +51,7 @@ class TransactionStoreResponseShapeTest extends TestCase
             'allocated_amount' => '10000.00',
             'current_balance' => '10000.00',
             'daily_used_myr' => '0.00',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
         ]);
 

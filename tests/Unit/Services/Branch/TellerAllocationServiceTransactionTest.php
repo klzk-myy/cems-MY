@@ -40,7 +40,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => $currencyCode,
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'allocated_amount' => $currentBalance,
             'current_balance' => $currentBalance,
             'daily_limit_myr' => $dailyLimitMyr,
@@ -181,7 +181,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
 
         $returned = $this->activeAllocation($teller, $branch, 'USD', '500.0000');
-        $returned->update(['status' => TellerAllocationStatus::RETURNED]);
+        $returned->update(['status' => TellerAllocationStatus::Returned]);
         $active = $this->activeAllocation($teller, $branch, 'USD', '9000.0000');
 
         $transaction = $this->transaction($teller, $branch, TransactionType::Sell, 'USD', '100.0000', '450.0000');

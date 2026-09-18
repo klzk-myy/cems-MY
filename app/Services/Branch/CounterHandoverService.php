@@ -378,7 +378,7 @@ class CounterHandoverService
         TellerAllocation::query()
             ->with(['counter', 'user', 'branch'])
             ->where('user_id', $fromUser->id)
-            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->where('status', TellerAllocationStatus::Active->value)
             ->whereDate('session_date', $today)
             ->get()
             ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->transferToTeller($allocation, $toUser));
@@ -480,7 +480,7 @@ class CounterHandoverService
 
             // Return previous teller's allocation to branch pool
             $fromAllocation = TellerAllocation::where('user_id', $locked->from_user_id)
-                ->where('status', TellerAllocationStatus::ACTIVE)
+                ->where('status', TellerAllocationStatus::Active)
                 ->whereDate('session_date', now()->toDateString())
                 ->first();
 
@@ -490,7 +490,7 @@ class CounterHandoverService
 
             // Activate new teller's allocation
             $toAllocation = TellerAllocation::where('user_id', $locked->to_user_id)
-                ->where('status', TellerAllocationStatus::APPROVED)
+                ->where('status', TellerAllocationStatus::Approved)
                 ->whereDate('session_date', now()->toDateString())
                 ->first();
 

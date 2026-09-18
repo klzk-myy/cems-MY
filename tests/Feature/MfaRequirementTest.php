@@ -96,7 +96,7 @@ class MfaRequirementTest extends TestCase
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::PENDING,
+            'status' => TellerAllocationStatus::Pending,
             'session_date' => now()->toDateString(),
         ]);
 
@@ -149,7 +149,7 @@ class MfaRequirementTest extends TestCase
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::PENDING,
+            'status' => TellerAllocationStatus::Pending,
             'session_date' => now()->toDateString(),
         ]);
 

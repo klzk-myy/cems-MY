@@ -2,8 +2,11 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountingPeriodType;
 use App\Enums\AccountMappingKey;
+use App\Enums\FiscalYearStatus;
+use App\Enums\JournalEntryStatus;
 use App\Enums\Permission;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\FiscalYearClosedException;
@@ -59,7 +62,7 @@ class FiscalYearService
             'year_code' => $yearCode,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'status' => 'Open',
+            'status' => FiscalYearStatus::Open->value,
         ]);
 
         // Attach any existing unlinked periods that fall inside the year so
@@ -82,7 +85,7 @@ class FiscalYearService
                     'start_date' => $month->copy()->startOfMonth()->toDateString(),
                     'end_date' => $month->copy()->endOfMonth()->toDateString(),
                     'period_type' => AccountingPeriodType::Month->value,
-                    'status' => 'Open',
+                    'status' => AccountingPeriodStatus::Open->value,
                 ]
             );
             $month->addMonth();
@@ -170,7 +173,7 @@ class FiscalYearService
 
             // Update fiscal year status
             $lockedYear->update([
-                'status' => 'Closed',
+                'status' => FiscalYearStatus::Closed->value,
                 'closed_by' => $userId,
                 'closed_at' => now(),
             ]);
@@ -245,7 +248,7 @@ class FiscalYearService
      */
     protected function validateAllPeriodsClosed(FiscalYear $year): void
     {
-        $openPeriods = $year->periods()->where('status', 'Open')->count();
+        $openPeriods = $year->periods()->where('status', AccountingPeriodStatus::Open->value)->count();
 
         if ($openPeriods > 0) {
             throw new OpenPeriodsException($openPeriods);
@@ -283,7 +286,7 @@ class FiscalYearService
             'period_id' => $this->getPeriodId($entryDate),
             'reference_type' => 'FiscalYearClosing',
             'description' => 'Closing Revenue to Income Summary',
-            'status' => 'Posted',
+            'status' => JournalEntryStatus::Posted->value,
             'created_by' => $userId,
             'posted_by' => $userId,
             'posted_at' => now(),
@@ -357,7 +360,7 @@ class FiscalYearService
             'period_id' => $this->getPeriodId($entryDate),
             'reference_type' => 'FiscalYearClosing',
             'description' => 'Closing Expenses to Income Summary',
-            'status' => 'Posted',
+            'status' => JournalEntryStatus::Posted->value,
             'created_by' => $userId,
             'posted_by' => $userId,
             'posted_at' => now(),
@@ -430,7 +433,7 @@ class FiscalYearService
             'period_id' => $this->getPeriodId($entryDate),
             'reference_type' => 'FiscalYearClosing',
             'description' => 'Close Income Summary to Retained Earnings',
-            'status' => 'Posted',
+            'status' => JournalEntryStatus::Posted->value,
             'created_by' => $userId,
             'posted_by' => $userId,
             'posted_at' => now(),

@@ -465,7 +465,7 @@ class TransactionApprovalServiceTest extends TestCase
             'current_balance' => '10000.00',
             'daily_limit_myr' => '50000.00',
             'daily_used_myr' => '0.00',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
         ]);
 

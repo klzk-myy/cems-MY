@@ -44,7 +44,7 @@
                         </td>
                         <td class="px-4 py-3 text-right font-medium">{{ number_format($transaction->amount_local, 2) }} {{ $transaction->currency_code }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status?->value === 'Completed' ? 'bg-success/10 text-success' : (str_starts_with((string) $transaction->status?->value, 'Pending') ? 'bg-warning/10 text-warning' : 'bg-gray/10 text-muted') }}">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status === \App\Enums\TransactionStatus::Completed ? 'bg-success/10 text-success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'bg-warning/10 text-warning' : 'bg-gray/10 text-muted') }}">
                                 {{ $transaction->status->label() }}
                             </span>
                         </td>

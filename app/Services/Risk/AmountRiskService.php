@@ -2,6 +2,7 @@
 
 namespace App\Services\Risk;
 
+use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\System\MathService;
@@ -55,7 +56,7 @@ class AmountRiskService
     {
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subDays($days))
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', TransactionStatus::Cancelled->value)
             ->max('amount_local') ?? '0';
     }
 
@@ -68,7 +69,7 @@ class AmountRiskService
     {
         $query = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subDays($days))
-            ->where('status', '!=', 'cancelled');
+            ->where('status', '!=', TransactionStatus::Cancelled->value);
 
         // CAST to CHAR keeps the DECIMAL exact; sum() would return a PHP float.
         $total = (string) ((clone $query)

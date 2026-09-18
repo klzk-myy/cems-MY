@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\ApprovalStatus;
 use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApprovePepApprovalRequest;
@@ -35,7 +36,7 @@ class PepApprovalController extends Controller
     public function index(Request $request): View
     {
         $pending = PepApprovalRequest::with(['customer'])
-            ->where('status', 'pending')
+            ->where('status', ApprovalStatus::Pending->value)
             ->orderByDesc('created_at')
             ->paginate(25);
 

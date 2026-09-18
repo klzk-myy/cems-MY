@@ -57,7 +57,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             'allocated_amount' => $requestedAmount,
             'current_balance' => 0,
             'daily_used_myr' => 0,
-            'status' => TellerAllocationStatus::PENDING->value,
+            'status' => TellerAllocationStatus::Pending->value,
             'session_date' => now()->toDateString(),
         ];
 
@@ -94,7 +94,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->firstOrFail();
 
             if (! $locked->isPending()) {
-                throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
             }
 
             if (! $this->branchPoolService->allocateToTeller($this->allocationBranchOrFail($locked), $locked->currency_code, $approvedAmount)) {
@@ -112,7 +112,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
     {
         if (! $allocation->isApproved()) {
-            throw new InvalidAllocationStateException(TellerAllocationStatus::APPROVED->value);
+            throw new InvalidAllocationStateException(TellerAllocationStatus::Approved->value);
         }
 
         $allocation->activate();
@@ -138,7 +138,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->first();
 
             if (! $locked || ! $locked->isActive()) {
-                throw new InvalidAllocationStateException(TellerAllocationStatus::ACTIVE->value);
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Active->value);
             }
 
             $till = TillBalance::where('till_id', $session->tillCode())
@@ -268,7 +268,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
     {
         if (! $allocation->isPending()) {
-            throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
+            throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
         }
 
         return DB::transaction(function () use ($allocation, $rejector, $reason) {
@@ -298,12 +298,12 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($locked->status->value === TellerAllocationStatus::APPROVED->value) {
+            if ($locked->status->value === TellerAllocationStatus::Approved->value) {
                 if ($this->mathService->compare((string) $locked->allocated_amount, '0') > 0) {
                     $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, (string) $locked->allocated_amount);
                 }
-            } elseif ($locked->status->value !== TellerAllocationStatus::PENDING->value) {
-                throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
+            } elseif ($locked->status->value !== TellerAllocationStatus::Pending->value) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
             }
 
             $locked->cancel($actor, $reason);
@@ -319,8 +319,8 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($locked->status->value !== TellerAllocationStatus::ACTIVE->value) {
-                throw new InvalidAllocationStateException(TellerAllocationStatus::ACTIVE->value);
+            if ($locked->status->value !== TellerAllocationStatus::Active->value) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Active->value);
             }
 
             // The pool earmark releases for BOTH the unspent balance and any
@@ -354,7 +354,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     {
         return TellerAllocation::where('user_id', $teller->id)
             ->where('currency_code', $currencyCode)
-            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->where('status', TellerAllocationStatus::Active->value)
             ->whereDate('session_date', now()->toDateString())
             ->orderByDesc('current_balance')
             ->orderByDesc('id')
@@ -364,7 +364,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function getPendingAllocationsForBranch(Branch $branch): Collection
     {
         return TellerAllocation::where('branch_id', $branch->id)
-            ->where('status', TellerAllocationStatus::PENDING->value)
+            ->where('status', TellerAllocationStatus::Pending->value)
             ->whereDate('session_date', now()->toDateString())
             ->with(TellerAllocation::API_RELATIONS)
             ->get();
@@ -373,7 +373,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function getActiveAllocationsForBranch(Branch $branch): Collection
     {
         return TellerAllocation::where('branch_id', $branch->id)
-            ->where('status', TellerAllocationStatus::ACTIVE->value)
+            ->where('status', TellerAllocationStatus::Active->value)
             ->whereDate('session_date', now()->toDateString())
             ->with(TellerAllocation::API_RELATIONS)
             ->get();
@@ -573,7 +573,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     {
         if ($transaction->teller_allocation_id) {
             $pinned = TellerAllocation::where('id', $transaction->teller_allocation_id)
-                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->where('status', TellerAllocationStatus::Active->value)
                 ->whereDate('session_date', now()->toDateString())
                 ->first();
 

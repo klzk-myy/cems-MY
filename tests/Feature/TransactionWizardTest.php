@@ -60,7 +60,7 @@ class TransactionWizardTest extends TestCase
             'current_balance' => '100000.0000',
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
         ]);
         CurrencyPosition::factory()->create([

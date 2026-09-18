@@ -182,7 +182,7 @@ class BankReconciliation extends BaseModel
     public function markMatched(int $journalEntryId): void
     {
         $this->update([
-            'status' => 'matched',
+            'status' => BankReconciliationStatus::Matched->value,
             'matched_to_journal_entry_id' => $journalEntryId,
             'matched_at' => now(),
         ]);
@@ -194,7 +194,7 @@ class BankReconciliation extends BaseModel
     public function markUnmatched(): void
     {
         $this->update([
-            'status' => 'unmatched',
+            'status' => BankReconciliationStatus::Unmatched->value,
             'matched_to_journal_entry_id' => null,
             'matched_at' => null,
         ]);

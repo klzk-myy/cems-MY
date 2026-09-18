@@ -74,7 +74,7 @@ class SellDoesNotCreateEmptyPositionTest extends TestCase
             'requested_amount' => '0',
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
         ]);
 

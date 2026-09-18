@@ -279,7 +279,7 @@ class BranchClosingWorkflowTest extends TestCase
             'branch_id' => $this->branch->id,
             'user_id' => $this->tellerA->id,
             'counter_id' => $this->counter->id,
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
         ]);
 
         $response = $this->actingAs($user, 'sanctum')
@@ -415,9 +415,9 @@ class BranchClosingWorkflowTest extends TestCase
         $this->branchClosingService->settle($workflow, $this->manager);
 
         $pending->refresh();
-        $this->assertEquals(TellerAllocationStatus::CANCELLED, $pending->status);
+        $this->assertEquals(TellerAllocationStatus::Cancelled, $pending->status);
         $approved->refresh();
-        $this->assertEquals(TellerAllocationStatus::CANCELLED, $approved->status);
+        $this->assertEquals(TellerAllocationStatus::Cancelled, $approved->status);
         $this->assertEquals('Cancelled at branch settlement', $approved->rejection_reason);
 
         // The approved earmark released back to available.

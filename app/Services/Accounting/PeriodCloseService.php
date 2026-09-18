@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountMappingKey;
+use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
 use App\Models\AccountingPeriod;
@@ -134,7 +135,7 @@ class PeriodCloseService
         // with('lines') every entry triggers an extra query (N+1).
         $unbalanced = JournalEntry::with('lines')
             ->where('period_id', $period->id)
-            ->where('status', 'Posted')
+            ->where('status', JournalEntryStatus::Posted->value)
             ->get()
             ->filter(fn ($entry) => ! $entry->isBalanced());
 

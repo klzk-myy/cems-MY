@@ -267,7 +267,7 @@ class CounterService
             // Without this the loaded portion would stay earmarked to a
             // teller who no longer holds it.
             TellerAllocation::where('user_id', $session->user_id)
-                ->where('status', TellerAllocationStatus::ACTIVE->value)
+                ->where('status', TellerAllocationStatus::Active->value)
                 ->get()
                 ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->returnToPool($allocation));
 

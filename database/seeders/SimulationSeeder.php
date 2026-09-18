@@ -191,7 +191,7 @@ class SimulationSeeder extends Seeder
                     'requested_amount' => 50000,
                     'daily_limit_myr' => 100000,
                     'daily_used_myr' => 0,
-                    'status' => TellerAllocationStatus::ACTIVE->value,
+                    'status' => TellerAllocationStatus::Active->value,
                     'opened_at' => now(),
                 ]
             );

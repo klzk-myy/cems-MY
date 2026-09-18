@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
+use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\BankReconciliation;
 use App\Models\JournalEntry;
@@ -59,7 +60,7 @@ class BankReconciliationService
                     'description' => $line['description'],
                     'debit' => $line['debit'] ?? 0,
                     'credit' => $line['credit'] ?? 0,
-                    'status' => 'unmatched',
+                    'status' => BankReconciliationStatus::Unmatched->value,
                     'created_by' => $userId,
                     'check_number' => $line['check_number'] ?? null,
                     'check_date' => $line['check_date'] ?? null,
@@ -76,7 +77,7 @@ class BankReconciliationService
                 'imported' => count($imported),
                 'skipped' => $skipped,
                 'unmatched' => BankReconciliation::where('account_code', $accountCode)
-                    ->where('status', 'unmatched')
+                    ->where('status', BankReconciliationStatus::Unmatched->value)
                     ->count(),
             ];
         });
@@ -98,7 +99,7 @@ class BankReconciliationService
             'description' => 'Check issued: '.($checkData['check_payee'] ?? 'Unknown payee'),
             'debit' => $checkData['amount'] ?? 0,
             'credit' => 0,
-            'status' => 'unmatched',
+            'status' => BankReconciliationStatus::Unmatched->value,
             'created_by' => $userId,
             'check_number' => $checkData['check_number'],
             'check_date' => $checkData['check_date'] ?? today(),
@@ -138,7 +139,7 @@ class BankReconciliationService
 
         $record->update([
             'check_status' => 'cleared',
-            'status' => 'matched', // Auto-match when cleared
+            'status' => BankReconciliationStatus::Matched->value, // Auto-match when cleared
         ]);
 
         return $record;
@@ -184,7 +185,7 @@ class BankReconciliationService
     public function autoMatch(string $accountCode): void
     {
         $unmatched = BankReconciliation::where('account_code', $accountCode)
-            ->where('status', 'unmatched')
+            ->where('status', BankReconciliationStatus::Unmatched->value)
             ->get();
 
         foreach ($unmatched as $record) {
@@ -201,7 +202,7 @@ class BankReconciliationService
             $isDebit = $this->mathService->compare($recordAmount, '0') > 0;
             $column = $isDebit ? 'debit' : 'credit';
 
-            $matchingEntry = JournalEntry::where('status', 'Posted')
+            $matchingEntry = JournalEntry::where('status', JournalEntryStatus::Posted->value)
                 ->whereHas('lines', function ($query) use ($accountCode, $amount, $column) {
                     $query->where('account_code', $accountCode)
                         ->where($column, $amount);
@@ -216,7 +217,7 @@ class BankReconciliationService
 
             if ($matchingEntry) {
                 $record->update([
-                    'status' => 'matched',
+                    'status' => BankReconciliationStatus::Matched->value,
                     'matched_to_journal_entry_id' => $matchingEntry->id,
                     'matched_at' => now(),
                 ]);
@@ -509,7 +510,7 @@ class BankReconciliationService
         $record = BankReconciliation::findOrFail($reconciliationId);
 
         $record->update([
-            'status' => 'exception',
+            'status' => BankReconciliationStatus::Exception->value,
             'notes' => $reason,
         ]);
 

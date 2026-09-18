@@ -79,7 +79,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if ($fiscalYear->status?->value === 'Open' && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
+                                @if ($fiscalYear->status === \App\Enums\FiscalYearStatus::Open && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}"
                                           class="flex items-center justify-center gap-2"
                                           data-confirm="Close {{ $fiscalYear->year_code }}? All periods must be closed and this cannot be undone.">
@@ -129,13 +129,13 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if ($period->status?->value === 'Open' && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
+                                @if ($period->status === \App\Enums\AccountingPeriodStatus::Open && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           data-confirm="Close period {{ $period->period_code }}?">
                                         @csrf
                                         <x-button variant="ghost" size="sm" type="submit">Close</x-button>
                                     </form>
-                                @elseif ($period->status?->value === 'Open')
+                                @elseif ($period->status === \App\Enums\AccountingPeriodStatus::Open)
                                     <span class="text-xs text-ink-muted">—</span>
                                 @else
                                     <span class="text-xs text-ink-muted">Closed</span>

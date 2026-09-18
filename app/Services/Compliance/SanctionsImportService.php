@@ -3,6 +3,7 @@
 namespace App\Services\Compliance;
 
 use App\Enums\EntityType;
+use App\Enums\SanctionStatus;
 use App\Enums\UpdateStatus;
 use App\Events\SanctionsListUpdated;
 use App\Exceptions\Domain\SanctionsImportException;
@@ -107,7 +108,7 @@ class SanctionsImportService
                 'last_updated_at' => now(),
                 'update_status' => UpdateStatus::Success,
                 'last_error_message' => null,
-                'entry_count' => $list->entries()->where('status', 'active')->count(),
+                'entry_count' => $list->entries()->where('status', SanctionStatus::Active->value)->count(),
             ]);
 
             SanctionImportLog::create([
@@ -341,7 +342,7 @@ class SanctionsImportService
             'last_updated_at' => now(),
             'update_status' => UpdateStatus::Success,
             'last_error_message' => null,
-            'entry_count' => $list->entries()->where('status', 'active')->count(),
+            'entry_count' => $list->entries()->where('status', SanctionStatus::Active->value)->count(),
         ]);
 
         SanctionImportLog::create([

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\CounterStatus;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\SchemaSeeder;
 use Illuminate\Console\Command;
@@ -126,7 +127,7 @@ class ResetTestDatabase extends Command
 
         // Reset counters table (only if column exists)
         if (Schema::hasTable('counters') && Schema::hasColumn('counters', 'status')) {
-            DB::table('counters')->update(['status' => 'active']);
+            DB::table('counters')->update(['status' => CounterStatus::Active->value]);
         }
 
         // Reset users password hash timestamps (only if column exists)

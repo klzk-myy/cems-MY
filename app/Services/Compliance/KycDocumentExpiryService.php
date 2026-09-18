@@ -3,6 +3,7 @@
 namespace App\Services\Compliance;
 
 use App\Enums\CddLevel;
+use App\Enums\CustomerDocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
@@ -55,10 +56,10 @@ class KycDocumentExpiryService
     {
         return CustomerDocument::query()
             ->verified()
-            ->where('status', '!=', 'expired')
+            ->where('status', '!=', CustomerDocumentStatus::Expired->value)
             ->whereNotNull('expiry_date')
             ->where('expiry_date', '<', $this->graceCutoffDate())
-            ->update(['status' => 'expired']);
+            ->update(['status' => CustomerDocumentStatus::Expired->value]);
     }
 
     protected function graceCutoffDate(): Carbon

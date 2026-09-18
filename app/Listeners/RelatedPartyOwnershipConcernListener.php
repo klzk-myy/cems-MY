@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Enums\AlertPriority;
 use App\Enums\FindingSeverity;
+use App\Enums\FindingStatus;
 use App\Enums\FindingType;
 use App\Enums\FlagStatus;
 use App\Events\RelatedPartyOwnershipConcern;
@@ -27,7 +28,7 @@ class RelatedPartyOwnershipConcernListener
                     'ownership_interest' => $event->ownershipInterest,
                     'customer_name' => $event->customer->full_name,
                 ],
-                'status' => 'New',
+                'status' => FindingStatus::New->value,
                 'generated_at' => now(),
             ]);
 

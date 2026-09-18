@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\SanctionStatus;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
@@ -161,7 +162,7 @@ class SanctionListController extends Controller
     {
         $entry = SanctionEntry::findOrFail($entryId);
 
-        $entry->update(['status' => 'inactive']);
+        $entry->update(['status' => SanctionStatus::Inactive->value]);
 
         return $this->successResponse(['message' => 'Entry deactivated'], 'Entry deactivated');
     }

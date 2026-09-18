@@ -4,6 +4,7 @@ namespace App\Services\Compliance;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
@@ -491,7 +492,7 @@ class ComplianceService implements ComplianceServiceInterface
         return FlaggedTransaction::whereHas('transaction', function ($query) use ($customerId) {
             $query->where('customer_id', $customerId);
         })
-            ->where('status', '!=', 'Resolved')
+            ->where('status', '!=', FlagStatus::Resolved->value)
             ->with('transaction')
             ->orderBy('created_at', 'desc')
             ->get()

@@ -236,7 +236,7 @@ class AccountingService implements AccountingServiceInterface
             ]);
 
             $this->auditService->logJournalWorkflowEvent('journal_entry_rejected', $entry->id, [
-                'old' => ['status' => 'Pending'],
+                'old' => ['status' => JournalEntryStatus::Pending->value],
                 'new' => [
                     'status' => JournalEntryStatus::Rejected->value,
                     'rejected_by' => $rejectedBy,

@@ -374,7 +374,7 @@ class ComplianceReportingService
             ->limit(20)
             ->get();
 
-        $pendingCount = $reports->where('status', 'Pending')->count();
+        $pendingCount = $reports->where('status', ReportGeneratedStatus::Pending->value)->count();
 
         return [
             'pending_count' => $pendingCount,

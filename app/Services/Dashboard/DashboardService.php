@@ -2,6 +2,7 @@
 
 namespace App\Services\Dashboard;
 
+use App\Enums\FlagStatus;
 use App\Enums\Permission;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
@@ -27,7 +28,7 @@ class DashboardService
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('amount_local'),
             'flagged' => $user && $user->role->canAccessCompliance()
-                ? FlaggedTransaction::where('status', 'Open')->count()
+                ? FlaggedTransaction::where('status', FlagStatus::Open->value)->count()
                 : 0,
             'active_customers' => Customer::when($branchId, fn ($q) => $q->forBranch($branchId))->count(),
             'dlq_count' => $user && $user->role->canPerform(Permission::ManageDlq)

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
@@ -89,7 +90,7 @@ class EodReconciliationService
                 $query->whereIn('till_id', $counterCodes)
                     ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
             })
-            ->where('status', '!=', 'Resolved')
+            ->where('status', '!=', FlagStatus::Resolved->value)
             ->get()
             ->groupBy(fn (FlaggedTransaction $flag) => (string) $flag->transaction?->till_id);
 
@@ -155,7 +156,7 @@ class EodReconciliationService
                     $query->where('branch_id', $branchId);
                 }
             })
-            ->where('status', '!=', 'Resolved')
+            ->where('status', '!=', FlagStatus::Resolved->value)
             ->get();
 
         return [
@@ -247,7 +248,7 @@ class EodReconciliationService
                 $query->where('till_id', $counter->code)
                     ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
             })
-            ->where('status', '!=', 'Resolved')
+            ->where('status', '!=', FlagStatus::Resolved->value)
             ->get();
 
         $handovers = CounterHandover::with(['counterSession', 'fromUser', 'toUser', 'supervisor'])

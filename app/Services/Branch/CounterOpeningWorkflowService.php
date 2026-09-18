@@ -69,7 +69,7 @@ class CounterOpeningWorkflowService
                 ->where('branch_id', $teller->branch_id)
                 ->where('counter_id', $counter->id)
                 ->whereIn('currency_code', $currencyCodes)
-                ->where('status', TellerAllocationStatus::PENDING->value)
+                ->where('status', TellerAllocationStatus::Pending->value)
                 ->whereDate('session_date', '<=', Carbon::parse($today)->toDateString())
                 ->orderByDesc('session_date')
                 ->get()

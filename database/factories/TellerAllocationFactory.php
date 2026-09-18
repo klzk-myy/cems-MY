@@ -25,7 +25,7 @@ class TellerAllocationFactory extends Factory
             'requested_amount' => $this->faker->randomFloat(4, 10000, 100000),
             'daily_limit_myr' => $this->faker->randomFloat(4, 50000, 500000),
             'daily_used_myr' => $this->faker->randomFloat(4, 0, 50000),
-            'status' => TellerAllocationStatus::PENDING,
+            'status' => TellerAllocationStatus::Pending,
             'session_date' => now()->toDateString(),
             'approved_by' => null,
             'approved_at' => null,
@@ -37,14 +37,14 @@ class TellerAllocationFactory extends Factory
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => TellerAllocationStatus::PENDING,
+            'status' => TellerAllocationStatus::Pending,
         ]);
     }
 
     public function approved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => TellerAllocationStatus::APPROVED,
+            'status' => TellerAllocationStatus::Approved,
             'approved_by' => User::factory(),
             'approved_at' => now(),
         ]);
@@ -53,7 +53,7 @@ class TellerAllocationFactory extends Factory
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'approved_by' => User::factory(),
             'approved_at' => now()->subDay(),
             'opened_at' => now(),
@@ -63,7 +63,7 @@ class TellerAllocationFactory extends Factory
     public function returned(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => TellerAllocationStatus::RETURNED,
+            'status' => TellerAllocationStatus::Returned,
             'approved_by' => User::factory(),
             'approved_at' => now()->subDay(),
             'opened_at' => now()->subHours(4),

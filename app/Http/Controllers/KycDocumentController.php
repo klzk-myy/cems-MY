@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CustomerDocumentStatus;
 use App\Models\CustomerDocument;
 use App\Services\AuditService;
 use App\Services\System\DocumentStorageService;
@@ -23,7 +24,7 @@ class KycDocumentController extends Controller
         $this->authorize('verify', $customerDocument);
 
         $customerDocument->update([
-            'status' => 'verified',
+            'status' => CustomerDocumentStatus::Verified->value,
             'verified_by' => $request->user()->id,
             'verified_at' => now(),
             'rejection_reason' => null,
@@ -54,7 +55,7 @@ class KycDocumentController extends Controller
         ]);
 
         $customerDocument->update([
-            'status' => 'rejected',
+            'status' => CustomerDocumentStatus::Rejected->value,
             'verified_by' => $request->user()->id,
             'verified_at' => now(),
             'rejection_reason' => $validated['reason'],

@@ -145,9 +145,9 @@
                         @forelse($customer->documents as $document)
                             @php
                                 $statusVariant = match ($document->status) {
-                                    'verified' => 'success',
-                                    'rejected' => 'danger',
-                                    'expired' => 'warning',
+                                    \App\Enums\CustomerDocumentStatus::Verified => 'success',
+                                    \App\Enums\CustomerDocumentStatus::Rejected => 'danger',
+                                    \App\Enums\CustomerDocumentStatus::Expired => 'warning',
                                     default => 'info',
                                 };
                             @endphp
@@ -156,7 +156,7 @@
                                     <div class="space-y-0.5 text-sm min-w-0">
                                         <div class="flex items-center gap-2">
                                             <span class="font-medium">{{ $document->document_type?->label() ?? $document->document_type }}</span>
-                                            <x-badge :variant="$statusVariant">{{ ucfirst($document->status ?? 'pending') }}</x-badge>
+                                            <x-badge :variant="$statusVariant">{{ ucfirst($document->status?->value ?? 'pending') }}</x-badge>
                                         </div>
                                         <div class="text-xs text-ink-muted">
                                             ID: {{ $customer->id_number_masked ?? '****' }}

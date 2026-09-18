@@ -376,13 +376,13 @@ class TransactionConfirmationService
     {
         $cutoff = now()->subHours($hours);
 
-        $stale = TransactionConfirmation::where('status', 'pending')
+        $stale = TransactionConfirmation::where('status', TransactionConfirmationStatus::Pending->value)
             ->where('created_at', '<=', $cutoff)
             ->get();
 
         $count = 0;
         foreach ($stale as $confirmation) {
-            $confirmation->update(['status' => 'expired']);
+            $confirmation->update(['status' => TransactionConfirmationStatus::Expired->value]);
             $count++;
         }
 

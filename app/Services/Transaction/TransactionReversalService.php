@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\JournalEntryStatus;
 use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -283,7 +284,7 @@ class TransactionReversalService
 
         $originalEntries = JournalEntry::where('reference_type', 'Transaction')
             ->where('reference_id', $transaction->id)
-            ->where('status', 'Posted')
+            ->where('status', JournalEntryStatus::Posted->value)
             ->get();
 
         foreach ($originalEntries as $originalEntry) {

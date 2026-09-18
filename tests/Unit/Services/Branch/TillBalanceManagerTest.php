@@ -55,7 +55,7 @@ class TillBalanceManagerTest extends TestCase
             'requested_amount' => '1000.00',
             'daily_limit_myr' => '500000.00',
             'daily_used_myr' => '0.00',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => now()->toDateString(),
         ]);
 

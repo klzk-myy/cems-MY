@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\CustomerDocumentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $customer_id
  * @property string $document_type
- * @property string $status
+ * @property CustomerDocumentStatus|null $status
  * @property int|null $file_size
  * @property Carbon|null $verified_at
  * @property Carbon|null $expiry_date
@@ -30,7 +31,7 @@ class CustomerDocumentResource extends JsonResource
             'id' => $this->id,
             'customer_id' => $this->customer_id,
             'document_type' => $this->document_type,
-            'status' => $this->status,
+            'status' => $this->status?->value,
             'file_size' => $this->file_size,
             'verified_at' => $this->verified_at?->toIso8601String(),
             'expiry_date' => $this->expiry_date?->toDateString(),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CounterStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
@@ -103,7 +104,7 @@ class TransactionController extends Controller
         $currencyInverses = $activeCurrencies->pluck('rate_inverse', 'code');
         $customers = Customer::orderBy('full_name')->pluck('full_name', 'id');
         $branches = Branch::select('id', 'name')->orderBy('name')->get();
-        $counters = Counter::where('status', 'active')->orderBy('name')->pluck('name', 'id');
+        $counters = Counter::where('status', CounterStatus::Active->value)->orderBy('name')->pluck('name', 'id');
         $idempotencyKey = Str::uuid()->toString();
 
         $suggested_rate = null;

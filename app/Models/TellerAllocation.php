@@ -228,7 +228,7 @@ class TellerAllocation extends BaseModel
             'approved_at' => now(),
             'allocated_amount' => $allocatedAmount,
             'current_balance' => $allocatedAmount,
-            'status' => TellerAllocationStatus::APPROVED,
+            'status' => TellerAllocationStatus::Approved,
         ];
 
         if ($dailyLimitMyr !== null) {
@@ -241,7 +241,7 @@ class TellerAllocation extends BaseModel
     public function activate(): void
     {
         $this->update([
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'opened_at' => now(),
         ]);
     }
@@ -249,7 +249,7 @@ class TellerAllocation extends BaseModel
     public function returnToPool(): void
     {
         $this->update([
-            'status' => TellerAllocationStatus::RETURNED,
+            'status' => TellerAllocationStatus::Returned,
             'closed_at' => now(),
         ]);
     }
@@ -257,7 +257,7 @@ class TellerAllocation extends BaseModel
     public function reject(User $rejector, ?string $reason = null): void
     {
         $this->update([
-            'status' => TellerAllocationStatus::REJECTED,
+            'status' => TellerAllocationStatus::Rejected,
             'rejected_by' => $rejector->id,
             'rejected_at' => now(),
             'rejection_reason' => $reason,
@@ -272,7 +272,7 @@ class TellerAllocation extends BaseModel
     public function cancel(User $actor, ?string $reason = null): void
     {
         $this->update([
-            'status' => TellerAllocationStatus::CANCELLED,
+            'status' => TellerAllocationStatus::Cancelled,
             'rejected_by' => $actor->id,
             'rejected_at' => now(),
             'rejection_reason' => $reason,

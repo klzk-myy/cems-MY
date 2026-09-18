@@ -43,11 +43,11 @@ class AllocationController extends Controller
             ->when($branch, fn ($q) => $q->where('branch_id', $branch->id));
 
         match ($status) {
-            'pending' => $query->where('status', TellerAllocationStatus::PENDING),
-            'approved' => $query->where('status', TellerAllocationStatus::APPROVED),
-            'active' => $query->where('status', TellerAllocationStatus::ACTIVE),
-            'completed' => $query->where('status', TellerAllocationStatus::CLOSED),
-            'rejected' => $query->whereIn('status', [TellerAllocationStatus::REJECTED, TellerAllocationStatus::CANCELLED]),
+            'pending' => $query->where('status', TellerAllocationStatus::Pending),
+            'approved' => $query->where('status', TellerAllocationStatus::Approved),
+            'active' => $query->where('status', TellerAllocationStatus::Active),
+            'completed' => $query->where('status', TellerAllocationStatus::Closed),
+            'rejected' => $query->whereIn('status', [TellerAllocationStatus::Rejected, TellerAllocationStatus::Cancelled]),
             default => $query,
         };
 
@@ -496,7 +496,7 @@ class AllocationController extends Controller
         $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
         $pools = BranchPool::whereIn('branch_id', $branchIds)->get();
         $allocations = TellerAllocation::whereIn('branch_id', $branchIds)
-            ->whereIn('status', [TellerAllocationStatus::APPROVED, TellerAllocationStatus::ACTIVE])
+            ->whereIn('status', [TellerAllocationStatus::Approved, TellerAllocationStatus::Active])
             ->with('user:id,username')
             ->get(['id', 'branch_id', 'user_id', 'currency_code', 'allocated_amount']);
 

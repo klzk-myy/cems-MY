@@ -46,7 +46,7 @@ class TellerAllocationServiceTest extends TestCase
         $allocation = $this->service->requestAllocation($teller, $manager, 'MYR', '10000.0000');
 
         $this->assertInstanceOf(TellerAllocation::class, $allocation);
-        $this->assertEquals(TellerAllocationStatus::PENDING, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Pending, $allocation->status);
         $this->assertEquals('10000.0000', $allocation->requested_amount);
     }
 
@@ -66,7 +66,7 @@ class TellerAllocationServiceTest extends TestCase
         $pool->refresh();
         $allocation->refresh();
         $this->assertEquals('40000.0000', $pool->available_balance);
-        $this->assertEquals(TellerAllocationStatus::APPROVED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Approved, $allocation->status);
         $this->assertEquals('10000.0000', $allocation->allocated_amount);
         $this->assertEquals('10000.0000', $allocation->current_balance);
     }
@@ -81,7 +81,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::APPROVED,
+            'status' => TellerAllocationStatus::Approved,
             'allocated_amount' => '10000.0000',
             'current_balance' => '10000.0000',
             'session_date' => now()->toDateString(),
@@ -90,7 +90,7 @@ class TellerAllocationServiceTest extends TestCase
         $this->service->activateAllocation($allocation);
 
         $allocation->refresh();
-        $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Active, $allocation->status);
         $this->assertNotNull($allocation->opened_at);
     }
 
@@ -107,7 +107,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '8000.0000',
             'allocated_amount' => '10000.0000',
             'session_date' => now()->toDateString(),
@@ -118,7 +118,7 @@ class TellerAllocationServiceTest extends TestCase
         $pool->refresh();
         $allocation->refresh();
         $this->assertEquals('48000.0000', $pool->available_balance);
-        $this->assertEquals(TellerAllocationStatus::RETURNED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
     }
 
     #[Test]
@@ -130,7 +130,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '5000.0000', // smaller than the requested amount
             'daily_limit_myr' => '20000.0000',
             'daily_used_myr' => '0.0000',
@@ -157,7 +157,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '50000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '9000.0000',
@@ -179,7 +179,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '50000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
@@ -201,7 +201,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
@@ -227,7 +227,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
@@ -237,7 +237,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '3000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
@@ -262,7 +262,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
@@ -295,7 +295,7 @@ class TellerAllocationServiceTest extends TestCase
         $allocation->refresh();
         $this->assertEquals('50000.0000', $pool->available_balance);
         $this->assertEquals('0.0000', $pool->allocated_balance);
-        $this->assertEquals(TellerAllocationStatus::REJECTED, $allocation->status);
+        $this->assertEquals(TellerAllocationStatus::Rejected, $allocation->status);
         $this->assertNotNull($allocation->rejected_at);
         $this->assertEquals($manager->id, $allocation->rejected_by);
         $this->assertEquals('Insufficient documentation', $allocation->rejection_reason);
@@ -311,7 +311,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller1->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'current_balance' => '8000.0000',
             'allocated_amount' => '10000.0000',
             'session_date' => now()->toDateString(),
@@ -338,7 +338,7 @@ class TellerAllocationServiceTest extends TestCase
             'user_id' => $teller1->id,
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
+            'status' => TellerAllocationStatus::Active,
             'session_date' => now()->toDateString(),
         ]);
 
