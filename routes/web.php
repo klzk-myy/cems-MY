@@ -9,6 +9,7 @@ use App\Http\Controllers\Accounting\PeriodController;
 use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BranchScopeController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\ThresholdController;
 use App\Http\Controllers\AllocationController;
@@ -570,6 +571,12 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/', [RolePermissionController::class, 'index'])->name('index');
         Route::post('/', [RolePermissionController::class, 'update'])->name('update')->middleware('password.confirm');
     });
+
+    // Branch/HQ Scope — read-only matrix documenting the operating boundary
+    // between standalone branches and the HQ administrative office.
+    Route::middleware(['role:manage_role_permissions', 'mfa.verified'])
+        ->get('/admin/branch-scope', [BranchScopeController::class, 'index'])
+        ->name('admin.branch-scope.index');
 
     // Threshold Management — admin UI over the audited threshold system.
     // Views effective values vs config defaults and writes DB overrides via

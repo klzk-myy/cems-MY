@@ -173,6 +173,31 @@ class RolePermissionMatrixTest extends TestCase
     }
 
     #[Test]
+    public function branch_scope_matrix_renders_for_privileged_users(): void
+    {
+        $admin = $this->makeUser(UserRole::Admin);
+
+        $response = $this->actingAs($admin)->get(route('admin.branch-scope.index'));
+
+        $response->assertOk();
+        $response->assertSee('Branch user');
+        $response->assertSee('HQ admin office');
+        $response->assertSee('manage_all_branches');
+        $response->assertSee('Daily close');
+        $response->assertSee('Cash remittance');
+    }
+
+    #[Test]
+    public function branch_scope_matrix_denies_non_privileged_roles(): void
+    {
+        $manager = $this->makeUser(UserRole::Manager);
+
+        $this->actingAs($manager)
+            ->get(route('admin.branch-scope.index'))
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function update_endpoint_grants_any_permission_to_any_role(): void
     {
         $admin = $this->makeUser(UserRole::Admin);
