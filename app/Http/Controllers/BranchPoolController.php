@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PoolRemittanceStatus;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Currency;
+use App\Models\PoolRemittance;
 use App\Services\Branch\BranchPoolService;
+use App\Services\Branch\PoolRemittanceService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +18,7 @@ class BranchPoolController extends Controller
 {
     public function __construct(
         protected BranchPoolService $poolService,
+        protected PoolRemittanceService $remittanceService,
         protected MathService $mathService,
     ) {}
 
@@ -86,8 +90,42 @@ class BranchPoolController extends Controller
         $this->authorizePoolBranch($request, $branchPool);
 
         $branchPool->load('branch');
+        $branch = $branchPool->branch;
 
-        return view('branch.pools.show', compact('branchPool'));
+        $pendingInbound = PoolRemittance::with(['fromBranch', 'initiator'])
+            ->where('to_branch_id', $branchPool->branch_id)
+            ->where('currency_code', $branchPool->currency_code)
+            ->where('status', PoolRemittanceStatus::Pending)
+            ->orderByDesc('id')
+            ->get();
+
+        $pendingOutbound = PoolRemittance::with('toBranch')
+            ->where('from_branch_id', $branchPool->branch_id)
+            ->where('currency_code', $branchPool->currency_code)
+            ->where('status', PoolRemittanceStatus::Pending)
+            ->orderByDesc('id')
+            ->get();
+
+        $recentRemittances = PoolRemittance::with(['fromBranch', 'toBranch'])
+            ->where(function ($query) use ($branchPool) {
+                $query->where('from_branch_id', $branchPool->branch_id)
+                    ->orWhere('to_branch_id', $branchPool->branch_id);
+            })
+            ->where('currency_code', $branchPool->currency_code)
+            ->where('status', '!=', PoolRemittanceStatus::Pending)
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get();
+
+        // A trading branch remits to head office; head office picks which
+        // trading branch receives the capital.
+        $remitDestinations = $branch instanceof Branch && $branch->isHeadOffice()
+            ? Branch::branches()->orderBy('name')->get()
+            : Branch::headOffices()->get();
+
+        return view('branch.pools.show', compact(
+            'branchPool', 'pendingInbound', 'pendingOutbound', 'recentRemittances', 'remitDestinations'
+        ));
     }
 
     /**
@@ -146,6 +184,73 @@ class BranchPoolController extends Controller
     }
 
     /**
+     * Initiate a remittance out of this pool. Trading branches remit surplus
+     * up to head office; head office remits capital down to a trading branch.
+     * The value parks in the 2300 clearing account until the receiver
+     * acknowledges.
+     */
+    public function remit(Request $request, BranchPool $branchPool): RedirectResponse
+    {
+        $this->authorizePoolBranch($request, $branchPool);
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'to_branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $from = $branchPool->branch;
+        $to = Branch::whereKey((int) $validated['to_branch_id'])->firstOrFail();
+
+        if (! $from instanceof Branch) {
+            return back()->with('error', 'This pool is not attached to a branch.');
+        }
+
+        $remittance = $this->remittanceService->initiate(
+            $from,
+            $to,
+            $branchPool->currency_code,
+            (string) $validated['amount'],
+            $request->user()->id,
+            $validated['notes'] ?? null,
+        );
+
+        return back()->with('success', "Remittance {$remittance->remittance_number} initiated — awaiting acknowledgement by {$to->name}.");
+    }
+
+    /**
+     * Acknowledge receipt of a pending remittance — credits this branch's
+     * pool and clears the 2300 clearing leg. Restricted to the receiving
+     * branch (or a cross-branch user).
+     */
+    public function acknowledgeRemittance(Request $request, PoolRemittance $poolRemittance): RedirectResponse
+    {
+        $this->authorizeRemittanceBranch($request, $poolRemittance, 'to_branch_id');
+
+        $this->remittanceService->acknowledge($poolRemittance, $request->user()->id);
+
+        return back()->with('success', "Remittance {$poolRemittance->remittance_number} acknowledged — pool credited.");
+    }
+
+    /**
+     * Cancel a pending remittance — returns the funds to the sender's pool
+     * and reverses the 2300 clearing leg. Restricted to the sending branch
+     * (or a cross-branch user).
+     */
+    public function cancelRemittance(Request $request, PoolRemittance $poolRemittance): RedirectResponse
+    {
+        $this->authorizeRemittanceBranch($request, $poolRemittance, 'from_branch_id');
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->remittanceService->cancel($poolRemittance, $request->user()->id, $validated['reason'] ?? null);
+
+        return back()->with('success', "Remittance {$poolRemittance->remittance_number} cancelled — funds returned to the sending pool.");
+    }
+
+    /**
      * Users without the manage_all_branches grant may only view and act on
      * pools in their own branch.
      */
@@ -156,6 +261,21 @@ class BranchPoolController extends Controller
         abort_unless(
             $user->role->canManageAllBranches()
                 || (int) $branchPool->branch_id === (int) $user->branch_id,
+            403
+        );
+    }
+
+    /**
+     * Users without the manage_all_branches grant may only act on a
+     * remittance when their branch is on the relevant side of it.
+     */
+    private function authorizeRemittanceBranch(Request $request, PoolRemittance $poolRemittance, string $side): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->role->canManageAllBranches()
+                || (int) $poolRemittance->{$side} === (int) $user->branch_id,
             403
         );
     }

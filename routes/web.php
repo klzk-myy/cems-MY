@@ -310,6 +310,9 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/{branchPool}', [BranchPoolController::class, 'show'])->name('show');
         Route::post('/{branchPool}/fund', [BranchPoolController::class, 'fund'])->name('fund');
         Route::post('/{branchPool}/debit', [BranchPoolController::class, 'debit'])->name('debit');
+        Route::post('/{branchPool}/remit', [BranchPoolController::class, 'remit'])->name('remit');
+        Route::post('/remittances/{poolRemittance}/acknowledge', [BranchPoolController::class, 'acknowledgeRemittance'])->name('remittances.acknowledge');
+        Route::post('/remittances/{poolRemittance}/cancel', [BranchPoolController::class, 'cancelRemittance'])->name('remittances.cancel');
     });
 
     // EOD Dashboard (manager/admin)

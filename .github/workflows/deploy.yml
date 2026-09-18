@@ -114,6 +114,7 @@ jobs:
             # Idempotent schema upgrades for live databases — each command
             # no-ops when its column/table already exists.
             php artisan allocations:install-loaded-balance
+            php artisan pools:install-remittances-table
 
             php artisan optimize:clear
             php artisan config:cache
