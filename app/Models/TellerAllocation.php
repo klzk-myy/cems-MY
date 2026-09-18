@@ -254,14 +254,6 @@ class TellerAllocation extends BaseModel
         ]);
     }
 
-    public function forceReturn(): void
-    {
-        $this->update([
-            'status' => TellerAllocationStatus::AUTO_RETURNED,
-            'closed_at' => now(),
-        ]);
-    }
-
     public function reject(User $rejector, ?string $reason = null): void
     {
         $this->update([

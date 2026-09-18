@@ -21,9 +21,9 @@ interface TellerAllocationServiceInterface
 
     public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation;
 
-    public function returnToPool(TellerAllocation $allocation): TellerAllocation;
+    public function cancelAllocation(TellerAllocation $allocation, User $actor, ?string $reason = null): TellerAllocation;
 
-    public function forceReturnAllOpen(): int;
+    public function returnToPool(TellerAllocation $allocation): TellerAllocation;
 
     public function getActiveAllocation(User $teller, string $currencyCode): ?TellerAllocation;
 

@@ -18,10 +18,10 @@ class FinalizeBranchClosingRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'completed_at' => ['required', 'date'],
-            'finalized_by' => ['required', 'integer', 'exists:users,id'],
-        ];
+        // Finalization derives everything from the route's {branch} binding,
+        // the active workflow, and the authenticated user — these required
+        // fields were never submitted by the form nor used by the service,
+        // so the action always failed validation.
+        return [];
     }
 }

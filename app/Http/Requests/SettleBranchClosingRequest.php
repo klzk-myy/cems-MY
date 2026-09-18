@@ -18,11 +18,10 @@ class SettleBranchClosingRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'amount_myr' => ['required', 'numeric', 'min:0'],
-            'currency_code' => ['required', 'string', 'size:3'],
-            'settlement_date' => ['required', 'date'],
-        ];
+        // Settlement derives everything from the route's {branch} binding and
+        // the active workflow — these required fields were never submitted by
+        // the form nor used by the service, so the action always failed
+        // validation.
+        return [];
     }
 }

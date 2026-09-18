@@ -18,10 +18,9 @@ class InitiateBranchClosingRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'reason' => ['required', 'string', 'max:500'],
-            'scheduled_date' => ['required', 'date', 'after:today'],
-        ];
+        // The workflow is initiated from the route's {branch} binding only —
+        // reason/scheduled_date were never stored on the model, so requiring
+        // them made the initiate button permanently invalid.
+        return [];
     }
 }

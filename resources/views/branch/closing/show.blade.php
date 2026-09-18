@@ -70,20 +70,6 @@
 
                     <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
                         <div class="flex items-center gap-3">
-                            @if($checklist['transfers_complete'])
-                                <x-icon name="check" class="w-5 h-5 text-success-text" />
-                            @else
-                                <x-icon name="x" class="w-5 h-5 text-danger-text" />
-                            @endif
-                            <span class="text-sm font-medium text-ink">Transfers Complete</span>
-                        </div>
-                        <span class="text-sm {{ $checklist['transfers_complete'] ? 'text-success-text' : 'text-danger-text' }}">
-                            {{ $checklist['transfers_complete'] ? 'Complete' : 'Pending' }}
-                        </span>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-canvas-subtle rounded-lg">
-                        <div class="flex items-center gap-3">
                             @if($checklist['documents_finalized'])
                                 <x-icon name="check" class="w-5 h-5 text-success-text" />
                             @else

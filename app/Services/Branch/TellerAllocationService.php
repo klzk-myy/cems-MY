@@ -284,6 +284,35 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         });
     }
 
+    /**
+     * Cancel an allocation that never reached the teller's hands. A pending
+     * request drew no pool funds and simply rejects; an approved-but-
+     * unaccepted one still holds a pool earmark (approve moved
+     * available→allocated), which releases back to available. Used by
+     * branch settlement so stale requests neither linger nor block the
+     * close. Active custody is returned via returnToPool(), not here.
+     */
+    public function cancelAllocation(TellerAllocation $allocation, User $actor, ?string $reason = null): TellerAllocation
+    {
+        return DB::transaction(function () use ($allocation, $actor, $reason) {
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status->value === TellerAllocationStatus::APPROVED->value) {
+                if ($this->mathService->compare((string) $locked->allocated_amount, '0') > 0) {
+                    $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, (string) $locked->allocated_amount);
+                }
+            } elseif ($locked->status->value !== TellerAllocationStatus::PENDING->value) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
+            }
+
+            $locked->reject($actor, $reason);
+
+            return $locked;
+        });
+    }
+
     public function returnToPool(TellerAllocation $allocation): TellerAllocation
     {
         return DB::transaction(function () use ($allocation) {
@@ -313,20 +342,6 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
             return $locked;
         });
-    }
-
-    public function forceReturnAllOpen(): int
-    {
-        $openAllocations = TellerAllocation::where('status', TellerAllocationStatus::ACTIVE->value)
-            ->whereDate('session_date', '<', now()->toDateString())
-            ->get();
-
-        foreach ($openAllocations as $allocation) {
-            $this->returnToPool($allocation);
-            $allocation->forceReturn();
-        }
-
-        return $openAllocations->count();
     }
 
     /**

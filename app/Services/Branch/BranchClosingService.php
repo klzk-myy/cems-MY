@@ -51,7 +51,6 @@ class BranchClosingService
         return [
             'counters_closed' => $this->checkCountersClosed($branch),
             'allocations_returned' => $this->checkAllocationsReturned($branch),
-            'transfers_complete' => $this->checkTransfersComplete($branch),
             'documents_finalized' => $this->checkDocumentsFinalized($branch, $workflow),
         ];
     }
@@ -62,7 +61,6 @@ class BranchClosingService
 
         return $checklist['counters_closed']
             && $checklist['allocations_returned']
-            && $checklist['transfers_complete']
             && $checklist['documents_finalized'];
     }
 
@@ -139,6 +137,25 @@ class BranchClosingService
                 $this->tellerAllocationService->returnToPool($allocation);
             }
 
+            // Stale pending/approved requests can never proceed past a
+            // branch settlement — cancel them here rather than gating the
+            // close on them. Approved rows release their pool earmark, so
+            // this must run before the HQ-transfer journals sweep
+            // available_balance.
+            $cancelledRequests = TellerAllocation::query()
+                ->where('branch_id', $branch->id)
+                ->whereIn('status', [
+                    TellerAllocationStatus::PENDING->value,
+                    TellerAllocationStatus::APPROVED->value,
+                ])
+                ->get()
+                ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->cancelAllocation(
+                    $allocation,
+                    $settler,
+                    'Cancelled at branch settlement'
+                ))
+                ->count();
+
             // Create settlement journal entries (transfer balances to HQ)
             $this->createSettlementJournalEntries($branch, $settler);
 
@@ -153,6 +170,7 @@ class BranchClosingService
                     'branch_id' => $branch->id,
                     'branch_code' => $branch->code,
                     'allocations_returned' => $activeAllocations->count(),
+                    'requests_cancelled' => $cancelledRequests,
                     'action' => 'branch_closed_and_settled',
                 ]
             );
@@ -221,18 +239,6 @@ class BranchClosingService
             ->count();
 
         return $activeAllocations === 0;
-    }
-
-    protected function checkTransfersComplete(Branch $branch): bool
-    {
-        $pendingTransfers = TellerAllocation::where('branch_id', $branch->id)
-            ->whereIn('status', [
-                TellerAllocationStatus::PENDING->value,
-                TellerAllocationStatus::APPROVED->value,
-            ])
-            ->count();
-
-        return $pendingTransfers === 0;
     }
 
     protected function checkDocumentsFinalized(Branch $branch, BranchClosureWorkflow $workflow): bool

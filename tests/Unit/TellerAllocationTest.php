@@ -175,18 +175,6 @@ class TellerAllocationTest extends TestCase
     }
 
     #[Test]
-    public function force_return(): void
-    {
-        /** @var TellerAllocation $allocation */
-        $allocation = TellerAllocation::factory()->active()->create();
-
-        $allocation->forceReturn();
-
-        $this->assertEquals(TellerAllocationStatus::AUTO_RETURNED, $allocation->status);
-        $this->assertNotNull($allocation->closed_at);
-    }
-
-    #[Test]
     public function belongs_to_user(): void
     {
         $allocation = TellerAllocation::factory()->create();

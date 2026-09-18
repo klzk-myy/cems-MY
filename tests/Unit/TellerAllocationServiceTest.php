@@ -302,43 +302,6 @@ class TellerAllocationServiceTest extends TestCase
     }
 
     #[Test]
-    public function force_return_all_open(): void
-    {
-        $branch = Branch::factory()->create();
-        $pool = BranchPool::factory()->for($branch)->myr()->create([
-            'available_balance' => '30000.0000',
-            'allocated_balance' => '20000.0000',
-        ]);
-        $teller1 = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
-        $teller2 = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
-
-        $allocation1 = TellerAllocation::factory()->create([
-            'user_id' => $teller1->id,
-            'branch_id' => $branch->id,
-            'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
-            'current_balance' => '8000.0000',
-            'allocated_amount' => '10000.0000',
-            'session_date' => now()->subDay()->toDateString(),
-        ]);
-        $allocation2 = TellerAllocation::factory()->create([
-            'user_id' => $teller2->id,
-            'branch_id' => $branch->id,
-            'currency_code' => 'MYR',
-            'status' => TellerAllocationStatus::ACTIVE,
-            'current_balance' => '12000.0000',
-            'allocated_amount' => '10000.0000',
-            'session_date' => now()->subDay()->toDateString(),
-        ]);
-
-        $count = $this->service->forceReturnAllOpen();
-
-        $this->assertEquals(2, $count);
-        $pool->refresh();
-        $this->assertEquals('50000.0000', $pool->available_balance);
-    }
-
-    #[Test]
     public function transfer_to_teller(): void
     {
         $branch = Branch::factory()->create();

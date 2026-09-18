@@ -113,12 +113,11 @@ class BranchClosingWorkflowTest extends TestCase
         $this->assertIsArray($checklist);
         $this->assertArrayHasKey('counters_closed', $checklist);
         $this->assertArrayHasKey('allocations_returned', $checklist);
-        $this->assertArrayHasKey('transfers_complete', $checklist);
         $this->assertArrayHasKey('documents_finalized', $checklist);
+        $this->assertArrayNotHasKey('transfers_complete', $checklist);
 
         $this->assertTrue($checklist['counters_closed'], 'No open counters should mean counters_closed is true');
         $this->assertTrue($checklist['allocations_returned'], 'No active allocations should mean allocations_returned is true');
-        $this->assertTrue($checklist['transfers_complete'], 'No pending transfers should mean transfers_complete is true');
         $this->assertTrue($checklist['documents_finalized'], 'No other pending workflows');
     }
 
@@ -252,7 +251,6 @@ class BranchClosingWorkflowTest extends TestCase
                 'checklist' => [
                     'counters_closed',
                     'allocations_returned',
-                    'transfers_complete',
                     'documents_finalized',
                 ],
                 'can_finalize',
@@ -340,6 +338,55 @@ class BranchClosingWorkflowTest extends TestCase
 
         $this->expectException(BranchClosingChecklistIncompleteException::class);
         $this->branchClosingService->settle($workflow, $this->manager);
+    }
+
+    #[Test]
+    public function settle_cancels_pending_and_approved_requests(): void
+    {
+        // HQ-transfer journals need the suspense account.
+        ChartOfAccount::firstOrCreate(
+            ['account_code' => '2300'],
+            ['account_name' => 'Inter-Branch Clearing', 'account_type' => 'Asset', 'is_active' => true]
+        );
+
+        $mathService = new MathService;
+        $branchPoolService = new BranchPoolService(new AuditService, $mathService);
+        $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
+
+        // A pending request holds no pool funds.
+        $pending = $tellerAllocationService->requestAllocation(
+            $this->tellerA,
+            $this->manager,
+            'USD',
+            '5000.0000'
+        );
+
+        // An approved-but-unaccepted request still holds a pool earmark.
+        $approved = $tellerAllocationService->requestAllocation(
+            $this->tellerA,
+            $this->manager,
+            'USD',
+            '10000.0000'
+        );
+        $tellerAllocationService->approveAllocation($approved, $this->manager, '10000.0000');
+
+        $this->pool->refresh();
+        $this->assertEquals('10000.0000', $this->pool->allocated_balance);
+        $this->assertEquals('90000.0000', $this->pool->available_balance);
+
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
+
+        $pending->refresh();
+        $this->assertEquals(TellerAllocationStatus::REJECTED, $pending->status);
+        $approved->refresh();
+        $this->assertEquals(TellerAllocationStatus::REJECTED, $approved->status);
+        $this->assertEquals('Cancelled at branch settlement', $approved->rejection_reason);
+
+        // The approved earmark released back to available before the HQ sweep.
+        $this->pool->refresh();
+        $this->assertEquals('0.0000', $this->pool->allocated_balance);
+        $this->assertEquals('100000.0000', $this->pool->available_balance);
     }
 
     #[Test]
