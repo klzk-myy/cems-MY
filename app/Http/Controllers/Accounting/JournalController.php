@@ -16,6 +16,7 @@ use App\Services\Accounting\AccountingService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JournalController extends Controller
@@ -138,6 +139,8 @@ class JournalController extends Controller
 
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Journal reversal failed', ['exception' => $e, 'entry_id' => $entry->id]);
 

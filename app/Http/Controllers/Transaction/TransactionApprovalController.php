@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Transaction;
 
 use App\Actions\Transaction\ApproveTransactionAction;
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
@@ -23,6 +24,7 @@ use App\Services\Transaction\TransactionStateMachineFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TransactionApprovalController extends Controller
@@ -86,6 +88,8 @@ class TransactionApprovalController extends Controller
             return back()->with('error', 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', 'The transaction is not eligible for rejection in its current state.');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Transaction rejection failed', [
                 'transaction_id' => $transaction->id,
@@ -114,6 +118,8 @@ class TransactionApprovalController extends Controller
                 ->with('success', 'Compliance hold cleared. Transaction may now proceed through approval.');
         } catch (\InvalidArgumentException|TransactionValidationException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Compliance hold clearance failed', [
                 'transaction_id' => $transaction->id,
@@ -179,6 +185,8 @@ class TransactionApprovalController extends Controller
             return redirect()->route('transactions.show', $transaction)
                 ->with($result['success'] ? 'success' : 'error', $result['message']);
 
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Transaction confirmation failed', [
                 'confirmation_id' => $confirmation->id,

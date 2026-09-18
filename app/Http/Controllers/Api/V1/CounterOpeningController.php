@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\RequiresPermission;
@@ -14,7 +15,6 @@ use App\Models\User;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 /**
  * CounterOpeningController API v1
@@ -45,7 +45,7 @@ class CounterOpeningController extends Controller
         $branch = $user->branch;
 
         if (! $branch instanceof Branch) {
-            return $this->errorResponse('User has no assigned branch', [], 400);
+            return $this->errorResponse('User has no assigned branch', [], 422);
         }
 
         if ($response = $this->requirePermissionResponse(Permission::ManageCounters, 'Only users with the Manage Counters permission can view pending opening requests')) {
@@ -81,10 +81,10 @@ class CounterOpeningController extends Controller
             );
 
             return $this->successResponse($allocations, 'Opening request initiated, awaiting manager approval');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            Log::error('Failed to initiate opening request', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
+            return $this->serverErrorResponse('Failed to initiate opening request. Please contact support.', $e);
         }
     }
 
@@ -113,7 +113,7 @@ class CounterOpeningController extends Controller
 
         // Verify teller belongs to same branch
         if ($teller->branch_id !== $counter->branch_id) {
-            return $this->errorResponse('Teller does not belong to this branch', [], 400);
+            return $this->errorResponse('Teller does not belong to this branch', [], 422);
         }
 
         try {
@@ -126,6 +126,8 @@ class CounterOpeningController extends Controller
             );
 
             return $this->successResponse($session, 'Counter opened successfully');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to open counter. Please contact support.', $e);
         }

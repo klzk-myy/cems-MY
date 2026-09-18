@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\AuditService;
@@ -11,6 +12,7 @@ use App\Services\Transaction\TransactionRecoveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -75,6 +77,8 @@ class DlqController extends Controller
                 $retried ? 'Transaction moved out of the DLQ and queued for retry.' : 'Could not retry the transaction.'
             );
 
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('DLQ retry failed', [
                 'transaction_id' => $transaction->id,
@@ -131,6 +135,8 @@ class DlqController extends Controller
 
             return back()->with('error', 'Could not purge the transaction.');
 
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('DLQ purge failed', [
                 'transaction_id' => $transaction->id,

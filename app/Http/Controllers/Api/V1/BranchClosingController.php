@@ -35,7 +35,7 @@ class BranchClosingController extends Controller
 
         $existingWorkflow = $this->branchClosingService->getActiveWorkflow($branch);
         if ($existingWorkflow) {
-            return $this->errorResponse('An active closure workflow already exists for this branch', [], 400, [
+            return $this->errorResponse('An active closure workflow already exists for this branch', [], 409, [
                 'data' => $existingWorkflow,
             ]);
         }
@@ -43,7 +43,7 @@ class BranchClosingController extends Controller
         try {
             $workflow = $this->branchClosingService->initiateClosure($branch, $user);
         } catch (BusinessDateFrozenException $e) {
-            return $this->errorResponse('This business date is already finalized — reopen the day before starting a new closure.', [], 400);
+            return $this->domainErrorResponse($e, 'This business date is already finalized — reopen the day before starting a new closure.');
         }
 
         return $this->successResponse($workflow, 'Branch closure workflow initiated', 201);
@@ -93,9 +93,9 @@ class BranchClosingController extends Controller
 
             return $this->successResponse($workflow->fresh(), 'Branch settlement completed');
         } catch (BranchClosingChecklistIncompleteException $e) {
-            return $this->errorResponse('Cannot settle branch closure: counters must be closed first.', [], 400);
+            return $this->domainErrorResponse($e, 'Cannot settle branch closure: counters must be closed first.');
         } catch (InvalidStateException $e) {
-            return $this->errorResponse($e->getMessage(), [], 400);
+            return $this->domainErrorResponse($e);
         }
     }
 
@@ -120,9 +120,9 @@ class BranchClosingController extends Controller
 
             return $this->successResponse($workflow->fresh(), 'Branch closure finalized successfully');
         } catch (BranchClosingChecklistIncompleteException $e) {
-            return $this->errorResponse('Cannot finalize branch closure: incomplete checklist items must be resolved first.', [], 400);
+            return $this->domainErrorResponse($e, 'Cannot finalize branch closure: incomplete checklist items must be resolved first.');
         } catch (InvalidStateException $e) {
-            return $this->errorResponse($e->getMessage(), [], 400);
+            return $this->domainErrorResponse($e);
         }
     }
 

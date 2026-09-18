@@ -29,6 +29,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 
 class TransactionWizardController extends Controller
@@ -294,6 +295,8 @@ class TransactionWizardController extends Controller
                 'field' => $this->transactionExceptionField($e),
                 'message' => $e->getMessage(),
             ], $e->getStatusCode());
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             $this->logger->error('Transaction creation failed in wizard', [
                 'session_id' => $sessionId,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Requests\SetupRequest;
 use App\Models\Currency;
 use App\Services\System\SetupService;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SetupController extends Controller
@@ -111,6 +113,8 @@ class SetupController extends Controller
                     'password' => 'Use the password you provided',
                 ],
             ]);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Setup wizard quickSetup failed', [
@@ -242,6 +246,8 @@ class SetupController extends Controller
                 'message' => 'Business setup completed successfully!',
                 'redirect' => route('login'),
             ]);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Setup wizard completeSetup failed', [
@@ -286,6 +292,8 @@ class SetupController extends Controller
                 'success' => true,
                 'message' => 'Setup reset. You can start fresh.',
             ]);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Setup wizard resetSetup failed', [
                 'error' => $e->getMessage(),

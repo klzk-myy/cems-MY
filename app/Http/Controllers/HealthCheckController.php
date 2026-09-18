@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\DomainException;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class HealthCheckController extends Controller
 {
@@ -46,6 +48,8 @@ class HealthCheckController extends Controller
                 'status' => 'healthy',
                 'message' => 'Database connection successful',
             ];
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return [
                 'status' => 'unhealthy',
@@ -76,6 +80,8 @@ class HealthCheckController extends Controller
                 'status' => 'unhealthy',
                 'message' => 'Cache read/write test failed',
             ];
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return [
                 'status' => 'unhealthy',
@@ -103,6 +109,8 @@ class HealthCheckController extends Controller
                 'message' => "Queue connection ({$queueDriver}) successful",
                 'driver' => $queueDriver,
             ];
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return [
                 'status' => 'unhealthy',

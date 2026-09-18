@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
@@ -45,9 +46,13 @@ class EmergencyCounterController extends Controller
         } catch (EmergencyCloseCooldownException $e) {
             return $this->errorResponse('Emergency closure on cooldown. Please wait before initiating another.', [], 429);
         } catch (EmergencyCloseSessionTooNewException $e) {
-            return $this->errorResponse('The counter session is too new to be closed in emergency mode.', [], 422);
+            return $this->domainErrorResponse($e, 'The counter session is too new to be closed in emergency mode.');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\RuntimeException $e) {
-            return $this->errorResponse('Failed to initiate emergency closure. Please try again.', [], 400);
+            return $this->errorResponse('Failed to initiate emergency closure. Please try again.', [], 409);
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to initiate emergency closure. Please try again.', $e);
         }
     }
 

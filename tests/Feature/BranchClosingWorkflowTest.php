@@ -292,7 +292,7 @@ class BranchClosingWorkflowTest extends TestCase
         $response = $this->actingAs($user, 'sanctum')
             ->postJson("/api/v1/branches/{$this->branch->id}/closing/finalize");
 
-        $response->assertStatus(400);
+        $response->assertStatus(409);
         $response->assertJson(['success' => false]);
 
         $response = $this->actingAs($user, 'sanctum')

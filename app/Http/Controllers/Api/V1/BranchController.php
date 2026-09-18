@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
@@ -97,8 +98,12 @@ class BranchController extends Controller
             $this->branchService->deactivateBranch($branch, (int) Auth::id(), $request->ip());
 
             return $this->successResponse(null, 'Branch deactivated successfully');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\RuntimeException $e) {
-            return $this->errorResponse('Failed to deactivate branch. Please try again.', [], 400);
+            return $this->errorResponse('Failed to deactivate branch. Please try again.', [], 409);
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to deactivate branch. Please try again.', $e);
         }
     }
 

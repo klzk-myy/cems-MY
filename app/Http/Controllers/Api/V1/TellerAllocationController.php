@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
@@ -17,7 +18,6 @@ use App\Models\TellerAllocation;
 use App\Services\Branch\TellerAllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 /**
  * TellerAllocationController API v1
@@ -45,7 +45,7 @@ class TellerAllocationController extends Controller
         $branch = $user->branch;
 
         if (! $branch instanceof Branch) {
-            return $this->errorResponse('User has no assigned branch', [], 400);
+            return $this->errorResponse('User has no assigned branch', [], 422);
         }
 
         $pending = $this->allocationService->getPendingAllocationsForBranch($branch);
@@ -64,7 +64,7 @@ class TellerAllocationController extends Controller
         $branch = $user->branch;
 
         if (! $branch instanceof Branch) {
-            return $this->errorResponse('User has no assigned branch', [], 400);
+            return $this->errorResponse('User has no assigned branch', [], 422);
         }
 
         $active = $this->allocationService->getActiveAllocationsForBranch($branch);
@@ -118,7 +118,7 @@ class TellerAllocationController extends Controller
         }
 
         if ($statusCheck && ! $allocation->{$statusCheck}()) {
-            return $this->errorResponse('Allocation is not in the required status', [], 400);
+            return $this->errorResponse('Allocation is not in the required status', [], 409);
         }
 
         try {
@@ -129,10 +129,10 @@ class TellerAllocationController extends Controller
             }
 
             return $this->successResponse($result);
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            Log::error("Failed to {$actionName} allocation", ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
-
-            return $this->errorResponse('Operation failed. Please contact support.', [], 400);
+            return $this->serverErrorResponse("Failed to {$actionName} allocation. Please contact support.", $e);
         }
     }
 
@@ -248,10 +248,10 @@ class TellerAllocationController extends Controller
                 null,
                 $counter
             );
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            Log::error('Failed to request allocation', ['error' => $e->getMessage(), 'user_id' => $user->id]);
-
-            return $this->errorResponse($e->getMessage(), [], 400);
+            return $this->serverErrorResponse('Failed to request allocation. Please contact support.', $e);
         }
 
         return $this->successResponse($allocation->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation request created', 201);
@@ -274,7 +274,7 @@ class TellerAllocationController extends Controller
         }
 
         if (! $allocation->isApproved()) {
-            return $this->errorResponse('Allocation is not in approved status', [], 400);
+            return $this->errorResponse('Allocation is not in approved status', [], 409);
         }
 
         $this->allocationService->activateAllocation($allocation);
@@ -299,7 +299,7 @@ class TellerAllocationController extends Controller
         }
 
         if (! $allocation->isActive()) {
-            return $this->errorResponse('Allocation is not active', [], 400);
+            return $this->errorResponse('Allocation is not active', [], 409);
         }
 
         $this->allocationService->returnToPool($allocation);

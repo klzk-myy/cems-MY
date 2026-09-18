@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\CounterSessionStatus;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\VarianceThresholdException;
@@ -79,7 +80,7 @@ class CounterApiController extends Controller
                 isset($validated['supervisor_id']) ? (int) $validated['supervisor_id'] : null
             );
         } catch (InvalidStateException $e) {
-            return $this->errorResponse($e->getMessage(), [], 422);
+            return $this->domainErrorResponse($e);
         }
 
         try {
@@ -95,9 +96,11 @@ class CounterApiController extends Controller
                 'session' => $result['session'] ?? $session->fresh(),
             ]);
         } catch (SessionClosedException $e) {
-            return $this->errorResponse('The counter session has already been closed.', [], 422);
+            return $this->domainErrorResponse($e, 'The counter session has already been closed.');
         } catch (VarianceThresholdException $e) {
-            return $this->errorResponse('Variance threshold exceeded. Supervisor review required.', [], 422);
+            return $this->domainErrorResponse($e, 'Variance threshold exceeded. Supervisor review required.');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Operation failed. Please contact support.', $e);
         }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSanctionEntryRequest;
@@ -13,6 +14,7 @@ use App\Services\Compliance\SanctionsOrchestrationService;
 use App\Support\LikeEscaper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SanctionListController extends Controller
@@ -203,6 +205,8 @@ class SanctionListController extends Controller
             }
 
             return redirect()->back()->with('success', 'Import triggered successfully');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to trigger import. Please try again.');
         }

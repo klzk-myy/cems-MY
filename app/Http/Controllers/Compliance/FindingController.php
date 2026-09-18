@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\ComplianceCaseType;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DismissFindingRequest;
@@ -13,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FindingController extends Controller
@@ -94,6 +96,8 @@ class FindingController extends Controller
 
             return redirect()->route('compliance.cases.show', $case)
                 ->with('success', 'Case created from finding');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('FindingController: Exception creating case from finding', [
                 'message' => $e->getMessage(),
@@ -140,6 +144,8 @@ class FindingController extends Controller
             ]);
 
             return redirect()->back()->with('error', 'Failed to dismiss finding. Please try again.');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('FindingController: Exception dismissing finding', [
                 'message' => $e->getMessage(),

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Enums\AccountCode;
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InsufficientPettyCashException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\StoreExpenseRequest;
@@ -13,6 +14,7 @@ use App\Services\Accounting\ExpenseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -94,6 +96,8 @@ class ExpenseController extends Controller
             );
         } catch (InsufficientPettyCashException $e) {
             return back()->withInput()->withErrors(['amount' => $e->getMessage()]);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::warning('Expense post failed', ['exception' => $e->getMessage(), 'user_id' => $user->id]);
 

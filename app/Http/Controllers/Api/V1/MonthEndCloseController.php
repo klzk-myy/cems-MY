@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -32,11 +33,13 @@ class MonthEndCloseController extends Controller
 
             return $this->successResponse($results);
         } catch (MonthEndPreCheckFailedException $e) {
-            return $this->errorResponse('Pre-flight checks failed', [], 422, [
+            return $this->errorResponse('Pre-flight checks failed', ['code' => $e->getErrorCode()], $e->getStatusCode(), [
                 'failures' => $e->getFailures(),
             ]);
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse('Month-end close failed. Please try again.', [], 500);
+            return $this->serverErrorResponse('Month-end close failed. Please try again.', $e);
         }
     }
 
@@ -47,8 +50,10 @@ class MonthEndCloseController extends Controller
             $status = $this->monthEndCloseService->getMonthEndStatus($carbonDate);
 
             return $this->successResponse($status);
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve month-end status. Please try again.', [], 500);
+            return $this->serverErrorResponse('Failed to retrieve month-end status. Please try again.', $e);
         }
     }
 }

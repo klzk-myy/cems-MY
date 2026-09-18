@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\DomainException;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Counter;
@@ -18,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AllocationController extends Controller
@@ -87,6 +89,8 @@ class AllocationController extends Controller
                 (string) $validated['approved_amount'],
                 isset($validated['daily_limit_myr']) ? (string) $validated['daily_limit_myr'] : null
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -115,6 +119,8 @@ class AllocationController extends Controller
                 $request->user(),
                 $validated['rejection_reason'] ?? null
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -203,6 +209,8 @@ class AllocationController extends Controller
                     $created->push($allocation);
                 }
             });
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -243,6 +251,8 @@ class AllocationController extends Controller
                 (string) $validated['amount'],
                 $validated['direction'] === 'increase'
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -263,6 +273,8 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->returnToPool($allocation);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -364,6 +376,8 @@ class AllocationController extends Controller
                     $count++;
                 }
             });
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -388,6 +402,8 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->activateAllocation($allocation);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -429,6 +445,8 @@ class AllocationController extends Controller
                 (string) $validated['amount'],
                 $validated['direction'] === 'load'
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -451,6 +469,8 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->returnToPool($allocation);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

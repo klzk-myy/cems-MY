@@ -2,6 +2,7 @@
 
 namespace App\Http\Concerns;
 
+use App\Exceptions\Domain\DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -34,9 +35,10 @@ trait HandlesControllerErrors
         array $extra = []
     ): RedirectResponse {
         // Service-layer validation failures (e.g. duplicate ID number) carry
-        // field messages — let the framework redirect back with them rather
-        // than masking them behind the generic fallback.
-        if ($e instanceof ValidationException) {
+        // field messages, and domain exceptions carry client-safe messages —
+        // let the global handler render both rather than masking them behind
+        // the generic fallback.
+        if ($e instanceof ValidationException || $e instanceof DomainException) {
             throw $e;
         }
 
@@ -69,9 +71,9 @@ trait HandlesControllerErrors
         array $extra = []
     ): JsonResponse {
         // Same passthrough as the web variant — a service-layer
-        // ValidationException should surface as a 422 with field errors,
-        // not a generic 500.
-        if ($e instanceof ValidationException) {
+        // ValidationException surfaces as a 422 with field errors and a
+        // DomainException as its declared status, not a generic 500.
+        if ($e instanceof ValidationException || $e instanceof DomainException) {
             throw $e;
         }
 

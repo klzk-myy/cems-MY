@@ -8,4 +8,9 @@ class InvalidAllocationStateException extends DomainException
     {
         parent::__construct("Can only activate {$requiredState} allocation");
     }
+
+    public function getStatusCode(): int
+    {
+        return 409;
+    }
 }

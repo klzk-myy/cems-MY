@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Customer\CustomerIndexAction;
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\CloseCustomerRequest;
 use App\Http\Requests\FreezeCustomerRequest;
@@ -21,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -155,6 +157,8 @@ class CustomerController extends Controller
 
         try {
             $result = $this->customerService->createCustomerAction($validated, (int) auth()->id());
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
@@ -246,6 +250,8 @@ class CustomerController extends Controller
 
         try {
             $customer->freeze($request->validated('reason'));
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
@@ -287,6 +293,8 @@ class CustomerController extends Controller
 
         try {
             $customer->unfreeze();
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
@@ -339,6 +347,8 @@ class CustomerController extends Controller
 
         try {
             $this->customerService->closeCustomer($customer, $request->validated('reason'), $user);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,
@@ -388,6 +398,8 @@ class CustomerController extends Controller
 
         try {
             $result = $this->customerService->updateCustomerAction($customer, $validated, (int) auth()->id());
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb(
                 $e,

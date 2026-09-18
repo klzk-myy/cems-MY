@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Permission;
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\BranchScopedQuery;
 use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
@@ -21,6 +22,7 @@ use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class StockCashController extends Controller
@@ -125,6 +127,8 @@ class StockCashController extends Controller
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', 'Till operation failed. Please try again.');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Failed to open till', ['error' => $e->getMessage()]);
 
@@ -178,6 +182,8 @@ class StockCashController extends Controller
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', 'Till operation failed. Please try again.');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Failed to close till', ['error' => $e->getMessage()]);
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Eod\CounterReconciliationRequest;
@@ -61,8 +62,10 @@ class EodReconciliationController extends Controller
             $report = $this->eodService->generateDailyReconciliationSummary($carbonDate, $branchId);
 
             return $this->successResponse($report);
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to generate reconciliation report. Please try again.', [], 500);
+            return $this->serverErrorResponse('Failed to generate reconciliation report. Please try again.', $e);
         }
     }
 
@@ -92,8 +95,10 @@ class EodReconciliationController extends Controller
             $report = $this->eodService->generateCounterReconciliation($counterId, $carbonDate);
 
             return $this->successResponse($report);
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to generate counter reconciliation. Please try again.', [], 500);
+            return $this->serverErrorResponse('Failed to generate counter reconciliation. Please try again.', $e);
         }
     }
 
@@ -157,8 +162,10 @@ class EodReconciliationController extends Controller
 
             return $pdf->download($filename);
 
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to generate reconciliation report. Please try again.', [], 500);
+            return $this->serverErrorResponse('Failed to generate reconciliation report. Please try again.', $e);
         }
     }
 

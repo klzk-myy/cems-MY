@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class LoginController extends Controller
@@ -68,6 +70,8 @@ class LoginController extends Controller
                 }
 
                 return redirect()->intended('/dashboard');
+            } catch (ValidationException|DomainException $e) {
+                throw $e;
             } catch (\Throwable $e) {
                 Log::error('Login transaction failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
             }

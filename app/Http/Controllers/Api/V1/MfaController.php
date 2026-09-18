@@ -45,7 +45,7 @@ class MfaController extends Controller
         $user = $request->user();
 
         if ($user->mfa_enabled) {
-            return $this->errorResponse('MFA is already enabled for this account.', [], 400);
+            return $this->errorResponse('MFA is already enabled for this account.', [], 409);
         }
 
         $secretData = $this->mfaService->generateSecret($user->email);
@@ -81,7 +81,7 @@ class MfaController extends Controller
             ->get(self::PENDING_SECRET_PREFIX.$user->id);
 
         if (! is_string($pendingSecret) || $pendingSecret === '') {
-            return $this->errorResponse('No pending MFA enrollment. Call POST api/v1/mfa/enroll first.', [], 400);
+            return $this->errorResponse('No pending MFA enrollment. Call POST api/v1/mfa/enroll first.', [], 409);
         }
 
         // Same brute-force lockout as web verification (5 failures / 15 min).
@@ -129,7 +129,7 @@ class MfaController extends Controller
         $user = $request->user();
 
         if (! $user->mfa_enabled) {
-            return $this->errorResponse('MFA is not enabled for this account.', [], 400);
+            return $this->errorResponse('MFA is not enabled for this account.', [], 409);
         }
 
         MfaRecoveryCode::where('user_id', $user->id)->delete();
@@ -164,7 +164,7 @@ class MfaController extends Controller
         $secret = $this->mfaService->getSecret($user);
 
         if (! $secret) {
-            return $this->errorResponse('MFA secret not found.', [], 400);
+            return $this->notFoundResponse('MFA secret not found.');
         }
 
         $valid = $this->mfaService->verifyCode($secret, $validated['code']);

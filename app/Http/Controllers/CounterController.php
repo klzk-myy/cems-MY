@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Exceptions\Domain\InvalidStateException;
@@ -32,6 +33,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CounterController extends Controller
@@ -477,6 +479,8 @@ class CounterController extends Controller
 
             return redirect()->route('counters.index')
                 ->with('success', 'Handover acknowledged successfully');
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Failed to acknowledge counter handover', [
                 'handover_id' => $handover->id ?? null,
@@ -523,6 +527,8 @@ class CounterController extends Controller
             );
 
             return redirect()->route($redirectRoute)->with('success', $successMessage);
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error("Counter {$verb} failed", [
                 'message' => $e->getMessage(),

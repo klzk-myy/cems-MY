@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
+use App\Exceptions\Domain\DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,7 @@ trait ApiResponse
     protected function errorResponse(
         string $message,
         array $errors = [],
-        int $code = 400,
+        int $code = 422,
         array $meta = []
     ): JsonResponse {
         return response()->json(array_merge([
@@ -39,6 +40,25 @@ trait ApiResponse
             'message' => $message,
             'errors' => $errors,
         ], $meta), $code);
+    }
+
+    /**
+     * Standard error response for domain exceptions: the exception's own
+     * declared status and stable machine-readable code. Controllers may
+     * override the message with friendlier copy without losing the code.
+     *
+     * @param  array<string, mixed>  $errors
+     */
+    protected function domainErrorResponse(
+        DomainException $e,
+        ?string $message = null,
+        array $errors = []
+    ): JsonResponse {
+        return $this->errorResponse(
+            $message ?? $e->getMessage(),
+            array_merge(['code' => $e->getErrorCode()], $errors),
+            $e->getStatusCode()
+        );
     }
 
     protected function resourceResponse(

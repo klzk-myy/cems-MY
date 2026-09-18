@@ -100,7 +100,7 @@ class CaseApiTest extends TestCase
             ->postJson("/api/v1/compliance/findings/{$finding->id}/dismiss", [
                 'reason' => 'dismissing again',
             ])
-            ->assertStatus(400);
+            ->assertStatus(422);
     }
 
     #[Test]

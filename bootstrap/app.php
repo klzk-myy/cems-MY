@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureBranchScope;
@@ -26,6 +27,7 @@ use App\Services\Compliance\KycDocumentExpiryService;
 use App\Services\Compliance\Monitors\SanctionsRescreeningMonitor;
 use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionConfirmationService;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
@@ -35,9 +37,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -94,7 +101,97 @@ $app = Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Domain exceptions declare their own HTTP status and a stable
+        // machine-readable code; their messages are client-safe by contract.
+        $exceptions->render(function (DomainException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => ['code' => $e->getErrorCode()],
+                ], $e->getStatusCode());
+            }
+
+            return back()->withInput()->with('error', $e->getMessage());
+        });
+
+        // Validation failures keep the ApiResponse envelope at 422 so API
+        // consumers see one error schema regardless of where validation ran.
+        $exceptions->render(function (ValidationException $e, $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        });
+
+        // Remaining API failures: HttpException keeps its status,
+        // RuntimeException is a state conflict (409), everything else is a
+        // sanitized 500 — internal details must not reach API consumers.
+        $exceptions->render(function (Throwable $e, $request) {
+            if ($e instanceof HttpResponseException) {
+                return $e->getResponse();
+            }
+
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            $status = match (true) {
+                $e instanceof HttpExceptionInterface => $e->getStatusCode(),
+                $e instanceof AuthenticationException => 401,
+                $e instanceof RuntimeException => 409,
+                default => 500,
+            };
+
+            return response()->json([
+                'success' => false,
+                'message' => $status >= 500
+                    ? 'An internal error occurred. Please try again later.'
+                    : $e->getMessage(),
+                'errors' => $status >= 500 ? ['code' => 'INTERNAL_ERROR'] : [],
+            ], $status);
+        });
+
+        // Unhandled production exceptions page the ops mailbox; the
+        // recipients filter guards against an unset env var yielding [''].
+        $exceptions->report(function (Throwable $e) {
+            if (! app()->isProduction()) {
+                return;
+            }
+
+            Log::critical('Unhandled production exception', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            $recipients = array_values(array_filter(
+                (array) config('monitoring.alert_recipients'),
+                fn ($recipient) => is_string($recipient) && trim($recipient) !== ''
+            ));
+
+            if ($recipients === []) {
+                return;
+            }
+
+            Mail::raw(sprintf(
+                "An unhandled exception occurred in production.\n\nType: %s\nMessage: %s\nLocation: %s:%d\nTime: %s\n\nStack trace:\n%s",
+                get_class($e),
+                $e->getMessage(),
+                basename($e->getFile()),
+                $e->getLine(),
+                now()->toDateTimeString(),
+                $e->getTraceAsString()
+            ), function ($message) use ($recipients) {
+                $message->to($recipients)->subject('[CRITICAL] Unhandled Exception in CEMS-MY');
+            });
+        });
     })
     ->withSchedule(function (Schedule $schedule) {
         // MSB(2) - Daily transaction summary (previous day)

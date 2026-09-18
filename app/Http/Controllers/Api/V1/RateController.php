@@ -121,7 +121,7 @@ class RateController extends Controller
                 $validated['effective_date'] ?? null
             );
         } catch (InvalidRateException $e) {
-            return $this->errorResponse($e->getMessage(), [], 422);
+            return $this->domainErrorResponse($e);
         }
 
         if (! $result->success) {

@@ -10,6 +10,7 @@ use App\Services\Accounting\FiscalYearService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FiscalYearController extends Controller
@@ -62,6 +63,8 @@ class FiscalYearController extends Controller
             );
 
             return redirect()->back()->with('success', "Fiscal year {$year->year_code} created successfully.");
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('FiscalYear create failed', ['exception' => $e, 'year_code' => $request->year_code]);
 
@@ -90,6 +93,8 @@ class FiscalYearController extends Controller
             // Domain failures carry actionable messages (already closed,
             // open periods remaining, permission denied) — surface them.
             return redirect()->back()->with('error', $e->getMessage());
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('FiscalYear close failed', ['exception' => $e, 'year_code' => $year->year_code]);
 

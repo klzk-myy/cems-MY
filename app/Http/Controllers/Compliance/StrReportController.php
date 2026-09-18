@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\StrReportStatus;
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStrReportRequest;
 use App\Models\Compliance\ComplianceCase;
@@ -12,6 +13,7 @@ use App\Services\Compliance\StrReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -74,6 +76,8 @@ class StrReportController extends Controller
 
         try {
             $report = $this->strReportService->createFromCase($case, $request->user());
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('STR draft creation failed', [
                 'error' => $e->getMessage(),
@@ -102,6 +106,8 @@ class StrReportController extends Controller
                 (string) $request->validated('bnm_reference'),
                 $request->user()
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('STR submit failed', [
                 'error' => $e->getMessage(),
@@ -124,6 +130,8 @@ class StrReportController extends Controller
 
         try {
             $this->strReportService->acknowledge($strReport, $request->user());
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('STR acknowledge failed', [
                 'error' => $e->getMessage(),

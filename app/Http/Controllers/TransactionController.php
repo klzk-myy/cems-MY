@@ -28,6 +28,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -159,6 +160,8 @@ class TransactionController extends Controller
             return $field !== null
                 ? back()->withErrors([$field => $e->getMessage()])->withInput()
                 : back()->with('error', $e->getMessage())->withInput();
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Transaction creation failed', [
                 'error' => $e->getMessage(),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Customer\SearchCustomerRequest;
@@ -19,6 +20,7 @@ use App\Services\Customer\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
@@ -79,6 +81,10 @@ class CustomerController extends Controller
                 'Customer created successfully.',
                 201
             );
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Customer API store failed', [
                 'error' => $e->getMessage(),
@@ -130,6 +136,10 @@ class CustomerController extends Controller
                 new CustomerResource($result->customer->fresh()),
                 'Customer updated successfully.'
             );
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Customer API update failed', [
                 'error' => $e->getMessage(),
@@ -151,7 +161,7 @@ class CustomerController extends Controller
         $this->authorize('delete', $customer);
 
         if ($customer->transactions()->exists()) {
-            return $this->errorResponse('Cannot delete customer with existing transactions.', [], 400);
+            return $this->errorResponse('Cannot delete customer with existing transactions.', [], 422);
         }
 
         $customerName = $customer->full_name;

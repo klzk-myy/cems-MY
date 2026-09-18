@@ -53,7 +53,7 @@ class FindingController extends Controller
         try {
             $finding->dismiss($validated['reason']);
         } catch (CaseManagementException $e) {
-            return $this->errorResponse('Failed to dismiss finding. Please try again.', [], 400);
+            return $this->domainErrorResponse($e, 'Failed to dismiss finding. Please try again.');
         }
 
         return $this->successResponse($finding, 'Finding dismissed.');

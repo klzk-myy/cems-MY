@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permission;
+use App\Exceptions\Domain\DomainException;
 use App\Models\SystemAlert;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -99,6 +101,8 @@ class SystemAlertController extends Controller
                 ],
                 'INFO'
             );
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Failed to acknowledge system alert', [
                 'alert_id' => $alert->id,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -14,6 +15,7 @@ use App\Models\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
 use App\Support\LikeEscaper;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class SanctionListController extends Controller
 {
@@ -87,11 +89,20 @@ class SanctionListController extends Controller
                 'records_updated' => $result['updated'],
                 'records_deactivated' => $result['deactivated'],
             ]);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Import failed', [], 500, [
+        } catch (DomainException $e) {
+            return $this->errorResponse('Import failed', ['code' => $e->getErrorCode()], $e->getStatusCode(), [
                 'data' => [
                     'status' => 'failed',
                     'error' => $e->getMessage(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Sanctions import failed', ['error' => $e->getMessage(), 'list_id' => $listId]);
+
+            return $this->errorResponse('Import failed', [], 500, [
+                'data' => [
+                    'status' => 'failed',
+                    'error' => 'Import failed. Check server logs for details.',
                 ],
             ]);
         }

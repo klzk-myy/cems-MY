@@ -37,7 +37,7 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result->ok) {
-            return $this->errorResponse($result->message, [], 400);
+            return $this->errorResponse($result->message, [], 422);
         }
 
         return $this->successResponse(
@@ -60,7 +60,7 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result->ok) {
-            return $this->errorResponse($result->message, [], 400);
+            return $this->errorResponse($result->message, [], 422);
         }
 
         return $this->successResponse(
@@ -83,7 +83,7 @@ class TransactionCancellationController extends Controller
         );
 
         if (! $result->ok) {
-            return $this->errorResponse($result->message, [], 400);
+            return $this->errorResponse($result->message, [], 422);
         }
 
         return $this->successResponse([

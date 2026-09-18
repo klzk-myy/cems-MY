@@ -65,19 +65,14 @@ class TransactionController extends Controller
                 201
             );
         } catch (TransactionBlockedException $e) {
-            return $this->errorResponse('Transaction blocked due to compliance restrictions.', ['reason' => 'blocked'], 403);
+            return $this->domainErrorResponse($e, 'Transaction blocked due to compliance restrictions.', ['reason' => 'blocked']);
         } catch (DomainException $e) {
             $field = $this->transactionExceptionField($e);
 
-            return $this->errorResponse(
-                $e->getMessage(),
-                array_filter([
-                    'code' => $e->getErrorCode(),
-                    'field' => $field,
-                    $field ?? 'transaction' => [$e->getMessage()],
-                ]),
-                $e->getStatusCode()
-            );
+            return $this->domainErrorResponse($e, null, array_filter([
+                'field' => $field,
+                $field ?? 'transaction' => [$e->getMessage()],
+            ]));
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Transaction failed. Please contact support.', $e);
         }

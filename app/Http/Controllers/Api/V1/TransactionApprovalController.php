@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Transaction\ApproveTransactionAction;
+use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -61,11 +62,11 @@ class TransactionApprovalController extends Controller
 
             return $this->successResponse($transaction, 'Transaction has been rejected.');
         } catch (SelfApprovalException $e) {
-            return $this->errorResponse('You cannot reject your own transaction. Segregation of duties requires a different approver.', [], 422);
+            return $this->domainErrorResponse($e, 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
         } catch (\InvalidArgumentException $e) {
             return $this->errorResponse('The transaction is not eligible for rejection in its current state.', [], 422);
         } catch (\Exception $e) {
-            return $this->errorResponse('Rejection failed due to a system error. Please contact support.', [], 500);
+            return $this->serverErrorResponse('Rejection failed due to a system error. Please contact support.', $e);
         }
     }
 
@@ -82,8 +83,10 @@ class TransactionApprovalController extends Controller
             $this->approvalService->clearHold($transaction, (int) auth()->id());
 
             return $this->successResponse($transaction->fresh(), 'Compliance hold cleared.');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), [], 422);
+            return $this->serverErrorResponse('Failed to clear compliance hold. Please contact support.', $e);
         }
     }
 

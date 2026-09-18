@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ClosePeriodRequest;
 use App\Models\AccountingPeriod;
@@ -11,6 +12,7 @@ use App\Services\Accounting\PeriodCloseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PeriodController extends Controller
@@ -44,6 +46,8 @@ class PeriodController extends Controller
 
             return redirect()->route('accounting.periods')
                 ->with('success', "Period {$period->period_code} closed successfully");
+        } catch (ValidationException|DomainException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Period close failed', ['error' => $e->getMessage()]);
 

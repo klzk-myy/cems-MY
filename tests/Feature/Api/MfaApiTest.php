@@ -184,7 +184,7 @@ class MfaApiTest extends TestCase
         ])->assertStatus(200);
 
         $this->postJson('/api/v1/mfa/recovery-codes/regenerate', ['current_password' => 'pass'])
-            ->assertStatus(400);
+            ->assertStatus(409);
     }
 
     /**
