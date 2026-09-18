@@ -19,21 +19,22 @@
                 <x-slot:tbody>
                     @forelse($history as $result)
                         <tr class="border-t border-border hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 text-sm">{{ $result->created_at?->format('d M Y H:i') ?? 'N/A' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $result->screened_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ \Illuminate\Support\Carbon::parse($result['created_at'])->format('d M Y H:i') }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $result['screened_name'] ?? 'N/A' }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <x-badge :variant="match ($result->result) {
+                                <x-badge :variant="match ($result['result'] ?? null) {
                                     'clear' => 'success',
-                                    'potential_match', 'confirmed_match' => 'danger',
+                                    'flag' => 'warning',
+                                    'block', 'potential_match', 'confirmed_match' => 'danger',
                                     default => 'gray',
                                 }">
-                                    {{ ucfirst(str_replace('_', ' ', (string) $result->result)) }}
+                                    {{ ucfirst(str_replace('_', ' ', (string) ($result['result'] ?? 'Unknown'))) }}
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm">
-                                {{ $result->match_score !== null ? round((float) $result->match_score * 100, 1).'%' : 'N/A' }}
+                                {{ isset($result['match_score']) ? round((float) $result['match_score'] * 100, 1).'%' : 'N/A' }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $result->action_taken ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink-muted">{{ $result['action_taken'] ?? '—' }}</td>
                         </tr>
                     @empty
                         <x-empty-state message="No screening history for this customer." :colspan="5" />

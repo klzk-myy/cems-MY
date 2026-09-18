@@ -165,7 +165,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
                         <div class="flex items-center gap-2">
                             <span class="font-medium tabular-nums">{{ $entry->old_score }} → {{ $entry->new_score }}</span>
-                            @if ((string) $entry->old_rating !== (string) $entry->new_rating)
+                            @if ($entry->old_rating?->value !== $entry->new_rating?->value)
                                 <x-badge :variant="$entry->new_rating?->color() ?? 'gray'">
                                     {{ $entry->old_rating?->value ?? '-' }} → {{ $entry->new_rating?->value ?? '-' }}
                                 </x-badge>
