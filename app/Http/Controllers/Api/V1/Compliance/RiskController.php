@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Compliance;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\LockRiskProfileRequest;
+use App\Http\Resources\Api\V1\RiskProfileResource;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Services\Compliance\RiskScoringEngine;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class RiskController extends Controller
     {
         $profile = $this->findProfileOrFail($customerId);
 
-        return $this->successResponse($profile, 'Risk profile retrieved successfully.');
+        return $this->successResponse(new RiskProfileResource($profile), 'Risk profile retrieved successfully.');
     }
 
     /**
@@ -62,7 +63,7 @@ class RiskController extends Controller
     {
         $profile = $this->engine->recalculateForCustomer((int) $customerId);
 
-        return $this->successResponse($profile, 'Risk score recalculated.');
+        return $this->successResponse(new RiskProfileResource($profile), 'Risk score recalculated.');
     }
 
     /**
@@ -76,7 +77,7 @@ class RiskController extends Controller
 
         $profile->lock((int) auth()->id(), $validated['reason']);
 
-        return $this->successResponse($profile, 'Risk profile locked.');
+        return $this->successResponse(new RiskProfileResource($profile), 'Risk profile locked.');
     }
 
     /**
@@ -88,7 +89,7 @@ class RiskController extends Controller
 
         $profile->unlock();
 
-        return $this->successResponse($profile, 'Risk profile unlocked.');
+        return $this->successResponse(new RiskProfileResource($profile), 'Risk profile unlocked.');
     }
 
     /**

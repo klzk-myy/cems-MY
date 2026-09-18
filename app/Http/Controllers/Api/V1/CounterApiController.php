@@ -13,6 +13,7 @@ use App\Http\Controllers\Concerns\ResolvesCloseSupervisor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\CloseCounterRequest;
 use App\Http\Requests\Api\V1\Counter\StoreCounterRequest;
+use App\Http\Resources\Api\V1\CounterResource;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Services\Branch\CounterService;
@@ -39,7 +40,7 @@ class CounterApiController extends Controller
             $request->user()
         );
 
-        return $this->successResponse(['counter' => $counter], 'Counter created successfully', 201);
+        return $this->successResponse(['counter' => new CounterResource($counter)], 'Counter created successfully', 201);
     }
 
     public function close(CloseCounterRequest $request, string $counterId): JsonResponse

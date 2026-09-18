@@ -10,6 +10,7 @@ use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
+use App\Http\Resources\Api\V1\CounterSessionResource;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\Branch\CounterOpeningWorkflowService;
@@ -125,7 +126,7 @@ class CounterOpeningController extends Controller
                 $validated['daily_limits'] ?? []
             );
 
-            return $this->successResponse($session, 'Counter opened successfully');
+            return $this->successResponse(new CounterSessionResource($session), 'Counter opened successfully');
         } catch (DomainException $e) {
             return $this->domainErrorResponse($e);
         } catch (\Exception $e) {

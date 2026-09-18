@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiCancelTransactionRequest;
 use App\Http\Requests\ApproveCancelRequest;
 use App\Http\Requests\RejectCancelRequest;
+use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use Illuminate\Http\JsonResponse;
 
@@ -41,7 +42,7 @@ class TransactionCancellationController extends Controller
         }
 
         return $this->successResponse(
-            ['transaction' => $transaction->fresh()],
+            ['transaction' => new TransactionResource($transaction->fresh())],
             $result->message
         );
     }
@@ -64,7 +65,7 @@ class TransactionCancellationController extends Controller
         }
 
         return $this->successResponse(
-            ['transaction' => $transaction->fresh()],
+            ['transaction' => new TransactionResource($transaction->fresh())],
             $result->message
         );
     }
@@ -87,7 +88,7 @@ class TransactionCancellationController extends Controller
         }
 
         return $this->successResponse([
-            'transaction' => $transaction->fresh(),
+            'transaction' => new TransactionResource($transaction->fresh()),
             'previous_status' => $result->context['previous_status'] ?? null,
         ], $result->message);
     }

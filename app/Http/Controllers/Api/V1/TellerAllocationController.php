@@ -12,6 +12,7 @@ use App\Http\Requests\Api\V1\TellerAllocation\ModifyAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\MyActiveAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\RejectAllocationRequest;
 use App\Http\Requests\Api\V1\TellerAllocation\RequestAllocationRequest;
+use App\Http\Resources\Api\V1\TellerAllocationResource;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\TellerAllocation;
@@ -50,7 +51,7 @@ class TellerAllocationController extends Controller
 
         $pending = $this->allocationService->getPendingAllocationsForBranch($branch);
 
-        return $this->successResponse($pending);
+        return $this->successResponse(TellerAllocationResource::collection($pending));
     }
 
     /**
@@ -69,7 +70,7 @@ class TellerAllocationController extends Controller
 
         $active = $this->allocationService->getActiveAllocationsForBranch($branch);
 
-        return $this->successResponse($active);
+        return $this->successResponse(TellerAllocationResource::collection($active));
     }
 
     /**
@@ -88,7 +89,7 @@ class TellerAllocationController extends Controller
             return $authorization;
         }
 
-        return $this->successResponse($allocation);
+        return $this->successResponse(new TellerAllocationResource($allocation));
     }
 
     /**
@@ -128,7 +129,7 @@ class TellerAllocationController extends Controller
                 $result->loadMissing(TellerAllocation::API_RELATIONS);
             }
 
-            return $this->successResponse($result);
+            return $this->successResponse($result instanceof TellerAllocation ? new TellerAllocationResource($result) : $result);
         } catch (DomainException $e) {
             return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
@@ -221,7 +222,7 @@ class TellerAllocationController extends Controller
 
         $data = array_key_exists('data', $result) ? $result['data'] : $result;
 
-        return $this->successResponse($data, $result['message'] ?? 'Active allocation retrieved');
+        return $this->successResponse($data instanceof TellerAllocation ? new TellerAllocationResource($data) : $data, $result['message'] ?? 'Active allocation retrieved');
     }
 
     /**
@@ -254,7 +255,7 @@ class TellerAllocationController extends Controller
             return $this->serverErrorResponse('Failed to request allocation. Please contact support.', $e);
         }
 
-        return $this->successResponse($allocation->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation request created', 201);
+        return $this->successResponse(new TellerAllocationResource($allocation->loadMissing(TellerAllocation::API_RELATIONS)), 'Allocation request created', 201);
     }
 
     /**
@@ -279,7 +280,7 @@ class TellerAllocationController extends Controller
 
         $this->allocationService->activateAllocation($allocation);
 
-        return $this->successResponse($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation activated');
+        return $this->successResponse(new TellerAllocationResource($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS)), 'Allocation activated');
     }
 
     /**
@@ -304,6 +305,6 @@ class TellerAllocationController extends Controller
 
         $this->allocationService->returnToPool($allocation);
 
-        return $this->successResponse($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS), 'Allocation returned to pool');
+        return $this->successResponse(new TellerAllocationResource($allocation->refresh()->loadMissing(TellerAllocation::API_RELATIONS)), 'Allocation returned to pool');
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\DismissFindingRequest;
 use App\Http\Requests\Api\V1\Compliance\FindingIndexRequest;
+use App\Http\Resources\Api\V1\FindingResource;
 use App\Models\Compliance\ComplianceFinding;
 use Illuminate\Http\JsonResponse;
 
@@ -28,7 +29,7 @@ class FindingController extends Controller
         $perPage = min(100, max(1, (int) ($request->validated()['per_page'] ?? 20)));
         $findings = $query->orderBy('generated_at', 'desc')->paginate($perPage);
 
-        return $this->successResponse($findings, 'Findings retrieved successfully.');
+        return $this->resourceResponse(FindingResource::collection($findings), 'Findings retrieved successfully.');
     }
 
     /**
@@ -38,7 +39,7 @@ class FindingController extends Controller
     {
         $finding = ComplianceFinding::with('subject')->findOrFail($id);
 
-        return $this->successResponse($finding, 'Finding retrieved successfully.');
+        return $this->successResponse(new FindingResource($finding), 'Finding retrieved successfully.');
     }
 
     /**
@@ -56,7 +57,7 @@ class FindingController extends Controller
             return $this->domainErrorResponse($e, 'Failed to dismiss finding. Please try again.');
         }
 
-        return $this->successResponse($finding, 'Finding dismissed.');
+        return $this->successResponse(new FindingResource($finding), 'Finding dismissed.');
     }
 
     /**

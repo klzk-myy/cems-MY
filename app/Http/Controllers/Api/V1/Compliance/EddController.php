@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\EddIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\RejectEddRequest;
 use App\Http\Requests\Api\V1\Compliance\SubmitQuestionnaireRequest;
+use App\Http\Resources\Api\V1\EddRecordResource;
+use App\Http\Resources\Api\V1\EddTemplateResource;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +37,7 @@ class EddController extends Controller
         $perPage = min(100, max(1, (int) $request->get('per_page', 20)));
         $records = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return $this->successResponse($records, 'EDD records retrieved successfully.');
+        return $this->resourceResponse(EddRecordResource::collection($records), 'EDD records retrieved successfully.');
     }
 
     /**
@@ -48,7 +50,7 @@ class EddController extends Controller
 
         $this->authorize('view', $record);
 
-        return $this->successResponse($record, 'EDD record retrieved successfully.');
+        return $this->successResponse(new EddRecordResource($record), 'EDD record retrieved successfully.');
     }
 
     /**
@@ -60,7 +62,7 @@ class EddController extends Controller
             ->orderBy('name')
             ->get();
 
-        return $this->successResponse($templates, 'EDD templates retrieved successfully.');
+        return $this->successResponse(EddTemplateResource::collection($templates), 'EDD templates retrieved successfully.');
     }
 
     /**
@@ -83,7 +85,7 @@ class EddController extends Controller
             'status' => EddStatus::QuestionnaireSubmitted,
         ]);
 
-        return $this->successResponse($record->fresh(), 'Questionnaire submitted successfully.');
+        return $this->successResponse(new EddRecordResource($record->fresh()), 'Questionnaire submitted successfully.');
     }
 
     /**
@@ -118,7 +120,7 @@ class EddController extends Controller
             'approved_at' => now(),
         ]);
 
-        return $this->successResponse($record, 'EDD record approved.');
+        return $this->successResponse(new EddRecordResource($record), 'EDD record approved.');
     }
 
     /**
@@ -145,6 +147,6 @@ class EddController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        return $this->successResponse($record, 'EDD record rejected.');
+        return $this->successResponse(new EddRecordResource($record), 'EDD record rejected.');
     }
 }

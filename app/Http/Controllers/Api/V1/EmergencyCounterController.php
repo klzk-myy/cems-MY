@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\InitiateEmergencyCloseRequest;
+use App\Http\Resources\Api\V1\EmergencyClosureResource;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,7 @@ class EmergencyCounterController extends Controller
                 $validated['reason']
             );
 
-            return $this->successResponse($closure, 'Emergency closure initiated successfully', 201);
+            return $this->successResponse(new EmergencyClosureResource($closure), 'Emergency closure initiated successfully', 201);
         } catch (EmergencyCloseCooldownException $e) {
             return $this->errorResponse('Emergency closure on cooldown. Please wait before initiating another.', [], 429);
         } catch (EmergencyCloseSessionTooNewException $e) {
@@ -93,6 +94,6 @@ class EmergencyCounterController extends Controller
 
         $closure = $this->emergencyService->acknowledge($closure, $user);
 
-        return $this->successResponse($closure, 'Emergency closure acknowledged');
+        return $this->successResponse(new EmergencyClosureResource($closure), 'Emergency closure acknowledged');
     }
 }

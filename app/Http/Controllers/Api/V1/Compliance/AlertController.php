@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\AlertIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkResolveAlertRequest;
+use App\Http\Resources\Api\V1\AlertResource;
 use App\Models\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
@@ -49,7 +50,7 @@ class AlertController extends Controller
             ->orderByDesc('risk_score')
             ->paginate($perPage);
 
-        return $this->successResponse($alerts, 'Alerts retrieved successfully.');
+        return $this->resourceResponse(AlertResource::collection($alerts), 'Alerts retrieved successfully.');
     }
 
     /**
@@ -65,7 +66,7 @@ class AlertController extends Controller
             'case',
         ])->findOrFail($id);
 
-        return $this->successResponse($alert, 'Alert retrieved successfully.');
+        return $this->successResponse(new AlertResource($alert), 'Alert retrieved successfully.');
     }
 
     /**

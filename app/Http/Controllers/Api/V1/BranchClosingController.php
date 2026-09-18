@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\BranchClosingRequest;
+use App\Http\Resources\Api\V1\BranchClosureResource;
 use App\Models\Branch;
 use App\Services\Branch\BranchClosingService;
 use Illuminate\Http\JsonResponse;
@@ -46,7 +47,7 @@ class BranchClosingController extends Controller
             return $this->domainErrorResponse($e, 'This business date is already finalized — reopen the day before starting a new closure.');
         }
 
-        return $this->successResponse($workflow, 'Branch closure workflow initiated', 201);
+        return $this->successResponse(new BranchClosureResource($workflow), 'Branch closure workflow initiated', 201);
     }
 
     public function checklist(BranchClosingRequest $request, int $branchId): JsonResponse
@@ -91,7 +92,7 @@ class BranchClosingController extends Controller
         try {
             $this->branchClosingService->settle($workflow, $user);
 
-            return $this->successResponse($workflow->fresh(), 'Branch settlement completed');
+            return $this->successResponse(new BranchClosureResource($workflow->fresh()), 'Branch settlement completed');
         } catch (BranchClosingChecklistIncompleteException $e) {
             return $this->domainErrorResponse($e, 'Cannot settle branch closure: counters must be closed first.');
         } catch (InvalidStateException $e) {
@@ -118,7 +119,7 @@ class BranchClosingController extends Controller
         try {
             $this->branchClosingService->finalize($workflow, $user);
 
-            return $this->successResponse($workflow->fresh(), 'Branch closure finalized successfully');
+            return $this->successResponse(new BranchClosureResource($workflow->fresh()), 'Branch closure finalized successfully');
         } catch (BranchClosingChecklistIncompleteException $e) {
             return $this->domainErrorResponse($e, 'Cannot finalize branch closure: incomplete checklist items must be resolved first.');
         } catch (InvalidStateException $e) {

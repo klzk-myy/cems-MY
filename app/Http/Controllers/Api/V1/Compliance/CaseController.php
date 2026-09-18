@@ -14,7 +14,9 @@ use App\Http\Requests\Api\V1\Compliance\CaseIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\CloseCaseRequest;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
+use App\Http\Resources\Api\V1\CaseNoteResource;
 use App\Http\Resources\Api\V1\Compliance\CaseCollection;
+use App\Http\Resources\Api\V1\Compliance\CaseResource;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
@@ -66,7 +68,7 @@ class CaseController extends Controller
 
         $this->authorize('view', $case);
 
-        return $this->successResponse($case, 'Case retrieved successfully.');
+        return $this->successResponse(new CaseResource($case), 'Case retrieved successfully.');
     }
 
     /**
@@ -100,7 +102,7 @@ class CaseController extends Controller
             );
         }
 
-        return $this->successResponse($case, 'Case created successfully.', 201);
+        return $this->successResponse(new CaseResource($case), 'Case created successfully.', 201);
     }
 
     /**
@@ -129,7 +131,7 @@ class CaseController extends Controller
             $case->update(['priority' => ComplianceCasePriority::from($validated['priority'])]);
         }
 
-        return $this->successResponse($case->fresh(), 'Case updated successfully.');
+        return $this->successResponse(new CaseResource($case->fresh()), 'Case updated successfully.');
     }
 
     /**
@@ -151,7 +153,7 @@ class CaseController extends Controller
             isInternal: $validated['is_internal'] ?? true
         );
 
-        return $this->successResponse($note, 'Note added successfully.', 201);
+        return $this->successResponse(new CaseNoteResource($note), 'Note added successfully.', 201);
     }
 
     /**
@@ -171,7 +173,7 @@ class CaseController extends Controller
             notes: $validated['notes'] ?? null
         );
 
-        return $this->successResponse($case, 'Case closed successfully.');
+        return $this->successResponse(new CaseResource($case), 'Case closed successfully.');
     }
 
     /**
@@ -183,7 +185,7 @@ class CaseController extends Controller
         $this->authorize('update', $case);
         $case = $this->caseService->escalateCase($case);
 
-        return $this->successResponse($case, 'Case escalated successfully.');
+        return $this->successResponse(new CaseResource($case), 'Case escalated successfully.');
     }
 
     /**

@@ -8,6 +8,8 @@ use App\Exceptions\Domain\SelfApprovalException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
+use App\Http\Resources\Api\V1\TransactionConfirmationResource;
+use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
@@ -41,7 +43,7 @@ class TransactionApprovalController extends Controller
             return $this->errorResponse($result->message, [], 422);
         }
 
-        return $this->successResponse($result->transaction, $result->message);
+        return $this->successResponse(new TransactionResource($result->transaction), $result->message);
     }
 
     /**
@@ -60,7 +62,7 @@ class TransactionApprovalController extends Controller
                 return $this->errorResponse('Transaction cannot be rejected from its current status.', [], 422);
             }
 
-            return $this->successResponse($transaction, 'Transaction has been rejected.');
+            return $this->successResponse(new TransactionResource($transaction), 'Transaction has been rejected.');
         } catch (SelfApprovalException $e) {
             return $this->domainErrorResponse($e, 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
         } catch (\InvalidArgumentException $e) {
@@ -82,7 +84,7 @@ class TransactionApprovalController extends Controller
         try {
             $this->approvalService->clearHold($transaction, (int) auth()->id());
 
-            return $this->successResponse($transaction->fresh(), 'Compliance hold cleared.');
+            return $this->successResponse(new TransactionResource($transaction->fresh()), 'Compliance hold cleared.');
         } catch (DomainException $e) {
             return $this->domainErrorResponse($e);
         } catch (\Exception $e) {
@@ -126,6 +128,6 @@ class TransactionApprovalController extends Controller
             return $this->errorResponse($result['message'], [], 422);
         }
 
-        return $this->successResponse($confirmation->fresh(), $result['message']);
+        return $this->successResponse(new TransactionConfirmationResource($confirmation->fresh()), $result['message']);
     }
 }

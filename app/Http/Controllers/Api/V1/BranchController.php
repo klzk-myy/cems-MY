@@ -8,6 +8,9 @@ use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBranchRequest;
 use App\Http\Requests\UpdateBranchRequest;
+use App\Http\Resources\Api\V1\BranchResource;
+use App\Http\Resources\Api\V1\CounterResource;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Models\Branch;
 use App\Services\Branch\BranchService;
 use Illuminate\Http\JsonResponse;
@@ -70,7 +73,7 @@ class BranchController extends Controller
             return $authorization;
         }
 
-        return $this->successResponse($branch);
+        return $this->successResponse(new BranchResource($branch));
     }
 
     /**
@@ -84,7 +87,7 @@ class BranchController extends Controller
 
         $branch = $this->branchService->updateBranch($branch, $validated, (int) Auth::id(), $request->ip());
 
-        return $this->successResponse($branch->fresh(), 'Branch updated successfully');
+        return $this->successResponse(new BranchResource($branch->fresh()), 'Branch updated successfully');
     }
 
     /**
@@ -122,7 +125,7 @@ class BranchController extends Controller
 
         $counters = $branch->counters()->get(['id', 'code', 'name', 'status']);
 
-        return $this->successResponse($counters);
+        return $this->successResponse(CounterResource::collection($counters));
     }
 
     /**
@@ -140,6 +143,6 @@ class BranchController extends Controller
 
         $users = $branch->users()->get(['id', 'username', 'email', 'role']);
 
-        return $this->successResponse($users);
+        return $this->successResponse(UserResource::collection($users));
     }
 }

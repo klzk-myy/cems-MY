@@ -59,6 +59,7 @@ class CaseResource extends JsonResource
             'primary_finding_id' => $this->primary_finding_id,
             'metadata' => $this->metadata,
             'created_via' => $this->created_via,
+            'customer_id' => $this->customer_id,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             'customer' => new CustomerResource($this->whenLoaded('customer')),
