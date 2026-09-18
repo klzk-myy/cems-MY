@@ -13,8 +13,6 @@ use App\Models\Expense;
 use App\Services\Accounting\ExpenseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -96,12 +94,8 @@ class ExpenseController extends Controller
             );
         } catch (InsufficientPettyCashException $e) {
             return back()->withInput()->withErrors(['amount' => $e->getMessage()]);
-        } catch (ValidationException|DomainException $e) {
+        } catch (DomainException $e) {
             throw $e;
-        } catch (\Exception $e) {
-            Log::warning('Expense post failed', ['exception' => $e->getMessage(), 'user_id' => $user->id]);
-
-            return back()->withInput()->withErrors(['description' => 'Failed to post expense: '.$e->getMessage()]);
         }
 
         return redirect()->route('accounting.expenses.index')

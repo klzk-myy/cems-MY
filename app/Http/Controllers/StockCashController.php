@@ -125,10 +125,10 @@ class StockCashController extends Controller
                 (int) auth()->id(),
                 $validated['notes'] ?? null
             );
-        } catch (\RuntimeException $e) {
-            return back()->with('error', 'Till operation failed. Please try again.');
         } catch (ValidationException|DomainException $e) {
             throw $e;
+        } catch (\RuntimeException $e) {
+            return back()->with('error', 'Till operation failed. Please try again.');
         } catch (\Throwable $e) {
             Log::error('Failed to open till', ['error' => $e->getMessage()]);
 
@@ -180,10 +180,10 @@ class StockCashController extends Controller
                 (int) auth()->id(),
                 $validated['difference_notes'] ?? null
             );
-        } catch (\RuntimeException $e) {
-            return back()->with('error', 'Till operation failed. Please try again.');
         } catch (ValidationException|DomainException $e) {
             throw $e;
+        } catch (\RuntimeException $e) {
+            return back()->with('error', 'Till operation failed. Please try again.');
         } catch (\Throwable $e) {
             Log::error('Failed to close till', ['error' => $e->getMessage()]);
 
