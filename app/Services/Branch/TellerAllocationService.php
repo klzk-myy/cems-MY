@@ -251,13 +251,12 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 $locked->allocated_amount = $this->mathService->subtract($locked->allocated_amount, $newAmount);
             }
 
-            // NOTE on intentional drift: after partial sells, allocated_amount
-            // (bookkeeping) and the pool's allocated_balance (funds) diverge by
-            // design — sold float was paid out to customers and is NOT credited
-            // back to the pool. A naive allocated==pool invariant is therefore
-            // invalid; reconciliation happens at EOD via closeSessionAndReturnToPool/
-            // BranchClosingService::settle, which return only current_balance.
-            // There is deliberately no assert here: current_balance may exceed
+            // NOTE: allocated_amount is per-allocation bookkeeping; the pool's
+            // allocated_balance tracks live custody — applyTransactionAllocation
+            // consumes the earmark on sells and grows it on buys, so the pool
+            // earmark always equals current_balance + loaded_balance across
+            // active allocations plus outstanding approved earmarks. There is
+            // deliberately no assert here: current_balance may exceed
             // allocated_amount after intraday buys (buy adds float, not allocation).
 
             $locked->save();
@@ -307,7 +306,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 throw new InvalidAllocationStateException(TellerAllocationStatus::PENDING->value);
             }
 
-            $locked->reject($actor, $reason);
+            $locked->cancel($actor, $reason);
 
             return $locked;
         });
@@ -505,10 +504,24 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // The pool earmark tracks live custody: a sell hands stock to the
+            // customer (earmark consumed, never returns to available), a buy
+            // brings in stock the customer sold to the teller (earmark grows).
+            // Without this the spent/earned amounts drift in allocated_balance.
             if ($transaction->type === TransactionType::Buy) {
                 $lockedAllocation->add((string) $transaction->amount_foreign);
+                $this->branchPoolService->growTellerEarmark(
+                    $this->allocationBranchOrFail($lockedAllocation),
+                    $lockedAllocation->currency_code,
+                    (string) $transaction->amount_foreign
+                );
             } else {
                 $lockedAllocation->deduct((string) $transaction->amount_foreign);
+                $this->branchPoolService->consumeTellerEarmark(
+                    $this->allocationBranchOrFail($lockedAllocation),
+                    $lockedAllocation->currency_code,
+                    (string) $transaction->amount_foreign
+                );
             }
 
             $lockedAllocation->addDailyUsed((string) $transaction->amount_local);
@@ -528,10 +541,22 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Mirror applyTransactionAllocation: reversing a buy consumes the
+            // earmark the buy created; reversing a sell restores it.
             if ($transaction->type === TransactionType::Buy) {
                 $lockedAllocation->deduct((string) $transaction->amount_foreign);
+                $this->branchPoolService->consumeTellerEarmark(
+                    $this->allocationBranchOrFail($lockedAllocation),
+                    $lockedAllocation->currency_code,
+                    (string) $transaction->amount_foreign
+                );
             } else {
                 $lockedAllocation->add((string) $transaction->amount_foreign);
+                $this->branchPoolService->growTellerEarmark(
+                    $this->allocationBranchOrFail($lockedAllocation),
+                    $lockedAllocation->currency_code,
+                    (string) $transaction->amount_foreign
+                );
             }
 
             $lockedAllocation->subtractDailyUsed((string) $transaction->amount_local);

@@ -45,7 +45,7 @@ class AllocationController extends Controller
             'approved' => $query->where('status', TellerAllocationStatus::APPROVED),
             'active' => $query->where('status', TellerAllocationStatus::ACTIVE),
             'completed' => $query->where('status', TellerAllocationStatus::CLOSED),
-            'rejected' => $query->where('status', TellerAllocationStatus::REJECTED),
+            'rejected' => $query->whereIn('status', [TellerAllocationStatus::REJECTED, TellerAllocationStatus::CANCELLED]),
             default => $query,
         };
 

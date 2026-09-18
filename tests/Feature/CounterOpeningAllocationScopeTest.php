@@ -32,7 +32,8 @@ class CounterOpeningAllocationScopeTest extends TestCase
         $counterService = new CounterService(
             $tellerAllocationService,
             new ThresholdService,
-            resolve(AuditService::class)
+            resolve(AuditService::class),
+            app(TillService::class)
         );
 
         return new CounterOpeningWorkflowService(
@@ -91,7 +92,8 @@ class CounterOpeningAllocationScopeTest extends TestCase
         $service = new CounterService(
             resolve(TellerAllocationService::class),
             new ThresholdService,
-            resolve(AuditService::class)
+            resolve(AuditService::class),
+            app(TillService::class)
         );
 
         // Pass currency code (string) as identifier

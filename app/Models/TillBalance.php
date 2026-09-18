@@ -131,12 +131,18 @@ class TillBalance extends BaseModel
 
     /**
      * Calculate the expected balance (opening + transaction activity)
+     * For the base currency: expected = opening_balance + transaction_total
      * For foreign currency: expected = opening_balance + buy_total_foreign - sell_total_foreign
      * This correctly tracks position for both buys (adds to position) and sells (reduces position)
      */
     public function getExpectedBalance(): string
     {
         $opening = (string) $this->opening_balance;
+
+        if ($this->currency_code === Currency::baseCurrency()) {
+            return BcmathHelper::add($opening, (string) ($this->transaction_total ?? '0'));
+        }
+
         $buyTotal = $this->buy_total_foreign !== null ? (string) $this->buy_total_foreign : '0';
         $sellTotal = $this->sell_total_foreign !== null ? (string) $this->sell_total_foreign : '0';
 

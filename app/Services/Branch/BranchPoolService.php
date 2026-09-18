@@ -92,6 +92,75 @@ class BranchPoolService
     }
 
     /**
+     * Consume part of the teller earmark for stock that left the branch —
+     * a sell hands the foreign currency to the customer, so the amount is
+     * removed from allocated without touching available. Shortfalls
+     * (historical drift) clamp at zero and log rather than blocking the
+     * transaction — currency_positions remains the authoritative gate.
+     */
+    public function consumeTellerEarmark(Branch $branch, string $currencyCode, float|string $amount): void
+    {
+        $amount = (string) $amount;
+
+        DB::transaction(function () use ($branch, $currencyCode, $amount) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pool) {
+                Log::warning('Branch pool earmark consume skipped — no pool row', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                ]);
+
+                return;
+            }
+
+            $consumed = $pool->consumeAllocated($amount);
+
+            if ($this->mathService->compare($consumed, $amount) < 0) {
+                Log::warning('Branch pool earmark consume partially uncovered', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                    'consumed' => $consumed,
+                    'pool_id' => $pool->id,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Earmark stock that entered teller custody from outside the pool —
+     * a buy brings in foreign currency the customer sold to the teller.
+     */
+    public function growTellerEarmark(Branch $branch, string $currencyCode, float|string $amount): void
+    {
+        $amount = (string) $amount;
+
+        DB::transaction(function () use ($branch, $currencyCode, $amount) {
+            $pool = BranchPool::where('branch_id', $branch->id)
+                ->where('currency_code', $currencyCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pool) {
+                Log::warning('Branch pool earmark grow skipped — no pool row', [
+                    'branch_id' => $branch->id,
+                    'currency_code' => $currencyCode,
+                    'amount' => $amount,
+                ]);
+
+                return;
+            }
+
+            $pool->growAllocated($amount);
+        });
+    }
+
+    /**
      * Debit the branch's available pool balance (e.g. stock dispatched to
      * another branch). Pools predate transfer-driven tracking and may not
      * cover the dispatched amount, so the debit is clamped at zero and any

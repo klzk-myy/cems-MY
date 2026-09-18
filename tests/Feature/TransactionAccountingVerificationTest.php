@@ -125,7 +125,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
-        $counterService = new CounterService($tellerAllocationService, $thresholdService, $auditService);
+        $counterService = new CounterService($tellerAllocationService, $thresholdService, $auditService, app(TillService::class));
         $auditService = resolve(AuditService::class);
         $workflowService = new CounterOpeningWorkflowService(
             $branchPoolService,

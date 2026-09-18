@@ -156,17 +156,11 @@ class TillService
      *
      * MYR balances track net MYR movement in transaction_total (buys subtract,
      * sells add). FCY balances track position in buy_total_foreign /
-     * sell_total_foreign (see TillBalance::getExpectedBalance()).
+     * sell_total_foreign. The formula lives on the model so every close
+     * path (counter, emergency, EOD) computes the same expected value.
      */
     public function expectedClosingForBalance(TillBalance $balance): string
     {
-        if ($balance->currency_code === Currency::baseCurrency()) {
-            return $this->mathService->add(
-                (string) $balance->opening_balance,
-                (string) ($balance->transaction_total ?? '0')
-            );
-        }
-
         return $balance->getExpectedBalance();
     }
 

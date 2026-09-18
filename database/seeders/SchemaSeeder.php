@@ -1035,7 +1035,7 @@ class SchemaSeeder extends Seeder
             $table->decimal('requested_amount', 20, 4);
             $table->decimal('daily_limit_myr', 20, 4)->default(0);
             $table->decimal('daily_used_myr', 20, 4)->default(0);
-            $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected', 'cancelled'])->default('pending');
             $table->date('session_date');
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();

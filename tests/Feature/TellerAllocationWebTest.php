@@ -92,8 +92,9 @@ class TellerAllocationWebTest extends TestCase
 
         $this->actingAs($this->teller)
             ->post(route('my-allocations.request.store'), [
-                'currency_code' => 'USD',
-                'requested_amount' => '5000.0000',
+                'lines' => [
+                    ['currency_code' => 'USD', 'amount' => '5000.0000'],
+                ],
                 'counter_id' => $this->counter->id,
             ])
             ->assertRedirect(route('my-allocations.index'));

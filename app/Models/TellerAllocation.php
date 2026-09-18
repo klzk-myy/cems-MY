@@ -263,4 +263,19 @@ class TellerAllocation extends BaseModel
             'rejection_reason' => $reason,
         ]);
     }
+
+    /**
+     * Terminate a pending/approved request without a rejection verdict —
+     * e.g. branch settlement sweeping stale requests at day close. Reuses
+     * the rejected_* columns to record who ended the request and why.
+     */
+    public function cancel(User $actor, ?string $reason = null): void
+    {
+        $this->update([
+            'status' => TellerAllocationStatus::CANCELLED,
+            'rejected_by' => $actor->id,
+            'rejected_at' => now(),
+            'rejection_reason' => $reason,
+        ]);
+    }
 }

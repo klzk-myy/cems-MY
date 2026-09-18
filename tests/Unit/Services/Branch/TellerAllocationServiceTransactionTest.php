@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Branch;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
+use App\Models\BranchPool;
 use App\Models\Customer;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
@@ -207,5 +208,91 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->reverseTransactionAllocation($transaction);
 
         $this->assertDatabaseCount('teller_allocations', 0);
+    }
+
+    #[Test]
+    public function sell_consumes_pool_earmark_so_stock_paid_out_leaves_allocated(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        $pool = BranchPool::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'available_balance' => '9000.0000',
+            'allocated_balance' => '1000.0000',
+        ]);
+        $transaction = $this->transaction($teller, $branch, TransactionType::Sell, 'USD', '100.0000', '450.0000');
+
+        $this->service->applyTransactionAllocation($transaction, $allocation);
+
+        $pool->refresh();
+        $this->assertEquals('900.0000', (string) $pool->allocated_balance);
+        $this->assertEquals('9000.0000', (string) $pool->available_balance);
+    }
+
+    #[Test]
+    public function buy_grows_pool_earmark_for_stock_entering_custody(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        $pool = BranchPool::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'available_balance' => '9000.0000',
+            'allocated_balance' => '1000.0000',
+        ]);
+        $transaction = $this->transaction($teller, $branch, TransactionType::Buy, 'USD', '100.0000', '450.0000');
+
+        $this->service->applyTransactionAllocation($transaction, $allocation);
+
+        $pool->refresh();
+        $this->assertEquals('1100.0000', (string) $pool->allocated_balance);
+        $this->assertEquals('9000.0000', (string) $pool->available_balance);
+    }
+
+    #[Test]
+    public function return_to_pool_after_sell_leaves_no_residual_earmark(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        $pool = BranchPool::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'available_balance' => '9000.0000',
+            'allocated_balance' => '1000.0000',
+        ]);
+        $transaction = $this->transaction($teller, $branch, TransactionType::Sell, 'USD', '100.0000', '450.0000');
+
+        $this->service->applyTransactionAllocation($transaction, $allocation);
+        $this->service->returnToPool($allocation);
+
+        // The 100 sold left the branch with the customer; only the unspent
+        // 900 returns to available and no phantom earmark remains.
+        $pool->refresh();
+        $this->assertEquals('0.0000', (string) $pool->allocated_balance);
+        $this->assertEquals('9900.0000', (string) $pool->available_balance);
+    }
+
+    #[Test]
+    public function return_to_pool_after_buy_releases_purchased_stock_to_available(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
+        $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        $pool = BranchPool::factory()->for($branch)->create([
+            'currency_code' => 'USD',
+            'available_balance' => '9000.0000',
+            'allocated_balance' => '1000.0000',
+        ]);
+        $transaction = $this->transaction($teller, $branch, TransactionType::Buy, 'USD', '100.0000', '450.0000');
+
+        $this->service->applyTransactionAllocation($transaction, $allocation);
+        $this->service->returnToPool($allocation);
+
+        // The 100 bought is real branch stock in the teller's custody — it
+        // returns to available along with the original float.
+        $pool->refresh();
+        $this->assertEquals('0.0000', (string) $pool->allocated_balance);
+        $this->assertEquals('10100.0000', (string) $pool->available_balance);
     }
 }

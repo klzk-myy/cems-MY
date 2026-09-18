@@ -415,9 +415,9 @@ class BranchClosingWorkflowTest extends TestCase
         $this->branchClosingService->settle($workflow, $this->manager);
 
         $pending->refresh();
-        $this->assertEquals(TellerAllocationStatus::REJECTED, $pending->status);
+        $this->assertEquals(TellerAllocationStatus::CANCELLED, $pending->status);
         $approved->refresh();
-        $this->assertEquals(TellerAllocationStatus::REJECTED, $approved->status);
+        $this->assertEquals(TellerAllocationStatus::CANCELLED, $approved->status);
         $this->assertEquals('Cancelled at branch settlement', $approved->rejection_reason);
 
         // The approved earmark released back to available.

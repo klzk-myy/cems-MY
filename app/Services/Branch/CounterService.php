@@ -31,6 +31,7 @@ class CounterService
         protected TellerAllocationService $tellerAllocationService,
         protected ThresholdService $thresholdService,
         protected AuditService $auditService,
+        protected TillService $tillService,
     ) {}
 
     /**
@@ -208,15 +209,15 @@ class CounterService
                 }
 
                 $tillBalance = $tillBalances->get($currency->code);
-                $openingBalance = $tillBalance ? $tillBalance->opening_balance : '0';
-                // For foreign currency: expected = opening + buy_total_foreign - sell_total_foreign
-                // This correctly handles position: buys increase stock, sells decrease stock
-                $buyTotal = $tillBalance && $tillBalance->buy_total_foreign !== null
-                    ? $tillBalance->buy_total_foreign : '0';
-                $sellTotal = $tillBalance && $tillBalance->sell_total_foreign !== null
-                    ? $tillBalance->sell_total_foreign : '0';
-                $netForeign = BcmathHelper::subtract($buyTotal, $sellTotal);
-                $expectedBalance = BcmathHelper::add($openingBalance, $netForeign);
+                // Expected drawer = opening + net movement in that currency:
+                // MYR tracks it in transaction_total (buys subtract, sells
+                // add); FCY in buy/sell_total_foreign. Same formula as
+                // TillService::expectedClosingForBalance — the one the My
+                // Till panel and day reconciliation use — so an honest count
+                // reads zero variance instead of a forced red.
+                $expectedBalance = $tillBalance
+                    ? $this->tillService->expectedClosingForBalance($tillBalance)
+                    : '0';
 
                 $closingBalance = $float['amount'];
                 $variance = BcmathHelper::subtract($closingBalance, $expectedBalance);

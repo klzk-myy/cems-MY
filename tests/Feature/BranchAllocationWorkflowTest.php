@@ -10,6 +10,7 @@ use App\Models\BranchPool;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
+use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
@@ -106,7 +107,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
         $this->branchPoolService = $branchPoolService;
         $this->tellerAllocationService = $tellerAllocationService;
-        $counterService = new CounterService($tellerAllocationService, new ThresholdService, app(AuditService::class));
+        $counterService = new CounterService($tellerAllocationService, new ThresholdService, app(AuditService::class), app(TillService::class));
         $this->counterService = $counterService;
         $this->counterHandoverService = new CounterHandoverService(
             $tellerAllocationService,
@@ -377,5 +378,43 @@ class BranchAllocationWorkflowTest extends TestCase
 
         $allocationB->refresh();
         $this->assertEquals(TellerAllocationStatus::ACTIVE, $allocationB->status);
+    }
+
+    #[Test]
+    public function close_session_counts_myr_cash_movement_in_expected_balance(): void
+    {
+        // Regression: expected MYR at close is opening + transaction_total
+        // (net MYR movement), not the foreign buy/sell formula — an honest
+        // count after trading must read zero variance, not forced red.
+        $myrPool = BranchPool::factory()->create([
+            'branch_id' => $this->branch->id,
+            'currency_code' => 'MYR',
+            'available_balance' => '50000.0000',
+            'allocated_balance' => '0.0000',
+        ]);
+
+        $session = $this->counterService->openSession(
+            $this->counter,
+            $this->tellerA,
+            [['currency_id' => 'MYR', 'amount' => '10000.0000']]
+        );
+
+        $myrTill = TillBalance::where('till_id', $session->tillCode())
+            ->where('currency_code', 'MYR')
+            ->firstOrFail();
+
+        // A sell paid RM 2,405 into the drawer (transaction_total tracks net MYR).
+        $myrTill->update(['transaction_total' => '2405.0000']);
+
+        $session = $this->counterService->closeSession(
+            $session,
+            $this->tellerA,
+            [['currency_id' => 'MYR', 'amount' => '12405.0000']]
+        );
+
+        $myrTill->refresh();
+        $this->assertEquals('0.0000', $myrTill->variance);
+        $this->assertEquals('12405.0000', $myrTill->closing_balance);
+        $this->assertEquals(CounterSessionStatus::Closed, $session->fresh()->status);
     }
 }

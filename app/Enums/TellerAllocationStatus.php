@@ -11,6 +11,7 @@ enum TellerAllocationStatus: string
     case CLOSED = 'closed';
     case AUTO_RETURNED = 'auto_returned';
     case REJECTED = 'rejected';
+    case CANCELLED = 'cancelled';
 
     public function isPending(): bool
     {
@@ -47,6 +48,11 @@ enum TellerAllocationStatus: string
         return $this === self::REJECTED;
     }
 
+    public function isCancelled(): bool
+    {
+        return $this === self::CANCELLED;
+    }
+
     public function label(): string
     {
         return match ($this) {
@@ -57,6 +63,7 @@ enum TellerAllocationStatus: string
             self::CLOSED => 'Closed',
             self::AUTO_RETURNED => 'Auto Returned',
             self::REJECTED => 'Rejected',
+            self::CANCELLED => 'Cancelled',
         };
     }
 }

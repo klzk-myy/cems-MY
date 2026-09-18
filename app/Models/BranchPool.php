@@ -81,4 +81,38 @@ class BranchPool extends BaseModel
 
         return true;
     }
+
+    /**
+     * Shrink the teller earmark without returning stock to available —
+     * a sell removes the foreign currency from the branch entirely, so
+     * the earmark must drop to keep available+allocated equal to stock
+     * on hand. Clamps at zero (pools may carry historical drift) and
+     * returns the amount actually consumed.
+     */
+    public function consumeAllocated(string $amount): string
+    {
+        $consumed = BcmathHelper::compare($this->allocated_balance, $amount) >= 0
+            ? $amount
+            : $this->allocated_balance;
+
+        if (BcmathHelper::compare($consumed, '0') <= 0) {
+            return '0';
+        }
+
+        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $consumed);
+        $this->save();
+
+        return $consumed;
+    }
+
+    /**
+     * Grow the teller earmark for stock that entered custody outside the
+     * pool — a buy brings in foreign currency the customer sold to the
+     * teller, which was never drawn from available.
+     */
+    public function growAllocated(string $amount): void
+    {
+        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $amount);
+        $this->save();
+    }
 }
