@@ -239,14 +239,14 @@ class SchemaSeeder extends Seeder
     {
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
-            $table->string('code');
+            $table->string('code', 16);
             $table->string('name');
-            $table->string('type')->default('branch');
+            $table->string('type', 64)->default('branch');
             $table->text('address')->nullable();
             $table->string('city')->nullable();
-            $table->string('state')->nullable();
+            $table->string('state', 64)->nullable();
             $table->string('postal_code')->nullable();
-            $table->string('country')->default('Malaysia');
+            $table->string('country', 64)->default('Malaysia');
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->boolean('is_active')->default(true);
@@ -309,7 +309,7 @@ class SchemaSeeder extends Seeder
             $table->date('start_date');
             $table->date('end_date');
             $table->string('period_type')->default('month');
-            $table->string('status')->default('open');
+            $table->string('status', 64)->default('open');
             $table->timestamp('closed_at')->nullable();
             $table->unsignedBigInteger('closed_by')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -455,12 +455,12 @@ class SchemaSeeder extends Seeder
 
         Schema::create('compliance_findings', function (Blueprint $table) {
             $table->id();
-            $table->string('finding_type');
-            $table->string('severity');
+            $table->string('finding_type', 64);
+            $table->string('severity', 64);
             $table->string('subject_type');
             $table->integer('subject_id');
             $table->text('details')->nullable();
-            $table->string('status')->default('New');
+            $table->string('status', 64)->default('New');
             $table->timestamp('generated_at');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -476,14 +476,14 @@ class SchemaSeeder extends Seeder
             $table->string('full_name');
             $table->string('id_type');
             $table->binary('id_number_encrypted');
-            $table->string('nationality');
+            $table->string('nationality', 64);
             $table->date('date_of_birth');
             $table->text('address')->nullable();
             $table->text('phone')->nullable();
             $table->string('email')->nullable();
             $table->boolean('pep_status')->default(false);
             $table->integer('risk_score')->default(0);
-            $table->string('risk_rating')->default('Low');
+            $table->string('risk_rating', 64)->default('Low');
             $table->timestamp('risk_assessed_at')->nullable();
             $table->timestamp('last_transaction_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -531,7 +531,7 @@ class SchemaSeeder extends Seeder
         });
 
         Schema::create('currencies', function (Blueprint $table) {
-            $table->string('code')->primary();
+            $table->string('code', 8)->primary();
             $table->string('name');
             $table->string('symbol')->nullable();
             $table->integer('decimal_places')->default(2);
@@ -550,14 +550,14 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('user_id');
             $table->string('till_id')->default('MAIN');
-            $table->string('type');
-            $table->string('currency_code');
+            $table->string('type', 64);
+            $table->string('currency_code', 8);
             $table->decimal('amount_local', 18, 4);
             $table->decimal('amount_foreign', 18, 4);
             $table->decimal('rate', 18, 8);
             $table->text('purpose')->nullable();
             $table->string('source_of_funds')->nullable();
-            $table->string('status')->default('Draft');
+            $table->string('status', 64)->default('Draft');
             $table->text('hold_reason')->nullable();
             $table->unsignedBigInteger('compliance_cleared_by')->nullable();
             $table->timestamp('compliance_cleared_at')->nullable();
@@ -649,7 +649,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
-            $table->string('severity')->nullable();
+            $table->string('severity', 64)->nullable();
             $table->index('transaction_id', 'flagged_transactions_transaction_id_index');
             $table->index('assigned_to', 'flagged_transactions_assigned_to_index');
             $table->index('created_at', 'flagged_trans_created_idx');
@@ -669,8 +669,8 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->string('case_number');
             $table->string('case_type');
-            $table->string('status')->default('Open');
-            $table->string('severity');
+            $table->string('status', 64)->default('Open');
+            $table->string('severity', 64);
             $table->string('priority');
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('primary_flag_id')->nullable();
@@ -704,7 +704,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('flagged_transaction_id')->nullable();
             $table->unsignedBigInteger('customer_id');
-            $table->string('type');
+            $table->string('type', 64);
             $table->string('priority');
             $table->integer('risk_score')->default(0);
             $table->text('reason')->nullable();
@@ -715,7 +715,7 @@ class SchemaSeeder extends Seeder
             $table->text('escalation_reason')->nullable();
             $table->unsignedBigInteger('assigned_to')->nullable();
             $table->unsignedBigInteger('case_id')->nullable();
-            $table->string('status')->default('Open');
+            $table->string('status', 64)->default('Open');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
@@ -745,7 +745,7 @@ class SchemaSeeder extends Seeder
             $table->boolean('is_active')->default(true);
             $table->text('conditions')->nullable();
             $table->string('rule_type')->nullable();
-            $table->string('action')->default('flag');
+            $table->string('action', 64)->default('flag');
             $table->integer('risk_score')->default(0);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -761,12 +761,12 @@ class SchemaSeeder extends Seeder
 
         Schema::create('audit_trails', function (Blueprint $table) {
             $table->id();
-            $table->string('auditable_type');
+            $table->string('auditable_type', 128);
             $table->integer('auditable_id');
-            $table->string('action');
+            $table->string('action', 64);
             $table->unsignedBigInteger('user_id')->nullable();
             $table->text('metadata')->nullable();
-            $table->string('ip_address')->nullable();
+            $table->string('ip_address', 45)->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['auditable_type', 'auditable_id'], 'audit_trails_auditable_type_auditable_id_index');
@@ -786,7 +786,7 @@ class SchemaSeeder extends Seeder
             $table->integer('file_size')->nullable();
             $table->string('checksum')->nullable();
             $table->boolean('encryption_status')->default(false);
-            $table->string('status')->default('pending');
+            $table->string('status', 64)->default('pending');
             $table->timestamp('started_at');
             $table->timestamp('completed_at')->nullable();
             $table->text('error_message')->nullable();
@@ -838,7 +838,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('initiated_by');
-            $table->string('status')->default('initiated');
+            $table->string('status', 64)->default('initiated');
             $table->text('checklist')->nullable();
             $table->timestamp('settlement_at')->nullable();
             $table->timestamp('finalized_at')->nullable();
@@ -854,7 +854,7 @@ class SchemaSeeder extends Seeder
         Schema::create('branch_pools', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('branch_id');
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('available_balance', 20, 4)->default(0);
             $table->decimal('allocated_balance', 20, 4)->default(0);
             $table->timestamp('created_at')->nullable();
@@ -870,7 +870,7 @@ class SchemaSeeder extends Seeder
             $table->string('remittance_number');
             $table->unsignedBigInteger('from_branch_id');
             $table->unsignedBigInteger('to_branch_id');
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('amount', 20, 4);
             $table->enum('status', ['Pending', 'Acknowledged', 'Cancelled'])->default('Pending');
             $table->unsignedBigInteger('initiated_by');
@@ -979,7 +979,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
-            $table->string('code');
+            $table->string('code', 32);
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
@@ -990,7 +990,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('cost_centers', function (Blueprint $table) {
             $table->id();
-            $table->string('code');
+            $table->string('code', 32);
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
@@ -1004,9 +1004,9 @@ class SchemaSeeder extends Seeder
 
         Schema::create('counters', function (Blueprint $table) {
             $table->id();
-            $table->string('code');
+            $table->string('code', 16);
             $table->string('name');
-            $table->string('status')->default('active');
+            $table->string('status', 64)->default('active');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
@@ -1025,7 +1025,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('counter_id')->nullable();
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('allocated_amount', 20, 4);
             $table->decimal('current_balance', 20, 4);
             $table->decimal('loaded_balance', 20, 4)->default(0);
@@ -1086,7 +1086,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('closed_at')->nullable();
             $table->unsignedBigInteger('opened_by');
             $table->unsignedBigInteger('closed_by')->nullable();
-            $table->string('status')->default('open');
+            $table->string('status', 64)->default('open');
             $table->text('notes')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -1136,7 +1136,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('currency_positions', function (Blueprint $table) {
             $table->id();
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
             $table->decimal('quantity', 18, 4)->default(0);
@@ -1184,7 +1184,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('verified_by')->nullable();
             $table->timestamp('verified_at')->nullable();
             $table->date('expiry_date')->nullable();
-            $table->string('status')->default('pending');
+            $table->string('status', 64)->default('pending');
             $table->string('rejection_reason')->nullable();
             $table->index('customer_id', 'customer_documents_customer_id_index');
             $table->index('document_type', 'customer_documents_document_type_index');
@@ -1214,7 +1214,7 @@ class SchemaSeeder extends Seeder
             $table->string('id_type')->nullable();
             $table->string('id_number_encrypted')->nullable();
             $table->date('date_of_birth')->nullable();
-            $table->string('nationality')->nullable();
+            $table->string('nationality', 64)->nullable();
             $table->text('address')->nullable();
             $table->boolean('is_pep')->default(false);
             $table->text('additional_info')->nullable();
@@ -1253,7 +1253,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->integer('risk_score')->default(20);
-            $table->string('risk_tier');
+            $table->string('risk_tier', 64);
             $table->text('risk_factors')->nullable();
             $table->integer('previous_score')->nullable();
             $table->timestamp('score_changed_at')->nullable();
@@ -1277,7 +1277,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('user_id');
             $table->string('device_name')->nullable();
             $table->string('device_fingerprint');
-            $table->string('ip_address')->nullable();
+            $table->string('ip_address', 45)->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -1302,7 +1302,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('flagged_transaction_id')->nullable();
             $table->unsignedBigInteger('customer_id');
             $table->string('edd_reference');
-            $table->string('status')->default('Incomplete');
+            $table->string('status', 64)->default('Incomplete');
             $table->string('risk_level')->default('Medium');
             $table->text('source_of_funds')->nullable();
             $table->text('source_of_funds_description')->nullable();
@@ -1345,7 +1345,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('edd_record_id');
             $table->string('document_type');
-            $table->string('status')->default('Pending');
+            $table->string('status', 64)->default('Pending');
             $table->string('file_path')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->timestamp('uploaded_at')->nullable();
@@ -1362,7 +1362,7 @@ class SchemaSeeder extends Seeder
         Schema::create('edd_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('type');
+            $table->string('type', 64);
             $table->text('description')->nullable();
             $table->text('questions')->nullable();
             $table->integer('version')->default(1);
@@ -1418,7 +1418,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('exchange_rate_histories', function (Blueprint $table) {
             $table->id();
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('rate', 18, 8);
             $table->unsignedBigInteger('rate_unit')->default(1);
             $table->boolean('rate_inverse')->default(false);
@@ -1440,7 +1440,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('exchange_rates', function (Blueprint $table) {
             $table->id();
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('rate_buy', 18, 8);
             $table->decimal('rate_sell', 18, 8);
             $table->unsignedBigInteger('rate_unit')->default(1);
@@ -1471,7 +1471,7 @@ class SchemaSeeder extends Seeder
         });
 
         Schema::create('high_risk_countries', function (Blueprint $table) {
-            $table->string('country_code')->primary();
+            $table->string('country_code', 8)->primary();
             $table->string('country_name');
             $table->enum('risk_level', ['High', 'Grey']);
             $table->string('source');
@@ -1537,8 +1537,8 @@ class SchemaSeeder extends Seeder
 
         Schema::create('notifications', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->string('type');
-            $table->string('notifiable_type');
+            $table->string('type', 128);
+            $table->string('notifiable_type', 128);
             $table->unsignedBigInteger('notifiable_id');
             $table->text('data');
             $table->timestamp('read_at')->nullable();
@@ -1622,7 +1622,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('schedule_id')->nullable();
             $table->string('report_type');
             $table->text('parameters')->nullable();
-            $table->string('status')->default('scheduled');
+            $table->string('status', 64)->default('scheduled');
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->string('file_path')->nullable();
@@ -1663,7 +1663,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('revaluation_entries', function (Blueprint $table) {
             $table->id();
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->string('till_id')->default('MAIN');
             $table->decimal('old_rate', 18, 8);
             $table->decimal('new_rate', 18, 8);
@@ -1740,7 +1740,7 @@ class SchemaSeeder extends Seeder
             $table->string('entity_name');
             $table->enum('entity_type', ['Individual', 'Organization', 'Vessel', 'Aircraft'])->default('Individual');
             $table->text('aliases')->nullable();
-            $table->string('nationality')->nullable();
+            $table->string('nationality', 64)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->mediumText('details')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -1748,13 +1748,13 @@ class SchemaSeeder extends Seeder
             $table->string('normalized_name')->nullable();
             $table->string('soundex_code')->nullable();
             $table->string('metaphone_code')->nullable();
-            $table->string('status')->default('active');
+            $table->string('status', 64)->default('active');
             $table->string('reference_number')->nullable();
             $table->date('listing_date')->nullable();
             $table->string('list_source')->nullable();
             $table->text('address')->nullable();
             $table->string('city')->nullable();
-            $table->string('country')->nullable();
+            $table->string('country', 64)->nullable();
             $table->string('postal_code')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->index('list_id', 'sanction_entries_list_id_index');
@@ -1843,10 +1843,10 @@ class SchemaSeeder extends Seeder
         Schema::create('stock_reservations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('transaction_id');
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->string('till_id');
             $table->decimal('amount_foreign', 18, 4);
-            $table->string('status')->default('pending');
+            $table->string('status', 64)->default('pending');
             $table->timestamp('expires_at')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamp('created_at')->nullable();
@@ -1892,7 +1892,7 @@ class SchemaSeeder extends Seeder
         Schema::create('stock_transfer_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('stock_transfer_id');
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('quantity', 18, 4);
             $table->decimal('rate', 18, 8);
             $table->decimal('value_myr', 18, 4);
@@ -1917,7 +1917,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->decimal('trigger_amount', 18, 4)->default(0);
             $table->text('trigger_reason');
-            $table->string('status')->default('Draft');
+            $table->string('status', 64)->default('Draft');
             $table->string('bnm_reference')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('acknowledged_at')->nullable();
@@ -1953,7 +1953,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('system_health_checks', function (Blueprint $table) {
             $table->id();
-            $table->string('check_name');
+            $table->string('check_name', 64);
             $table->enum('status', ['ok', 'warning', 'critical'])->default('ok');
             $table->text('message')->nullable();
             $table->timestamp('checked_at');
@@ -1968,20 +1968,20 @@ class SchemaSeeder extends Seeder
         Schema::create('system_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('action');
-            $table->string('entity_type')->nullable();
+            $table->string('action', 64);
+            $table->string('entity_type', 128)->nullable();
             $table->integer('entity_id')->nullable();
             $table->text('old_values')->nullable();
             $table->text('new_values')->nullable();
-            $table->string('ip_address')->nullable();
+            $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->enum('severity', ['INFO', 'WARNING', 'ERROR', 'CRITICAL'])->default('INFO');
             $table->string('session_id')->nullable();
             $table->text('description')->nullable();
-            $table->string('previous_hash')->nullable();
-            $table->string('entry_hash')->nullable();
+            $table->string('previous_hash', 128)->nullable();
+            $table->string('entry_hash', 128)->nullable();
             $table->index(['entity_type', 'entity_id'], 'system_logs_entity_type_entity_id_index');
             $table->index('created_at', 'system_logs_created_at_index');
             $table->index('session_id', 'system_logs_session_id_index');
@@ -2042,7 +2042,7 @@ class SchemaSeeder extends Seeder
         Schema::create('till_balances', function (Blueprint $table) {
             $table->id();
             $table->string('till_id');
-            $table->string('currency_code');
+            $table->string('currency_code', 8);
             $table->decimal('opening_balance', 18, 4);
             $table->decimal('closing_balance', 18, 4)->nullable();
             $table->decimal('variance', 18, 4)->nullable();

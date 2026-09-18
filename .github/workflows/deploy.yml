@@ -118,6 +118,7 @@ jobs:
             php artisan db:install-audit-type-fixes --force
             php artisan db:install-audit-fks --force
             php artisan db:install-audit-index-cleanup --force
+            php artisan db:install-audit-varchar-sizing --force
 
             php artisan optimize:clear
             php artisan config:cache
