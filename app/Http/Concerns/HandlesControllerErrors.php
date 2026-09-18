@@ -5,6 +5,7 @@ namespace App\Http\Concerns;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Replaces the 62 duplicated controller blocks that looked like:
@@ -32,6 +33,13 @@ trait HandlesControllerErrors
         string $message,
         array $extra = []
     ): RedirectResponse {
+        // Service-layer validation failures (e.g. duplicate ID number) carry
+        // field messages — let the framework redirect back with them rather
+        // than masking them behind the generic fallback.
+        if ($e instanceof ValidationException) {
+            throw $e;
+        }
+
         Log::error($context, array_merge([
             'error' => $e->getMessage(),
             'user_id' => auth()->id(),
@@ -60,6 +68,13 @@ trait HandlesControllerErrors
         int $status = 500,
         array $extra = []
     ): JsonResponse {
+        // Same passthrough as the web variant — a service-layer
+        // ValidationException should surface as a 422 with field errors,
+        // not a generic 500.
+        if ($e instanceof ValidationException) {
+            throw $e;
+        }
+
         Log::error($context, array_merge([
             'error' => $e->getMessage(),
             'user_id' => auth()->id(),
