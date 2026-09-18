@@ -66,6 +66,8 @@ opencode.json
 # (AGENTS.md/CLAUDE.md are local agent notes — intentionally ignored)
 /*.md
 !README.md
+/SECURITY.md
+/MEMORY.md
 
 # Local tooling config
 /reasonix.toml
