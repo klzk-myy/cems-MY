@@ -347,7 +347,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->bigInteger('period_id')->unsigned()->nullable();
             $table->index('entry_date', 'idx_journal_entries_entry_date');
-            $table->index('period_id', 'idx_journal_entries_period_id');
             $table->index('status', 'idx_journal_entries_status');
             $table->index('created_by', 'idx_journal_entries_created_by');
             $table->index(['period_id', 'status'], 'idx_journal_entries_period_status');
@@ -2084,7 +2083,6 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['transaction_id', 'status'], 'transaction_confirmations_transaction_id_status_index');
-            $table->index('confirmation_token', 'transaction_confirmations_confirmation_token_index');
             $table->index('expires_at', 'transaction_confirmations_expires_at_index');
             $table->unique('confirmation_token', 'transaction_confirmations_confirmation_token_unique');
             $table->unique('transaction_id', 'transaction_confirmations_transaction_id_unique');
