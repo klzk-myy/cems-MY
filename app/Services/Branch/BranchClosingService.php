@@ -2,7 +2,6 @@
 
 namespace App\Services\Branch;
 
-use App\Enums\AccountMappingKey;
 use App\Enums\BranchClosureStatus;
 use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
@@ -10,14 +9,12 @@ use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
-use App\Models\BranchPool;
 use App\Models\CounterSession;
-use App\Models\Currency;
 use App\Models\TellerAllocation;
 use App\Models\User;
-use App\Services\Accounting\AccountingService;
-use App\Services\Accounting\AccountMappingService;
 use App\Services\AuditService;
+use App\Services\EodReconciliationService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class BranchClosingService
@@ -25,8 +22,7 @@ class BranchClosingService
     public function __construct(
         protected TellerAllocationService $tellerAllocationService,
         protected AuditService $auditService,
-        protected AccountingService $accountingService,
-        protected AccountMappingService $accountMappingService
+        protected EodReconciliationService $eodReconciliationService
     ) {}
 
     public function initiateClosure(Branch $branch, User $initiator): BranchClosureWorkflow
@@ -66,7 +62,7 @@ class BranchClosingService
 
     public function finalize(BranchClosureWorkflow $workflow, User $finalizer): void
     {
-        DB::transaction(function () use ($workflow) {
+        DB::transaction(function () use ($workflow, $finalizer) {
             $lockedWorkflow = BranchClosureWorkflow::whereKey($workflow->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -76,15 +72,75 @@ class BranchClosingService
                 return;
             }
 
-            if (! $this->canFinalize($lockedWorkflow)) {
+            $checklist = $this->getChecklist($lockedWorkflow);
+
+            if (! ($checklist['counters_closed']
+                && $checklist['allocations_returned']
+                && $checklist['documents_finalized'])) {
                 throw new BranchClosingChecklistIncompleteException;
             }
 
+            $branch = $lockedWorkflow->branch;
+
+            // Archive the day's proof on the workflow row: the checklist that
+            // passed plus a snapshot of the reconciliation the manager saw.
             $lockedWorkflow->update([
                 'status' => 'finalized',
                 'finalized_at' => now(),
+                'checklist' => [
+                    'results' => $checklist,
+                    'recon' => $this->getDayReconciliation($branch),
+                ],
             ]);
+
+            $this->auditService->log(
+                'branch_closure_finalized',
+                $finalizer->id,
+                'BranchClosureWorkflow',
+                $lockedWorkflow->id,
+                [],
+                [
+                    'branch_id' => $branch->id,
+                    'branch_code' => $branch->code,
+                    'business_date' => $lockedWorkflow->created_at?->toDateString(),
+                ]
+            );
         });
+    }
+
+    /**
+     * Today's reconciliation for the branch — sessions, expected-vs-counted
+     * totals, and per-counter variances — trimmed to the lightweight payload
+     * shown on the close page and archived at finalize.
+     *
+     * @return array{date: string, summary: array<string, int>, totals: array<string, string>, counters: array<int, array<string, mixed>>, large_transactions: int, flagged_transactions: int}
+     */
+    public function getDayReconciliation(Branch $branch): array
+    {
+        $recon = $this->eodReconciliationService->generateDailyReconciliationSummary(
+            Carbon::today(),
+            $branch->id
+        );
+
+        /** @var array<int, array<string, mixed>> $counterSummaries */
+        $counterSummaries = $recon['counter_summaries'];
+
+        return [
+            'date' => $recon['date'],
+            'summary' => $recon['summary'],
+            'totals' => $recon['totals'],
+            'counters' => array_map(fn (array $counter) => [
+                'counter_code' => $counter['counter_code'],
+                'counter_name' => $counter['counter_name'],
+                'session_status' => $counter['session']['status'] ?? null,
+                'opening_float' => $counter['opening_float'],
+                'closing_float_expected' => $counter['closing_float_expected'],
+                'closing_float_actual' => $counter['closing_float_actual'],
+                'variance' => $counter['variance'],
+            ], $counterSummaries),
+            'large_transactions' => $recon['large_transactions']['count'],
+            'flagged_transactions' => $recon['flagged_transactions']['count'],
+        ];
     }
 
     public function getActiveWorkflow(Branch $branch): ?BranchClosureWorkflow
@@ -102,8 +158,7 @@ class BranchClosingService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            // Idempotent: settling an already-settled workflow must not post
-            // duplicate HQ-transfer journals for the same pool balances.
+            // Idempotent: settling an already-settled workflow is a no-op.
             if ($lockedWorkflow->status === BranchClosureStatus::Settled) {
                 return;
             }
@@ -120,8 +175,8 @@ class BranchClosingService
                 throw new \RuntimeException("Closure workflow {$lockedWorkflow->id} has no branch assigned.");
             }
 
-            // Settlement force-returns allocations and moves pool balances to
-            // HQ; running it over open counters would corrupt live sessions.
+            // Settlement force-returns allocations to the branch pool; running
+            // it over open counters would corrupt live sessions.
             if (! $this->checkCountersClosed($branch)) {
                 throw new BranchClosingChecklistIncompleteException;
             }
@@ -139,8 +194,7 @@ class BranchClosingService
 
             // Stale pending/approved requests can never proceed past a
             // branch settlement — cancel them here rather than gating the
-            // close on them. Approved rows release their pool earmark, so
-            // this must run before the HQ-transfer journals sweep
+            // close on them. Approved rows release their pool earmark back to
             // available_balance.
             $cancelledRequests = TellerAllocation::query()
                 ->where('branch_id', $branch->id)
@@ -155,9 +209,6 @@ class BranchClosingService
                     'Cancelled at branch settlement'
                 ))
                 ->count();
-
-            // Create settlement journal entries (transfer balances to HQ)
-            $this->createSettlementJournalEntries($branch, $settler);
 
             // Log the settlement action
             $this->auditService->log(
@@ -180,45 +231,6 @@ class BranchClosingService
                 'settlement_at' => now(),
             ]);
         });
-    }
-
-    /**
-     * Create settlement journal entries for branch closing.
-     * Transfers remaining balances from branch pool to headquarters.
-     */
-    protected function createSettlementJournalEntries(Branch $branch, User $settler): void
-    {
-        // Get all branch pool balances
-        $branchPools = BranchPool::where('branch_id', $branch->id)->get();
-
-        foreach ($branchPools as $pool) {
-            if ($pool->available_balance > 0) {
-                $lines = [
-                    [
-                        'account_code' => $pool->currency_code === Currency::baseCurrency()
-                            ? $this->accountMappingService->code(AccountMappingKey::CashMyr)
-                            : $this->accountMappingService->forCurrency('inventory', $pool->currency_code),
-                        'debit' => '0.00',
-                        'credit' => $pool->available_balance,
-                        'description' => "Branch {$branch->code} pool balance",
-                    ],
-                    [
-                        'account_code' => $this->accountMappingService->code(AccountMappingKey::SuspenseHq),
-                        'debit' => $pool->available_balance,
-                        'credit' => '0.00',
-                        'description' => "HQ receiving {$pool->currency_code} from branch {$branch->code}",
-                    ],
-                ];
-                $this->accountingService->createJournalEntry(
-                    $lines,
-                    'BranchSettlement',
-                    null,
-                    "Branch {$branch->code} settlement - {$pool->currency_code} transfer to HQ",
-                    now()->toDateString(),
-                    $settler->id
-                );
-            }
-        }
     }
 
     protected function checkCountersClosed(Branch $branch): bool

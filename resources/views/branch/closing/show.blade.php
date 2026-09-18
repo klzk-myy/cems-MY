@@ -16,6 +16,66 @@
             <x-alert type="danger">{{ session('error') }}</x-alert>
         @endif
 
+        <x-card title="Day Reconciliation — {{ $recon['date'] }}">
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-sm text-ink-muted">Sessions</p>
+                        <p class="text-sm font-medium text-ink">
+                            {{ $recon['summary']['closed_counters'] + $recon['summary']['handed_over_counters'] }} closed / {{ $recon['summary']['active_counters'] }} open
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Expected Closing (MYR)</p>
+                        <p class="text-sm font-medium text-ink">{{ number_format((float) $recon['totals']['closing_expected'], 2) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Counted Closing (MYR)</p>
+                        <p class="text-sm font-medium text-ink">{{ number_format((float) $recon['totals']['closing_actual'], 2) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-ink-muted">Variance (MYR)</p>
+                        <p class="text-sm font-medium {{ (float) $recon['totals']['variance'] !== 0.0 ? 'text-danger-text' : 'text-success-text' }}">
+                            {{ number_format((float) $recon['totals']['variance'], 2) }}
+                        </p>
+                    </div>
+                </div>
+
+                @if(count($recon['counters']) > 0)
+                    <x-table>
+                        <x-slot:thead>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Opening</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Expected</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Counted</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                        </x-slot:thead>
+                        <x-slot:tbody>
+                            @foreach($recon['counters'] as $counter)
+                                <tr>
+                                    <td class="px-4 py-2 text-sm text-ink">{{ $counter['counter_code'] }}</td>
+                                    <td class="px-4 py-2 text-sm text-ink-muted">{{ $counter['session_status'] }}</td>
+                                    <td class="px-4 py-2 text-sm text-right font-mono text-ink">{{ number_format((float) $counter['opening_float'], 2) }}</td>
+                                    <td class="px-4 py-2 text-sm text-right font-mono text-ink">{{ number_format((float) $counter['closing_float_expected'], 2) }}</td>
+                                    <td class="px-4 py-2 text-sm text-right font-mono text-ink">{{ $counter['closing_float_actual'] !== null ? number_format((float) $counter['closing_float_actual'], 2) : '—' }}</td>
+                                    <td class="px-4 py-2 text-sm text-right font-mono {{ (float) $counter['variance'] !== 0.0 ? 'text-danger-text' : 'text-ink' }}">{{ number_format((float) $counter['variance'], 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </x-slot:tbody>
+                    </x-table>
+                @else
+                    <p class="text-sm text-ink-muted">No counter sessions recorded for this date.</p>
+                @endif
+
+                @if($recon['flagged_transactions'] > 0 || $recon['large_transactions'] > 0)
+                    <p class="text-sm text-ink-muted">
+                        {{ $recon['large_transactions'] }} large transaction(s), {{ $recon['flagged_transactions'] }} unresolved flag(s) today.
+                    </p>
+                @endif
+            </div>
+        </x-card>
+
         @if($workflow)
             <x-card title="Workflow Progress">
                 <div class="grid grid-cols-2 gap-6">

@@ -8,7 +8,6 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Models\Branch;
 use App\Models\BranchPool;
-use App\Models\ChartOfAccount;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\JournalEntry;
@@ -299,32 +298,48 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function settle_twice_does_not_duplicate_hq_journal_entries(): void
+    public function finalize_archives_checklist_and_recon_snapshot(): void
     {
-        // Ensure settlement accounts exist for the HQ-transfer journals
-        // (defaults: suspense.hq -> 2300, cash.myr -> 1000, inventory.default -> 2000).
-        foreach ([
-            ['2300', 'Inter-Branch Clearing', 'Asset'],
-        ] as [$code, $name, $type]) {
-            ChartOfAccount::firstOrCreate(
-                ['account_code' => $code],
-                ['account_name' => $name, 'account_type' => $type, 'is_active' => true]
-            );
-        }
-
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $workflow->refresh();
+        $this->assertEquals(BranchClosureStatus::Finalized, $workflow->status);
+
+        $snapshot = $workflow->checklist;
+        $this->assertIsArray($snapshot);
+        $this->assertTrue($snapshot['results']['counters_closed']);
+        $this->assertTrue($snapshot['results']['allocations_returned']);
+        $this->assertTrue($snapshot['results']['documents_finalized']);
+
+        $this->assertSame(now()->toDateString(), $snapshot['recon']['date']);
+        $this->assertArrayHasKey('totals', $snapshot['recon']);
+        $this->assertArrayHasKey('summary', $snapshot['recon']);
+    }
+
+    #[Test]
+    public function settle_moves_no_funds_and_is_idempotent(): void
+    {
+        // Daily close is operational only: pool balances stay at the branch
+        // and no HQ-transfer journals are posted. Remittance is a separate
+        // explicit pool action, not part of the close workflow.
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $journalsBefore = JournalEntry::where('reference_type', 'BranchSettlement')->count();
 
         $this->branchClosingService->settle($workflow, $this->manager);
         $workflow->refresh();
         $this->assertEquals(BranchClosureStatus::Settled, $workflow->status);
 
-        $journalCountAfterFirst = JournalEntry::where('reference_type', 'BranchSettlement')->count();
-        $this->assertGreaterThan(0, $journalCountAfterFirst, 'First settle must post HQ-transfer journals');
+        $this->assertSame($journalsBefore, JournalEntry::where('reference_type', 'BranchSettlement')->count());
 
-        // Second settle must be a no-op: no duplicate journals, status stays settled.
+        $this->pool->refresh();
+        $this->assertEquals('100000.0000', $this->pool->available_balance);
+        $this->assertEquals('0.0000', $this->pool->allocated_balance);
+
+        // Second settle must be a no-op.
         $this->branchClosingService->settle($workflow, $this->manager);
-
-        $this->assertSame($journalCountAfterFirst, JournalEntry::where('reference_type', 'BranchSettlement')->count());
         $this->assertEquals(BranchClosureStatus::Settled, $workflow->fresh()->status);
     }
 
@@ -343,12 +358,6 @@ class BranchClosingWorkflowTest extends TestCase
     #[Test]
     public function settle_cancels_pending_and_approved_requests(): void
     {
-        // HQ-transfer journals need the suspense account.
-        ChartOfAccount::firstOrCreate(
-            ['account_code' => '2300'],
-            ['account_name' => 'Inter-Branch Clearing', 'account_type' => 'Asset', 'is_active' => true]
-        );
-
         $mathService = new MathService;
         $branchPoolService = new BranchPoolService(new AuditService, $mathService);
         $tellerAllocationService = new TellerAllocationService($branchPoolService, $mathService, app(AuditService::class), app(TillService::class));
@@ -383,7 +392,7 @@ class BranchClosingWorkflowTest extends TestCase
         $this->assertEquals(TellerAllocationStatus::REJECTED, $approved->status);
         $this->assertEquals('Cancelled at branch settlement', $approved->rejection_reason);
 
-        // The approved earmark released back to available before the HQ sweep.
+        // The approved earmark released back to available.
         $this->pool->refresh();
         $this->assertEquals('0.0000', $this->pool->allocated_balance);
         $this->assertEquals('100000.0000', $this->pool->available_balance);

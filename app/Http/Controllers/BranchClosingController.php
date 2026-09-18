@@ -44,8 +44,9 @@ class BranchClosingController extends Controller
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
         $checklist = $workflow ? $this->branchClosingService->getChecklist($workflow) : null;
         $canFinalize = $workflow ? $this->branchClosingService->canFinalize($workflow) : false;
+        $recon = $this->branchClosingService->getDayReconciliation($branch);
 
-        return view('branch.closing.show', compact('branch', 'workflow', 'checklist', 'canFinalize'));
+        return view('branch.closing.show', compact('branch', 'workflow', 'checklist', 'canFinalize', 'recon'));
     }
 
     public function initiate(InitiateBranchClosingRequest $request, Branch $branch): RedirectResponse
