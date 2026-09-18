@@ -354,6 +354,8 @@ class SchemaSeeder extends Seeder
             $table->index('approved_by', 'idx_journal_entries_approved_by');
             $table->index('reversed_by', 'idx_journal_entries_reversed_by');
             $table->index('posted_by', 'idx_journal_entries_posted_by');
+            $table->index('cost_center_id', 'idx_journal_entries_cost_center');
+            $table->index('department_id', 'idx_journal_entries_department');
             $table->foreign('period_id')->references('id')->on('accounting_periods');
             $table->foreign('branch_id')->references('id')->on('branches');
             $table->foreign('approved_by')->references('id')->on('users');
@@ -376,6 +378,8 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('department_id')->nullable();
             $table->string('normal_balance')->nullable();
             $table->index('account_type', 'chart_of_accounts_account_type_index');
+            $table->index('cost_center_id', 'chart_of_accounts_cost_center_id_index');
+            $table->index('department_id', 'chart_of_accounts_department_id_index');
             $table->foreign('parent_code')->references('account_code')->on('chart_of_accounts')->restrictOnDelete();
         });
 
@@ -604,6 +608,7 @@ class SchemaSeeder extends Seeder
             $table->index('approved_by', 'transactions_approved_by_index');
             $table->index('compliance_cleared_by', 'transactions_compliance_cleared_by_index');
             $table->index('counter_id', 'transactions_counter_id_index');
+            $table->index('rate_override_approved_by', 'transactions_rate_override_approved_by_index');
             $table->index(['branch_id', 'created_at'], 'transactions_branch_created_idx');
             $table->index('cancelled_at', 'transactions_cancelled_at_index');
             $table->index('created_at', 'transactions_created_at_index');
@@ -621,6 +626,8 @@ class SchemaSeeder extends Seeder
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
             $table->foreign('approved_by')->references('id')->on('users');
+            $table->foreign('rate_override_approved_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('compliance_cleared_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('customer_id')->references('id')->on('customers');
             $table->foreign('cancelled_by')->references('id')->on('users')->restrictOnDelete();
@@ -746,6 +753,8 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->index('is_active', 'aml_rules_is_active_index');
             $table->index('rule_type', 'aml_rules_rule_type_index');
+            $table->index('created_by', 'aml_rules_created_by_index');
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->index('action', 'aml_rules_action_index');
             $table->index('risk_score', 'aml_rules_risk_score_index');
             $table->unique('rule_code', 'aml_rules_rule_code_unique');
@@ -852,7 +861,9 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique(['branch_id', 'currency_code'], 'branch_pools_branch_id_currency_code_unique');
+            $table->index('currency_code', 'branch_pools_currency_code_index');
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
         Schema::create('pool_remittances', function (Blueprint $table) {
@@ -876,11 +887,17 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->unique('remittance_number', 'pool_remittances_remittance_number_unique');
             $table->index(['status', 'to_branch_id'], 'pool_remittances_status_to_branch_index');
+            $table->index('out_journal_entry_id', 'pool_remittances_out_journal_entry_id_index');
+            $table->index('ack_journal_entry_id', 'pool_remittances_ack_journal_entry_id_index');
+            $table->index('currency_code', 'pool_remittances_currency_code_index');
             $table->foreign('from_branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('to_branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('initiated_by')->references('id')->on('users')->cascadeOnDelete();
             $table->foreign('acknowledged_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('cancelled_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('out_journal_entry_id')->references('id')->on('journal_entries')->restrictOnDelete();
+            $table->foreign('ack_journal_entry_id')->references('id')->on('journal_entries')->restrictOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
         Schema::create('budgets', function (Blueprint $table) {
@@ -1031,16 +1048,34 @@ class SchemaSeeder extends Seeder
             $table->index(['counter_id', 'session_date'], 'teller_alloc_counter_date_idx');
             $table->index(['branch_id', 'session_date'], 'teller_alloc_branch_date_idx');
             $table->index('approved_by', 'idx_40a1c4772e24');
+            $table->index('rejected_by', 'teller_allocations_rejected_by_index');
+            $table->index('currency_code', 'teller_allocations_currency_code_index');
             $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('rejected_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('counter_id')->references('id')->on('counters')->nullOnDelete();
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
         // Deferred FK: teller_allocations is created after transactions.
         Schema::table('transactions', function (Blueprint $table) {
             $table->index('teller_allocation_id', 'transactions_teller_allocation_id_index');
             $table->foreign('teller_allocation_id')->references('id')->on('teller_allocations')->nullOnDelete();
+        });
+
+        // Deferred FKs: counters, cost_centers and departments are created
+        // after transactions, journal_entries and chart_of_accounts.
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->foreign('counter_id')->references('id')->on('counters')->nullOnDelete();
+        });
+        Schema::table('journal_entries', function (Blueprint $table) {
+            $table->foreign('cost_center_id')->references('id')->on('cost_centers')->nullOnDelete();
+            $table->foreign('department_id')->references('id')->on('departments')->nullOnDelete();
+        });
+        Schema::table('chart_of_accounts', function (Blueprint $table) {
+            $table->foreign('cost_center_id')->references('id')->on('cost_centers')->nullOnDelete();
+            $table->foreign('department_id')->references('id')->on('departments')->nullOnDelete();
         });
 
         Schema::create('counter_sessions', function (Blueprint $table) {
@@ -1117,6 +1152,7 @@ class SchemaSeeder extends Seeder
             $table->unique(['currency_code', 'branch_key'], 'currency_positions_currency_code_branch_key_unique');
             $table->index('branch_id', 'currency_positions_branch_id_index');
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
+            $table->foreign('branch_id')->references('id')->on('branches')->restrictOnDelete();
         });
 
         Schema::create('customer_behavioral_baselines', function (Blueprint $table) {
@@ -1232,7 +1268,9 @@ class SchemaSeeder extends Seeder
             $table->index('risk_tier', 'customer_risk_profiles_risk_tier_index');
             $table->index('risk_score', 'customer_risk_profiles_risk_score_index');
             $table->unique('customer_id', 'customer_risk_profiles_customer_id_unique');
+            $table->index('locked_by', 'customer_risk_profiles_locked_by_index');
             $table->foreign('customer_id')->references('id')->on('customers')->cascadeOnDelete();
+            $table->foreign('locked_by')->references('id')->on('users')->nullOnDelete();
         });
 
         Schema::create('device_computations', function (Blueprint $table) {
@@ -1317,7 +1355,9 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index('edd_record_id', 'idx_18d041a74a1b');
+            $table->index('verified_by', 'edd_document_requests_verified_by_index');
             $table->foreign('edd_record_id')->references('id')->on('enhanced_diligence_records')->cascadeOnDelete();
+            $table->foreign('verified_by')->references('id')->on('users')->nullOnDelete();
         });
 
         Schema::create('edd_templates', function (Blueprint $table) {
@@ -1813,7 +1853,11 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index('transaction_id', 'stock_reservations_transaction_id_index');
+            $table->index('created_by', 'stock_reservations_created_by_index');
             $table->index(['currency_code', 'till_id', 'status'], 'stock_reservations_currency_code_till_id_status_index');
+            $table->foreign('transaction_id')->references('id')->on('transactions')->restrictOnDelete();
+            $table->foreign('created_by')->references('id')->on('users')->restrictOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
         Schema::create('stock_transfers', function (Blueprint $table) {
@@ -1865,6 +1909,7 @@ class SchemaSeeder extends Seeder
             $table->index('currency_code', 'stock_transfer_items_currency_code_index');
             $table->index('stock_transfer_id', 'idx_d7a732f0665b');
             $table->foreign('stock_transfer_id')->references('id')->on('stock_transfers')->cascadeOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
         Schema::create('str_reports', function (Blueprint $table) {
@@ -2043,6 +2088,10 @@ class SchemaSeeder extends Seeder
             $table->index('expires_at', 'transaction_confirmations_expires_at_index');
             $table->unique('confirmation_token', 'transaction_confirmations_confirmation_token_unique');
             $table->unique('transaction_id', 'transaction_confirmations_transaction_id_unique');
+            $table->index('user_id', 'transaction_confirmations_user_id_index');
+            $table->index('confirmed_by', 'transaction_confirmations_confirmed_by_index');
+            $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete();
+            $table->foreign('confirmed_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('transaction_id')->references('id')->on('transactions')->restrictOnDelete();
         });
 
@@ -2086,6 +2135,8 @@ class SchemaSeeder extends Seeder
             $table->text('file_hash')->nullable();
             $table->integer('file_size')->nullable();
             $table->integer('processed_rows')->default(0);
+            $table->index('imported_by', 'transaction_imports_imported_by_index');
+            $table->foreign('imported_by')->references('id')->on('users')->restrictOnDelete();
         });
 
         Schema::create('user_notification_preferences', function (Blueprint $table) {
