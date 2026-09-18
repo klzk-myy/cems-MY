@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmPasswordRequest;
 use App\Support\PasswordHash;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -21,12 +21,8 @@ class ConfirmablePasswordController extends Controller
         return view('auth.confirm-password');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(ConfirmPasswordRequest $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'string'],
-        ]);
-
         $user = $request->user();
 
         if (! $user || ! PasswordHash::check($request->password, $user->password_hash)) {

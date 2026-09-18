@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\PoolRemittanceStatus;
 use App\Exceptions\Domain\DomainException;
+use App\Http\Requests\CancelPoolRemittanceRequest;
+use App\Http\Requests\DebitBranchPoolRequest;
+use App\Http\Requests\FundBranchPoolRequest;
+use App\Http\Requests\RemitBranchPoolRequest;
+use App\Http\Requests\StoreBranchPoolRequest;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Currency;
@@ -47,15 +52,12 @@ class BranchPoolController extends Controller
      * may create one for their own branch; cross-branch creation requires the
      * manage_all_branches grant.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreBranchPoolRequest $request): RedirectResponse
     {
         $user = $request->user();
         $allBranches = $user->role->canManageAllBranches();
 
-        $validated = $request->validate([
-            'branch_id' => [$allBranches ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
-            'currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code'],
-        ]);
+        $validated = $request->validated();
 
         $branchId = $allBranches ? (int) $validated['branch_id'] : (int) $user->branch_id;
 
@@ -130,13 +132,11 @@ class BranchPoolController extends Controller
     /**
      * Fund a pool (manager/admin only).
      */
-    public function fund(Request $request, BranchPool $branchPool): RedirectResponse
+    public function fund(FundBranchPoolRequest $request, BranchPool $branchPool): RedirectResponse
     {
         $this->authorizeBranchScope($request, (int) $branchPool->branch_id);
 
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-        ]);
+        $validated = $request->validated();
 
         $branch = $branchPool->branch;
 
@@ -163,13 +163,11 @@ class BranchPoolController extends Controller
      * the service runs the balance check under the pool row lock and
      * writes the audit event.
      */
-    public function debit(Request $request, BranchPool $branchPool): RedirectResponse
+    public function debit(DebitBranchPoolRequest $request, BranchPool $branchPool): RedirectResponse
     {
         $this->authorizeBranchScope($request, (int) $branchPool->branch_id);
 
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-        ]);
+        $validated = $request->validated();
 
         $branch = $branchPool->branch;
 
@@ -197,15 +195,11 @@ class BranchPoolController extends Controller
      * The value parks in the 2300 clearing account until the receiver
      * acknowledges.
      */
-    public function remit(Request $request, BranchPool $branchPool): RedirectResponse
+    public function remit(RemitBranchPoolRequest $request, BranchPool $branchPool): RedirectResponse
     {
         $this->authorizeBranchScope($request, (int) $branchPool->branch_id);
 
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'to_branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $from = $branchPool->branch;
         $to = Branch::whereKey((int) $validated['to_branch_id'])->firstOrFail();
@@ -253,13 +247,11 @@ class BranchPoolController extends Controller
      * and reverses the 2300 clearing leg. Restricted to the sending branch
      * (or a cross-branch user).
      */
-    public function cancelRemittance(Request $request, PoolRemittance $poolRemittance): RedirectResponse
+    public function cancelRemittance(CancelPoolRemittanceRequest $request, PoolRemittance $poolRemittance): RedirectResponse
     {
         $this->authorizeBranchScope($request, (int) $poolRemittance->from_branch_id);
 
-        $validated = $request->validate([
-            'reason' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         try {
             $this->remittanceService->cancel($poolRemittance, $request->user()->id, $validated['reason'] ?? null);

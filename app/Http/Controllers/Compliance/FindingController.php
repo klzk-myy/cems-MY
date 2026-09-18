@@ -6,14 +6,13 @@ use App\Enums\ComplianceCaseType;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateCaseFromFindingRequest;
 use App\Http\Requests\DismissFindingRequest;
 use App\Http\Requests\FindingIndexRequest;
 use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -67,12 +66,9 @@ class FindingController extends Controller
         return view('compliance.findings.show', compact('finding'));
     }
 
-    public function createCase(Request $request, int $id): RedirectResponse
+    public function createCase(CreateCaseFromFindingRequest $request, int $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'case_type' => ['required', Rule::enum(ComplianceCaseType::class)],
-            'summary' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $finding = ComplianceFinding::find($id);
 

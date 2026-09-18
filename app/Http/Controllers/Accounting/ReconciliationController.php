@@ -8,13 +8,13 @@ use App\Http\Requests\Accounting\ExportReconciliationRequest;
 use App\Http\Requests\Accounting\ImportBankStatementRequest;
 use App\Http\Requests\Accounting\ManualMatchReconciliationRequest;
 use App\Http\Requests\Accounting\MarkReconciliationExceptionRequest;
+use App\Http\Requests\Accounting\ReconciliationIndexRequest;
 use App\Http\Requests\Accounting\ReconciliationReportRequest;
 use App\Models\BankReconciliation;
 use App\Models\ChartOfAccount;
 use App\Services\Accounting\BankReconciliationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ReconciliationController extends Controller
@@ -23,7 +23,7 @@ class ReconciliationController extends Controller
         protected BankReconciliationService $bankReconciliationService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(ReconciliationIndexRequest $request): View
     {
         // Reconcilable accounts are the Cash-class assets: till cash, banks
         // and nostro accounts. A name LIKE '%Cash%' filter used to miss the
@@ -32,12 +32,7 @@ class ReconciliationController extends Controller
             ->where('account_class', 'Cash')
             ->where('is_active', true)
             ->get();
-        $filters = $request->validate([
-            'account_code' => 'nullable|string|exists:chart_of_accounts,account_code',
-            'account' => 'nullable|string|exists:chart_of_accounts,account_code',
-            'from' => 'nullable|date',
-            'to' => 'nullable|date|after_or_equal:from',
-        ]);
+        $filters = $request->validated();
 
         $accountCode = $filters['account_code'] ?? $filters['account'] ?? $cashAccounts->first()?->account_code;
         $fromDate = $filters['from'] ?? now()->startOfMonth()->toDateString();

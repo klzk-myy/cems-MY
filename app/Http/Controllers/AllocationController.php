@@ -5,6 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\DomainException;
+use App\Http\Requests\ApproveAllocationRequest;
+use App\Http\Requests\ModifyAllocationRequest;
+use App\Http\Requests\RejectAllocationRequest;
+use App\Http\Requests\StoreAllocationRequest;
+use App\Http\Requests\SubmitAllocationRequest;
+use App\Http\Requests\TransferTillRequest;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Counter;
@@ -69,14 +75,11 @@ class AllocationController extends Controller
     /**
      * Approve a pending allocation request (manager/admin, own branch).
      */
-    public function approve(Request $request, TellerAllocation $allocation): RedirectResponse
+    public function approve(ApproveAllocationRequest $request, TellerAllocation $allocation): RedirectResponse
     {
         $this->authorizeAllocationBranch($request, $allocation);
 
-        $validated = $request->validate([
-            'approved_amount' => ['required', 'numeric', 'min:0.0001'],
-            'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         if (! $allocation->isPending()) {
             return back()->with('error', 'Allocation is not pending approval.');
@@ -101,13 +104,11 @@ class AllocationController extends Controller
     /**
      * Reject a pending allocation request (manager/admin, own branch).
      */
-    public function reject(Request $request, TellerAllocation $allocation): RedirectResponse
+    public function reject(RejectAllocationRequest $request, TellerAllocation $allocation): RedirectResponse
     {
         $this->authorizeAllocationBranch($request, $allocation);
 
-        $validated = $request->validate([
-            'rejection_reason' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         if (! $allocation->isPending()) {
             return back()->with('error', 'Allocation is not pending approval.');
@@ -165,15 +166,9 @@ class AllocationController extends Controller
      * via Accept on My Allocations — same as a request-driven approval.
      * Accepts multiple currency lines; the batch is atomic.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreAllocationRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
-            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
-            'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         $teller = User::query()->find((int) $validated['user_id']);
 
@@ -231,14 +226,11 @@ class AllocationController extends Controller
      * Increase draws more from the branch pool; decrease returns unspent
      * float to the pool — see TellerAllocationService::modifyAllocation().
      */
-    public function modify(Request $request, TellerAllocation $allocation): RedirectResponse
+    public function modify(ModifyAllocationRequest $request, TellerAllocation $allocation): RedirectResponse
     {
         $this->authorizeAllocationBranch($request, $allocation);
 
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.0001'],
-            'direction' => ['required', 'in:increase,decrease'],
-        ]);
+        $validated = $request->validated();
 
         if (! $allocation->isApproved() && ! $allocation->isActive()) {
             return back()->with('error', 'Only approved or active allocations can be adjusted.');
@@ -340,16 +332,11 @@ class AllocationController extends Controller
      * Submit teller stock requests — one pending allocation per currency
      * line, atomic. The branch manager approves from the allocations screen.
      */
-    public function submitRequest(Request $request): RedirectResponse
+    public function submitRequest(SubmitAllocationRequest $request): RedirectResponse
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
-            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
-            'counter_id' => ['nullable', 'integer', 'exists:counters,id'],
-        ]);
+        $validated = $request->validated();
 
         $counter = isset($validated['counter_id'])
             ? Counter::query()->find((int) $validated['counter_id'])
@@ -416,7 +403,7 @@ class AllocationController extends Controller
      * session's till — direction=load puts custody into the drawer,
      * direction=unload returns unspent drawer cash to custody.
      */
-    public function transferTill(Request $request, TellerAllocation $allocation): RedirectResponse
+    public function transferTill(TransferTillRequest $request, TellerAllocation $allocation): RedirectResponse
     {
         abort_unless($allocation->user_id === $request->user()->id, 403);
 
@@ -424,10 +411,7 @@ class AllocationController extends Controller
             return back()->with('error', 'Allocation is not active.');
         }
 
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.0001'],
-            'direction' => ['required', 'in:load,unload'],
-        ]);
+        $validated = $request->validated();
 
         $session = CounterSession::open()
             ->where('user_id', $request->user()->id)

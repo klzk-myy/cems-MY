@@ -7,13 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\BalanceSheetRequest;
 use App\Http\Requests\Accounting\LedgerRequest;
 use App\Http\Requests\Accounting\ProfitLossRequest;
+use App\Http\Requests\Accounting\ReportDateRangeRequest;
 use App\Http\Requests\Accounting\TrialBalanceRequest;
 use App\Models\Branch;
 use App\Models\ChartOfAccount;
 use App\Services\Accounting\CashFlowService;
 use App\Services\Accounting\LedgerService;
 use App\Services\System\MathService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -74,7 +74,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function ledgerAccount(Request $request, string $accountCode): View
+    public function ledgerAccount(ReportDateRangeRequest $request, string $accountCode): View
     {
         $this->requireAccountingAccess();
 
@@ -87,10 +87,7 @@ class ReportController extends Controller
             abort(404, 'Account not found.');
         }
 
-        $dates = $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date|after_or_equal:from',
-        ]);
+        $dates = $request->validated();
 
         $from = $dates['from'] ?? now()->startOfMonth()->toDateString();
         $to = $dates['to'] ?? now()->toDateString();
@@ -155,14 +152,11 @@ class ReportController extends Controller
         ]);
     }
 
-    public function cashFlow(Request $request): View
+    public function cashFlow(ReportDateRangeRequest $request): View
     {
         $this->requireAccountingAccess();
 
-        $dates = $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date|after_or_equal:from',
-        ]);
+        $dates = $request->validated();
 
         $from = $dates['from'] ?? now()->startOfMonth()->toDateString();
         $to = $dates['to'] ?? now()->toDateString();
@@ -178,13 +172,11 @@ class ReportController extends Controller
         ]);
     }
 
-    public function ratios(Request $request): View
+    public function ratios(TrialBalanceRequest $request): View
     {
         $this->requireAccountingAccess();
 
-        $asOfDate = $request->validate([
-            'as_of_date' => 'nullable|date',
-        ])['as_of_date'] ?? now()->toDateString();
+        $asOfDate = $request->validated()['as_of_date'] ?? now()->toDateString();
         $branchId = $this->resolveReportBranchId(Auth::user(), $request);
         $trialBalance = $this->ledgerService->getTrialBalance($asOfDate, $branchId);
 

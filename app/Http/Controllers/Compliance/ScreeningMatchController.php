@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmScreeningMatchRequest;
+use App\Http\Requests\DismissScreeningMatchRequest;
 use App\Models\SanctionEntry;
 use App\Models\ScreeningResult;
 use App\Services\AuditService;
@@ -52,11 +54,9 @@ class ScreeningMatchController extends Controller
         ]);
     }
 
-    public function confirm(Request $request, int $resultId): RedirectResponse
+    public function confirm(ConfirmScreeningMatchRequest $request, int $resultId): RedirectResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $result = ScreeningResult::query()
             ->with(['customer', 'sanctionEntry.sanctionList', 'adverseMediaEntry'])
@@ -108,11 +108,9 @@ class ScreeningMatchController extends Controller
                     : ' Customer frozen, transactions blocked and FIU reporting flagged.'));
     }
 
-    public function dismiss(Request $request, int $resultId): RedirectResponse
+    public function dismiss(DismissScreeningMatchRequest $request, int $resultId): RedirectResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $result = ScreeningResult::query()->findOrFail($resultId);
 

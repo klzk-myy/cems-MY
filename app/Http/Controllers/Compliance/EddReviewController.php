@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Enums\EddStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RejectEddReviewRequest;
 use App\Models\EnhancedDiligenceRecord;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,7 +93,7 @@ class EddReviewController extends Controller
     /**
      * Reject an EDD record. A reason is required and stored as review notes.
      */
-    public function reject(Request $request, EnhancedDiligenceRecord $eddRecord): RedirectResponse
+    public function reject(RejectEddReviewRequest $request, EnhancedDiligenceRecord $eddRecord): RedirectResponse
     {
         $this->authorize('update', $eddRecord);
 
@@ -103,9 +104,7 @@ class EddReviewController extends Controller
             );
         }
 
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $eddRecord->update([
             'status' => EddStatus::Rejected,

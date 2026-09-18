@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UploadEddDocumentRequest;
 use App\Models\Compliance\EddDocumentRequest;
 use App\Models\Customer;
 use App\Models\EnhancedDiligenceRecord;
@@ -83,7 +84,7 @@ class EddCustomerController extends Controller
     /**
      * Signed upload for a document request. Stores file with UUID name.
      */
-    public function upload(Request $request, EddDocumentRequest $eddDocumentRequest): RedirectResponse
+    public function upload(UploadEddDocumentRequest $request, EddDocumentRequest $eddDocumentRequest): RedirectResponse
     {
         $customer = $this->resolveCustomer($request);
 
@@ -94,10 +95,6 @@ class EddCustomerController extends Controller
         if ($eddDocumentRequest->eddRecord?->customer_id !== $customer->id) {
             abort(403, 'Unauthorized access to this document request.');
         }
-
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
-        ]);
 
         $file = $request->file('file');
         $extension = $file->getClientOriginalExtension();

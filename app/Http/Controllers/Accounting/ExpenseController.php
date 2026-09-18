@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InsufficientPettyCashException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Accounting\FundExpenseRequest;
 use App\Http\Requests\Accounting\StoreExpenseRequest;
 use App\Models\Branch;
 use App\Models\Expense;
@@ -106,7 +107,7 @@ class ExpenseController extends Controller
      * Top up a branch petty-cash float from company cash. Admin only —
      * funding moves company money into branch floats.
      */
-    public function fund(Request $request): RedirectResponse
+    public function fund(FundExpenseRequest $request): RedirectResponse
     {
         $user = $request->user();
 
@@ -114,11 +115,7 @@ class ExpenseController extends Controller
             abort(403, 'Only admins can fund petty cash floats');
         }
 
-        $validated = $request->validate([
-            'branch_id' => 'required|integer|exists:branches,id',
-            'amount' => 'required|numeric|min:0.0001',
-            'description' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         /** @var Branch $branch */
         $branch = Branch::query()->findOrFail((int) $validated['branch_id']);

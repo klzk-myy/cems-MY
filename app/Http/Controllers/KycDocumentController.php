@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CustomerDocumentStatus;
+use App\Http\Requests\RejectKycDocumentRequest;
 use App\Models\CustomerDocument;
 use App\Services\AuditService;
 use App\Services\System\DocumentStorageService;
@@ -46,13 +47,11 @@ class KycDocumentController extends Controller
     /**
      * Reject a customer document with a reason.
      */
-    public function reject(Request $request, CustomerDocument $customerDocument): JsonResponse
+    public function reject(RejectKycDocumentRequest $request, CustomerDocument $customerDocument): JsonResponse
     {
         $this->authorize('reject', $customerDocument);
 
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $customerDocument->update([
             'status' => CustomerDocumentStatus::Rejected->value,

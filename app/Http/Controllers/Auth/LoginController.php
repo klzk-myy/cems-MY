@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\LogoutOtherDevicesRequest;
 use App\Models\User;
-use App\Rules\PasswordRules;
 use App\Services\AuditService;
 use App\Services\System\RateLimitService;
 use App\Support\PasswordHash;
@@ -125,20 +126,12 @@ class LoginController extends Controller
         return view('auth.change-password');
     }
 
-    public function changePassword(Request $request): RedirectResponse
+    public function changePassword(ChangePasswordRequest $request): RedirectResponse
     {
         /** @var User $user */
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'current_password' => ['required'],
-            'password' => array_merge(
-                ['different:current_password'],
-                PasswordRules::forChange($user)
-            ),
-        ], [
-            'password.different' => 'The new password must be different from the current password.',
-        ]);
+        $validated = $request->validated();
 
         if (! PasswordHash::check($validated['current_password'], $user->password_hash)) {
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
@@ -168,11 +161,9 @@ class LoginController extends Controller
      * Invalidate every other session for the authenticated user after
      * re-verifying their current password.
      */
-    public function logoutOtherDevices(Request $request): RedirectResponse
+    public function logoutOtherDevices(LogoutOtherDevicesRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         /** @var User $user */
         $user = Auth::user();

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateNotificationPreferencesRequest;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationPreferenceController extends Controller
@@ -34,13 +34,9 @@ class NotificationPreferenceController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateNotificationPreferencesRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'types' => ['nullable', 'array'],
-            'types.*' => ['string'],
-            'digest_enabled' => ['nullable', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         /** @var User $user */
         $user = Auth::user();
