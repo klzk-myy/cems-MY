@@ -216,6 +216,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
         $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        /** @var BranchPool $pool */
         $pool = BranchPool::factory()->for($branch)->create([
             'currency_code' => 'USD',
             'available_balance' => '9000.0000',
@@ -236,6 +237,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
         $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        /** @var BranchPool $pool */
         $pool = BranchPool::factory()->for($branch)->create([
             'currency_code' => 'USD',
             'available_balance' => '9000.0000',
@@ -256,6 +258,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
         $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        /** @var BranchPool $pool */
         $pool = BranchPool::factory()->for($branch)->create([
             'currency_code' => 'USD',
             'available_balance' => '9000.0000',
@@ -279,6 +282,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $branch = Branch::factory()->create();
         $teller = User::factory()->create(['role' => 'teller', 'branch_id' => $branch->id]);
         $allocation = $this->activeAllocation($teller, $branch, 'USD', '1000.0000');
+        /** @var BranchPool $pool */
         $pool = BranchPool::factory()->for($branch)->create([
             'currency_code' => 'USD',
             'available_balance' => '9000.0000',
