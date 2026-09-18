@@ -34,7 +34,21 @@ class LoginController extends Controller
 
         $user = User::where('username', $validated['username'])->first();
 
-        if ($user && $user->is_active && Hash::check($validated['password'], $user->password_hash)) {
+        // A hash stored in a foreign format (e.g. bcrypt under the Argon2id
+        // driver) makes Hash::check throw — that must fail closed as invalid
+        // credentials, not a 500 on the login page.
+        try {
+            $passwordValid = $user !== null
+                && Hash::check($validated['password'], $user->password_hash);
+        } catch (\RuntimeException $e) {
+            Log::warning('Login rejected: unrecognised password hash format', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            $passwordValid = false;
+        }
+
+        if ($user && $user->is_active && $passwordValid) {
             try {
                 DB::transaction(function () use ($user, $request) {
                     Auth::login($user, (bool) $request->boolean('remember'));

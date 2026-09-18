@@ -100,6 +100,31 @@ class LoginControllerTest extends TestCase
     }
 
     #[Test]
+    public function login_with_foreign_hash_format_fails_as_invalid_credentials_not_500(): void
+    {
+        // A bcrypt hash under the Argon2id default driver makes Hash::check
+        // throw — the login must fail closed like any bad credential.
+        // Disable throttling — the 'login' named limiter is registered by
+        // RouteServiceProvider, which some local test environments boot
+        // without; the throttle config flag keeps this test env-independent.
+        config(['security.rate_limits.enabled' => false]);
+
+        User::factory()->create([
+            'username' => 'legacy-hash-user',
+            'password_hash' => bcrypt('whatever-password'),
+            'is_active' => true,
+        ]);
+
+        $this->post('/login', [
+            'username' => 'legacy-hash-user',
+            'password' => 'whatever-password',
+            'ip' => '127.0.0.1',
+        ])->assertRedirect()->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+    }
+
+    #[Test]
     public function login_with_unknown_username_returns_error(): void
     {
         $this->post('/login', [
