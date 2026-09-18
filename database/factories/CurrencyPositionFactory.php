@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\CurrencyPosition;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,7 +20,7 @@ class CurrencyPositionFactory extends Factory
     {
         return [
             'currency_code' => 'USD',
-            'branch_id' => 1,
+            'branch_id' => Branch::factory(),
             'quantity' => $this->faker->randomNumber(5) * 1000,
             'average_cost' => '4.5000',
             'total_cost' => '0.0000',

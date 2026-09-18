@@ -5,6 +5,7 @@ namespace Tests\Feature\Audit;
 use App\Enums\StockTransferStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
 use App\Models\Branch;
@@ -40,6 +41,7 @@ use App\Services\ThresholdService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -335,6 +337,14 @@ class ReportingAccountingFixesTest extends TestCase
     #[Test]
     public function stock_transfer_accepts_partial_receipt(): void
     {
+        // The seal job is deferred to afterCommit; on the sync driver it
+        // executes inline at commit() and throws when it meets an unsealed
+        // gap (the plain log() entry written between sealed ones — sealed
+        // later by the audit:seal-pending sweeper, retried by the job on
+        // queued drivers). Faking it keeps this test focused on the
+        // partial-receipt accounting, not seal ordering.
+        Queue::fake([SealAuditHashJob::class]);
+
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $currency = Currency::factory()->create(['code' => 'EUR']);
 

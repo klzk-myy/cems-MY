@@ -24,6 +24,16 @@ class ThrottleRequests extends BaseThrottleRequests
             return $next($request);
         }
 
+        // Named-limiter detection must happen here: parent::handle() checks
+        // func_num_args() === 3, but it always receives five arguments from
+        // this call, so the upstream named-limiter branch would never run
+        // and 'throttle:api' would crash in resolveMaxAttempts().
+        if (is_string($maxAttempts)
+            && func_num_args() === 3
+            && ! is_null($limiter = $this->limiter->limiter($maxAttempts))) {
+            return $this->handleRequestUsingNamedLimiter($request, $next, $maxAttempts, $limiter);
+        }
+
         return parent::handle($request, $next, $maxAttempts, $decayMinutes, $prefix);
     }
 }

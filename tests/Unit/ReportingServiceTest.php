@@ -35,8 +35,8 @@ class ReportingServiceTest extends TestCase
 
         CurrencyPosition::factory()->create([
             'currency_code' => $currency->code,
-            'balance' => '5000',
-            'avg_cost_rate' => '4.5000',
+            'quantity' => '5000',
+            'average_cost' => '4.5000',
         ]);
 
         Transaction::factory()->completed()->create([

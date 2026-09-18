@@ -21,7 +21,7 @@
         </div>
     @endisset
     @isset($slot)
-        @if(! $slot->isEmpty())
+        @if(! ($slot instanceof \Illuminate\View\ComponentSlot ? $slot->isEmpty() : trim((string) $slot) === ''))
             <div class="mt-4">
                 {{ $slot }}
             </div>

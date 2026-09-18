@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\CustomerRiskScoringService;
@@ -365,8 +366,9 @@ class CustomerRiskScoringServiceTest extends TestCase
         $customer = Customer::factory()->create();
         $profile = CustomerRiskProfile::createForCustomer($customer->id, 50);
 
-        // Lock for EDD review
-        $profile->lock($customer->id, 'Enhanced Due Diligence required');
+        // Lock for EDD review (locked_by is an FK to users)
+        $locker = User::factory()->create();
+        $profile->lock($locker->id, 'Enhanced Due Diligence required');
 
         // Verify it's locked immediately
         $this->assertTrue($profile->isLocked());
@@ -380,7 +382,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $this->assertTrue($profile->isLocked(), 'Customer lock should not auto-expire before EDD is complete');
 
         // Verify lock metadata is preserved
-        $this->assertEquals($customer->id, $profile->locked_by);
+        $this->assertEquals($locker->id, $profile->locked_by);
         $this->assertEquals('Enhanced Due Diligence required', $profile->lock_reason);
 
         // Manual unlock after EDD completion

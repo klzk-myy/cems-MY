@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Branch\TillService;
 use App\Services\DTOs\AllocationValidationResult;
 use App\Services\System\MathService;
 use Mockery;
@@ -27,6 +28,7 @@ class TellerAllocationResolutionTest extends TestCase
             Mockery::mock(BranchPoolService::class),
             Mockery::mock(MathService::class),
             Mockery::mock(AuditService::class),
+            Mockery::mock(TillService::class),
         ])->makePartial();
     }
 

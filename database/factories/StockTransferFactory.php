@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\StockTransferStatus;
+use App\Models\Branch;
 use App\Models\StockTransfer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -34,8 +35,8 @@ class StockTransferFactory extends Factory
                 StockTransferStatus::Cancelled->value,
                 StockTransferStatus::Rejected->value,
             ]),
-            'source_branch_name' => $this->faker->city().' Branch',
-            'destination_branch_name' => $this->faker->city().' Branch',
+            'source_branch_name' => fn () => Branch::factory()->create()->name,
+            'destination_branch_name' => fn () => Branch::factory()->create()->name,
             'requested_by' => User::factory(),
             'requested_at' => $this->faker->dateTimeThisMonth(),
             'branch_manager_approved_by' => User::factory(),

@@ -962,7 +962,7 @@ class TransactionCreationServiceTest extends TestCase
 
         // A pending reservation for the SAME till for 900 units.
         StockReservation::create([
-            'transaction_id' => 99999,
+            'transaction_id' => Transaction::factory()->create()->id,
             'currency_code' => 'USD',
             'till_id' => $counter->code,
             'amount_foreign' => '900.00',

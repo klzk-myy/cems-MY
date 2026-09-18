@@ -13,6 +13,8 @@ class CurrencyPositionLockService
 
     public function findForUpdate(?string $branchId, string $currencyCode): ?CurrencyPosition
     {
+        $branchId = $this->normalizeBranchId($branchId);
+
         return CurrencyPosition::when(
             $branchId === null,
             fn ($query) => $query->whereNull('branch_id'),
@@ -36,6 +38,8 @@ class CurrencyPositionLockService
      */
     public function lock(?string $branchId, string $currencyCode): CurrencyPosition
     {
+        $branchId = $this->normalizeBranchId($branchId);
+
         return DB::transaction(function () use ($branchId, $currencyCode) {
             $position = $this->findForUpdate($branchId, $currencyCode);
 
@@ -73,5 +77,12 @@ class CurrencyPositionLockService
         $position->update(['quantity' => $newQuantity]);
 
         return $position->refresh();
+    }
+
+    private function normalizeBranchId(?string $branchId): ?string
+    {
+        $branchId = $branchId !== null ? trim($branchId) : null;
+
+        return $branchId === '' ? null : $branchId;
     }
 }

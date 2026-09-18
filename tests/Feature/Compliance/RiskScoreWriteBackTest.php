@@ -7,6 +7,7 @@ use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\CustomerRiskHistory;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\PepAssessmentService;
@@ -179,7 +180,7 @@ class RiskScoreWriteBackTest extends TestCase
 
         // Seed an existing profile and lock it (EDD review hold).
         $profile = CustomerRiskProfile::createForCustomer($customer->id, 42);
-        $profile->lock(1, 'EDD review in progress');
+        $profile->lock(User::factory()->create()->id, 'EDD review in progress');
 
         $snapshotsBefore = $customer->riskScoreSnapshots()->count();
 
