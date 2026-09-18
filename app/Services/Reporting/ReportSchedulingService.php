@@ -132,7 +132,7 @@ class ReportSchedulingService
                 $type,
                 $periodStart,
                 $periodEnd,
-                ReportGeneratedStatus::Generated->value,
+                ReportGeneratedStatus::Generated,
                 'CSV'
             );
             $artifact->file_path = $filePath;

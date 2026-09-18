@@ -197,7 +197,7 @@ class CurrencyPositionServiceTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         // Create an expired reservation (expires_at in the past)
@@ -244,7 +244,7 @@ class CurrencyPositionServiceTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         // Create a valid reservation (expires_at in the future)
@@ -280,7 +280,7 @@ class CurrencyPositionServiceTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         // Create an expired reservation

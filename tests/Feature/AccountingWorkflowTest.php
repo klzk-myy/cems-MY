@@ -63,7 +63,7 @@ class AccountingWorkflowTest extends TestCase
             'year_code' => '2026',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         // Create chart of accounts with unique codes
@@ -645,7 +645,7 @@ class AccountingWorkflowTest extends TestCase
 
         $entry = JournalEntry::first();
         $this->assertNotNull($entry);
-        $this->assertEquals('Posted', $entry->status->value);
+        $this->assertEquals('posted', $entry->status->value);
         $this->assertNotNull($entry->posted_at);
         $this->assertNotNull($entry->posted_by);
 
@@ -676,7 +676,7 @@ class AccountingWorkflowTest extends TestCase
         $createResponse->assertSessionHasNoErrors();
 
         $originalEntry = JournalEntry::first();
-        $this->assertEquals('Posted', $originalEntry->status->value);
+        $this->assertEquals('posted', $originalEntry->status->value);
 
         $reverseResponse = $this->actingAs($this->manager)
             ->post("/accounting/journal/{$originalEntry->id}/reverse", [
@@ -686,13 +686,13 @@ class AccountingWorkflowTest extends TestCase
         $reverseResponse->assertSessionHasNoErrors();
 
         $originalEntry->refresh();
-        $this->assertEquals('Reversed', $originalEntry->status->value);
+        $this->assertEquals('reversed', $originalEntry->status->value);
         $this->assertNotNull($originalEntry->reversed_at);
         $this->assertNotNull($originalEntry->reversed_by);
 
         $reversalEntry = JournalEntry::where('reference_id', $originalEntry->id)->first();
         $this->assertNotNull($reversalEntry);
-        $this->assertEquals('Posted', $reversalEntry->status->value);
+        $this->assertEquals('posted', $reversalEntry->status->value);
 
         $originalCashLine = $originalEntry->lines->firstWhere('account_code', $this->cashAccount->account_code);
         $reversalCashLine = $reversalEntry->lines->firstWhere('account_code', $this->cashAccount->account_code);
@@ -736,7 +736,7 @@ class AccountingWorkflowTest extends TestCase
             'period_type' => 'month',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'Closed',
+            'status' => 'closed',
         ]);
 
         // Create journal entry with debit to expense and credit to income summary
@@ -746,7 +746,7 @@ class AccountingWorkflowTest extends TestCase
             'period_id' => $period->id,
             'reference_type' => 'Manual',
             'description' => 'Test expense entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'created_by' => $this->manager->id,
             'posted_by' => $this->manager->id,
             'posted_at' => now(),
@@ -795,7 +795,7 @@ class AccountingWorkflowTest extends TestCase
             'period_id' => $period->id,
             'reference_type' => 'FiscalYearClosing',
             'description' => 'Closing Expenses to Income Summary',
-            'status' => 'Posted',
+            'status' => 'posted',
             'created_by' => $this->manager->id,
             'posted_by' => $this->manager->id,
             'posted_at' => now(),
@@ -879,7 +879,7 @@ class AccountingWorkflowTest extends TestCase
             'period_type' => 'month',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'Closed',
+            'status' => 'closed',
         ]);
 
         // Create journal entry with large expense (net loss)
@@ -889,7 +889,7 @@ class AccountingWorkflowTest extends TestCase
             'period_id' => $period->id,
             'reference_type' => 'Manual',
             'description' => 'Test large expense entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'created_by' => $this->manager->id,
             'posted_by' => $this->manager->id,
             'posted_at' => now(),
@@ -937,7 +937,7 @@ class AccountingWorkflowTest extends TestCase
             'period_id' => $period->id,
             'reference_type' => 'FiscalYearClosing',
             'description' => 'Closing Expenses to Income Summary (Loss)',
-            'status' => 'Posted',
+            'status' => 'posted',
             'created_by' => $this->manager->id,
             'posted_by' => $this->manager->id,
             'posted_at' => now(),

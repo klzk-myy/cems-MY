@@ -186,10 +186,9 @@
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge
-                                    :variant="match ($transaction->status?->value) {
-                                        'Completed' => 'success',
-                                        'Pending' => 'warning',
-                                        'PendingApproval' => 'warning',
+                                    :variant="match ($transaction->status) {
+                                        \App\Enums\TransactionStatus::Completed => 'success',
+                                        \App\Enums\TransactionStatus::Pending, \App\Enums\TransactionStatus::PendingApproval => 'warning',
                                         default => 'gray',
                                     }"
                                 >

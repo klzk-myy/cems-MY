@@ -123,7 +123,7 @@ class ReportingAccountingFixesTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         // 0.10 + 0.20: float sum produces 0.30000000000000004; bcmath -> 0.3000
@@ -177,7 +177,7 @@ class ReportingAccountingFixesTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -235,7 +235,7 @@ class ReportingAccountingFixesTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();

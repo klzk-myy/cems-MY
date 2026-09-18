@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\FiscalYearStatus;
 use App\Models\FiscalYear;
 use Illuminate\Database\Seeder;
 
@@ -15,7 +16,7 @@ class FiscalYearSeeder extends Seeder
             [
                 'start_date' => "$currentYear-01-01",
                 'end_date' => "$currentYear-12-31",
-                'status' => 'Open',
+                'status' => FiscalYearStatus::Open->value,
             ]
         );
 

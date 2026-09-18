@@ -11,6 +11,6 @@ class ReportGeneratedStatusTest extends TestCase
     #[Test]
     public function archived_value_is_allowed_by_database(): void
     {
-        $this->assertSame('Archived', ReportGeneratedStatus::Archived->value);
+        $this->assertSame('archived', ReportGeneratedStatus::Archived->value);
     }
 }

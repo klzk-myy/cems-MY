@@ -144,6 +144,6 @@ trait EdgeSteps
         });
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
-        $this->assertSame('PendingApproval', $status, 'B10: transaction must be unchanged');
+        $this->assertSame('pending_approval', $status, 'B10: transaction must be unchanged');
     }
 }

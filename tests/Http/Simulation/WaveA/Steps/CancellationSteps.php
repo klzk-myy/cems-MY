@@ -31,7 +31,7 @@ trait CancellationSteps
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-        $this->assertSame('PendingCancellation', $status, 'A6: transaction should be pending cancellation');
+        $this->assertSame('pending_cancellation', $status, 'A6: transaction should be pending cancellation');
     }
 
     /**
@@ -48,7 +48,7 @@ trait CancellationSteps
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-        $this->assertSame('PendingCancellation', $status, 'A6b: transaction should be pending cancellation');
+        $this->assertSame('pending_cancellation', $status, 'A6b: transaction should be pending cancellation');
     }
 
     /**
@@ -69,7 +69,7 @@ trait CancellationSteps
 
             $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-            $this->assertSame('Cancelled', $status, 'A6c: transaction should be cancelled');
+            $this->assertSame('cancelled', $status, 'A6c: transaction should be cancelled');
             $this->assertReversalBalanced($txId, 'A6c web');
         }, 'sim_manager');
     }
@@ -88,7 +88,7 @@ trait CancellationSteps
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-        $this->assertSame('Cancelled', $status, 'A6d: transaction should be cancelled');
+        $this->assertSame('cancelled', $status, 'A6d: transaction should be cancelled');
         $this->assertReversalBalanced($txId, 'A6d API');
     }
 

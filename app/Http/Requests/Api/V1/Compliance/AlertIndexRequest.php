@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Compliance;
 
+use App\Enums\AlertPriority;
+use App\Enums\FlagStatus;
 use App\Http\Requests\ApiFormRequest;
 
 class AlertIndexRequest extends ApiFormRequest
@@ -15,9 +17,9 @@ class AlertIndexRequest extends ApiFormRequest
     {
         return [
             'per_page' => 'nullable|integer|min:1|max:100',
-            'priority' => 'nullable|in:critical,high,medium,low',
+            'priority' => 'nullable|in:'.implode(',', array_column(AlertPriority::cases(), 'value')),
             'assigned' => 'nullable|in:yes,no',
-            'status' => 'nullable|in:Open,Under_Review,Resolved,Escalated,Rejected',
+            'status' => 'nullable|in:'.implode(',', array_column(FlagStatus::cases(), 'value')),
         ];
     }
 }

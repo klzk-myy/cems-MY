@@ -9,11 +9,11 @@ namespace App\Enums;
  */
 enum ReportGeneratedStatus: string
 {
-    case Pending = 'Pending';
-    case Generated = 'Generated';
-    case Failed = 'Failed';
-    case Submitted = 'Submitted';
-    case Archived = 'Archived';
+    case Pending = 'pending';
+    case Generated = 'generated';
+    case Failed = 'failed';
+    case Submitted = 'submitted';
+    case Archived = 'archived';
 
     /**
      * Check if the report is pending.

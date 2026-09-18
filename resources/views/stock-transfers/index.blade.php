@@ -27,7 +27,7 @@
                             <td class="px-4 py-3 text-sm">{{ $transfer->source_branch_name }}</td>
                             <td class="px-4 py-3 text-sm">{{ $transfer->destination_branch_name }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <x-badge variant="{{ $transfer->status->value === 'Completed' ? 'success' : ($transfer->status->value === 'Requested' ? 'warning' : 'gray') }}">
+                                <x-badge variant="{{ $transfer->status === \App\Enums\StockTransferStatus::Completed ? 'success' : ($transfer->status === \App\Enums\StockTransferStatus::Requested ? 'warning' : 'gray') }}">
                                     {{ $transfer->status->label() }}
                                 </x-badge>
                             </td>

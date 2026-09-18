@@ -221,11 +221,11 @@ class TransactionStateMachineTest extends TestCase
 
                 // Per-target metadata
                 match ($target) {
-                    'Approved' => $this->assertTrue(isset($fresh->approved_by, $fresh->approved_at), "Approved metadata missing for {$from} -> {$target}"),
-                    'Cancelled' => $this->assertTrue(isset($fresh->cancelled_by, $fresh->cancelled_at) && $fresh->cancellation_reason === "matrix {$from}->{$target}", "Cancelled metadata missing for {$from} -> {$target}"),
-                    'Failed' => $this->assertSame("matrix {$from}->{$target}", $fresh->failure_reason, "Failed metadata missing for {$from} -> {$target}"),
-                    'Rejected' => $this->assertSame("matrix {$from}->{$target}", $fresh->rejection_reason, "Rejected metadata missing for {$from} -> {$target}"),
-                    'Reversed' => $this->assertSame("matrix {$from}->{$target}", $fresh->reversal_reason, "Reversed metadata missing for {$from} -> {$target}"),
+                    'approved' => $this->assertTrue(isset($fresh->approved_by, $fresh->approved_at), "Approved metadata missing for {$from} -> {$target}"),
+                    'cancelled' => $this->assertTrue(isset($fresh->cancelled_by, $fresh->cancelled_at) && $fresh->cancellation_reason === "matrix {$from}->{$target}", "Cancelled metadata missing for {$from} -> {$target}"),
+                    'failed' => $this->assertSame("matrix {$from}->{$target}", $fresh->failure_reason, "Failed metadata missing for {$from} -> {$target}"),
+                    'rejected' => $this->assertSame("matrix {$from}->{$target}", $fresh->rejection_reason, "Rejected metadata missing for {$from} -> {$target}"),
+                    'reversed' => $this->assertSame("matrix {$from}->{$target}", $fresh->reversal_reason, "Reversed metadata missing for {$from} -> {$target}"),
                     default => null,
                 };
             }
@@ -240,16 +240,16 @@ class TransactionStateMachineTest extends TestCase
     public function transitions_matrix_rejects_sample_of_invalid_transitions(): void
     {
         $invalidSamples = [
-            ['Draft', 'Completed'],          // drafts must go through approval flow
-            ['Draft', 'Processing'],
-            ['PendingApproval', 'Draft'],    // no return to Draft anywhere
-            ['Approved', 'Completed'],       // must pass through Processing (or manager direct-complete)
-            ['Finalized', 'Cancelled'],      // Finalized is terminal
-            ['Cancelled', 'PendingApproval'], // Cancelled is terminal
-            ['Reversed', 'Failed'],          // Reversed is terminal
-            ['Rejected', 'Completed'],       // rejected can only go to Cancelled
-            ['Failed', 'Reversed'],          // failed recovery cannot jump to Reversed
-            ['Processing', 'PendingApproval'], // no backwards transition
+            ['draft', 'completed'],          // drafts must go through approval flow
+            ['draft', 'processing'],
+            ['pending_approval', 'draft'],    // no return to Draft anywhere
+            ['approved', 'completed'],       // must pass through Processing (or manager direct-complete)
+            ['finalized', 'cancelled'],      // Finalized is terminal
+            ['cancelled', 'pending_approval'], // Cancelled is terminal
+            ['reversed', 'failed'],          // Reversed is terminal
+            ['rejected', 'completed'],       // rejected can only go to Cancelled
+            ['failed', 'reversed'],          // failed recovery cannot jump to Reversed
+            ['processing', 'pending_approval'], // no backwards transition
         ];
 
         foreach ($invalidSamples as [$from, $to]) {

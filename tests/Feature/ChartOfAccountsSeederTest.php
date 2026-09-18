@@ -68,7 +68,7 @@ class ChartOfAccountsSeederTest extends TestCase
         $entry = JournalEntry::where('reference_type', 'Opening Balance')->first();
 
         $this->assertNotNull($entry, 'Opening balance journal entry was not created');
-        $this->assertSame('Posted', $entry->status->value);
+        $this->assertSame('posted', $entry->status->value);
 
         $lines = $entry->lines;
         $this->assertCount(2, $lines);

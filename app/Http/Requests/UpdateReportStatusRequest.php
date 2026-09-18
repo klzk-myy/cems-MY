@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StrReportStatus;
+
 class UpdateReportStatusRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
@@ -14,7 +16,7 @@ class UpdateReportStatusRequest extends AuthorizedFormRequest
         return [
             'date' => 'required_with:date|date_format:Y-m-d',
             'month' => 'required_with:month|date_format:Y-m',
-            'status' => 'required|in:Submitted',
+            'status' => 'required|in:'.StrReportStatus::Submitted->value,
         ];
     }
 }

@@ -188,7 +188,7 @@ class CaseManagementServiceTest extends TestCase
                 'customer_id' => $customer->id,
                 'amount_local' => 60000,
             ])->id,
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $case = ComplianceCase::factory()->create([

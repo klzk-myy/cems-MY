@@ -269,7 +269,7 @@ class CriticalTransactionFixesTest extends TestCase
 
         $this->assertDatabaseHas('reports_generated', [
             'report_type' => ReportType::MonthEnd->value,
-            'status' => 'Failed',
+            'status' => 'failed',
         ]);
     }
 

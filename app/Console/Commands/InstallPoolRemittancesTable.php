@@ -39,7 +39,7 @@ class InstallPoolRemittancesTable extends Command
             $table->unsignedBigInteger('to_branch_id');
             $table->string('currency_code', 8);
             $table->decimal('amount', 20, 4);
-            $table->enum('status', ['Pending', 'Acknowledged', 'Cancelled'])->default('Pending');
+            $table->enum('status', ['pending', 'acknowledged', 'cancelled'])->default('pending');
             $table->unsignedBigInteger('initiated_by');
             $table->timestamp('initiated_at')->nullable();
             $table->unsignedBigInteger('acknowledged_by')->nullable();

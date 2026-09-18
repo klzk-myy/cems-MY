@@ -21,10 +21,10 @@
                 @if ($activeYear)
                     <div class="flex items-center gap-3">
                         <x-badge
-                            :variant="match ($activeYear->status?->value) {
-                                'Open' => 'success',
-                                'Closed' => 'gray',
-                                'Archived' => 'info',
+                            :variant="match ($activeYear->status) {
+                                \App\Enums\FiscalYearStatus::Open => 'success',
+                                \App\Enums\FiscalYearStatus::Closed => 'gray',
+                                \App\Enums\FiscalYearStatus::Archived => 'info',
                                 default => 'gray',
                             }"
                         >
@@ -68,10 +68,10 @@
                             <td class="px-4 py-3 text-center text-sm">{{ $fiscalYear->periods?->count() ?? 0 }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge
-                                    :variant="match ($fiscalYear->status?->value) {
-                                        'Open' => 'success',
-                                        'Closed' => 'gray',
-                                        'Archived' => 'info',
+                                    :variant="match ($fiscalYear->status) {
+                                        \App\Enums\FiscalYearStatus::Open => 'success',
+                                        \App\Enums\FiscalYearStatus::Closed => 'gray',
+                                        \App\Enums\FiscalYearStatus::Archived => 'info',
                                         default => 'gray',
                                     }"
                                 >
@@ -119,9 +119,9 @@
                             <td class="px-4 py-3 text-sm">{{ $period->end_date?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge
-                                    :variant="match ($period->status?->value) {
-                                        'Open' => 'success',
-                                        'Closed' => 'gray',
+                                    :variant="match ($period->status) {
+                                        \App\Enums\AccountingPeriodStatus::Open => 'success',
+                                        \App\Enums\AccountingPeriodStatus::Closed => 'gray',
                                         default => 'gray',
                                     }"
                                 >

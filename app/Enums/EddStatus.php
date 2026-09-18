@@ -9,13 +9,13 @@ namespace App\Enums;
  */
 enum EddStatus: string
 {
-    case Incomplete = 'Incomplete';
-    case PendingQuestionnaire = 'Pending_Questionnaire';
-    case QuestionnaireSubmitted = 'Questionnaire_Submitted';
-    case PendingReview = 'Pending_Review';
-    case Approved = 'Approved';
-    case Rejected = 'Rejected';
-    case Expired = 'Expired';
+    case Incomplete = 'incomplete';
+    case PendingQuestionnaire = 'pending_questionnaire';
+    case QuestionnaireSubmitted = 'questionnaire_submitted';
+    case PendingReview = 'pending_review';
+    case Approved = 'approved';
+    case Rejected = 'rejected';
+    case Expired = 'expired';
 
     /**
      * Get a human-readable label for the EDD status.

@@ -28,12 +28,12 @@
                         <p class="text-sm text-ink-muted">Status</p>
                         <p class="mt-1">
                             <x-badge
-                                :variant="match ($entry->status?->value) {
-                                    'Posted' => 'success',
-                                    'Pending' => 'warning',
-                                    'Draft' => 'secondary',
-                                    'Rejected' => 'danger',
-                                    'Reversed' => 'info',
+                                :variant="match ($entry->status) {
+                                    \App\Enums\JournalEntryStatus::Posted => 'success',
+                                    \App\Enums\JournalEntryStatus::Pending => 'warning',
+                                    \App\Enums\JournalEntryStatus::Draft => 'secondary',
+                                    \App\Enums\JournalEntryStatus::Rejected => 'danger',
+                                    \App\Enums\JournalEntryStatus::Reversed => 'info',
                                     default => 'secondary',
                                 }"
                             >

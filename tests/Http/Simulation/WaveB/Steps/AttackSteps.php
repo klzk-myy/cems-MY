@@ -87,7 +87,7 @@ trait AttackSteps
         }
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
-        $this->assertSame('PendingApproval', $status, 'B4: transaction must remain pending approval');
+        $this->assertSame('pending_approval', $status, 'B4: transaction must remain pending approval');
     }
 
     /**
@@ -119,7 +119,7 @@ trait AttackSteps
         });
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
-        $this->assertSame('PendingCancellation', $status, 'B9: same-manager approval must not cancel the transaction');
+        $this->assertSame('pending_cancellation', $status, 'B9: same-manager approval must not cancel the transaction');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Compliance;
 
+use App\Enums\EddDocumentStatus;
 use App\Models\Compliance\EddDocumentRequest;
 use App\Models\EnhancedDiligenceRecord;
 use App\Models\User;
@@ -23,7 +24,7 @@ class EddDocumentRequestFactory extends Factory
             'edd_record_id' => EnhancedDiligenceRecord::factory(),
             'document_type' => $this->faker->randomElement(['passport', 'id_card', 'proof_of_address', 'bank_statement', 'tax_return']),
             'file_path' => 'edd/documents/'.$this->faker->unique()->uuid.'.pdf',
-            'status' => $this->faker->randomElement(['Pending', 'Received', 'Verified', 'Rejected']),
+            'status' => $this->faker->randomElement([EddDocumentStatus::Pending->value, EddDocumentStatus::Received->value, EddDocumentStatus::Verified->value, EddDocumentStatus::Rejected->value]),
             'rejection_reason' => $this->faker->optional()->sentence(),
             'uploaded_at' => $this->faker->dateTimeThisMonth(),
             'verified_at' => $this->faker->optional()->dateTimeThisMonth(),

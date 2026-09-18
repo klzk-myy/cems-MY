@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\FlagStatus;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,7 +20,7 @@ class FlaggedTransactionFactory extends Factory
             'transaction_id' => Transaction::factory(),
             'flag_type' => fake()->randomElement(['Velocity', 'Structuring', 'EDD_Required', 'Sanction_Match', 'Manual_Review', 'Counterfeit_Currency']),
             'flag_reason' => fake()->sentence(),
-            'status' => fake()->randomElement(['Open', 'Under_Review', 'Resolved']),
+            'status' => fake()->randomElement([FlagStatus::Open->value, FlagStatus::UnderReview->value, FlagStatus::Resolved->value]),
             'assigned_to' => null,
             'reviewed_by' => null,
             'notes' => null,
@@ -30,7 +31,7 @@ class FlaggedTransactionFactory extends Factory
     public function open(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Open',
+            'status' => FlagStatus::Open->value,
             'assigned_to' => null,
             'reviewed_by' => null,
             'resolved_at' => null,
@@ -40,14 +41,14 @@ class FlaggedTransactionFactory extends Factory
     public function underReview(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Under_Review',
+            'status' => FlagStatus::UnderReview->value,
         ]);
     }
 
     public function resolved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'Resolved',
+            'status' => FlagStatus::Resolved->value,
             'resolved_at' => now(),
         ]);
     }

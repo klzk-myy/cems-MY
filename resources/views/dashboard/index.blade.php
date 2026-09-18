@@ -34,10 +34,10 @@
                             </td>
                             <td class="px-4 py-3 text-right font-medium">{{ number_format((float) $transaction->amount_local, 2) }} MYR</td>
                             <td class="px-4 py-3">
-                                <x-badge :variant="match ($transaction->status?->value ?? '') {
-                                    'Completed' => 'success',
-                                    'Pending', 'PendingApproval' => 'warning',
-                                    'Cancelled', 'Failed' => 'danger',
+                                <x-badge :variant="match ($transaction->status) {
+                                    \App\Enums\TransactionStatus::Completed => 'success',
+                                    \App\Enums\TransactionStatus::Pending, \App\Enums\TransactionStatus::PendingApproval => 'warning',
+                                    \App\Enums\TransactionStatus::Cancelled, \App\Enums\TransactionStatus::Failed => 'danger',
                                     default => 'gray',
                                 }">
                                     {{ $transaction->status?->label() ?? 'N/A' }}

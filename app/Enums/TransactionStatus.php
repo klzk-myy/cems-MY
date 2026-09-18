@@ -14,17 +14,17 @@ enum TransactionStatus: string
      * Legacy state — retained only so historical rows deserialize. Absent
      * from TransactionStateMachine::TRANSITIONS; no code path creates it.
      */
-    case Draft = 'Draft';
-    case PendingApproval = 'PendingApproval';
-    case Approved = 'Approved';
-    case Processing = 'Processing';
-    case Completed = 'Completed';
-    case Finalized = 'Finalized';
-    case Cancelled = 'Cancelled';
-    case Reversed = 'Reversed';
-    case Failed = 'Failed';
-    case Rejected = 'Rejected';
-    case PendingCancellation = 'PendingCancellation';
+    case Draft = 'draft';
+    case PendingApproval = 'pending_approval';
+    case Approved = 'approved';
+    case Processing = 'processing';
+    case Completed = 'completed';
+    case Finalized = 'finalized';
+    case Cancelled = 'cancelled';
+    case Reversed = 'reversed';
+    case Failed = 'failed';
+    case Rejected = 'rejected';
+    case PendingCancellation = 'pending_cancellation';
 
     /**
      * Legacy states — retained only so historical rows deserialize. They are
@@ -32,8 +32,8 @@ enum TransactionStatus: string
      * create or transition into them. Holds map to PendingApproval instead of
      * OnHold; there is no Draft intake and no Completed -> Finalized sweep.
      */
-    case Pending = 'Pending';
-    case OnHold = 'OnHold';
+    case Pending = 'pending';
+    case OnHold = 'on_hold';
 
     /**
      * Check if the transaction is in draft state.

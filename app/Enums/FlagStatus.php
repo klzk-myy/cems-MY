@@ -9,11 +9,11 @@ namespace App\Enums;
  */
 enum FlagStatus: string
 {
-    case Open = 'Open';
-    case UnderReview = 'Under_Review';
-    case Resolved = 'Resolved';
-    case Escalated = 'Escalated';
-    case Rejected = 'Rejected';
+    case Open = 'open';
+    case UnderReview = 'under_review';
+    case Resolved = 'resolved';
+    case Escalated = 'escalated';
+    case Rejected = 'rejected';
 
     /**
      * Check if the flag is open.

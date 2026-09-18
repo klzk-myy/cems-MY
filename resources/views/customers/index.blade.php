@@ -10,7 +10,7 @@
 
         <x-filter-bar method="GET">
             <x-input name="search" value="{{ request('search') }}" placeholder="Search by name or ID..." inline />
-            <x-select name="risk_rating" :options="['' => 'All Risk Ratings', 'Low' => 'Low', 'Medium' => 'Medium', 'High' => 'High']" :selected="request('risk_rating')" inline />
+            <x-select name="risk_rating" :options="['' => 'All Risk Ratings', \App\Enums\RiskRating::Low->value => 'Low', \App\Enums\RiskRating::Medium->value => 'Medium', \App\Enums\RiskRating::High->value => 'High', \App\Enums\RiskRating::Critical->value => 'Critical']" :selected="request('risk_rating')" inline />
             <x-select name="nationality" :options="['' => 'All Nationalities', 'MY' => 'Malaysian', 'SG' => 'Singaporean', 'OTHER' => 'Other']" :selected="request('nationality')" inline />
             <x-button type="submit" variant="primary">Filter</x-button>
         </x-filter-bar>

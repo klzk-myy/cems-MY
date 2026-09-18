@@ -48,7 +48,7 @@
                     <x-select
                         name="risk_rating"
                         label="Risk Rating"
-                        :options="['Low' => 'Low', 'Medium' => 'Medium', 'High' => 'High']"
+                        :options="[\App\Enums\RiskRating::Low->value => 'Low', \App\Enums\RiskRating::Medium->value => 'Medium', \App\Enums\RiskRating::High->value => 'High', \App\Enums\RiskRating::Critical->value => 'Critical']"
                         selected="{{ old('risk_rating', $customer->risk_rating?->value ?? $customer->risk_rating ?? '') }}"
                     />
                 </div>

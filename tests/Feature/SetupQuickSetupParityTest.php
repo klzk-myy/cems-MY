@@ -40,7 +40,7 @@ class SetupQuickSetupParityTest extends TestCase
 
         $this->assertTrue(
             FiscalYear::where('year_code', 'FY'.now()->year)
-                ->where('status', 'Open')
+                ->where('status', 'open')
                 ->exists(),
             'Current fiscal year must exist and be open after quick setup'
         );
@@ -73,11 +73,11 @@ class SetupQuickSetupParityTest extends TestCase
         $response->assertOk();
 
         $this->assertFalse(ExchangeRate::exists(), 'Exchange rates must not be seeded when opted out');
-        $this->assertTrue(FiscalYear::where('status', 'Open')->exists());
+        $this->assertTrue(FiscalYear::where('status', 'open')->exists());
         $this->assertTrue(
             AccountingPeriod::whereDate('start_date', '<=', now())
                 ->whereDate('end_date', '>=', now())
-                ->where('status', 'Open')
+                ->where('status', 'open')
                 ->exists()
         );
     }
@@ -124,8 +124,8 @@ class SetupQuickSetupParityTest extends TestCase
 
         $response->assertOk()->assertJson(['success' => true]);
 
-        $this->assertTrue(FiscalYear::where('status', 'Open')->exists());
-        $this->assertTrue(AccountingPeriod::where('status', 'Open')->exists());
+        $this->assertTrue(FiscalYear::where('status', 'open')->exists());
+        $this->assertTrue(AccountingPeriod::where('status', 'open')->exists());
         $this->assertEquals(
             'Sanctions lists are not loaded yet. Run "php artisan sanctions:update" now - '
             .'sanctions screening is ineffective until the lists are imported.',

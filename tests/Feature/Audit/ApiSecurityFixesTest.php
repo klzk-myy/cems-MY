@@ -48,13 +48,13 @@ class ApiSecurityFixesTest extends TestCase
                 'POST',
                 'api.v1.reports.msb2.status',
                 [],
-                ['date' => $yesterday, 'status' => 'Submitted'],
+                ['date' => $yesterday, 'status' => 'submitted'],
             ],
             'lmca status' => [
                 'POST',
                 'api.v1.reports.lmca.status',
                 [],
-                ['month' => today()->subMonth()->format('Y-m'), 'status' => 'Submitted'],
+                ['month' => today()->subMonth()->format('Y-m'), 'status' => 'submitted'],
             ],
             'report download' => [
                 'GET',

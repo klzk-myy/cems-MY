@@ -9,11 +9,11 @@ namespace App\Enums;
  */
 enum JournalEntryStatus: string
 {
-    case Draft = 'Draft';
-    case Pending = 'Pending';
-    case Posted = 'Posted';
-    case Rejected = 'Rejected';
-    case Reversed = 'Reversed';
+    case Draft = 'draft';
+    case Pending = 'pending';
+    case Posted = 'posted';
+    case Rejected = 'rejected';
+    case Reversed = 'reversed';
 
     /**
      * Check if the entry is in draft state.

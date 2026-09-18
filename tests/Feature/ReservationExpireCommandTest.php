@@ -41,7 +41,7 @@ class ReservationExpireCommandTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         $reservation = StockReservation::factory()->create([
@@ -75,7 +75,7 @@ class ReservationExpireCommandTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         $reservation = StockReservation::factory()->create([
@@ -111,7 +111,7 @@ class ReservationExpireCommandTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         $reservation = StockReservation::factory()->create([
@@ -144,7 +144,7 @@ class ReservationExpireCommandTest extends TestCase
             'amount_local' => '420.00',
             'till_id' => 'TILL1',
             'branch_id' => $teller->branch_id,
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
         ]);
 
         // Create a reservation that is consumed but has an expired expires_at

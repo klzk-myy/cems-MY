@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\JournalEntryStatus;
+use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\ClosedPeriodException;
@@ -134,7 +135,7 @@ class MonthEndCloseService
             ReportType::MonthEnd,
             $date->copy()->startOfMonth(),
             $date->copy()->endOfMonth(),
-            $allSuccessful ? 'Generated' : 'Failed'
+            $allSuccessful ? ReportGeneratedStatus::Generated : ReportGeneratedStatus::Failed
         );
 
         return $reports;

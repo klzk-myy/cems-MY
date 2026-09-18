@@ -55,7 +55,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);
@@ -108,7 +108,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);
@@ -161,7 +161,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);
@@ -213,7 +213,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);
@@ -264,7 +264,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => now()->subDay()->toDateString(),
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);
@@ -314,7 +314,7 @@ class BankReconciliationServiceTest extends TestCase
         $journalEntry = JournalEntry::create([
             'entry_date' => $statementDate,
             'description' => 'Test entry',
-            'status' => 'Posted',
+            'status' => 'posted',
             'posted_by' => $this->user->id,
             'reference_type' => 'Manual',
         ]);

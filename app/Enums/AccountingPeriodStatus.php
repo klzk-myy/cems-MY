@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum AccountingPeriodStatus: string
 {
-    case Open = 'Open';
-    case Closed = 'Closed';
-    case Locked = 'Locked';
+    case Open = 'open';
+    case Closed = 'closed';
+    case Locked = 'locked';
 
     public function isOpen(): bool
     {

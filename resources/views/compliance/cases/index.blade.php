@@ -19,7 +19,7 @@
             />
             <x-select
                 name="status"
-                :options="['Open' => 'Open', 'UnderReview' => 'Under Review', 'PendingApproval' => 'Pending Approval', 'Closed' => 'Closed']"
+                :options="[\App\Enums\ComplianceCaseStatus::Open->value => 'Open', \App\Enums\ComplianceCaseStatus::UnderReview->value => 'Under Review', \App\Enums\ComplianceCaseStatus::PendingApproval->value => 'Pending Approval', \App\Enums\ComplianceCaseStatus::Closed->value => 'Closed']"
                 placeholder="All Status"
                 inline
             />
@@ -65,12 +65,12 @@
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge
-                                    :variant="match ($case->status?->value) {
-                                        'Open' => 'info',
-                                        'UnderReview' => 'warning',
-                                        'PendingApproval' => 'purple',
-                                        'Closed' => 'success',
-                                        'Escalated' => 'danger',
+                                    :variant="match ($case->status) {
+                                        \App\Enums\ComplianceCaseStatus::Open => 'info',
+                                        \App\Enums\ComplianceCaseStatus::UnderReview => 'warning',
+                                        \App\Enums\ComplianceCaseStatus::PendingApproval => 'purple',
+                                        \App\Enums\ComplianceCaseStatus::Closed => 'success',
+                                        \App\Enums\ComplianceCaseStatus::Escalated => 'danger',
                                         default => 'gray',
                                     }"
                                 >

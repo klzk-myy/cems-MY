@@ -39,7 +39,7 @@ enum CddLevel: string
             : $riskRating;
 
         // Enhanced Due Diligence triggers (risk-based, not amount-based per pd-00.md 14C.13)
-        if ($isPep || $hasSanctionMatch || $riskRatingValue === 'High') {
+        if ($isPep || $hasSanctionMatch || $riskRatingValue === RiskRating::High->value) {
             return self::Enhanced;
         }
 

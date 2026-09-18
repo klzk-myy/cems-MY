@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Enums\RiskRating;
 use App\Http\Requests\ApiFormRequest;
 
 class CustomerIndexRequest extends ApiFormRequest
@@ -16,7 +17,7 @@ class CustomerIndexRequest extends ApiFormRequest
         return [
             'per_page' => 'nullable|integer|min:1|max:100',
             'search' => 'nullable|string',
-            'risk_rating' => 'nullable|in:Low,Medium,High,Very High',
+            'risk_rating' => 'nullable|in:'.implode(',', array_column(RiskRating::cases(), 'value')),
             'is_active' => 'nullable|boolean',
             'pep_status' => 'nullable|boolean',
         ];

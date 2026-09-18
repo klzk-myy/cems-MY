@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use App\Models\ReportGenerated;
 use App\Services\Contracts\ReportingServiceInterface;
@@ -32,7 +33,7 @@ class ReportingService implements ReportingServiceInterface
         ReportType $reportType,
         Carbon $periodStart,
         Carbon $periodEnd,
-        string $status = 'Generated',
+        ReportGeneratedStatus $status = ReportGeneratedStatus::Generated,
         string $format = 'CSV'
     ): ReportGenerated {
         return ReportGenerated::create([
@@ -42,7 +43,7 @@ class ReportingService implements ReportingServiceInterface
             'generated_by' => ActorContext::capture()->userId ?? config('cems.system_user_id', 1),
             'generated_at' => now(),
             'file_format' => $format,
-            'status' => $status,
+            'status' => $status->value,
         ]);
     }
 

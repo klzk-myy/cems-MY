@@ -26,7 +26,7 @@ class TransactionStatusServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->create([
-            'status' => 'Completed',
+            'status' => 'completed',
             'user_id' => $user->id,
             'created_at' => now()->subHours(12), // 12 hours ago
             'is_refund' => false,
@@ -41,7 +41,7 @@ class TransactionStatusServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->create([
-            'status' => 'Completed',
+            'status' => 'completed',
             'user_id' => $user->id,
             'created_at' => now()->subHours(48), // 48 hours ago
             'is_refund' => false,
@@ -56,7 +56,7 @@ class TransactionStatusServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->create([
-            'status' => 'Completed',
+            'status' => 'completed',
             'user_id' => $user->id,
             'created_at' => now()->subHours(12),
             'is_refund' => false,
@@ -71,7 +71,7 @@ class TransactionStatusServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->create([
-            'status' => 'Completed',
+            'status' => 'completed',
             'user_id' => $user->id,
             'created_at' => now()->subHours(12),
             'is_refund' => true,
@@ -86,7 +86,7 @@ class TransactionStatusServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->create([
-            'status' => 'PendingApproval',
+            'status' => 'pending_approval',
             'user_id' => $user->id,
             'created_at' => now()->subHours(1),
             'is_refund' => false,

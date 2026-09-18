@@ -11,9 +11,9 @@ class AccountingPeriodStatusTest extends TestCase
     #[Test]
     public function values_match_database_enum(): void
     {
-        $this->assertSame('Open', AccountingPeriodStatus::Open->value);
-        $this->assertSame('Closed', AccountingPeriodStatus::Closed->value);
-        $this->assertSame('Locked', AccountingPeriodStatus::Locked->value);
+        $this->assertSame('open', AccountingPeriodStatus::Open->value);
+        $this->assertSame('closed', AccountingPeriodStatus::Closed->value);
+        $this->assertSame('locked', AccountingPeriodStatus::Locked->value);
     }
 
     #[Test]

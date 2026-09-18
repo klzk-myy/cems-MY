@@ -49,7 +49,7 @@
                             <td class="px-4 py-3 text-sm font-mono">{{ $flag->transaction_id }}</td>
                             <td class="px-4 py-3 text-sm">{{ $flag->flag_type?->label() ?? $flag->flag_type }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <x-badge variant="{{ $flag->status->value === 'Open' ? 'warning' : ($flag->status->value === 'Under_Review' ? 'info' : 'success') }}">
+                                <x-badge variant="{{ $flag->status === \App\Enums\FlagStatus::Open ? 'warning' : ($flag->status === \App\Enums\FlagStatus::UnderReview ? 'info' : 'success') }}">
                                     {{ $flag->status?->label() ?? $flag->status->value }}
                                 </x-badge>
                             </td>

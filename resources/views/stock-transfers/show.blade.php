@@ -2,10 +2,10 @@
     <div class="space-y-6">
         <x-page-header title="Stock Transfer {{ $stockTransfer->transfer_number }}">
             @php
-                $statusVariant = match ($stockTransfer->status->value) {
-                    'Completed', 'Received' => 'success',
-                    'Requested' => 'warning',
-                    'Cancelled', 'Rejected' => 'danger',
+                $statusVariant = match ($stockTransfer->status) {
+                    \App\Enums\StockTransferStatus::Completed, \App\Enums\StockTransferStatus::Received => 'success',
+                    \App\Enums\StockTransferStatus::Requested => 'warning',
+                    \App\Enums\StockTransferStatus::Cancelled, \App\Enums\StockTransferStatus::Rejected => 'danger',
                     default => 'info',
                 };
             @endphp
@@ -183,7 +183,7 @@
                     @endcan
                 @endif
 
-                @if(in_array($stockTransfer->status->value, ['Requested', 'BranchManagerApproved', 'HqApproved', 'InTransit']))
+                @if(in_array($stockTransfer->status, [\App\Enums\StockTransferStatus::Requested, \App\Enums\StockTransferStatus::BranchManagerApproved, \App\Enums\StockTransferStatus::HqApproved, \App\Enums\StockTransferStatus::InTransit], true))
                     @can('reject', $stockTransfer)
                     <div x-data="transferModals" class="inline">
                         <x-button @click="showRejectModal = true" variant="danger">Reject</x-button>

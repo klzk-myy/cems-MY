@@ -24,55 +24,55 @@ class TransactionStateMachine
      * Key is the current state, value is an array of valid target states.
      */
     protected const TRANSITIONS = [
-        'Draft' => [
-            'PendingApproval',
-            'PendingCancellation',
-            'Cancelled',
+        'draft' => [
+            'pending_approval',
+            'pending_cancellation',
+            'cancelled',
         ],
-        'PendingApproval' => [
-            'Approved',
-            'Rejected',
-            'PendingCancellation',
-            'Cancelled',
-            'Completed',  // Direct completion for manager approval
+        'pending_approval' => [
+            'approved',
+            'rejected',
+            'pending_cancellation',
+            'cancelled',
+            'completed',  // Direct completion for manager approval
         ],
-        'Approved' => [
-            'Processing',
-            'PendingCancellation',
-            'Cancelled',
+        'approved' => [
+            'processing',
+            'pending_cancellation',
+            'cancelled',
         ],
-        'Processing' => [
-            'Completed',
-            'Failed',
-            'PendingCancellation',
-            'Cancelled',
+        'processing' => [
+            'completed',
+            'failed',
+            'pending_cancellation',
+            'cancelled',
         ],
-        'Completed' => [
-            'Finalized',
-            'Reversed',
-            'PendingCancellation',
-            'Cancelled',
+        'completed' => [
+            'finalized',
+            'reversed',
+            'pending_cancellation',
+            'cancelled',
             // Booking failure after a persisted Completed record (e.g. accounting
             // or position write failure during create()). The side effects were
             // rolled back, so the record is marked Failed and re-executed by the
             // recovery flow (Failed -> Completed), never double-booked.
-            'Failed',
+            'failed',
         ],
-        'Finalized' => [],
-        'Cancelled' => [],
-        'Reversed' => [],
-        'Failed' => [
-            'PendingApproval',
-            'PendingCancellation',
-            'Cancelled',
-            'Completed',  // Automated re-execution of a previously failed transaction
+        'finalized' => [],
+        'cancelled' => [],
+        'reversed' => [],
+        'failed' => [
+            'pending_approval',
+            'pending_cancellation',
+            'cancelled',
+            'completed',  // Automated re-execution of a previously failed transaction
         ],
-        'Rejected' => [
-            'Cancelled',
+        'rejected' => [
+            'cancelled',
         ],
-        'PendingCancellation' => [
-            'Cancelled',
-            'Completed',
+        'pending_cancellation' => [
+            'cancelled',
+            'completed',
         ],
     ];
 

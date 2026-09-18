@@ -55,7 +55,7 @@ class ComplianceEventListenerTest extends TestCase
             'customer_id' => $snapshot->customer_id,
             'type' => ComplianceFlagType::RiskScoreEscalation->value,
             'priority' => AlertPriority::High->value,
-            'status' => 'Open',
+            'status' => 'open',
         ]);
     }
 

@@ -97,8 +97,8 @@ class ComplianceFlagService
                     ->pluck('count', 'status');
 
                 return [
-                    'open' => $counts->get('Open', 0),
-                    'under_review' => $counts->get('Under_Review', 0),
+                    'open' => $counts->get(FlagStatus::Open->value, 0),
+                    'under_review' => $counts->get(FlagStatus::UnderReview->value, 0),
                     'resolved_today' => FlaggedTransaction::where('status', FlagStatus::Resolved->value)
                         ->whereBetween('resolved_at', [today()->startOfDay(), today()->endOfDay()])
                         ->count(),

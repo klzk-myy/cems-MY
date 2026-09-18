@@ -25,7 +25,7 @@ trait ApprovalSteps
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-        $this->assertNotSame('PendingApproval', $status, 'A5: transaction did not transition');
+        $this->assertNotSame('pending_approval', $status, 'A5: transaction did not transition');
     }
 
     /**
@@ -40,6 +40,6 @@ trait ApprovalSteps
 
         $status = $this->state->oracle->scalar('SELECT status FROM transactions WHERE id = ?', [$txId]);
 
-        $this->assertNotSame('PendingApproval', $status, 'A5b: transaction did not transition');
+        $this->assertNotSame('pending_approval', $status, 'A5b: transaction did not transition');
     }
 }

@@ -13,9 +13,9 @@ namespace App\Enums;
  */
 enum PoolRemittanceStatus: string
 {
-    case Pending = 'Pending';
-    case Acknowledged = 'Acknowledged';
-    case Cancelled = 'Cancelled';
+    case Pending = 'pending';
+    case Acknowledged = 'acknowledged';
+    case Cancelled = 'cancelled';
 
     /**
      * Check if the remittance is still in transit.

@@ -10,10 +10,10 @@ namespace App\Enums;
  */
 enum StrReportStatus: string
 {
-    case Draft = 'Draft';
-    case Submitted = 'Submitted';
-    case Acknowledged = 'Acknowledged';
-    case Rejected = 'Rejected';
+    case Draft = 'draft';
+    case Submitted = 'submitted';
+    case Acknowledged = 'acknowledged';
+    case Rejected = 'rejected';
 
     /**
      * Check if this status can transition to the target status.

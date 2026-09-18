@@ -5,7 +5,7 @@
         <x-filter-bar>
             <form method="GET" class="flex flex-wrap items-end gap-3">
                 <x-select name="fiscal_year" :options="$fiscalYears" placeholder="All Fiscal Years" :value="request('fiscal_year')" inline />
-                <x-select name="status" :options="['Open' => 'Open', 'Closed' => 'Closed', 'Archived' => 'Archived']" placeholder="All Status" :value="request('status')" inline />
+                <x-select name="status" :options="[\App\Enums\AccountingPeriodStatus::Open->value => 'Open', \App\Enums\AccountingPeriodStatus::Closed->value => 'Closed', \App\Enums\AccountingPeriodStatus::Locked->value => 'Locked']" placeholder="All Status" :value="request('status')" inline />
                 <x-input name="search" type="text" placeholder="Search periods..." :value="request('search')" inline class="md:w-64" />
                 <x-button variant="secondary" type="submit">Filter</x-button>
             </form>
@@ -32,9 +32,9 @@
                             <td class="px-4 py-3 text-sm">{{ $period->fiscalYear?->year_code ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge
-                                    :variant="match ($period->status?->value ?? $period->status) {
-                                        'Open', 'open' => 'success',
-                                        'Closed', 'closed' => 'gray',
+                                    :variant="match ($period->status) {
+                                        \App\Enums\AccountingPeriodStatus::Open => 'success',
+                                        \App\Enums\AccountingPeriodStatus::Closed => 'gray',
                                         default => 'info',
                                     }"
                                 >
@@ -42,7 +42,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                @if ((($period->status?->value ?? $period->status) === 'Open' || ($period->status?->value ?? $period->status) === 'open') && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
+                                @if ($period->status === \App\Enums\AccountingPeriodStatus::Open && auth()->user()->role->canPerform(\App\Enums\Permission::ManageAccounting))
                                     <form method="POST" action="{{ route('accounting.period.close', $period) }}"
                                           class="flex items-center justify-center gap-2"
                                           data-confirm="Close period {{ $period->period_code }}? This cannot be undone.">

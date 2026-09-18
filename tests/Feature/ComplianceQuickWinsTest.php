@@ -167,13 +167,13 @@ class ComplianceQuickWinsTest extends TestCase
         $otherAssignee = User::factory()->create();
 
         ComplianceCase::factory()->create([
-            'status' => 'Open',
+            'status' => 'open',
             'priority' => 'Critical',
             'assigned_to' => $assignee->id,
             'sla_deadline' => now()->subHours(30),
         ]);
         ComplianceCase::factory()->create([
-            'status' => 'UnderReview',
+            'status' => 'under_review',
             'priority' => 'Low',
             'assigned_to' => $otherAssignee->id,
             'sla_deadline' => now()->subHours(2),

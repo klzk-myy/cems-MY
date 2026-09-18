@@ -56,7 +56,7 @@ class StrReportTest extends TestCase
                     'customer_id' => $this->customer->id,
                     'amount_local' => $amount,
                 ])->id,
-                'status' => 'Open',
+                'status' => 'open',
             ]);
 
             Alert::factory()->create([

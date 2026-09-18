@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Customer\CustomerIndexAction;
 use App\Enums\Permission;
+use App\Enums\RiskRating;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\CloseCustomerRequest;
@@ -118,7 +119,7 @@ class CustomerController extends Controller
 
         // Get filter options; the distinct-nationality scan is cached and
         // flushed via the 'customers' tag on customer create/update.
-        $riskRatings = ['Low', 'Medium', 'High'];
+        $riskRatings = [RiskRating::Low->value, RiskRating::Medium->value, RiskRating::High->value];
         $nationalities = $this->cacheOptimizationService->remember(
             CacheKeys::CustomerNationalities->value,
             300,
@@ -369,7 +370,7 @@ class CustomerController extends Controller
         $this->authorize('update', $customer);
 
         ['idTypes' => $idTypes, 'nationalities' => $nationalities] = $this->getCustomerFormOptions();
-        $riskRatings = ['Low', 'Medium', 'High'];
+        $riskRatings = [RiskRating::Low->value, RiskRating::Medium->value, RiskRating::High->value];
 
         // Decrypt ID number for display
         $decryptedIdNumber = $this->customerService->decryptIdNumber($customer);

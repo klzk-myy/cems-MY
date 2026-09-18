@@ -110,7 +110,7 @@
                                 <tr>
                                     <td>{{ $counter['counter_name'] ?? 'N/A' }}</td>
                                     <td>
-                                        <x-badge variant="{{ ($counter['session']['status'] ?? '') === 'Closed' ? 'success' : 'warning' }}">
+                                        <x-badge variant="{{ ($counter['session']['status'] ?? '') === \App\Enums\CounterSessionStatus::Closed->value ? 'success' : 'warning' }}">
                                             {{ $counter['session']['status'] ?? 'Unknown' }}
                                         </x-badge>
                                     </td>

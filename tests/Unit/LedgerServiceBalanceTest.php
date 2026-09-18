@@ -90,7 +90,7 @@ class LedgerServiceBalanceTest extends TestCase
             [
                 'start_date' => now()->startOfMonth()->toDateString(),
                 'end_date' => now()->endOfMonth()->toDateString(),
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 
@@ -167,7 +167,7 @@ class LedgerServiceBalanceTest extends TestCase
             [
                 'start_date' => now()->startOfMonth()->toDateString(),
                 'end_date' => now()->endOfMonth()->toDateString(),
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 

@@ -7,10 +7,10 @@ namespace App\Enums;
  */
 enum EddDocumentStatus: string
 {
-    case Pending = 'Pending';
-    case Received = 'Received';
-    case Verified = 'Verified';
-    case Rejected = 'Rejected';
+    case Pending = 'pending';
+    case Received = 'received';
+    case Verified = 'verified';
+    case Rejected = 'rejected';
 
     public function label(): string
     {

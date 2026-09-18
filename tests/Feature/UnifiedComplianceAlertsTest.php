@@ -339,7 +339,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $customer->id,
             'severity' => 'High',
             'finding_type' => 'Velocity_Exceeded',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'Test finding'],
         ]);
 
@@ -360,7 +360,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $customer->id,
             'severity' => 'High',
             'finding_type' => 'Velocity_Exceeded',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'Test finding'],
         ]);
 
@@ -382,7 +382,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $customer->id,
             'severity' => 'High',
             'finding_type' => 'Velocity_Exceeded',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'Older finding'],
             'generated_at' => now()->subDay(),
         ]);
@@ -391,7 +391,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $customer->id,
             'severity' => 'Critical',
             'finding_type' => 'Sanction_Match',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'Newer finding'],
             'generated_at' => now(),
         ]);
@@ -417,7 +417,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $jane->id,
             'severity' => 'High',
             'finding_type' => 'Velocity_Exceeded',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'Jane finding'],
             'generated_at' => now(),
         ]);
@@ -426,7 +426,7 @@ class UnifiedComplianceAlertsTest extends TestCase
             'subject_id' => $john->id,
             'severity' => 'Critical',
             'finding_type' => 'Sanction_Match',
-            'status' => 'New',
+            'status' => 'new',
             'details' => ['summary' => 'John finding'],
             'generated_at' => now(),
         ]);

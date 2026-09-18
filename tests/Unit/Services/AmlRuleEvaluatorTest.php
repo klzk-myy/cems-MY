@@ -119,7 +119,7 @@ class AmlRuleEvaluatorTest extends TestCase
                 'customer_id' => $customer->id,
                 'amount_local' => '20000',
                 'created_at' => $now->copy()->subDay(),
-                'status' => 'Completed',
+                'status' => 'completed',
             ]);
         }
 
@@ -127,7 +127,7 @@ class AmlRuleEvaluatorTest extends TestCase
             'customer_id' => $customer->id,
             'amount_local' => '20000',
             'created_at' => $now,
-            'status' => 'Completed',
+            'status' => 'completed',
         ]);
 
         $rule = new AmlRule([

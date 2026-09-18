@@ -172,10 +172,10 @@ class Transaction extends TransactionModel
      */
     public function getStatusVariantAttribute(): string
     {
-        return match ($this->status?->value) {
-            'Completed' => 'success',
-            'Pending', 'PendingApproval' => 'warning',
-            'Cancelled' => 'danger',
+        return match ($this->status) {
+            TransactionStatus::Completed => 'success',
+            TransactionStatus::Pending, TransactionStatus::PendingApproval => 'warning',
+            TransactionStatus::Cancelled => 'danger',
             default => 'gray',
         };
     }

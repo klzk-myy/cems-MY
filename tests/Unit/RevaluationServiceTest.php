@@ -72,7 +72,7 @@ class RevaluationServiceTest extends TestCase
                 'start_date' => $parsedDate->startOfMonth()->toDateString(),
                 'end_date' => $parsedDate->endOfMonth()->toDateString(),
                 'period_type' => 'month',
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
     }

@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 /**
  * Transaction Cancellation Service
@@ -469,7 +470,7 @@ class TransactionCancellationService
         $foundPendingCancellation = false;
 
         foreach ($history as $entry) {
-            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+            if (Str::snake((string) ($entry['to'] ?? '')) === TransactionStatus::PendingCancellation->value) {
                 $foundPendingCancellation = true;
 
                 continue;
@@ -480,7 +481,7 @@ class TransactionCancellationService
             }
 
             try {
-                $candidate = TransactionStatus::from($entry['from']);
+                $candidate = TransactionStatus::from(Str::snake((string) $entry['from']));
             } catch (\ValueError $e) {
                 continue;
             }
@@ -535,7 +536,7 @@ class TransactionCancellationService
         $history = $transaction->transition_history ?? [];
 
         foreach (array_reverse($history) as $entry) {
-            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+            if (Str::snake((string) ($entry['to'] ?? '')) === TransactionStatus::PendingCancellation->value) {
                 return $entry;
             }
         }
@@ -548,11 +549,11 @@ class TransactionCancellationService
         $history = $transaction->transition_history ?? [];
 
         foreach (array_reverse($history) as $entry) {
-            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+            if (Str::snake((string) ($entry['to'] ?? '')) === TransactionStatus::PendingCancellation->value) {
                 // First, try to get the explicitly stored previous_status
                 if (isset($entry['previous_status'])) {
                     try {
-                        return TransactionStatus::from($entry['previous_status']);
+                        return TransactionStatus::from(Str::snake((string) $entry['previous_status']));
                     } catch (\ValueError $e) {
                         // Fall through to fallback logic
                     }
@@ -560,7 +561,7 @@ class TransactionCancellationService
 
                 // Fallback: use the 'from' field of the transition
                 try {
-                    return TransactionStatus::from($entry['from']);
+                    return TransactionStatus::from(Str::snake((string) $entry['from']));
                 } catch (\ValueError $e) {
                     return null;
                 }

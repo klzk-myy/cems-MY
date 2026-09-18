@@ -208,7 +208,7 @@ class AccountMappingPageTest extends TestCase
                 'start_date' => now()->startOfMonth()->toDateString(),
                 'end_date' => now()->endOfMonth()->toDateString(),
                 'period_type' => 'month',
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 

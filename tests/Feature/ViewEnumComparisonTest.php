@@ -23,7 +23,7 @@ use Tests\TestCase;
  * Guards against enum-vs-string comparison bugs in web views.
  *
  * Eloquent enum casts return enum instances, so strict comparisons against
- * string literals (e.g. `$model->status === 'Completed'`) always evaluate to
+ * string literals (e.g. `$model->status === 'completed'`) always evaluate to
  * false. That silently killed action buttons and rendered every badge with the
  * default variant. Each test renders a page with real data and asserts on the
  * behavior that the comparison controls.

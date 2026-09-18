@@ -50,7 +50,7 @@ class ReportGeneratedRecorderTest extends TestCase
             ReportType::MonthEnd,
             Carbon::now()->startOfMonth(),
             Carbon::now()->endOfMonth(),
-            'Failed'
+            ReportGeneratedStatus::Failed
         );
 
         $this->assertSame(ReportGeneratedStatus::Failed, $record->status);

@@ -32,10 +32,10 @@
             <x-select
                 name="status"
                 :options="[
-                    'Draft' => 'Draft',
-                    'Submitted' => 'Submitted',
-                    'Acknowledged' => 'Acknowledged',
-                    'Rejected' => 'Rejected',
+                    \App\Enums\StrReportStatus::Draft->value => 'Draft',
+                    \App\Enums\StrReportStatus::Submitted->value => 'Submitted',
+                    \App\Enums\StrReportStatus::Acknowledged->value => 'Acknowledged',
+                    \App\Enums\StrReportStatus::Rejected->value => 'Rejected',
                 ]"
                 placeholder="All Statuses"
                 inline

@@ -96,7 +96,7 @@ class ComplianceControllersFixTest extends TestCase
 
         // Closing a case requires a resolution per UpdateCaseStatusRequest.
         $response = $this->patch("/compliance/cases/{$case->id}", [
-            'status' => 'Closed',
+            'status' => 'closed',
             'resolution' => CaseResolution::ClosedNoAction->value,
         ]);
         $response->assertStatus(302);
@@ -113,7 +113,7 @@ class ComplianceControllersFixTest extends TestCase
 
         $this->actingAs($this->officer);
 
-        $response = $this->patch("/compliance/cases/{$case->id}", ['status' => 'Open']);
+        $response = $this->patch("/compliance/cases/{$case->id}", ['status' => 'open']);
         $response->assertStatus(302);
         $response->assertSessionHas('error');
 
@@ -127,9 +127,9 @@ class ComplianceControllersFixTest extends TestCase
 
         $this->actingAs($this->officer);
 
-        // Lowercase slug used to pass validation but then crashed with a
-        // TypeError; the request now validates against the enum backing values.
-        $response = $this->patch("/compliance/cases/{$case->id}", ['status' => 'open']);
+        // Lowercase slugs are now the canonical backing values, so an
+        // unrecognised value is what must fail validation.
+        $response = $this->patch("/compliance/cases/{$case->id}", ['status' => 'not_a_status']);
         $response->assertStatus(302);
         $response->assertSessionHasErrors('status');
     }

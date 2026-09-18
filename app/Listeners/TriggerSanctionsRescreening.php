@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Enums\AlertPriority;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
+use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Events\CustomerRecordUpdated;
 use App\Events\SanctionsListUpdated;
@@ -78,7 +79,7 @@ class TriggerSanctionsRescreening
                         ->where('last_transaction_at', '>=', now()->subDays(30));
                 });
         })
-            ->orWhere('risk_rating', 'High')
+            ->orWhere('risk_rating', RiskRating::High->value)
             ->get();
     }
 

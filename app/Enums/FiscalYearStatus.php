@@ -9,11 +9,11 @@ namespace App\Enums;
  */
 enum FiscalYearStatus: string
 {
-    case Draft = 'Draft';
-    case Open = 'Open';
-    case Closed = 'Closed';
-    case Archived = 'Archived';
-    case Deleted = 'Deleted';
+    case Draft = 'draft';
+    case Open = 'open';
+    case Closed = 'closed';
+    case Archived = 'archived';
+    case Deleted = 'deleted';
 
     /**
      * Check if the fiscal year is open.

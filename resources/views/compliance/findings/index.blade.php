@@ -18,17 +18,17 @@
             <x-stat-card label="Total Findings" :value="$stats['total']" />
             <x-stat-card label="New" :value="$stats['new']" color="yellow" />
             <x-stat-card label="Critical Severity" :value="$stats['by_severity']['Critical'] ?? 0" color="red" />
-            <x-stat-card label="Dismissed" :value="$stats['by_status']['Dismissed'] ?? 0" color="green" />
+            <x-stat-card label="Dismissed" :value="$stats['by_status'][\App\Enums\FindingStatus::Dismissed->value] ?? 0" color="green" />
         </x-stat-grid>
 
         <x-filter-bar method="GET">
             <x-select
                 name="status"
                 :options="[
-                    'New' => 'New',
-                    'Reviewed' => 'Reviewed',
-                    'Case_Created' => 'Case Created',
-                    'Dismissed' => 'Dismissed',
+                    \App\Enums\FindingStatus::New->value => 'New',
+                    \App\Enums\FindingStatus::Reviewed->value => 'Reviewed',
+                    \App\Enums\FindingStatus::CaseCreated->value => 'Case Created',
+                    \App\Enums\FindingStatus::Dismissed->value => 'Dismissed',
                 ]"
                 placeholder="All Status"
                 :selected="request('status')"
@@ -84,10 +84,10 @@
                                     default => 'success',
                                 };
                                 $statusVariant = match ($finding['status']) {
-                                    'New' => 'warning',
-                                    'Reviewed' => 'info',
-                                    'Case_Created' => 'purple',
-                                    'Dismissed' => 'gray',
+                                    'new' => 'warning',
+                                    'reviewed' => 'info',
+                                    'case_created' => 'purple',
+                                    'dismissed' => 'gray',
                                     default => 'gray',
                                 };
                                 $typeLabel = \Illuminate\Support\Str::of($finding['finding_type'] ?? '')

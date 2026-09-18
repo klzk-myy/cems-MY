@@ -113,6 +113,6 @@ class CaseApiTest extends TestCase
                 'reason' => 'benign',
             ])
             ->assertOk()
-            ->assertJsonPath('data.status', 'Dismissed');
+            ->assertJsonPath('data.status', 'dismissed');
     }
 }

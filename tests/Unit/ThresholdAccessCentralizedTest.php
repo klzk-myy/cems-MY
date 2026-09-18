@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\AmlRuleType;
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
+use App\Enums\RiskRating;
 use App\Services\ThresholdService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -36,7 +37,7 @@ class ThresholdAccessCentralizedTest extends TestCase
         $enhanced = CddLevel::determine('100', isPep: true);
         $this->assertEquals(CddLevel::Enhanced, $enhanced);
 
-        $enhancedByRisk = CddLevel::determine('100', riskRating: 'High');
+        $enhancedByRisk = CddLevel::determine('100', riskRating: RiskRating::High);
         $this->assertEquals(CddLevel::Enhanced, $enhancedByRisk);
     }
 

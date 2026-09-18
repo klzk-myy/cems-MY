@@ -293,7 +293,7 @@ class SchemaSeeder extends Seeder
             $table->string('year_code');
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('status', ['Open', 'Closed', 'Archived'])->default('Open');
+            $table->enum('status', ['draft', 'open', 'closed', 'archived', 'deleted'])->default('open');
             $table->unsignedBigInteger('closed_by')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -330,7 +330,7 @@ class SchemaSeeder extends Seeder
             $table->string('reference_type', 50);
             $table->bigInteger('reference_id')->unsigned()->nullable();
             $table->text('description');
-            $table->string('status', 20)->default('Posted')->nullable();
+            $table->string('status', 20)->default('posted')->nullable();
             $table->bigInteger('posted_by')->unsigned()->nullable();
             $table->timestamp('posted_at')->nullable();
             $table->bigInteger('reversed_by')->unsigned()->nullable();
@@ -460,7 +460,7 @@ class SchemaSeeder extends Seeder
             $table->string('subject_type');
             $table->integer('subject_id');
             $table->text('details')->nullable();
-            $table->string('status', 64)->default('New');
+            $table->string('status', 64)->default('new');
             $table->timestamp('generated_at');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -557,7 +557,7 @@ class SchemaSeeder extends Seeder
             $table->decimal('rate', 18, 8);
             $table->text('purpose')->nullable();
             $table->string('source_of_funds')->nullable();
-            $table->string('status', 64)->default('Draft');
+            $table->string('status', 64)->default('draft');
             $table->text('hold_reason')->nullable();
             $table->unsignedBigInteger('compliance_cleared_by')->nullable();
             $table->timestamp('compliance_cleared_at')->nullable();
@@ -641,7 +641,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->enum('flag_type', ['Large_Amount', 'Sanctions_Hit', 'Velocity', 'Structuring', 'EDD_Required', 'Pep_Status', 'Sanction_Match', 'High_Risk_Customer', 'Unusual_Pattern', 'Manual_Review', 'High_Risk_Country', 'Round_Amount', 'Profile_Deviation', 'Aml_Rule_Triggered', 'Counterfeit_Currency']);
             $table->text('flag_reason');
-            $table->enum('status', ['Open', 'Under_Review', 'Resolved', 'Rejected'])->default('Open');
+            $table->enum('status', ['open', 'under_review', 'resolved', 'escalated', 'rejected'])->default('open');
             $table->unsignedBigInteger('assigned_to')->nullable();
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->text('notes')->nullable();
@@ -669,7 +669,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->string('case_number');
             $table->string('case_type');
-            $table->string('status', 64)->default('Open');
+            $table->string('status', 64)->default('open');
             $table->string('severity', 64);
             $table->string('priority');
             $table->unsignedBigInteger('customer_id')->nullable();
@@ -715,7 +715,7 @@ class SchemaSeeder extends Seeder
             $table->text('escalation_reason')->nullable();
             $table->unsignedBigInteger('assigned_to')->nullable();
             $table->unsignedBigInteger('case_id')->nullable();
-            $table->string('status', 64)->default('Open');
+            $table->string('status', 64)->default('open');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
@@ -872,7 +872,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('to_branch_id');
             $table->string('currency_code', 8);
             $table->decimal('amount', 20, 4);
-            $table->enum('status', ['Pending', 'Acknowledged', 'Cancelled'])->default('Pending');
+            $table->enum('status', ['pending', 'acknowledged', 'cancelled'])->default('pending');
             $table->unsignedBigInteger('initiated_by');
             $table->timestamp('initiated_at')->nullable();
             $table->unsignedBigInteger('acknowledged_by')->nullable();
@@ -1305,7 +1305,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('flagged_transaction_id')->nullable();
             $table->unsignedBigInteger('customer_id');
             $table->string('edd_reference');
-            $table->string('status', 64)->default('Incomplete');
+            $table->string('status', 64)->default('incomplete');
             $table->string('risk_level')->default('Medium');
             $table->text('source_of_funds')->nullable();
             $table->text('source_of_funds_description')->nullable();
@@ -1348,7 +1348,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('edd_record_id');
             $table->string('document_type');
-            $table->string('status', 64)->default('Pending');
+            $table->string('status', 64)->default('pending');
             $table->string('file_path')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->timestamp('uploaded_at')->nullable();
@@ -1653,7 +1653,7 @@ class SchemaSeeder extends Seeder
             $table->string('file_format');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->enum('status', ['Generated', 'Submitted', 'Pending', 'Failed'])->default('Generated');
+            $table->enum('status', ['pending', 'generated', 'failed', 'submitted', 'archived'])->default('generated');
             $table->timestamp('submitted_at')->nullable();
             $table->unsignedBigInteger('submitted_by')->nullable();
             $table->integer('version')->default(1);
@@ -1866,7 +1866,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->string('transfer_number');
             $table->enum('type', ['Standard', 'Emergency', 'Scheduled', 'Return']);
-            $table->enum('status', ['Requested', 'BranchManagerApproved', 'HqApproved', 'InTransit', 'PartiallyReceived', 'Received', 'Completed', 'Cancelled', 'Rejected'])->default('Requested');
+            $table->enum('status', ['requested', 'branch_manager_approved', 'hq_approved', 'in_transit', 'partially_received', 'received', 'completed', 'cancelled', 'rejected'])->default('requested');
             $table->string('source_branch_name')->nullable();
             $table->string('destination_branch_name')->nullable();
             $table->unsignedBigInteger('requested_by');
@@ -1920,7 +1920,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->decimal('trigger_amount', 18, 4)->default(0);
             $table->text('trigger_reason');
-            $table->string('status', 64)->default('Draft');
+            $table->string('status', 64)->default('draft');
             $table->string('bnm_reference')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('acknowledged_at')->nullable();

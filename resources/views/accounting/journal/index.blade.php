@@ -8,7 +8,7 @@
 
         <x-filter-bar method="GET">
             <x-input name="search" placeholder="Search entries..." inline />
-            <x-select name="status" :options="['' => 'All Status', 'Draft' => 'Draft', 'Pending' => 'Pending', 'Posted' => 'Posted', 'Reversed' => 'Reversed', 'Rejected' => 'Rejected']" inline />
+            <x-select name="status" :options="['' => 'All Status', \App\Enums\JournalEntryStatus::Draft->value => 'Draft', \App\Enums\JournalEntryStatus::Pending->value => 'Pending', \App\Enums\JournalEntryStatus::Posted->value => 'Posted', \App\Enums\JournalEntryStatus::Reversed->value => 'Reversed', \App\Enums\JournalEntryStatus::Rejected->value => 'Rejected']" inline />
             <x-input type="date" name="date" inline />
             <x-button type="submit" variant="secondary">Filter</x-button>
         </x-filter-bar>
@@ -40,12 +40,12 @@
                             <td class="px-4 py-3 text-sm text-right">{{ number_format((float) $entry->lines->sum('credit'), 2) }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge
-                                    :variant="match ($entry->status?->value) {
-                                        'Posted' => 'success',
-                                        'Pending' => 'warning',
-                                        'Draft' => 'secondary',
-                                        'Rejected' => 'danger',
-                                        'Reversed' => 'info',
+                                    :variant="match ($entry->status) {
+                                        \App\Enums\JournalEntryStatus::Posted => 'success',
+                                        \App\Enums\JournalEntryStatus::Pending => 'warning',
+                                        \App\Enums\JournalEntryStatus::Draft => 'secondary',
+                                        \App\Enums\JournalEntryStatus::Rejected => 'danger',
+                                        \App\Enums\JournalEntryStatus::Reversed => 'info',
                                         default => 'secondary',
                                     }"
                                 >

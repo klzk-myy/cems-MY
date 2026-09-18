@@ -11,6 +11,6 @@ class FlagStatusTest extends TestCase
     #[Test]
     public function escalated_value_is_allowed_by_database(): void
     {
-        $this->assertSame('Escalated', FlagStatus::Escalated->value);
+        $this->assertSame('escalated', FlagStatus::Escalated->value);
     }
 }

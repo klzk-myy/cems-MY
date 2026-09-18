@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use Illuminate\Support\Str;
 
 class TransactionPolicy
 {
@@ -132,9 +133,9 @@ class TransactionPolicy
     protected function preCancellationStatus(Transaction $transaction): ?TransactionStatus
     {
         foreach (array_reverse($transaction->transition_history ?? []) as $entry) {
-            if (($entry['to'] ?? '') === TransactionStatus::PendingCancellation->value) {
+            if (Str::snake((string) ($entry['to'] ?? '')) === TransactionStatus::PendingCancellation->value) {
                 try {
-                    return TransactionStatus::from($entry['previous_status'] ?? $entry['from']);
+                    return TransactionStatus::from(Str::snake((string) ($entry['previous_status'] ?? $entry['from'])));
                 } catch (\ValueError) {
                     return null;
                 }

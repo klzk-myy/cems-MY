@@ -349,7 +349,7 @@ class Customer extends BaseModel
     {
         $value = $this->risk_rating instanceof RiskRating
             ? $this->risk_rating->value
-            : ($this->risk_rating ?? 'Medium');
+            : ($this->risk_rating ?? RiskRating::Medium->value);
 
         return match (strtolower($value)) {
             'high', 'critical' => 'danger',

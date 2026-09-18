@@ -9,10 +9,10 @@ namespace App\Enums;
  */
 enum FindingStatus: string
 {
-    case New = 'New';
-    case Reviewed = 'Reviewed';
-    case Dismissed = 'Dismissed';
-    case CaseCreated = 'Case_Created';
+    case New = 'new';
+    case Reviewed = 'reviewed';
+    case Dismissed = 'dismissed';
+    case CaseCreated = 'case_created';
 
     /**
      * Check if the finding can be reviewed.

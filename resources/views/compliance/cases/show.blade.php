@@ -27,12 +27,12 @@
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Status</label>
                     <x-badge
-                        :variant="match ($case->status?->value) {
-                            'Open' => 'info',
-                            'UnderReview' => 'warning',
-                            'PendingApproval' => 'purple',
-                            'Closed' => 'success',
-                            'Escalated' => 'danger',
+                        :variant="match ($case->status) {
+                            \App\Enums\ComplianceCaseStatus::Open => 'info',
+                            \App\Enums\ComplianceCaseStatus::UnderReview => 'warning',
+                            \App\Enums\ComplianceCaseStatus::PendingApproval => 'purple',
+                            \App\Enums\ComplianceCaseStatus::Closed => 'success',
+                            \App\Enums\ComplianceCaseStatus::Escalated => 'danger',
                             default => 'gray',
                         }"
                     >

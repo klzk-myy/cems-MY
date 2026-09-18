@@ -9,15 +9,15 @@ namespace App\Enums;
  */
 enum StockTransferStatus: string
 {
-    case Requested = 'Requested';
-    case BranchManagerApproved = 'BranchManagerApproved';
-    case HqApproved = 'HqApproved';
-    case InTransit = 'InTransit';
-    case PartiallyReceived = 'PartiallyReceived';
-    case Received = 'Received';
-    case Completed = 'Completed';
-    case Cancelled = 'Cancelled';
-    case Rejected = 'Rejected';
+    case Requested = 'requested';
+    case BranchManagerApproved = 'branch_manager_approved';
+    case HqApproved = 'hq_approved';
+    case InTransit = 'in_transit';
+    case PartiallyReceived = 'partially_received';
+    case Received = 'received';
+    case Completed = 'completed';
+    case Cancelled = 'cancelled';
+    case Rejected = 'rejected';
 
     /**
      * Get a human-readable label for the status.

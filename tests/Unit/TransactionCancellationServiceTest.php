@@ -249,7 +249,7 @@ class TransactionCancellationServiceTest extends TestCase
         // Find the rejection transition entry
         $rejectionEntry = null;
         foreach (array_reverse($history) as $entry) {
-            if ($entry['to'] === 'Completed' && str_contains($entry['reason'] ?? '', 'Cancellation rejected')) {
+            if ($entry['to'] === TransactionStatus::Completed->value && str_contains($entry['reason'] ?? '', 'Cancellation rejected')) {
                 $rejectionEntry = $entry;
                 break;
             }
@@ -379,7 +379,7 @@ class TransactionCancellationServiceTest extends TestCase
     public function fallback_pre_cancellation_status_returns_null_without_pending_marker(): void
     {
         $transaction = $this->transactionWithHistory([
-            ['from' => 'Approved', 'to' => 'Completed'],
+            ['from' => 'approved', 'to' => 'completed'],
         ]);
 
         $this->assertNull($this->invokeFallback($transaction));
@@ -389,8 +389,8 @@ class TransactionCancellationServiceTest extends TestCase
     public function fallback_pre_cancellation_status_finds_status_after_pending_marker(): void
     {
         $transaction = $this->transactionWithHistory([
-            ['from' => 'Completed', 'to' => 'PendingCancellation'],
-            ['from' => 'Completed', 'to' => 'Completed'],
+            ['from' => 'completed', 'to' => 'pending_cancellation'],
+            ['from' => 'completed', 'to' => 'completed'],
         ]);
 
         $this->assertSame(TransactionStatus::Completed, $this->invokeFallback($transaction));
@@ -400,9 +400,9 @@ class TransactionCancellationServiceTest extends TestCase
     public function fallback_pre_cancellation_status_skips_invalid_and_current_statuses(): void
     {
         $transaction = $this->transactionWithHistory([
-            ['from' => 'PendingApproval', 'to' => 'PendingCancellation'],
+            ['from' => 'pending_approval', 'to' => 'pending_cancellation'],
             ['from' => 'bogus', 'to' => 'Other'],
-            ['from' => 'PendingCancellation', 'to' => 'Other'],
+            ['from' => 'pending_cancellation', 'to' => 'Other'],
         ]);
 
         $this->assertNull($this->invokeFallback($transaction));

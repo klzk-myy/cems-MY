@@ -79,7 +79,7 @@ class MonthEndCloseTest extends TestCase
             'year_code' => (string) $parsed->year,
             'start_date' => $parsed->startOfYear()->toDateString(),
             'end_date' => $parsed->endOfYear()->toDateString(),
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         return AccountingPeriod::factory()->create([
@@ -87,7 +87,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => $parsed->startOfMonth()->toDateString(),
             'end_date' => $parsed->endOfMonth()->toDateString(),
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
             'fiscal_year_id' => $fiscalYear->id,
         ]);
     }
@@ -102,7 +102,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $result = $this->service->preFlightChecks($date);
@@ -131,7 +131,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Closed',
+            'status' => 'closed',
         ]);
 
         $result = $this->service->preFlightChecks($date);
@@ -176,7 +176,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
             'fiscal_year_id' => null,
         ]);
 
@@ -198,7 +198,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $status = $this->service->getMonthEndStatus($date);
@@ -219,7 +219,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $this->service->closePeriod($date);
@@ -238,7 +238,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $first = $this->service->closePeriod($date);
@@ -262,7 +262,7 @@ class MonthEndCloseTest extends TestCase
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
             'period_type' => 'month',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $this->actingAs($this->manager);

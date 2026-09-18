@@ -5,11 +5,10 @@
 
             <x-slot:actions>
                 <x-badge
-                    :variant="match ($transaction->status?->value ?? '') {
-                        'Completed' => 'success',
-                        'Pending' => 'warning',
-                        'PendingApproval' => 'warning',
-                        'Cancelled' => 'danger',
+                    :variant="match ($transaction->status) {
+                        \App\Enums\TransactionStatus::Completed => 'success',
+                        \App\Enums\TransactionStatus::Pending, \App\Enums\TransactionStatus::PendingApproval => 'warning',
+                        \App\Enums\TransactionStatus::Cancelled => 'danger',
                         default => 'gray',
                     }"
                 >
@@ -122,7 +121,7 @@
                         </form>
                     @endcan
                 @endif
-                @if(in_array($transaction->status?->value, ['Pending', 'PendingApproval'], true))
+                @if(in_array($transaction->status, [\App\Enums\TransactionStatus::Pending, \App\Enums\TransactionStatus::PendingApproval], true))
                     @can('approve', $transaction)
                         <form method="POST" action="{{ route('transactions.approve', $transaction->id) }}" class="contents">
                             @csrf

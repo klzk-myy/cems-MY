@@ -275,8 +275,8 @@ class UnifiedAlertQueryService
                 : (FindingType::tryFrom($row->type)?->label() ?? $row->type),
             'status' => $row->status,
             'status_label' => $isAlert
-                ? (FlagStatus::tryFrom($row->status)?->label() ?? $row->status)
-                : (FindingStatus::tryFrom($row->status)?->label() ?? $row->status),
+                ? (FlagStatus::tryFrom(Str::snake((string) $row->status))?->label() ?? $row->status)
+                : (FindingStatus::tryFrom(Str::snake((string) $row->status))?->label() ?? $row->status),
             'customer' => $row->customer_id ? [
                 'id' => $row->customer_id,
                 'name' => $customer->full_name ?? $row->customer_name ?? 'Customer #'.$row->customer_id,

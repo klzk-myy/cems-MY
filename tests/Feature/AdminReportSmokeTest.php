@@ -67,13 +67,13 @@ class AdminReportSmokeTest extends TestCase
 
         $response = $this->actingAs($admin)->postJson('/api/v1/reports/msb2/status', [
             'date' => $date,
-            'status' => 'Submitted',
+            'status' => 'submitted',
         ]);
 
         $response->assertOk();
         $this->assertDatabaseHas('reports_generated', [
             'report_type' => ReportType::Msb2->value,
-            'status' => 'Submitted',
+            'status' => 'submitted',
         ]);
     }
 
@@ -148,13 +148,13 @@ class AdminReportSmokeTest extends TestCase
 
         $response = $this->actingAs($admin)->postJson('/api/v1/reports/lmca/status', [
             'month' => $month,
-            'status' => 'Submitted',
+            'status' => 'submitted',
         ]);
 
         $response->assertOk();
         $this->assertDatabaseHas('reports_generated', [
             'report_type' => ReportType::Lmca->value,
-            'status' => 'Submitted',
+            'status' => 'submitted',
         ]);
     }
 

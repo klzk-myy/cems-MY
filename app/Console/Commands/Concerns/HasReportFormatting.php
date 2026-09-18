@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Concerns;
 
+use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use App\Models\ReportGenerated;
 use App\Services\AuditService;
@@ -15,7 +16,7 @@ trait HasReportFormatting
         ReportType $reportType,
         Carbon $periodStart,
         Carbon $periodEnd,
-        string $status = 'Generated',
+        ReportGeneratedStatus $status = ReportGeneratedStatus::Generated,
         string $format = 'CSV'
     ): ReportGenerated {
         $record = app(ReportingService::class)->recordGeneratedReport(

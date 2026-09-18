@@ -105,7 +105,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -153,7 +153,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -200,7 +200,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -221,7 +221,7 @@ class AccountingServiceTest extends TestCase
         $service->reverseJournalEntry($entry, 'Status check', $user->id);
 
         $entry->refresh();
-        $this->assertEquals('Reversed', $entry->status->value);
+        $this->assertEquals('reversed', $entry->status->value);
     }
 
     #[Test]
@@ -248,7 +248,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -303,7 +303,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -373,7 +373,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -443,7 +443,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -489,7 +489,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -535,7 +535,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -666,7 +666,7 @@ class AccountingServiceTest extends TestCase
             'year_code' => '2026',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $period = AccountingPeriod::factory()->create([
@@ -674,7 +674,7 @@ class AccountingServiceTest extends TestCase
             'period_code' => '2026-01',
             'start_date' => '2026-01-01',
             'end_date' => '2026-01-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();
@@ -722,7 +722,7 @@ class AccountingServiceTest extends TestCase
         $this->assertEquals('0.0000', $inventoryBalanceAfterReversal);
 
         $sellEntry->refresh();
-        $this->assertEquals('Reversed', $sellEntry->status->value);
+        $this->assertEquals('reversed', $sellEntry->status->value);
         $this->assertNotNull($sellEntry->reversed_at);
     }
 
@@ -789,14 +789,14 @@ class AccountingServiceTest extends TestCase
             'year_code' => '2026',
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $period = AccountingPeriod::factory()->create([
             'period_code' => '2026-03',
             'start_date' => '2026-03-01',
             'end_date' => '2026-03-31',
-            'status' => 'Open',
+            'status' => 'open',
         ]);
 
         $user = User::factory()->create();

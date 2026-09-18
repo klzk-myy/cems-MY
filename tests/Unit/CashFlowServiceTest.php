@@ -49,7 +49,7 @@ class CashFlowServiceTest extends TestCase
             [
                 'start_date' => $date,
                 'end_date' => $date,
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 
@@ -117,7 +117,7 @@ class CashFlowServiceTest extends TestCase
             [
                 'start_date' => $to,
                 'end_date' => $to,
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 
@@ -153,7 +153,7 @@ class CashFlowServiceTest extends TestCase
             [
                 'start_date' => $to,
                 'end_date' => $to,
-                'status' => 'Open',
+                'status' => 'open',
             ]
         );
 

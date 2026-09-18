@@ -9,11 +9,11 @@ namespace App\Enums;
  */
 enum ComplianceCaseStatus: string
 {
-    case Open = 'Open';
-    case UnderReview = 'UnderReview';
-    case PendingApproval = 'PendingApproval';
-    case Closed = 'Closed';
-    case Escalated = 'Escalated';
+    case Open = 'open';
+    case UnderReview = 'under_review';
+    case PendingApproval = 'pending_approval';
+    case Closed = 'closed';
+    case Escalated = 'escalated';
 
     /**
      * Check if this status can transition to the target status.
