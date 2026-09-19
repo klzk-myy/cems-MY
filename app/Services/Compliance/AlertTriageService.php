@@ -219,7 +219,15 @@ class AlertTriageService
         foreach ($unassignedAlerts as $alert) {
             $minWorkloadOfficer = $queue->extract();
 
-            $this->assignToOfficer($alert, $minWorkloadOfficer);
+            try {
+                $this->assignToOfficer($alert, $minWorkloadOfficer);
+            } catch (\Exception $e) {
+                Log::error('Alert auto-assign failed', ['alert_id' => $alert->getKey(), 'error' => $e->getMessage()]);
+                $queue->insert($minWorkloadOfficer, -$workloads[$minWorkloadOfficer]);
+
+                continue;
+            }
+
             $workloads[$minWorkloadOfficer]++;
             // Re-insert with the incremented workload (negative priority = min-heap).
             $queue->insert($minWorkloadOfficer, -$workloads[$minWorkloadOfficer]);

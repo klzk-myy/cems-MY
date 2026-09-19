@@ -41,11 +41,10 @@ class BranchController extends Controller
         $perPage = min(100, max(1, (int) $request->get('per_page', 20)));
         $branches = Branch::orderBy('code')->paginate($perPage);
 
-        return $this->successResponse($branches->items(), 'Branches retrieved successfully.', 200, [
-            'current_page' => $branches->currentPage(),
-            'per_page' => $branches->perPage(),
-            'total' => $branches->total(),
-        ]);
+        return $this->resourceResponse(
+            BranchResource::collection($branches),
+            'Branches retrieved successfully.'
+        );
     }
 
     /**
@@ -123,7 +122,7 @@ class BranchController extends Controller
             return $authorization;
         }
 
-        $counters = $branch->counters()->get(['id', 'code', 'name', 'status']);
+        $counters = $branch->counters()->get();
 
         return $this->successResponse(CounterResource::collection($counters));
     }
@@ -141,7 +140,7 @@ class BranchController extends Controller
             return $authorization;
         }
 
-        $users = $branch->users()->get(['id', 'username', 'email', 'role']);
+        $users = $branch->users()->get();
 
         return $this->successResponse(UserResource::collection($users));
     }

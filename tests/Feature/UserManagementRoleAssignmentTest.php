@@ -317,4 +317,28 @@ class UserManagementRoleAssignmentTest extends TestCase
             'is_active' => true,
         ], $otherAdmin->id);
     }
+
+    #[Test]
+    public function user_service_deletes_an_admin_when_another_admin_remains(): void
+    {
+        $actor = User::factory()->create(['role' => UserRole::Admin]);
+        $target = User::factory()->create(['role' => UserRole::Admin]);
+
+        app(UserService::class)->deleteUser($target, $actor->id);
+
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
+    }
+
+    #[Test]
+    public function user_service_blocks_self_deletion(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $service = app(UserService::class);
+
+        $this->expectException(UserManagementException::class);
+        $this->expectExceptionMessage('Cannot delete your own account.');
+
+        $service->deleteUser($admin, $admin->id);
+    }
 }

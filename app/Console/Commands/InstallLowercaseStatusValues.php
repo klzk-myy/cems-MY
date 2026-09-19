@@ -241,12 +241,16 @@ class InstallLowercaseStatusValues extends Command
     protected function alterEnum(string $table, string $column, array $values, array $map = []): void
     {
         $columnMeta = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = '{$column}'");
-        $default = $columnMeta->Default ?? null;
-        $default = $map[$default] ?? $default;
+        $rawDefault = $columnMeta->Default ?? null;
+        $default = $rawDefault !== null ? ($map[$rawDefault] ?? $rawDefault) : null;
         $nullClause = ($columnMeta->Null ?? 'NO') === 'YES' ? ' NULL' : ' NOT NULL';
         $defaultClause = $default !== null && in_array($default, $values, true)
             ? ' DEFAULT '.$this->quote($default)
             : '';
+
+        if ($rawDefault !== null && $defaultClause === '') {
+            $this->warn("{$table}.{$column}: stored default '{$rawDefault}' is not in the new vocabulary — the DEFAULT clause is being dropped.");
+        }
 
         $quoted = $this->quoteValues($values);
         DB::statement("ALTER TABLE {$table} MODIFY {$column} ENUM({$quoted}){$nullClause}{$defaultClause}");

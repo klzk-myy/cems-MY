@@ -7,7 +7,10 @@ use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountMapping;
 use App\Models\SystemLog;
 use App\Services\Accounting\AccountMappingService;
+use App\Services\System\CacheKeys;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -41,6 +44,20 @@ class AccountMappingServiceTest extends TestCase
         AccountMapping::where('key', AccountMappingKey::CashPetty->value)->delete();
 
         $this->assertSame('1050', $this->service->code(AccountMappingKey::CashPetty));
+    }
+
+    #[Test]
+    public function code_falls_back_without_caching_null_when_table_is_missing(): void
+    {
+        $cacheKey = CacheKeys::accountMapping(AccountMappingKey::CashMyr->value);
+        Cache::forget($cacheKey);
+
+        Schema::drop('account_mappings');
+
+        // Enum fallback still serves the code, but nothing is cached —
+        // a stale null must not outlive a later install-mappings run.
+        $this->assertSame('1000', $this->service->code(AccountMappingKey::CashMyr));
+        $this->assertTrue(Cache::missing($cacheKey));
     }
 
     #[Test]

@@ -210,4 +210,37 @@ class AlertTriageControllerTest extends TestCase
             ->where('action', 'alert_assigned')
             ->count());
     }
+
+    #[Test]
+    public function auto_assign_continues_past_a_failing_alert(): void
+    {
+        $bad = Alert::factory()->create([
+            'priority' => AlertPriority::Critical,
+            'assigned_to' => null,
+        ]);
+        $good = Alert::factory()->create([
+            'priority' => AlertPriority::Low,
+            'assigned_to' => null,
+        ]);
+
+        $service = $this->partialMock(AlertTriageService::class, function ($mock) use ($bad) {
+            $mock->shouldReceive('assignToOfficer')
+                ->andReturnUsing(function (Alert $alert, int $officerId) use ($bad) {
+                    if ($alert->id === $bad->id) {
+                        throw new \RuntimeException('simulated assignment failure');
+                    }
+
+                    $alert->update(['assigned_to' => $officerId]);
+
+                    return $alert;
+                });
+        });
+
+        $assigned = $service->autoAssignAlerts();
+
+        $this->assertCount(1, $assigned);
+        $this->assertSame($good->id, $assigned[0]->id);
+        $this->assertNull($bad->fresh()->assigned_to);
+        $this->assertNotNull($good->fresh()->assigned_to);
+    }
 }

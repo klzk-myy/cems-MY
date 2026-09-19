@@ -15,6 +15,7 @@ use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\AccountMappingService;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -60,58 +61,70 @@ class PoolRemittanceService
             throw new TransactionValidationException(message: 'Remittance amount must be a positive number');
         }
 
-        return DB::transaction(function () use ($from, $to, $currencyCode, $amount, $initiatedBy, $notes) {
-            $pool = BranchPool::where('branch_id', $from->id)
-                ->where('currency_code', $currencyCode)
-                ->lockForUpdate()
-                ->first();
+        // A concurrent initiation from another branch can generate the same
+        // first-of-day sequence number before either commits; the unique
+        // index on remittance_number rejects the loser, so retry the whole
+        // transaction (number regenerated) rather than surfacing a 500.
+        for ($attempt = 0; ; $attempt++) {
+            try {
+                return DB::transaction(function () use ($from, $to, $currencyCode, $amount, $initiatedBy, $notes) {
+                    $pool = BranchPool::where('branch_id', $from->id)
+                        ->where('currency_code', $currencyCode)
+                        ->lockForUpdate()
+                        ->first();
 
-            if (! $pool || $this->mathService->compare($pool->available_balance, $amount) < 0) {
-                throw new TransactionValidationException(message: "Insufficient available balance in the {$currencyCode} pool");
+                    if (! $pool || $this->mathService->compare($pool->available_balance, $amount) < 0) {
+                        throw new TransactionValidationException(message: "Insufficient available balance in the {$currencyCode} pool");
+                    }
+
+                    $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amount);
+                    $pool->save();
+
+                    $remittance = PoolRemittance::create([
+                        'remittance_number' => PoolRemittance::generateRemittanceNumber(),
+                        'from_branch_id' => $from->id,
+                        'to_branch_id' => $to->id,
+                        'currency_code' => $currencyCode,
+                        'amount' => $amount,
+                        'status' => PoolRemittanceStatus::Pending,
+                        'initiated_by' => $initiatedBy,
+                        'initiated_at' => now(),
+                        'notes' => $notes,
+                    ]);
+
+                    $remittance->out_journal_entry_id = $this->postRemittanceGl($remittance, $from, RemittanceGlLeg::Dispatch, $initiatedBy)->id;
+                    $remittance->save();
+
+                    Log::info('Pool remittance initiated', [
+                        'remittance_number' => $remittance->remittance_number,
+                        'from_branch_id' => $from->id,
+                        'to_branch_id' => $to->id,
+                        'currency_code' => $currencyCode,
+                        'amount' => $amount,
+                        'initiated_by' => $initiatedBy,
+                    ]);
+
+                    $this->auditService->logBranchEvent(
+                        'pool_remittance_initiated',
+                        $from->id,
+                        [
+                            'remittance_id' => $remittance->id,
+                            'remittance_number' => $remittance->remittance_number,
+                            'to_branch_id' => $to->id,
+                            'currency_code' => $currencyCode,
+                            'amount' => $amount,
+                            'initiated_by' => $initiatedBy,
+                        ]
+                    );
+
+                    return $remittance;
+                });
+            } catch (UniqueConstraintViolationException $e) {
+                if ($attempt >= 2 || ! str_contains($e->getMessage(), 'remittance_number')) {
+                    throw $e;
+                }
             }
-
-            $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amount);
-            $pool->save();
-
-            $remittance = PoolRemittance::create([
-                'remittance_number' => PoolRemittance::generateRemittanceNumber(),
-                'from_branch_id' => $from->id,
-                'to_branch_id' => $to->id,
-                'currency_code' => $currencyCode,
-                'amount' => $amount,
-                'status' => PoolRemittanceStatus::Pending,
-                'initiated_by' => $initiatedBy,
-                'initiated_at' => now(),
-                'notes' => $notes,
-            ]);
-
-            $remittance->out_journal_entry_id = $this->postRemittanceGl($remittance, $from, RemittanceGlLeg::Dispatch, $initiatedBy)->id;
-            $remittance->save();
-
-            Log::info('Pool remittance initiated', [
-                'remittance_number' => $remittance->remittance_number,
-                'from_branch_id' => $from->id,
-                'to_branch_id' => $to->id,
-                'currency_code' => $currencyCode,
-                'amount' => $amount,
-                'initiated_by' => $initiatedBy,
-            ]);
-
-            $this->auditService->logBranchEvent(
-                'pool_remittance_initiated',
-                $from->id,
-                [
-                    'remittance_id' => $remittance->id,
-                    'remittance_number' => $remittance->remittance_number,
-                    'to_branch_id' => $to->id,
-                    'currency_code' => $currencyCode,
-                    'amount' => $amount,
-                    'initiated_by' => $initiatedBy,
-                ]
-            );
-
-            return $remittance;
-        });
+        }
     }
 
     public function acknowledge(PoolRemittance $remittance, int $acknowledgedBy): PoolRemittance

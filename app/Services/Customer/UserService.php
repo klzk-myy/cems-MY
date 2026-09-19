@@ -8,6 +8,7 @@ use App\Models\PasswordHistory;
 use App\Models\User;
 use App\Rules\PasswordRules;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -117,8 +118,6 @@ class UserService
             $this->resolveAssignableRole($actor, $newRole);
         }
 
-        $this->assertKeepsLastActiveAdmin($user, $newRole, $newActive);
-
         $branchId = $actor->isAdmin()
             ? ($data['branch_id'] ?? null)
             : $actor->branch_id;
@@ -131,15 +130,19 @@ class UserService
             'branch_id' => $user->branch_id,
         ];
 
-        $user->update([
-            'username' => $data['username'],
-            'email' => $data['email'],
-            'branch_id' => $branchId,
-            'is_active' => $newActive,
-        ]);
+        DB::transaction(function () use ($user, $newRole, $newActive, $data, $branchId) {
+            $this->assertKeepsLastActiveAdmin($user, $newRole, $newActive);
 
-        $user->role = $newRole;
-        $user->save();
+            $user->update([
+                'username' => $data['username'],
+                'email' => $data['email'],
+                'branch_id' => $branchId,
+                'is_active' => $newActive,
+            ]);
+
+            $user->role = $newRole;
+            $user->save();
+        });
 
         // Log user update
         $this->auditService->log(
@@ -175,11 +178,6 @@ class UserService
      */
     public function deleteUser(User $user, int $deletedBy): bool
     {
-        // Prevent deleting the last admin
-        if ($user->isAdmin() && User::where('role', UserRole::Admin)->count() <= 1) {
-            throw new UserManagementException('Cannot delete the last admin user.');
-        }
-
         // Prevent self-deletion
         if ($user->id === $deletedBy) {
             throw new UserManagementException('Cannot delete your own account.');
@@ -190,7 +188,22 @@ class UserService
         $username = $user->username;
         $userId = $user->id;
 
-        $user->delete();
+        // The admin count and the delete must share a transaction: locking
+        // the admin rows serializes concurrent deletes so two requests
+        // cannot both pass the last-admin check.
+        DB::transaction(function () use ($user) {
+            // pluck + FOR UPDATE locks every admin row; a count() query
+            // cannot take row locks, so count the locked ids in PHP.
+            $admins = count(
+                User::where('role', UserRole::Admin)->lockForUpdate()->pluck('id')->all()
+            );
+
+            if ($user->isAdmin() && $admins <= 1) {
+                throw new UserManagementException('Cannot delete the last admin user.');
+            }
+
+            $user->delete();
+        });
 
         // Log user deletion
         $this->auditService->log(
@@ -413,8 +426,18 @@ class UserService
             && $user->is_active
             && ($newRole !== UserRole::Admin || ! $newActive);
 
-        if ($leavesAdminPool
-            && User::where('role', UserRole::Admin)->where('is_active', true)->count() <= 1) {
+        // The lock serializes concurrent demotes/deactivates: a second caller
+        // waits on the locked admin rows, then recounts after commit. Without
+        // it two requests could both see count() > 1 and zero out the pool.
+        $activeAdmins = count(
+            User::where('role', UserRole::Admin)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->pluck('id')
+                ->all()
+        );
+
+        if ($leavesAdminPool && $activeAdmins <= 1) {
             throw new UserManagementException('Cannot demote or deactivate the last active admin.');
         }
     }

@@ -18,12 +18,18 @@ class AlertPolicy
         return $user->role->canPerform(Permission::AccessCompliance);
     }
 
-    public function assign(User $user, Alert $alert): bool
+    /**
+     * @param  Alert|null  $alert  Null when authorizing the class itself (bulk/auto-assign).
+     */
+    public function assign(User $user, ?Alert $alert = null): bool
     {
         return $user->role->canPerform(Permission::AccessCompliance);
     }
 
-    public function updateStatus(User $user, Alert $alert): bool
+    /**
+     * @param  Alert|null  $alert  Null when authorizing the class itself (bulk resolve).
+     */
+    public function updateStatus(User $user, ?Alert $alert = null): bool
     {
         return $user->role->canPerform(Permission::AccessCompliance);
     }

@@ -101,7 +101,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
      *
      * A transaction carrying a hold_reason cannot be approved until a
      * compliance officer clears it. Clearing does not approve — the normal
-     * tiered approval path still applies afterwards.
+     * approval path (compliance/admin via approve_transactions) still
+     * applies afterwards.
      */
     public function clearHold(Transaction $transaction, int $clearerId): void
     {

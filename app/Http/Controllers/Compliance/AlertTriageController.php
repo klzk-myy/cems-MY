@@ -54,7 +54,7 @@ class AlertTriageController extends Controller
      */
     public function bulkAssign(BulkAssignAlertsRequest $request): RedirectResponse
     {
-        $this->authorize('viewAny', Alert::class);
+        $this->authorize('assign', Alert::class);
 
         $validated = $request->validated();
 
@@ -72,7 +72,7 @@ class AlertTriageController extends Controller
      */
     public function bulkResolve(BulkResolveAlertsRequest $request): RedirectResponse
     {
-        $this->authorize('viewAny', Alert::class);
+        $this->authorize('updateStatus', Alert::class);
 
         $validated = $request->validated();
 
@@ -91,7 +91,7 @@ class AlertTriageController extends Controller
      */
     public function autoAssign(): RedirectResponse
     {
-        $this->authorize('viewAny', Alert::class);
+        $this->authorize('assign', Alert::class);
 
         $assigned = $this->alertTriageService->autoAssignAlerts();
 

@@ -71,8 +71,9 @@ enum UserRole: string
     }
 
     /**
-     * Check if the user can approve mid-tier transactions (RM10k–50k).
-     * All approvals require compliance officer or admin.
+     * Check if the user can approve transactions. Approval authority is
+     * uniform: every approval requires the approve_transactions
+     * permission (compliance officer or admin by default).
      */
     public function canApproveTransactions(): bool
     {
@@ -80,8 +81,10 @@ enum UserRole: string
     }
 
     /**
-     * Check if the user can approve large transactions.
-     * All approvals require compliance officer or admin.
+     * Check if the user can approve large transactions. Kept as a
+     * separate gate for call sites that distinguish large amounts —
+     * it currently delegates to the same approve_transactions
+     * permission as canApproveTransactions().
      */
     public function canApproveLargeTransactions(): bool
     {

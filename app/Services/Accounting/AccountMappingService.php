@@ -215,15 +215,17 @@ class AccountMappingService
 
     /**
      * Cached table lookup returning the stored code or null when unmapped.
-     * The hasTable check inside the callback keeps posting paths alive on
-     * databases where `accounting:install-mappings` has not run yet —
-     * resolution silently falls back to the enum defaults.
+     * The hasTable check stays outside the cached callback: pre-install
+     * lookups must not cache a null that would hide mappings written by a
+     * later `accounting:install-mappings` run until TTL expiry.
      */
     protected function resolve(string $key): ?string
     {
-        $callback = fn () => Schema::hasTable('account_mappings')
-            ? AccountMapping::where('key', $key)->value('account_code')
-            : null;
+        if (! Schema::hasTable('account_mappings')) {
+            return null;
+        }
+
+        $callback = fn () => AccountMapping::where('key', $key)->value('account_code');
 
         return $this->cacheInvalidationService->supportsTags()
             ? Cache::tags([CacheKeys::AccountMappingsTag->value])

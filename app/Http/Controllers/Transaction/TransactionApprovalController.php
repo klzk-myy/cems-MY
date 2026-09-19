@@ -105,7 +105,7 @@ class TransactionApprovalController extends Controller
      * Clear a compliance hold on a pending transaction.
      *
      * Compliance officers clear holds after review. Clearing records who and
-     * when; the transaction then follows the normal tiered approval path.
+     * when; the transaction then follows the normal approval path.
      */
     public function clearHold(Request $request, Transaction $transaction): RedirectResponse
     {

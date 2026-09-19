@@ -274,9 +274,7 @@ class UnifiedAlertQueryService
                 ? (ComplianceFlagType::tryFrom($row->type)?->label() ?? $row->type)
                 : (FindingType::tryFrom($row->type)?->label() ?? $row->type),
             'status' => $row->status,
-            'status_label' => $isAlert
-                ? (FlagStatus::tryFrom(Str::snake((string) $row->status))?->label() ?? $row->status)
-                : (FindingStatus::tryFrom(Str::snake((string) $row->status))?->label() ?? $row->status),
+            'status_label' => $this->statusLabel($isAlert, (string) $row->status),
             'customer' => $row->customer_id ? [
                 'id' => $row->customer_id,
                 'name' => $customer->full_name ?? $row->customer_name ?? 'Customer #'.$row->customer_id,
@@ -287,6 +285,23 @@ class UnifiedAlertQueryService
             'date' => $row->date ? Carbon::parse($row->date) : now(),
             'url' => $isAlert ? "/compliance/alerts/{$row->id}" : "/compliance/findings/{$row->id}",
         ];
+    }
+
+    /**
+     * Label lookup tolerant of legacy status vocabularies. Canonical values
+     * are lowercase-snake; legacy rows may be TitleCase or already
+     * underscored ('Under_Review'), which Str::snake alone turns into
+     * 'under__review' — collapsing underscores first fixes that.
+     */
+    private function statusLabel(bool $isAlert, string $status): string
+    {
+        $normalized = Str::snake(str_replace('_', ' ', $status));
+
+        $enum = $isAlert
+            ? FlagStatus::tryFrom($normalized)
+            : FindingStatus::tryFrom($normalized);
+
+        return $enum?->label() ?? $status;
     }
 
     /**
