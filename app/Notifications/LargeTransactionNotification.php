@@ -107,11 +107,13 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
     /**
      * Format the transaction amount for display.
      * Uses string-safe formatting to avoid float precision loss on large amounts.
+     * amount_myr is the MYR-denominated total, so the label is always MYR —
+     * the deal's foreign currency is shown on the template's own line.
      */
     protected function formatAmount(): string
     {
         $amount = (string) $this->transaction->amount_myr;
-        $currency = $this->transaction->currency->code ?? 'MYR';
+        $currency = 'MYR';
 
         // Split into integer and decimal parts to avoid float cast precision loss
         $parts = explode('.', $amount, 2);
