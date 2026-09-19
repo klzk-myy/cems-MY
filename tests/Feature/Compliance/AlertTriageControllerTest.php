@@ -175,6 +175,30 @@ class AlertTriageControllerTest extends TestCase
     }
 
     #[Test]
+    public function assign_rejects_assignee_who_is_not_an_officer(): void
+    {
+        $alert = Alert::factory()->create(['assigned_to' => null]);
+        $teller = User::factory()->create(['role' => 'teller']);
+        $service = app(AlertTriageService::class);
+
+        $this->expectException(CaseManagementException::class);
+
+        $service->assignToOfficer($alert, $teller->id);
+    }
+
+    #[Test]
+    public function assign_rejects_inactive_officer(): void
+    {
+        $alert = Alert::factory()->create(['assigned_to' => null]);
+        $inactive = User::factory()->create(['role' => 'compliance_officer', 'is_active' => false]);
+        $service = app(AlertTriageService::class);
+
+        $this->expectException(CaseManagementException::class);
+
+        $service->assignToOfficer($alert, $inactive->id);
+    }
+
+    #[Test]
     public function assign_alert_via_bulk_assign_writes_audit_record_per_alert(): void
     {
         $alerts = Alert::factory()->count(2)->create(['case_id' => null]);

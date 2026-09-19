@@ -190,6 +190,25 @@ class PoolRemittanceTest extends TestCase
     }
 
     #[Test]
+    public function acknowledge_rejects_the_initiating_user(): void
+    {
+        $this->pool($this->branch, '1000.0000');
+        $remittance = $this->service->initiate($this->branch, $this->hq, 'MYR', '400.00', $this->manager->id);
+
+        try {
+            $this->service->acknowledge($remittance, $this->manager->id);
+            $this->fail('initiator acknowledging their own remittance should be rejected');
+        } catch (TransactionValidationException $e) {
+            $this->assertStringContainsString('initiated', $e->getMessage());
+        }
+
+        $this->assertSame(PoolRemittanceStatus::Pending, $remittance->fresh()->status);
+        $this->assertNull(
+            BranchPool::where('branch_id', $this->hq->id)->where('currency_code', 'MYR')->first()
+        );
+    }
+
+    #[Test]
     public function cancel_returns_funds_to_the_sender_and_clears_the_in_transit_leg(): void
     {
         $pool = $this->pool($this->branch, '1000.0000');

@@ -166,6 +166,12 @@ class AlertTriageService
             throw new CaseManagementException('Alert is linked to a case; use case assignment workflow instead');
         }
 
+        $assignee = User::find($userId);
+
+        if (! $assignee?->is_active || ! in_array($assignee->role, [UserRole::ComplianceOfficer, UserRole::Manager], true)) {
+            throw new CaseManagementException("User {$userId} cannot be assigned alerts: assignee must be an active compliance officer or manager");
+        }
+
         $previousAssignee = $alert->assigned_to;
 
         $alert->update(['assigned_to' => $userId]);

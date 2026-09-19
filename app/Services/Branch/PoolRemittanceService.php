@@ -123,6 +123,10 @@ class PoolRemittanceService
                 throw new TransactionValidationException(message: "Remittance {$remittance->remittance_number} is {$remittance->status->value} and cannot be acknowledged");
             }
 
+            if ($remittance->initiated_by === $acknowledgedBy) {
+                throw new TransactionValidationException(message: "Remittance {$remittance->remittance_number} cannot be acknowledged by the user who initiated it");
+            }
+
             $to = $remittance->toBranch;
             $pool = $this->poolService->getOrCreateForBranch($to, $remittance->currency_code);
             $pool = BranchPool::whereKey($pool->id)->lockForUpdate()->firstOrFail();
