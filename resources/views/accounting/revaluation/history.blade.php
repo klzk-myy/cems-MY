@@ -29,11 +29,11 @@
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm">{{ $entry->revaluation_date?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-sm font-medium text-ink">{{ $entry->currency_code }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->position_amount, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->position_quantity, 2) }}</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->old_rate, 8) }}</td>
                             <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $entry->new_rate, 8) }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $entry->gain_loss_amount < 0 ? 'text-danger' : ((float) $entry->gain_loss_amount > 0 ? 'text-success' : '') }}">
-                                {{ number_format((float) $entry->gain_loss_amount, 2) }}
+                            <td class="px-4 py-3 text-sm text-right font-mono {{ (float) $entry->gain_loss_myr < 0 ? 'text-danger' : ((float) $entry->gain_loss_myr > 0 ? 'text-success' : '') }}">
+                                {{ number_format((float) $entry->gain_loss_myr, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm">{{ $entry->postedBy?->name ?? '—' }}</td>
                         </tr>

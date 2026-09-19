@@ -124,8 +124,8 @@ class TransactionServiceTest extends TestCase
             'currency_code' => $this->currency->code,
             'date' => today(),
             'opening_balance' => '10000.00',
-            'transaction_total' => '0',
-            'foreign_total' => '0',
+            'transaction_total_myr' => '0',
+            'total_quantity' => '0',
             'opened_by' => $this->teller->id,
         ]);
 
@@ -144,9 +144,9 @@ class TransactionServiceTest extends TestCase
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
             'currency_code' => $this->currency->code,
-            'allocated_amount' => '60000.0000',
-            'current_balance' => '60000.0000',
-            'requested_amount' => '60000.0000',
+            'allocated_quantity' => '60000.0000',
+            'current_quantity' => '60000.0000',
+            'requested_quantity' => '60000.0000',
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
             'status' => TellerAllocationStatus::Active,
@@ -165,7 +165,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -178,8 +178,8 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
         $this->assertEquals(TransactionType::Buy, $transaction->type);
         // Amount is stored as-provided (string), calculated amount uses BCMath
-        // Check that amount_local is approximately 450 (with 6 decimal precision)
-        $this->assertEqualsWithDelta(450.0, (float) $transaction->amount_local, 0.01);
+        // Check that amount_myr is approximately 450 (with 6 decimal precision)
+        $this->assertEqualsWithDelta(450.0, (float) $transaction->amount_myr, 0.01);
         $this->assertEquals(CddLevel::Simplified, $transaction->cdd_level);
     }
 
@@ -192,7 +192,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '500.00',
+            'quantity' => '500.00',
             'rate' => '4.500000',
             'purpose' => 'Investment',
             'source_of_funds' => 'Savings',
@@ -218,7 +218,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Property Purchase',
             'source_of_funds' => 'Property Sale',
@@ -244,7 +244,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -264,7 +264,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -284,7 +284,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '99.999999',
+            'quantity' => '99.999999',
             'rate' => '4.123456',
             'purpose' => 'Test Precision',
             'source_of_funds' => 'Test',
@@ -294,8 +294,8 @@ class TransactionServiceTest extends TestCase
         $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
 
         // Verify precision is maintained
-        $this->assertStringContainsString('.', $transaction->amount_local);
-        $this->assertGreaterThan(0, strlen(explode('.', $transaction->amount_local)[1] ?? ''));
+        $this->assertStringContainsString('.', $transaction->amount_myr);
+        $this->assertGreaterThan(0, strlen(explode('.', $transaction->amount_myr)[1] ?? ''));
     }
 
     #[Test]
@@ -306,7 +306,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -334,7 +334,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -354,14 +354,14 @@ class TransactionServiceTest extends TestCase
     #[Test]
     public function transaction_updates_till_balance(): void
     {
-        $initialForeignTotal = $this->tillBalance->foreign_total;
+        $initialForeignTotal = $this->tillBalance->total_quantity;
 
         $data = [
             'customer_id' => $this->customer->id,
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -374,17 +374,17 @@ class TransactionServiceTest extends TestCase
         $this->tillBalance->refresh();
 
         // Foreign currency total should be updated (Buy = USD received)
-        $this->assertNotEquals($initialForeignTotal, $this->tillBalance->foreign_total);
-        $this->assertEquals('100.0000', $this->tillBalance->foreign_total);
+        $this->assertNotEquals($initialForeignTotal, $this->tillBalance->total_quantity);
+        $this->assertEquals('100.0000', $this->tillBalance->total_quantity);
 
-        // MYR till balance transaction_total should reflect local value paid
+        // MYR till balance transaction_total_myr should reflect local value paid
         $myrBalance = TillBalance::where('till_id', $this->counter->code)
             ->where('currency_code', 'MYR')
             ->whereDate('date', today())
             ->whereNull('closed_at')
             ->first();
         $this->assertNotNull($myrBalance);
-        $this->assertEquals('-450.0000', $myrBalance->transaction_total);
+        $this->assertEquals('-450.0000', $myrBalance->transaction_total_myr);
     }
 
     #[Test]
@@ -393,18 +393,18 @@ class TransactionServiceTest extends TestCase
         // Reset till balance to zero for clean test
         $this->tillBalance->update([
             'opening_balance' => '0',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
-            'foreign_total' => '0', // legacy field still needed for compatibility
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
+            'total_quantity' => '0', // legacy field still needed for compatibility
         ]);
 
-        // Step 1: Do a BUY transaction - should add to buy_total_foreign
+        // Step 1: Do a BUY transaction - should add to buy_quantity
         $buyData = [
             'customer_id' => $this->customer->id,
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '500.00', // Buy 500 USD from customer
+            'quantity' => '500.00', // Buy 500 USD from customer
             'rate' => '4.500000', // Rate 4.5
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -414,17 +414,17 @@ class TransactionServiceTest extends TestCase
         $this->transactionService->createTransaction($buyData, $this->teller->id);
         $this->tillBalance->refresh();
 
-        // After BUY: buy_total_foreign should increase, sell_total_foreign unchanged
-        $this->assertEquals('500.0000', $this->tillBalance->buy_total_foreign);
-        $this->assertEquals('0.0000', $this->tillBalance->sell_total_foreign);
+        // After BUY: buy_quantity should increase, sell_quantity unchanged
+        $this->assertEquals('500.0000', $this->tillBalance->buy_quantity);
+        $this->assertEquals('0.0000', $this->tillBalance->sell_quantity);
 
-        // Step 2: Do a SELL transaction - should add to sell_total_foreign
+        // Step 2: Do a SELL transaction - should add to sell_quantity
         $sellData = [
             'customer_id' => $this->customer->id,
             'till_id' => $this->counter->code,
             'type' => TransactionType::Sell->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '200.00', // Sell 200 USD to customer
+            'quantity' => '200.00', // Sell 200 USD to customer
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -434,9 +434,9 @@ class TransactionServiceTest extends TestCase
         $this->transactionService->createTransaction($sellData, $this->teller->id);
         $this->tillBalance->refresh();
 
-        // After SELL: sell_total_foreign should increase, buy_total_foreign unchanged
-        $this->assertEquals('500.0000', $this->tillBalance->buy_total_foreign);
-        $this->assertEquals('200.0000', $this->tillBalance->sell_total_foreign);
+        // After SELL: sell_quantity should increase, buy_quantity unchanged
+        $this->assertEquals('500.0000', $this->tillBalance->buy_quantity);
+        $this->assertEquals('200.0000', $this->tillBalance->sell_quantity);
 
         // Step 3: Verify expected balance calculation: opening + buys - sells
         // Opening balance was 0, we bought 500 and sold 200, so net = 300 USD
@@ -453,7 +453,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -464,14 +464,14 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals(CddLevel::Simplified, $transaction->cdd_level);
 
         // Test Specific CDD (RM 3,000 - 10,000) per pd-00.md 14C.12.1
-        $data['amount_foreign'] = '1000.00'; // 1000 * 4.5 = 4500 MYR
+        $data['quantity'] = '1000.00'; // 1000 * 4.5 = 4500 MYR
         $data['idempotency_key'] = uniqid('test_', true);
 
         $transaction2 = $this->transactionService->createTransaction($data, $this->teller->id);
         $this->assertEquals(CddLevel::Specific, $transaction2->cdd_level);
 
         // Test Standard CDD (>= RM 10,000) per pd-00.md 14C.12.2
-        $data['amount_foreign'] = '3000.00'; // 3000 * 4.5 = 13500 MYR
+        $data['quantity'] = '3000.00'; // 3000 * 4.5 = 13500 MYR
         $data['idempotency_key'] = uniqid('test_', true);
 
         $transaction3 = $this->transactionService->createTransaction($data, $this->teller->id);
@@ -490,7 +490,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -521,7 +521,7 @@ class TransactionServiceTest extends TestCase
             'transaction_id' => 99999, // dummy
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
-            'amount_foreign' => '300.00',
+            'quantity' => '300.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => $this->teller->id,
@@ -576,7 +576,7 @@ class TransactionServiceTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '2500.00',
+            'quantity' => '2500.00',
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -652,7 +652,7 @@ class TransactionServiceTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '1200.00',
+            'quantity' => '1200.00',
             'rate' => '10.5',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -715,7 +715,7 @@ class TransactionServiceTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Buy->value,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -731,8 +731,8 @@ class TransactionServiceTest extends TestCase
             ->where('currency_code', 'MYR')
             ->first();
 
-        // Paid 450 MYR for 100 USD (450 = 100 * 4.50); transaction_total tracks outflow as negative
-        $this->assertEquals('-450.0000', $myrBalance->transaction_total);
+        // Paid 450 MYR for 100 USD (450 = 100 * 4.50); transaction_total_myr tracks outflow as negative
+        $this->assertEquals('-450.0000', $myrBalance->transaction_total_myr);
     }
 
     #[Test]
@@ -774,7 +774,7 @@ class TransactionServiceTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -789,7 +789,7 @@ class TransactionServiceTest extends TestCase
             ->first();
 
         // Received 450 MYR for 100 USD (450 = 100 * 4.50)
-        $this->assertEquals('450.0000', $myrBalance->transaction_total);
+        $this->assertEquals('450.0000', $myrBalance->transaction_total_myr);
     }
 
     #[Test]
@@ -805,7 +805,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -831,7 +831,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -858,7 +858,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',

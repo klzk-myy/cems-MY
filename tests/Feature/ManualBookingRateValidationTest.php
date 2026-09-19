@@ -72,7 +72,7 @@ class ManualBookingRateValidationTest extends TestCase
         return [
             'type' => 'buy',
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => $rate,
             'customer_id' => $this->customer->id,
             'till_id' => $this->counter->code,

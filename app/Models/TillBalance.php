@@ -17,10 +17,10 @@ use Illuminate\Support\Carbon;
  * @property string $opening_balance
  * @property string|null $closing_balance
  * @property string|null $variance
- * @property string $transaction_total
- * @property string $foreign_total
- * @property string $buy_total_foreign
- * @property string $sell_total_foreign
+ * @property string $transaction_total_myr
+ * @property string $total_quantity
+ * @property string $buy_quantity
+ * @property string $sell_quantity
  * @property Carbon $date
  * @property int $opened_by
  * @property int|null $closed_by
@@ -50,10 +50,10 @@ class TillBalance extends BaseModel
         'closed_by',
         'closed_at',
         'notes',
-        'foreign_total',
-        'transaction_total',
-        'buy_total_foreign',
-        'sell_total_foreign',
+        'total_quantity',
+        'transaction_total_myr',
+        'buy_quantity',
+        'sell_quantity',
     ];
 
     /**
@@ -80,10 +80,10 @@ class TillBalance extends BaseModel
             'opening_balance' => $openingBalance,
             'closing_balance' => null,
             'variance' => null,
-            'foreign_total' => '0',
-            'transaction_total' => '0',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'total_quantity' => '0',
+            'transaction_total_myr' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
             'date' => $date,
             'opened_by' => $openedBy,
         ], $overrides));
@@ -93,10 +93,10 @@ class TillBalance extends BaseModel
         'opening_balance' => MoneyCast::class,
         'closing_balance' => MoneyCast::class,
         'variance' => MoneyCast::class,
-        'foreign_total' => MoneyCast::class,
-        'transaction_total' => MoneyCast::class,
-        'buy_total_foreign' => MoneyCast::class,
-        'sell_total_foreign' => MoneyCast::class,
+        'total_quantity' => MoneyCast::class,
+        'transaction_total_myr' => MoneyCast::class,
+        'buy_quantity' => MoneyCast::class,
+        'sell_quantity' => MoneyCast::class,
         'date' => 'date',
         'closed_at' => 'datetime',
     ];
@@ -131,8 +131,8 @@ class TillBalance extends BaseModel
 
     /**
      * Calculate the expected balance (opening + transaction activity)
-     * For the base currency: expected = opening_balance + transaction_total
-     * For foreign currency: expected = opening_balance + buy_total_foreign - sell_total_foreign
+     * For the base currency: expected = opening_balance + transaction_total_myr
+     * For foreign currency: expected = opening_balance + buy_quantity - sell_quantity
      * This correctly tracks position for both buys (adds to position) and sells (reduces position)
      */
     public function getExpectedBalance(): string
@@ -140,21 +140,21 @@ class TillBalance extends BaseModel
         $opening = (string) $this->opening_balance;
 
         if ($this->currency_code === Currency::baseCurrency()) {
-            return BcmathHelper::add($opening, (string) ($this->transaction_total ?? '0'));
+            return BcmathHelper::add($opening, (string) ($this->transaction_total_myr ?? '0'));
         }
 
-        $buyTotal = $this->buy_total_foreign !== null ? (string) $this->buy_total_foreign : '0';
-        $sellTotal = $this->sell_total_foreign !== null ? (string) $this->sell_total_foreign : '0';
+        $buyQuantity = $this->buy_quantity !== null ? (string) $this->buy_quantity : '0';
+        $sellQuantity = $this->sell_quantity !== null ? (string) $this->sell_quantity : '0';
 
         // net foreign = buys - sells (buys increase position, sells decrease position)
-        $netForeign = BcmathHelper::subtract($buyTotal, $sellTotal);
+        $netQuantity = BcmathHelper::subtract($buyQuantity, $sellQuantity);
 
-        return BcmathHelper::add($opening, $netForeign);
+        return BcmathHelper::add($opening, $netQuantity);
     }
 
     /**
      * Calculate variance between closing balance and expected balance
-     * Expected = opening_balance + foreign_total (transaction activity)
+     * Expected = opening_balance + total_quantity (transaction activity)
      */
     public function calculateVariance(): string
     {

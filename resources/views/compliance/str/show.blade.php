@@ -62,7 +62,7 @@
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-ink-muted uppercase">Trigger Amount (MYR)</dt>
-                        <dd class="mt-1 text-sm font-semibold text-ink">RM {{ number_format((float) $report->trigger_amount, 2) }}</dd>
+                        <dd class="mt-1 text-sm font-semibold text-ink">RM {{ number_format((float) $report->trigger_amount_myr, 2) }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-ink-muted uppercase">BNM Reference</dt>

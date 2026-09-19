@@ -89,7 +89,7 @@ class AllocationController extends Controller
             $this->allocationService->approveAllocation(
                 $allocation,
                 $request->user(),
-                (string) $validated['approved_amount'],
+                (string) $validated['approved_quantity'],
                 isset($validated['daily_limit_myr']) ? (string) $validated['daily_limit_myr'] : null
             );
         } catch (ValidationException|DomainException $e) {
@@ -190,14 +190,14 @@ class AllocationController extends Controller
                         $teller,
                         $request->user(),
                         $line['currency_code'],
-                        (string) $line['amount'],
+                        (string) $line['quantity'],
                         $dailyLimit
                     );
 
                     $this->allocationService->approveAllocation(
                         $allocation,
                         $request->user(),
-                        (string) $line['amount'],
+                        (string) $line['quantity'],
                         $dailyLimit
                     );
 
@@ -240,7 +240,7 @@ class AllocationController extends Controller
             $this->allocationService->modifyAllocation(
                 $allocation,
                 $request->user(),
-                (string) $validated['amount'],
+                (string) $validated['quantity'],
                 $validated['direction'] === 'increase'
             );
         } catch (ValidationException|DomainException $e) {
@@ -249,7 +249,7 @@ class AllocationController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "Allocation {$validated['direction']}d by {$validated['amount']}.");
+        return back()->with('success', "Allocation {$validated['direction']}d by {$validated['quantity']}.");
     }
 
     /**
@@ -285,7 +285,7 @@ class AllocationController extends Controller
             ->paginate(25);
 
         // Expected drawer contents for the teller's open session — same
-        // formula the close workflow uses (MYR: opening + transaction_total;
+        // formula the close workflow uses (MYR: opening + transaction_total_myr;
         // FCY: opening + buys − sells via expectedClosingForBalance).
         $session = CounterSession::open()
             ->where('user_id', $request->user()->id)
@@ -356,7 +356,7 @@ class AllocationController extends Controller
                         $user,
                         $user,
                         $line['currency_code'],
-                        (string) $line['amount'],
+                        (string) $line['quantity'],
                         null,
                         $counter
                     );
@@ -426,7 +426,7 @@ class AllocationController extends Controller
             $this->allocationService->moveBetweenTillAndAllocation(
                 $allocation,
                 $session,
-                (string) $validated['amount'],
+                (string) $validated['quantity'],
                 $validated['direction'] === 'load'
             );
         } catch (ValidationException|DomainException $e) {
@@ -467,7 +467,7 @@ class AllocationController extends Controller
      * amount currently allocated to each teller (approved + active).
      *
      * @param  iterable<int>  $branchIds
-     * @return array<int, array{branch: string, rows: array<int, array{currency: string, total: float, available: float, tellers: array<int, array{name: string, amount: float}>}>}>
+     * @return array<int, array{branch: string, rows: array<int, array{currency: string, total: float, available: float, tellers: array<int, array{name: string, quantity: float}>}>}>
      */
     private function poolSummary(iterable $branchIds): array
     {
@@ -482,7 +482,7 @@ class AllocationController extends Controller
         $allocations = TellerAllocation::whereIn('branch_id', $branchIds)
             ->whereIn('status', [TellerAllocationStatus::Approved, TellerAllocationStatus::Active])
             ->with('user:id,username')
-            ->get(['id', 'branch_id', 'user_id', 'currency_code', 'allocated_amount']);
+            ->get(['id', 'branch_id', 'user_id', 'currency_code', 'allocated_quantity']);
 
         $summary = [];
 
@@ -494,7 +494,7 @@ class AllocationController extends Controller
                     ->groupBy('user_id')
                     ->map(fn (Collection $group) => [
                         'name' => $group->first()->user->username ?? 'unknown',
-                        'amount' => (float) $group->sum('allocated_amount'),
+                        'quantity' => (float) $group->sum('allocated_quantity'),
                     ])
                     ->sortBy('name')
                     ->values()

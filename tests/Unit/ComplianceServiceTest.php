@@ -137,7 +137,7 @@ class ComplianceServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '40000.0000',
+                'amount_myr' => '40000.0000',
                 'created_at' => now()->subHours(12),
                 'status' => TransactionStatus::Completed,
             ]);

@@ -185,7 +185,7 @@ class CustomerController extends Controller
 
         // Aggregate transaction stats in a single query instead of separate loadCount/loadSum/loadAvg
         $stats = $customer->transactions()
-            ->selectRaw('COUNT(*) as count, SUM(amount_local) as sum, AVG(amount_local) as avg, MAX(created_at) as last_at')
+            ->selectRaw('COUNT(*) as count, SUM(amount_myr) as sum, AVG(amount_myr) as avg, MAX(created_at) as last_at')
             ->first();
 
         $notes = $customer->notes()

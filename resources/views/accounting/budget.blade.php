@@ -36,7 +36,7 @@
                                         <option value="{{ $account->account_code }}">{{ $account->account_code }} — {{ $account->account_name }}</option>
                                     @endforeach
                                 </select>
-                                <input type="number" :name="'budgets['+index+'][amount]'" x-model="row.amount" step="0.01" min="0" required placeholder="Amount"
+                                <input type="number" :name="'budgets['+index+'][budget_myr]'" x-model="row.budget_myr" step="0.01" min="0" required placeholder="Amount"
                                        class="w-40 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg text-ink">
                                 <x-button type="button" variant="ghost" size="sm" @click="removeRow(index)" x-show="rows.length > 1">✕</x-button>
                             </div>
@@ -82,7 +82,7 @@
                                 <form method="POST" action="{{ route('accounting.budget.update', $item['id']) }}" class="flex items-center justify-center gap-1">
                                     @csrf
                                     @method('PATCH')
-                                    <input type="number" name="amount" step="0.01" min="0" required placeholder="New amount"
+                                    <input type="number" name="budget_myr" step="0.01" min="0" required placeholder="New amount"
                                            class="w-28 px-2 py-1 text-xs bg-canvas-subtle border border-border rounded-lg text-ink">
                                     <x-button variant="ghost" size="sm" type="submit">Save</x-button>
                                 </form>

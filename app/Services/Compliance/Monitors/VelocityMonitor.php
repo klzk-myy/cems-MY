@@ -45,9 +45,9 @@ class VelocityMonitor extends BaseMonitor
 
             $customerData = Transaction::where('created_at', '>=', $cutoffTime)
                 ->where('status', '!=', TransactionStatus::Cancelled->value)
-                ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_local) AS CHAR) as total_amount')
+                ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_myr) AS CHAR) as total_amount_myr')
                 ->groupBy('customer_id')
-                ->havingRaw('SUM(amount_local) >= ?', [$this->warningThreshold])
+                ->havingRaw('SUM(amount_myr) >= ?', [$this->warningThreshold])
                 ->get();
 
             $customerIds = $customerData->pluck('customer_id')->unique();
@@ -71,7 +71,7 @@ class VelocityMonitor extends BaseMonitor
     protected function createFindingFromData($data, ?Customer $customer): ?array
     {
         $customerId = $data->customer_id;
-        $amount24h = (string) $data->total_amount;
+        $amount24h = (string) $data->total_amount_myr;
         $transactionCount = $data->transaction_count;
 
         if ($this->math->compare($amount24h, $this->threshold) >= 0) {

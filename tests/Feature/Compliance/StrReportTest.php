@@ -54,7 +54,7 @@ class StrReportTest extends TestCase
                 'customer_id' => $this->customer->id,
                 'transaction_id' => Transaction::factory()->create([
                     'customer_id' => $this->customer->id,
-                    'amount_local' => $amount,
+                    'amount_myr' => $amount,
                 ])->id,
                 'status' => 'open',
             ]);
@@ -82,7 +82,7 @@ class StrReportTest extends TestCase
 
         $this->assertInstanceOf(StrReport::class, $report);
         $this->assertTrue($report->status === StrReportStatus::Draft);
-        $this->assertSame('55000.0000', (string) $report->trigger_amount);
+        $this->assertSame('55000.0000', (string) $report->trigger_amount_myr);
         $this->assertSame($case->id, $report->case_id);
         $this->assertSame($this->customer->id, $report->customer_id);
         $this->assertNull($report->bnm_reference);

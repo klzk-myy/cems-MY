@@ -306,10 +306,10 @@ class CustomerRiskScoringService
         $score = $this->amountRiskService->calculateScore($transactions, $customer);
 
         $monthlyVolume = (string) $transactions->where('created_at', '>=', now()->subDays(30))
-            ->sum('amount_local');
+            ->sum('amount_myr');
 
-        if ($customer->annual_volume_estimate) {
-            $annualEstimate = (string) $customer->annual_volume_estimate;
+        if ($customer->annual_volume_myr) {
+            $annualEstimate = (string) $customer->annual_volume_myr;
             $expectedMonthly = $this->mathService->divide($annualEstimate, '12', 2);
             $threshold = $this->mathService->multiply($expectedMonthly, '2', 2);
             if ($this->mathService->compare($monthlyVolume, $threshold) > 0) {

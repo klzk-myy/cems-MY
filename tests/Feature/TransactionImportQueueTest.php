@@ -28,7 +28,7 @@ class TransactionImportQueueTest extends TestCase
 
         $csv = UploadedFile::fake()->createWithContent(
             'transactions.csv',
-            "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN\n"
+            "customer_id,type,currency_code,quantity,rate,purpose,source_of_funds,till_id\n{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN\n"
         );
 
         $this->actingAs($user)
@@ -121,7 +121,7 @@ class TransactionImportQueueTest extends TestCase
     private function createMultiRowCsv(array $rows): string
     {
         $csv = tempnam(sys_get_temp_dir(), 'import');
-        file_put_contents($csv, "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n");
+        file_put_contents($csv, "customer_id,type,currency_code,quantity,rate,purpose,source_of_funds,till_id\n");
         foreach ($rows as $row) {
             file_put_contents($csv, "{$row}\n", FILE_APPEND);
         }

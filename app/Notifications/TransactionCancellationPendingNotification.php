@@ -73,7 +73,7 @@ class TransactionCancellationPendingNotification extends Notification implements
             'transaction_id' => $this->transaction->id,
             'customer_id' => $this->transaction->customer_id,
             'customer_name' => $this->transaction->customer->full_name ?? 'Unknown',
-            'amount_local' => $this->transaction->amount_local,
+            'amount_myr' => $this->transaction->amount_myr,
             'currency_code' => $this->transaction->currency_code,
             'reason' => $this->reason,
             'requested_by' => $this->requestedBy->id,

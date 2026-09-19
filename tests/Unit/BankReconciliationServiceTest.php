@@ -435,7 +435,7 @@ class BankReconciliationServiceTest extends TestCase
         $report = $this->bankReconciliationService->getReconciliationReport($accountCode, $fromDate, $toDate);
         $viewData = $this->bankReconciliationService->getReconciliationViewData($accountCode, $fromDate, $toDate);
 
-        $expectedKeys = ['id', 'date', 'reference', 'description', 'debit', 'credit', 'amount', 'status', 'notes'];
+        $expectedKeys = ['id', 'date', 'reference', 'description', 'debit', 'credit', 'amount_myr', 'status', 'notes'];
 
         $unmatchedItems = collect($report['unmatched_items']);
         $exceptions = collect($report['exceptions']);

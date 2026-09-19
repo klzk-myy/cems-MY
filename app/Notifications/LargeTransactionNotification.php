@@ -78,7 +78,7 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
             'confirmation_id' => $this->confirmation->id,
             'customer_id' => $this->transaction->customer_id,
             'customer_name' => $this->transaction->customer->full_name ?? 'Unknown',
-            'amount' => $this->transaction->amount_local,
+            'amount' => $this->transaction->amount_myr,
             'amount_formatted' => $this->formatAmount(),
             'currency_code' => $this->transaction->currency->code ?? null,
             'transaction_type' => $this->transaction->transaction_type->value ?? null,
@@ -110,7 +110,7 @@ class LargeTransactionNotification extends Notification implements ShouldQueue
      */
     protected function formatAmount(): string
     {
-        $amount = (string) $this->transaction->amount_local;
+        $amount = (string) $this->transaction->amount_myr;
         $currency = $this->transaction->currency->code ?? 'MYR';
 
         // Split into integer and decimal parts to avoid float cast precision loss

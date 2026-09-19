@@ -23,8 +23,8 @@
                 <form action="{{ route('branch-pools.fund', $branchPool->id) }}" method="POST" class="space-y-4">
                     @csrf
                     <div>
-                        <label for="fund-amount" class="block text-sm font-medium mb-1">Amount</label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="fund-amount" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
+                        <label for="fund-quantity" class="block text-sm font-medium mb-1">Amount</label>
+                        <input type="number" step="0.01" min="0.01" name="quantity" id="fund-quantity" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
                     </div>
                     <x-button type="submit" variant="success">Fund</x-button>
                 </form>
@@ -34,8 +34,8 @@
                 <form action="{{ route('branch-pools.debit', $branchPool->id) }}" method="POST" class="space-y-4">
                     @csrf
                     <div>
-                        <label for="debit-amount" class="block text-sm font-medium mb-1">Amount</label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="debit-amount" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
+                        <label for="debit-quantity" class="block text-sm font-medium mb-1">Amount</label>
+                        <input type="number" step="0.01" min="0.01" name="quantity" id="debit-quantity" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
                     </div>
                     <x-button type="submit" variant="danger">Debit</x-button>
                 </form>
@@ -52,7 +52,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="remit-amount" class="block text-sm font-medium mb-1">Amount</label>
-                                <input type="number" step="0.01" min="0.01" name="amount" id="remit-amount" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
+                                <input type="number" step="0.01" min="0.01" name="amount_myr" id="remit-amount" required class="w-full rounded-md border-border bg-surface text-ink text-sm">
                             </div>
                             <div>
                                 <label for="remit-to" class="block text-sm font-medium mb-1">Destination</label>

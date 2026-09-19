@@ -84,7 +84,7 @@ class TransactionMonitoringServiceTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '50000.00',
+            'amount_myr' => '50000.00',
             'currency_code' => 'USD',
         ]);
 
@@ -107,7 +107,7 @@ class TransactionMonitoringServiceTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '25000.00',
+            'amount_myr' => '25000.00',
             'currency_code' => 'USD',
         ]);
 
@@ -127,13 +127,13 @@ class TransactionMonitoringServiceTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '100.00',
+            'amount_myr' => '100.00',
             'currency_code' => 'USD',
         ]);
 
         // Force a velocity flag by seeding 24h history above the velocity threshold.
         $velocityThreshold = (string) config('thresholds.velocity_24h', '100000');
-        $transaction->amount_local = $velocityThreshold;
+        $transaction->amount_myr = $velocityThreshold;
         $transaction->save();
 
         $result = $this->service->monitorTransaction($transaction);
@@ -161,7 +161,7 @@ class TransactionMonitoringServiceTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => (string) config('thresholds.velocity_24h', '100000'),
+            'amount_myr' => (string) config('thresholds.velocity_24h', '100000'),
             'currency_code' => 'USD',
         ]);
 

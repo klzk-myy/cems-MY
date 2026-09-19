@@ -15,7 +15,7 @@ class TransferTillRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'numeric', 'min:0.0001'],
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
             'direction' => ['required', 'in:load,unload'],
 
         ];

@@ -26,7 +26,7 @@
                             <td class="px-4 py-3">{{ $allocation->id }}</td>
                             <td class="px-4 py-3">{{ $allocation->user?->username }}</td>
                             <td class="px-4 py-3">{{ $allocation->currency?->code }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_amount, 4) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_quantity, 4) }}</td>
                             <td class="px-4 py-3 text-center">
                                 <x-badge variant="{{ $allocation->status->isActive() ? 'success' : ($allocation->status->isPending() || $allocation->status->isApproved() ? 'warning' : 'info') }}">
                                     {{ $allocation->status->label() }}

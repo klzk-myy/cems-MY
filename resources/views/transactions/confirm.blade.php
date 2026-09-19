@@ -18,7 +18,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
-                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->amount_foreign ?? 0, 2) }} {{ $transaction->currency_code ?? '' }}</p>
+                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->quantity ?? 0, 2) }} {{ $transaction->currency_code ?? '' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
@@ -60,11 +60,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">MYR Amount</label>
-                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->amount_local ?? 0, 2) }}</p>
+                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->amount_myr ?? 0, 2) }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">FCY Amount</label>
-                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->amount_foreign ?? 0, 2) }}</p>
+                        <p class="text-sm font-medium text-ink">{{ number_format($transaction->quantity ?? 0, 2) }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Base Rate</label>

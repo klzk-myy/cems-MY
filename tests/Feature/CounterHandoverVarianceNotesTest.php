@@ -148,8 +148,8 @@ class CounterHandoverVarianceNotesTest extends TestCase
         // USD: 10000 -> 10500 (variance +500)
         // EUR: 5000 -> 5000 (variance 0)
         $physicalCounts = [
-            ['currency_id' => 'USD', 'amount' => '10500.00'],
-            ['currency_id' => 'EUR', 'amount' => '5000.00'],
+            ['currency_id' => 'USD', 'quantity' => '10500.00'],
+            ['currency_id' => 'EUR', 'quantity' => '5000.00'],
         ];
 
         $result = $handoverService->initiateHandover(
@@ -242,8 +242,8 @@ class CounterHandoverVarianceNotesTest extends TestCase
 
         // Hand over with variances on multiple currencies
         $physicalCounts = [
-            ['currency_id' => 'USD', 'amount' => '10200.00'], // +200 variance
-            ['currency_id' => 'EUR', 'amount' => '4800.00'], // -200 variance
+            ['currency_id' => 'USD', 'quantity' => '10200.00'], // +200 variance
+            ['currency_id' => 'EUR', 'quantity' => '4800.00'], // -200 variance
         ];
 
         $result = $handoverService->initiateHandover(
@@ -298,7 +298,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
 
         // Hand over with NO variance (closing == opening)
         $physicalCounts = [
-            ['currency_id' => 'USD', 'amount' => '10000.00'],
+            ['currency_id' => 'USD', 'quantity' => '10000.00'],
         ];
 
         $result = $handoverService->initiateHandover(
@@ -362,7 +362,7 @@ class CounterHandoverVarianceNotesTest extends TestCase
             $this->teller1,
             $this->teller2,
             $this->manager,
-            [['currency_id' => 'USD', 'amount' => '9800.00']]
+            [['currency_id' => 'USD', 'quantity' => '9800.00']]
         );
 
         $usdBalances = TillBalance::where('till_id', (string) $this->counter->code)

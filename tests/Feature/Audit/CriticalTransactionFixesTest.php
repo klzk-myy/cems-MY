@@ -72,13 +72,13 @@ class CriticalTransactionFixesTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'date' => today(),
-            'transaction_total' => '0',
+            'transaction_total_myr' => '0',
         ]);
         TillBalance::factory()->for($till)->create([
             'currency_code' => 'MYR',
             'branch_id' => $branch->id,
             'date' => today(),
-            'transaction_total' => '1000.00',
+            'transaction_total_myr' => '1000.00',
         ]);
 
         $this->actingAs($teller);
@@ -89,28 +89,28 @@ class CriticalTransactionFixesTest extends TestCase
             'till_id' => $till->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
-            'amount_local' => '470.00',
+            'quantity' => '100.00',
+            'amount_myr' => '470.00',
             'rate' => '4.70',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
         ], $teller->id, '127.0.0.1');
 
-        $this->assertSame('530.0000', TillBalance::where('till_id', $till->code)->where('currency_code', 'MYR')->first()->transaction_total);
+        $this->assertSame('530.0000', TillBalance::where('till_id', $till->code)->where('currency_code', 'MYR')->first()->transaction_total_myr);
     }
 
     public function test_reversing_buy_restores_myr_till_balance(): void
     {
         $transaction = $this->createCompletedBuyTransaction();
-        $before = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total;
+        $before = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total_myr;
 
         $manager = User::factory()->for($transaction->branch)->create(['role' => UserRole::Manager]);
         $service = app(TransactionReversalService::class);
         $service->reverse($transaction, $manager, 'customer request');
 
-        $after = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total;
+        $after = TillBalance::where('till_id', $transaction->till_id)->where('currency_code', 'MYR')->first()->transaction_total_myr;
         $this->assertSame(
-            $this->mathService->add($before, $transaction->amount_local),
+            $this->mathService->add($before, $transaction->amount_myr),
             $after
         );
     }
@@ -126,13 +126,13 @@ class CriticalTransactionFixesTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'date' => today(),
-            'transaction_total' => '0',
+            'transaction_total_myr' => '0',
         ]);
         TillBalance::factory()->for($till)->create([
             'currency_code' => 'MYR',
             'branch_id' => $branch->id,
             'date' => today(),
-            'transaction_total' => '1000.00',
+            'transaction_total_myr' => '1000.00',
         ]);
 
         CurrencyPosition::factory()->create([
@@ -149,8 +149,8 @@ class CriticalTransactionFixesTest extends TestCase
             'branch_id' => $branch->id,
             'till_id' => $till->code,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
-            'amount_local' => '470.00',
+            'quantity' => '100.00',
+            'amount_myr' => '470.00',
             'rate' => '4.70',
         ]);
 
@@ -166,7 +166,7 @@ class CriticalTransactionFixesTest extends TestCase
         $compliance = User::factory()->for($branch)->create(['role' => UserRole::ComplianceOfficer]);
         $transaction = Transaction::factory()->for($branch)->state([
             'status' => TransactionStatus::PendingApproval,
-            'amount_local' => '75000.00',
+            'amount_myr' => '75000.00',
         ])->create();
         TransactionConfirmation::factory()->for($transaction)->create([
             'status' => TransactionConfirmationStatus::Pending,
@@ -240,7 +240,7 @@ class CriticalTransactionFixesTest extends TestCase
     {
         $related = Customer::factory()->create();
         Transaction::factory()->for($related)->create([
-            'amount_local' => '500.00',
+            'amount_myr' => '500.00',
             'created_at' => now()->subMonth(),
         ]);
 
@@ -251,7 +251,7 @@ class CriticalTransactionFixesTest extends TestCase
 
         // MathService uses scale 4 (decimal(18,4)), so the summed amount is
         // formatted with four decimal places.
-        $this->assertSame('500.0000', (string) $analysis['total_amount_myrr']);
+        $this->assertSame('500.0000', (string) $analysis['total_amount_myr']);
     }
 
     public function test_month_end_report_recorded_as_failed_when_generation_fails(): void
@@ -287,7 +287,7 @@ class CriticalTransactionFixesTest extends TestCase
 
         $transaction = Transaction::factory()->for($branch)->create([
             'currency_code' => 'USD',
-            'amount_foreign' => '200.00',
+            'quantity' => '200.00',
             'till_id' => (string) $branch->id,
         ]);
         $service->reserveStock($transaction);

@@ -12,7 +12,7 @@ use App\ValueObjects\QuoteConvention;
  * Single source of truth for converting a foreign-currency transaction amount
  * into its local-currency equivalent:
  *
- *     amount_local = amount_foreign / rate_unit × rate
+ *     amount_myr = quantity / rate_unit × rate
  *
  * where `rate` is the unit-quoted rate (MYR per `rate_unit` foreign units,
  * e.g. RM 235 per 1,000,000 IDR) and `rate_unit` defaults to 1, which
@@ -40,39 +40,39 @@ class ExchangeCalculator
      *
      * @param  TransactionType  $type  Buy or Sell (kept for API completeness; the rate is caller-supplied).
      * @param  string  $currencyCode  ISO currency code of the foreign amount (kept for API completeness).
-     * @param  string  $amountForeign  Foreign amount as a numeric string.
+     * @param  string  $quantity  Foreign amount as a numeric string.
      * @param  string  $rate  Caller-supplied exchange rate as a numeric string, quoted in $convention terms.
      * @param  int|null  $branchId  Optional branch scope (kept for API completeness).
      * @param  QuoteConvention|null  $convention  Quote convention of $rate; defaults to unit-1 direct (per-unit rate).
-     * @return array{amount_local: string, amount_foreign: string, rate: string} The returned rate is normalized per-unit.
+     * @return array{amount_myr: string, quantity: string, rate: string} The returned rate is normalized per-unit.
      */
     public function calculate(
         TransactionType $type,
         string $currencyCode,
-        string $amountForeign,
+        string $quantity,
         string $rate,
         ?int $branchId = null,
         ?QuoteConvention $convention = null
     ): array {
         // Normalize the quoted rate to per-unit (8 decimals, matching
         // the transactions.rate column precision) before multiplying, so the
-        // returned rate is the exact value applied to amount_local.
+        // returned rate is the exact value applied to amount_myr.
         $perUnitRate = ($convention ?? new QuoteConvention)->toPerUnit($rate);
 
         // Foreign → local conversion delegated to MathService (BCMath). The
         // multiply uses MathService's default scale (4), matching the prior
-        // inline `multiply(amount_foreign, rate)`.
-        $amountLocal = $this->mathService->multiply($amountForeign, $perUnitRate);
+        // inline `multiply(quantity, rate)`.
+        $amountMyr = $this->mathService->multiply($quantity, $perUnitRate);
 
         // Round half-up to 4 decimals to align with decimal(18,4) storage.
         // Because multiply already returns a value truncated to its default
         // scale of 4, this rounding is a no-op relative to the former inline
         // behavior and therefore preserves exact prior output.
-        $amountLocal = $this->mathService->round($amountLocal, 4);
+        $amountMyr = $this->mathService->round($amountMyr, 4);
 
         return [
-            'amount_local' => $amountLocal,
-            'amount_foreign' => $amountForeign,
+            'amount_myr' => $amountMyr,
+            'quantity' => $quantity,
             'rate' => $perUnitRate,
         ];
     }

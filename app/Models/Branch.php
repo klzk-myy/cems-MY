@@ -32,7 +32,7 @@ use Illuminate\Support\Str;
  * @property bool $is_active
  * @property bool $is_main
  * @property int|null $parent_id
- * @property string $petty_cash_float MYR petty-cash float for branch expenses
+ * @property string $petty_cash_myr MYR petty-cash float for branch expenses
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */

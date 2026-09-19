@@ -96,7 +96,7 @@ trait TransactionImportTestHelpers
     private function createCsv(string $row): string
     {
         $csv = tempnam(sys_get_temp_dir(), 'import');
-        file_put_contents($csv, "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n");
+        file_put_contents($csv, "customer_id,type,currency_code,quantity,rate,purpose,source_of_funds,till_id\n");
         file_put_contents($csv, "{$row}\n", FILE_APPEND);
 
         return $csv;

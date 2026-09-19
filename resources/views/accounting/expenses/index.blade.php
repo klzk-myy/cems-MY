@@ -12,7 +12,7 @@
             <x-card>
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-ink-muted">{{ $currentBranch->name }} petty cash float</span>
-                    <span class="text-lg font-semibold font-mono">MYR {{ number_format((float) $pettyCashFloat, 2) }}</span>
+                    <span class="text-lg font-semibold font-mono">MYR {{ number_format((float) $pettyCashMyr, 2) }}</span>
                 </div>
             </x-card>
         @endif
@@ -38,7 +38,7 @@
                             <td class="px-4 py-3 text-sm">{{ $expense->category }}</td>
                             <td class="px-4 py-3 text-sm">{{ $expense->description }}</td>
                             <td class="px-4 py-3 text-sm font-mono">{{ $expense->account_code }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $expense->amount, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $expense->amount_myr, 2) }}</td>
                             <td class="px-4 py-3 text-sm">{{ $expense->creator?->username ?? '—' }}</td>
                         </tr>
                     @empty

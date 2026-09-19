@@ -24,8 +24,8 @@ class TillBalanceFactory extends Factory
             'closed_by' => null,
             'closed_at' => null,
             'notes' => null,
-            'foreign_total' => '0',
-            'transaction_total' => '0',
+            'total_quantity' => '0',
+            'transaction_total_myr' => '0',
         ];
     }
 }

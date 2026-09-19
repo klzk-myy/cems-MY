@@ -22,8 +22,8 @@ class PatternRiskServiceTest extends TestCase
         $model->id = $attrs['id'];
         $model->currency_code = $attrs['currency_code'];
         $model->type = $attrs['type'];
-        $model->amount_foreign = $attrs['amount_foreign'];
-        $model->amount_local = $attrs['amount_local'];
+        $model->quantity = $attrs['quantity'];
+        $model->amount_myr = $attrs['amount_myr'];
         $model->created_at = $attrs['created_at'];
 
         return $model;
@@ -53,16 +53,16 @@ class PatternRiskServiceTest extends TestCase
                 'id' => 1,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Sell,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26000.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26000.00',
                 'created_at' => $now->copy()->subHours(2),
             ]),
             $this->makeTransaction([
                 'id' => 2,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Buy,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26400.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26400.00',
                 'created_at' => $now,
             ]),
         ]);
@@ -87,16 +87,16 @@ class PatternRiskServiceTest extends TestCase
                 'id' => 1,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Buy,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26400.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26400.00',
                 'created_at' => $now->copy()->subHours(2),
             ]),
             $this->makeTransaction([
                 'id' => 2,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Sell,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26000.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26000.00',
                 'created_at' => $now,
             ]),
         ]);
@@ -117,16 +117,16 @@ class PatternRiskServiceTest extends TestCase
                 'id' => 1,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Sell,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26000.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26000.00',
                 'created_at' => $now->copy()->subHours(100),
             ]),
             $this->makeTransaction([
                 'id' => 2,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Buy,
-                'amount_foreign' => '6000.00',
-                'amount_local' => '26400.00',
+                'quantity' => '6000.00',
+                'amount_myr' => '26400.00',
                 'created_at' => $now,
             ]),
         ]);
@@ -147,16 +147,16 @@ class PatternRiskServiceTest extends TestCase
                 'id' => 1,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Sell,
-                'amount_foreign' => '3000.00',
-                'amount_local' => '13000.00',
+                'quantity' => '3000.00',
+                'amount_myr' => '13000.00',
                 'created_at' => $now->copy()->subHours(1),
             ]),
             $this->makeTransaction([
                 'id' => 2,
                 'currency_code' => 'USD',
                 'type' => TransactionType::Buy,
-                'amount_foreign' => '3000.00',
-                'amount_local' => '13200.00',
+                'quantity' => '3000.00',
+                'amount_myr' => '13200.00',
                 'created_at' => $now,
             ]),
         ]);

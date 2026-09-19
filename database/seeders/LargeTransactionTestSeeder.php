@@ -54,9 +54,9 @@ class LargeTransactionTestSeeder extends Seeder
             $customer = $customers->random();
             $type = fake()->randomElement([TransactionType::Buy, TransactionType::Sell]);
             $currency = fake()->randomElement($currencies);
-            $amountForeign = fake()->randomFloat(2, 50, 5000);
+            $quantity = fake()->randomFloat(2, 50, 5000);
             $rate = fake()->randomFloat(4, 3, 8);
-            $amountLocal = $amountForeign * $rate;
+            $amountMyr = $quantity * $rate;
 
             // Random date within last 30 days
             $createdAt = fake()->dateTimeBetween('-30 days', 'now');
@@ -71,8 +71,8 @@ class LargeTransactionTestSeeder extends Seeder
                 'user_id' => $teller->id,
                 'type' => $type,
                 'currency_code' => $currency,
-                'amount_foreign' => $amountForeign,
-                'amount_local' => $amountLocal,
+                'quantity' => $quantity,
+                'amount_myr' => $amountMyr,
                 'rate' => $rate,
                 'cdd_level' => fake()->randomElement($cddLevels),
                 'purpose' => fake()->randomElement($purposes),

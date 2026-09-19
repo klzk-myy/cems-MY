@@ -23,8 +23,8 @@ use Illuminate\Support\Carbon;
  * @property TransactionType $type
  * @property string $currency_code
  * @property string|null $counterparty_country
- * @property string $amount_local
- * @property string $amount_foreign
+ * @property string $amount_myr
+ * @property string $quantity
  * @property string $rate
  * @property string|null $base_rate
  * @property bool $rate_override
@@ -65,8 +65,8 @@ class TransactionResource extends JsonResource
             'type' => $this->type,
             'currency_code' => $this->currency_code,
             'counterparty_country' => $this->counterparty_country,
-            'amount_local' => $this->amount_local,
-            'amount_foreign' => $this->amount_foreign,
+            'amount_myr' => $this->amount_myr,
+            'quantity' => $this->quantity,
             'rate' => $this->rate,
             'base_rate' => $this->base_rate,
             'rate_override' => $this->rate_override,

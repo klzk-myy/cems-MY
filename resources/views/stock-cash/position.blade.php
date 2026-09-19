@@ -94,13 +94,13 @@
                                 {{ $transaction->currency?->code ?? 'N/A' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->amount_foreign, 2) }}
+                                {{ number_format((float) $transaction->quantity, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) $transaction->rate, 8) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) $transaction->amount_local, 2) }}
+                                {{ number_format((float) $transaction->amount_myr, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge

@@ -25,9 +25,9 @@ class TransactionService implements TransactionServiceInterface
         protected TransactionStatusServiceInterface $statusService,
     ) {}
 
-    public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult
+    public function preValidate(Customer $customer, string $amountMyr, string $currencyCode): PreValidationResult
     {
-        return $this->validationService->preValidate($customer, $amount, $currencyCode);
+        return $this->validationService->preValidate($customer, $amountMyr, $currencyCode);
     }
 
     public function createTransaction(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction

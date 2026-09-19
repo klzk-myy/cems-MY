@@ -22,13 +22,13 @@ enum CddLevel: string
     /**
      * Determine CDD level based on amount and customer risk.
      *
-     * @param  string  $amount  Transaction amount in MYR
+     * @param  string  $amountMyr  Transaction amount in MYR
      * @param  bool  $isPep  Whether customer is a Politically Exposed Person
      * @param  bool  $hasSanctionMatch  Whether customer matches sanctions list
      * @param  RiskRating|string  $riskRating  Customer risk rating
      */
     public static function determine(
-        string $amount,
+        string $amountMyr,
         bool $isPep = false,
         bool $hasSanctionMatch = false,
         RiskRating|string $riskRating = 'Low'
@@ -43,11 +43,11 @@ enum CddLevel: string
             return self::Enhanced;
         }
 
-        if (! is_numeric($amount)) {
+        if (! is_numeric($amountMyr)) {
             throw new \InvalidArgumentException('Transaction amount must be numeric.');
         }
 
-        /** @var numeric-string $amount */
+        /** @var numeric-string $amountMyr */
         // Amount thresholds per pd-00.md 14C.12
         // >= RM 10,000: Standard CDD
         $standardThreshold = self::getStandardCddThreshold();
@@ -56,7 +56,7 @@ enum CddLevel: string
             throw new \LogicException('Configured standard CDD threshold must be numeric.');
         }
 
-        if (bccomp($amount, $standardThreshold) >= 0) {
+        if (bccomp($amountMyr, $standardThreshold) >= 0) {
             return self::Standard;
         }
 
@@ -67,7 +67,7 @@ enum CddLevel: string
             throw new \LogicException('Configured specific CDD threshold must be numeric.');
         }
 
-        if (bccomp($amount, $specificThreshold) >= 0) {
+        if (bccomp($amountMyr, $specificThreshold) >= 0) {
             return self::Specific;
         }
 

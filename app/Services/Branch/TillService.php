@@ -30,7 +30,7 @@ class TillService
     {
         $sum = '0';
         foreach ($transactions->where('type', $type) as $transaction) {
-            $sum = $this->mathService->add($sum, (string) $transaction->amount_local);
+            $sum = $this->mathService->add($sum, (string) $transaction->amount_myr);
         }
 
         return $sum;
@@ -81,7 +81,7 @@ class TillService
                 Carbon::parse($date)->startOfDay(),
                 Carbon::parse($date)->endOfDay(),
             ])
-            ->selectRaw("SUM(CASE WHEN type='Buy' THEN amount_local ELSE -amount_local END) as net")
+            ->selectRaw("SUM(CASE WHEN type='Buy' THEN amount_myr ELSE -amount_myr END) as net")
             ->value('net') ?? '0';
 
         return (string) $netFlow;
@@ -154,9 +154,9 @@ class TillService
     /**
      * Expected closing balance for one till-balance row.
      *
-     * MYR balances track net MYR movement in transaction_total (buys subtract,
-     * sells add). FCY balances track position in buy_total_foreign /
-     * sell_total_foreign. The formula lives on the model so every close
+     * MYR balances track net MYR movement in transaction_total_myr (buys subtract,
+     * sells add). FCY balances track position in buy_quantity /
+     * sell_quantity. The formula lives on the model so every close
      * path (counter, emergency, EOD) computes the same expected value.
      */
     public function expectedClosingForBalance(TillBalance $balance): string

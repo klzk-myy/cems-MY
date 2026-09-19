@@ -42,8 +42,8 @@ class ReportingServiceTest extends TestCase
         Transaction::factory()->completed()->create([
             'currency_code' => $currency->code,
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
-            'amount_foreign' => '250.00',
+            'amount_myr' => '1000.00',
+            'quantity' => '250.00',
             'rate' => '4.0000',
             'created_at' => Carbon::parse($date),
         ]);
@@ -51,8 +51,8 @@ class ReportingServiceTest extends TestCase
         Transaction::factory()->completed()->create([
             'currency_code' => $currency->code,
             'type' => TransactionType::Sell->value,
-            'amount_local' => '500.00',
-            'amount_foreign' => '100.00',
+            'amount_myr' => '500.00',
+            'quantity' => '100.00',
             'rate' => '4.2000',
             'created_at' => Carbon::parse($date),
         ]);

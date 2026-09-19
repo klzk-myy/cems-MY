@@ -52,9 +52,9 @@ class TellerAllocationSeeder extends Seeder
                         'session_date' => today(),
                     ],
                     [
-                        'requested_amount' => (string) $amount,
-                        'allocated_amount' => (string) $amount,
-                        'current_balance' => (string) $amount,
+                        'requested_quantity' => (string) $amount,
+                        'allocated_quantity' => (string) $amount,
+                        'current_quantity' => (string) $amount,
                         'status' => TellerAllocationStatus::Active,
                         'approved_by' => User::where('role', 'manager')->first()?->id,
                         'approved_at' => now(),

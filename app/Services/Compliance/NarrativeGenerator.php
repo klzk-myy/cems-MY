@@ -63,7 +63,7 @@ class NarrativeGenerator
         if ($flaggedTransaction) {
             $narrative .= 'Transaction ID: '.$flaggedTransaction->id."\n";
             $narrative .= 'Transaction Date: '.($flaggedTransaction->created_at?->toDateString() ?? 'N/A')."\n";
-            $narrative .= 'Amount (MYR): '.number_format((float) ($flaggedTransaction->amount_local ?? 0), 2)."\n";
+            $narrative .= 'Amount (MYR): '.number_format((float) ($flaggedTransaction->amount_myr ?? 0), 2)."\n";
             $narrative .= 'Currency: '.($flaggedTransaction->currency_code ?? 'N/A')."\n";
             $narrative .= 'Transaction Type: '.($flaggedTransaction->flag_type?->value ?? 'N/A')."\n";
             $narrative .= 'Purpose: '.($flaggedTransaction->purpose ?? 'N/A')."\n";

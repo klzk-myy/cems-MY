@@ -12,9 +12,9 @@
                 <div><dt class="text-ink-muted">Branch</dt><dd>{{ $allocation->branch?->name }}</dd></div>
                 <div><dt class="text-ink-muted">Counter</dt><dd>{{ $allocation->counter?->name ?? '—' }}</dd></div>
                 <div><dt class="text-ink-muted">Currency</dt><dd>{{ $allocation->currency?->code }}</dd></div>
-                <div><dt class="text-ink-muted">Requested</dt><dd>{{ number_format((float) $allocation->requested_amount, 4) }}</dd></div>
-                <div><dt class="text-ink-muted">Allocated</dt><dd>{{ number_format((float) $allocation->allocated_amount, 4) }}</dd></div>
-                <div><dt class="text-ink-muted">Current Balance</dt><dd>{{ number_format((float) $allocation->current_balance, 4) }}</dd></div>
+                <div><dt class="text-ink-muted">Requested</dt><dd>{{ number_format((float) $allocation->requested_quantity, 4) }}</dd></div>
+                <div><dt class="text-ink-muted">Allocated</dt><dd>{{ number_format((float) $allocation->allocated_quantity, 4) }}</dd></div>
+                <div><dt class="text-ink-muted">Current Balance</dt><dd>{{ number_format((float) $allocation->current_quantity, 4) }}</dd></div>
                 <div><dt class="text-ink-muted">Status</dt><dd>{{ $allocation->status->label() }}</dd></div>
                 <div><dt class="text-ink-muted">Requested At</dt><dd>{{ $allocation->created_at->format('d M Y H:i') }}</dd></div>
                 @if($allocation->approver)
@@ -32,12 +32,12 @@
                     <form method="POST" action="{{ route('allocations.approve', $allocation->id) }}">
                         @csrf
                         <x-input
-                            name="approved_amount"
-                            label="Approved Amount"
+                            name="approved_quantity"
+                            label="Approved Quantity"
                             type="number"
                             step="0.0001"
                             min="0.0001"
-                            :value="$allocation->requested_amount"
+                            :value="$allocation->requested_quantity"
                             required
                         />
                         <x-input
@@ -72,13 +72,13 @@
             <x-card title="Adjust Allocation">
                 <p class="text-sm text-ink-muted mb-4">
                     Increase draws additional stock from the branch pool; decrease returns unspent
-                    float to the pool. Current balance: {{ number_format((float) $allocation->current_balance, 4) }}
+                    float to the pool. Current balance: {{ number_format((float) $allocation->current_quantity, 4) }}
                     {{ $allocation->currency?->code }}.
                 </p>
                 <form method="POST" action="{{ route('allocations.modify', $allocation->id) }}">
                     @csrf
                     <x-input
-                        name="amount"
+                        name="quantity"
                         label="Amount"
                         type="number"
                         step="0.0001"
@@ -96,7 +96,7 @@
         @if($allocation->isActive())
             <x-card title="Return to Pool">
                 <p class="text-sm text-ink-muted mb-4">
-                    Returns the remaining balance ({{ number_format((float) $allocation->current_balance, 4) }}
+                    Returns the remaining balance ({{ number_format((float) $allocation->current_quantity, 4) }}
                     {{ $allocation->currency?->code }}) to the branch pool.
                 </p>
                 <form method="POST" action="{{ route('allocations.return-to-pool', $allocation->id) }}">

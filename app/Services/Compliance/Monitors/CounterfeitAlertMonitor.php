@@ -95,7 +95,7 @@ class CounterfeitAlertMonitor extends BaseMonitor
                 'customer_id' => $flag->customer_id,
                 'customer_name' => $customer->full_name ?? 'Unknown',
                 'transaction_id' => $flag->transaction_id,
-                'transaction_amount' => $transaction?->amount_local ? (string) $transaction->amount_local : 'Unknown',
+                'transaction_amount' => $transaction?->amount_myr ? (string) $transaction->amount_myr : 'Unknown',
                 'currency_code' => $transaction->currency_code ?? 'Unknown',
                 'flag_reason' => $flag->flag_reason ?? 'Counterfeit currency reported',
                 'flag_created_at' => $flag->created_at?->toDateTimeString(),

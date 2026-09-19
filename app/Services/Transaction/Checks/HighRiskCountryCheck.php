@@ -25,7 +25,7 @@ class HighRiskCountryCheck implements TransactionCheck
             return [];
         }
 
-        if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getStandardCddThreshold()) < 0) {
+        if ($this->mathService->compare($transaction->amount_myr, $this->thresholdService->getStandardCddThreshold()) < 0) {
             return [];
         }
 

@@ -413,8 +413,8 @@ class ReportingAccountingFixesTest extends TestCase
             Transaction::factory()->create([
                 'customer_id' => $customer->id,
                 'currency_code' => $currency->code,
-                'amount_local' => '50000.10',
-                'amount_foreign' => '10000.00',
+                'amount_myr' => '50000.10',
+                'quantity' => '10000.00',
                 'created_at' => now()->subDays($i),
             ]);
         }
@@ -423,6 +423,6 @@ class ReportingAccountingFixesTest extends TestCase
         $findings = $monitor->run();
 
         $this->assertCount(1, $findings);
-        $this->assertSame('150000.3000', $findings[0]['details']['total_amount']);
+        $this->assertSame('150000.3000', $findings[0]['details']['total_amount_myr']);
     }
 }

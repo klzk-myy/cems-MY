@@ -198,7 +198,7 @@ class StrReportController extends Controller
                         $report->reference(),
                         $report->bnm_reference,
                         $report->customer->id_number_masked ?? ('CUST-'.$report->customer_id),
-                        number_format((float) $report->trigger_amount, 4, '.', ''),
+                        number_format((float) $report->trigger_amount_myr, 4, '.', ''),
                         $report->trigger_reason,
                         $report->status->value,
                         optional($report->submitted_at)->toDateTimeString(),

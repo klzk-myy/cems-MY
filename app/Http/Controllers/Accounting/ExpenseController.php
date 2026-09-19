@@ -44,7 +44,7 @@ class ExpenseController extends Controller
         return view('accounting.expenses.index', [
             'expenses' => $expenses,
             'currentBranch' => $branch,
-            'pettyCashFloat' => $branch?->petty_cash_float,
+            'pettyCashMyr' => $branch?->petty_cash_myr,
         ]);
     }
 
@@ -90,11 +90,11 @@ class ExpenseController extends Controller
                 $validated['account_code'],
                 $validated['category'],
                 $validated['description'],
-                $validated['amount'],
+                $validated['amount_myr'],
                 $validated['expense_date'] ?? null
             );
         } catch (InsufficientPettyCashException $e) {
-            return back()->withInput()->withErrors(['amount' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['amount_myr' => $e->getMessage()]);
         } catch (DomainException $e) {
             throw $e;
         }
@@ -120,7 +120,7 @@ class ExpenseController extends Controller
         /** @var Branch $branch */
         $branch = Branch::query()->findOrFail((int) $validated['branch_id']);
 
-        $this->expenseService->fundPettyCash($branch, $user, $validated['amount'], $validated['description'] ?? null);
+        $this->expenseService->fundPettyCash($branch, $user, $validated['amount_myr'], $validated['description'] ?? null);
 
         return redirect()->route('accounting.expenses.index')
             ->with('success', "Petty cash float funded for {$branch->name}.");

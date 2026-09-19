@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">FCY Amount</label>
-                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_foreign, 2) }}</p>
+                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->quantity, 2) }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
@@ -41,7 +41,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">MYR Amount</label>
-                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_local, 2) }}</p>
+                    <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_myr, 2) }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Counter</label>

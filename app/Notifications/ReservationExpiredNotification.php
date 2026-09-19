@@ -31,7 +31,7 @@ class ReservationExpiredNotification extends Notification implements ShouldQueue
             ->line('Your stock reservation has expired and been released.')
             ->line('Transaction ID: '.($transaction->id ?? 'N/A'))
             ->line('Currency: '.$this->reservation->currency_code)
-            ->line('Amount: '.$this->reservation->amount_foreign)
+            ->line('Amount: '.$this->reservation->quantity)
             ->line('Please contact your manager if you have questions.');
     }
 
@@ -44,7 +44,7 @@ class ReservationExpiredNotification extends Notification implements ShouldQueue
             'reservation_id' => $this->reservation->id,
             'transaction_id' => $transaction?->id,
             'currency_code' => $this->reservation->currency_code,
-            'amount_foreign' => $this->reservation->amount_foreign,
+            'quantity' => $this->reservation->quantity,
         ];
     }
 }

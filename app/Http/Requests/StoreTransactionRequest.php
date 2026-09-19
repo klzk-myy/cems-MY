@@ -57,7 +57,7 @@ class StoreTransactionRequest extends AuthorizedFormRequest
             'customer_id' => $this->customerIdRule(),
             'type' => $this->transactionTypeRule(),
             'currency_code' => $this->currencyCodeRuleStrict(),
-            'amount_foreign' => $this->amountForeignRuleStrict(),
+            'quantity' => $this->quantityRuleStrict(),
             'rate' => $this->rateRuleStrict(),
             'purpose' => $this->purposeRule(),
             'source_of_funds' => $this->sourceOfFundsRule(),
@@ -80,8 +80,8 @@ class StoreTransactionRequest extends AuthorizedFormRequest
     public function messages(): array
     {
         return [
-            'amount_foreign.min' => 'The transaction amount must be greater than zero.',
-            'amount_foreign.max' => 'The transaction amount exceeds the maximum allowed.',
+            'quantity.min' => 'The transaction amount must be greater than zero.',
+            'quantity.max' => 'The transaction amount exceeds the maximum allowed.',
             'rate.min' => 'The exchange rate must be greater than zero.',
             'purpose.required' => 'Please specify the purpose of this transaction.',
             'source_of_funds.required' => 'Please specify the source of funds.',
@@ -97,7 +97,7 @@ class StoreTransactionRequest extends AuthorizedFormRequest
     public function attributes(): array
     {
         return [
-            'amount_foreign' => 'foreign currency amount',
+            'quantity' => 'foreign currency amount',
             'source_of_funds' => 'source of funds',
         ];
     }

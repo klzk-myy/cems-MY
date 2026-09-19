@@ -67,7 +67,7 @@ class TillBalanceManagerLifecycleTest extends TestCase
         $this->expectException(TillAlreadyOpenException::class);
 
         app(CounterService::class)->openSession($counter, $user, [
-            ['currency_id' => $currency->code, 'amount' => '500.00'],
+            ['currency_id' => $currency->code, 'quantity' => '500.00'],
         ]);
     }
 
@@ -79,7 +79,7 @@ class TillBalanceManagerLifecycleTest extends TestCase
         $user = User::factory()->create();
 
         $session = app(CounterService::class)->openSession($counter, $user, [
-            ['currency_id' => $currency->code, 'amount' => '250.00'],
+            ['currency_id' => $currency->code, 'quantity' => '250.00'],
         ]);
 
         $this->assertNotNull($session);

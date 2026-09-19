@@ -50,8 +50,8 @@ class TransactionApprovalControllerTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => $currency->code,
             'status' => TransactionStatus::PendingApproval,
-            'amount_local' => '1000.00',
-            'amount_foreign' => '250.00',
+            'amount_myr' => '1000.00',
+            'quantity' => '250.00',
             'rate' => '4.000000',
         ]);
 

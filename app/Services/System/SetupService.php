@@ -439,11 +439,11 @@ class SetupService
 
         // Calculate total opening balance using BCMath for precision
         $totalMyr = $balanceData['opening_balance_myr'] ?? '0';
-        $totalForeign = '0';
-        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
-            $totalForeign = $this->mathService->add($totalForeign, (string) $amount);
+        $totalQuantity = '0';
+        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $quantity) {
+            $totalQuantity = $this->mathService->add($totalQuantity, (string) $quantity);
         }
-        $totalBalance = $this->mathService->add((string) $totalMyr, $totalForeign);
+        $totalBalance = $this->mathService->add((string) $totalMyr, $totalQuantity);
 
         if ($this->mathService->compare($totalBalance, '0') <= 0) {
             return;
@@ -465,17 +465,17 @@ class SetupService
         // on the same account buys and sells flow through (2000 Foreign
         // Currency Inventory) — posting it to 1011 leaves that account
         // permanently unrelieved while every sale drives 2000 negative.
-        $totalForeignBalance = '0';
-        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $amount) {
-            if ($this->mathService->compare((string) $amount, '0') > 0) {
-                $totalForeignBalance = $this->mathService->add($totalForeignBalance, (string) $amount);
+        $totalQuantity = '0';
+        foreach ($balanceData['opening_balance_foreign'] ?? [] as $currency => $quantity) {
+            if ($this->mathService->compare((string) $quantity, '0') > 0) {
+                $totalQuantity = $this->mathService->add($totalQuantity, (string) $quantity);
             }
         }
 
-        if ($this->mathService->compare($totalForeignBalance, '0') > 0) {
+        if ($this->mathService->compare($totalQuantity, '0') > 0) {
             $lines[] = [
                 'account_code' => $this->accountMappingService->code(AccountMappingKey::InventoryDefault),
-                'debit' => $totalForeignBalance,
+                'debit' => $totalQuantity,
                 'credit' => '0.00',
                 'description' => 'Opening balance - Foreign Currency Inventory',
             ];
@@ -560,14 +560,14 @@ class SetupService
             ->get(['currency_code', 'rate_buy', 'rate_unit', 'rate_inverse'])
             ->keyBy('currency_code');
 
-        foreach ($stockData['initial_stock'] as $currencyCode => $amount) {
+        foreach ($stockData['initial_stock'] as $currencyCode => $quantity) {
             // Zero-amount entries still create pool/position rows so every
             // currency selected in step 3 is mapped into the accounting
             // system, not only the ones with opening stock.
             BranchPool::create([
                 'branch_id' => $branch->id,
                 'currency_code' => $currencyCode,
-                'available_balance' => (string) $amount,
+                'available_balance' => (string) $quantity,
                 'allocated_balance' => '0.00',
             ]);
 
@@ -580,12 +580,12 @@ class SetupService
                 : ($rateRow === null
                     ? '0'
                     : $rateRow->perUnitRate((string) $rateRow->rate_buy));
-            $totalCost = $this->mathService->multiply((string) $amount, $cost);
+            $totalCost = $this->mathService->multiply((string) $quantity, $cost);
 
             CurrencyPosition::create([
                 'branch_id' => $branch->id,
                 'currency_code' => $currencyCode,
-                'quantity' => (string) $amount,
+                'quantity' => (string) $quantity,
                 'average_cost' => $cost,
                 'total_cost' => $totalCost,
                 'current_rate' => $cost,

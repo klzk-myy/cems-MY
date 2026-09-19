@@ -77,10 +77,10 @@
                                 {{ number_format((float) $balance->opening_balance, 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) ($balance->buy_total_foreign ?? 0), 2) }}
+                                {{ number_format((float) ($balance->buy_quantity ?? 0), 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
-                                {{ number_format((float) ($balance->sell_total_foreign ?? 0), 2) }}
+                                {{ number_format((float) ($balance->sell_quantity ?? 0), 2) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) ($balance->closing_balance ?? 0), 2) }}

@@ -24,8 +24,8 @@ class RevaluationEntryFactory extends Factory
             'till_id' => $this->faker->numberBetween(1, 100),
             'old_rate' => $this->faker->randomFloat(6, 0.1, 10),
             'new_rate' => $this->faker->randomFloat(6, 0.1, 10),
-            'position_amount' => $this->faker->randomFloat(2, 1000, 100000),
-            'gain_loss_amount' => $this->faker->randomFloat(2, -1000, 1000),
+            'position_quantity' => $this->faker->randomFloat(2, 1000, 100000),
+            'gain_loss_myr' => $this->faker->randomFloat(2, -1000, 1000),
             'revaluation_date' => $this->faker->date(),
             'posted_by' => User::factory(),
         ];

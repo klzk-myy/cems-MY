@@ -66,7 +66,7 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $report->reference() }}</td>
                             <td class="px-4 py-3 text-sm text-ink">{{ $report->customer?->full_name ?? 'N/A' }}</td>
-                            <td class="px-4 py-3 text-sm text-ink">RM {{ number_format((float) $report->trigger_amount, 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-ink">RM {{ number_format((float) $report->trigger_amount_myr, 2) }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge :variant="$report->status->color()">
                                     {{ $report->status->label() }}

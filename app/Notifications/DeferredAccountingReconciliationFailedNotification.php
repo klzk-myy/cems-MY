@@ -65,7 +65,7 @@ class DeferredAccountingReconciliationFailedNotification extends Notification im
             ->line('### Transactions Requiring Manual Intervention:');
 
         foreach ($this->report['cannot_reconcile'] as $item) {
-            $mail->line("- **Transaction #{$item['transaction_id']}**: {$item['currency']} {$item['amount_local']} - Reason: {$item['reason']}");
+            $mail->line("- **Transaction #{$item['transaction_id']}**: {$item['currency']} {$item['amount_myr']} - Reason: {$item['reason']}");
         }
 
         $mail->line('')

@@ -424,7 +424,7 @@ class AccountingWorkflowTest extends TestCase
             'branch_id' => $this->branch->id,
             'is_active' => true,
         ]);
-        $otherBranch = Branch::factory()->create(['petty_cash_float' => 5000]);
+        $otherBranch = Branch::factory()->create(['petty_cash_myr' => 5000]);
 
         // Cross-branch role: the submitted branch is honoured.
         $response = $this->actingAs($accountant)->post('/accounting/expenses', [
@@ -432,7 +432,7 @@ class AccountingWorkflowTest extends TestCase
             'account_code' => '6299',
             'category' => 'Operations',
             'description' => 'Cross-branch expense',
-            'amount' => '250.00',
+            'amount_myr' => '250.00',
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -446,8 +446,8 @@ class AccountingWorkflowTest extends TestCase
     public function branch_scoped_expense_post_ignores_submitted_branch(): void
     {
         // A branch-scoped poster cannot smuggle in another branch_id.
-        $otherBranch = Branch::factory()->create(['petty_cash_float' => 5000]);
-        $this->branch->petty_cash_float = '5000';
+        $otherBranch = Branch::factory()->create(['petty_cash_myr' => 5000]);
+        $this->branch->petty_cash_myr = '5000';
         $this->branch->save();
 
         $response = $this->actingAs($this->manager)->post('/accounting/expenses', [
@@ -455,7 +455,7 @@ class AccountingWorkflowTest extends TestCase
             'account_code' => '6299',
             'category' => 'Operations',
             'description' => 'Own-branch expense',
-            'amount' => '100.00',
+            'amount_myr' => '100.00',
         ]);
 
         $response->assertSessionHasNoErrors();

@@ -55,7 +55,7 @@ class TransactionCheckTest extends TestCase
         $check = new VelocityCheck($compliance);
         $transaction = Transaction::factory()->create([
             'customer_id' => Customer::factory()->create()->id,
-            'amount_local' => '50000.0000',
+            'amount_myr' => '50000.0000',
         ]);
 
         $descriptors = $check->check($transaction);
@@ -79,7 +79,7 @@ class TransactionCheckTest extends TestCase
         $check = new VelocityCheck($compliance);
         $transaction = new Transaction;
         $transaction->customer_id = 1;
-        $transaction->amount_local = '100.0000';
+        $transaction->amount_myr = '100.0000';
 
         $this->assertSame([], $check->check($transaction));
     }
@@ -96,7 +96,7 @@ class TransactionCheckTest extends TestCase
         $transaction = new Transaction;
         $transaction->status = TransactionStatus::Completed;
         $transaction->approved_by = null;
-        $transaction->amount_local = '50000.0000';
+        $transaction->amount_myr = '50000.0000';
         $transaction->setRelation('customer', new Customer);
 
         $descriptors = $check->check($transaction);
@@ -119,7 +119,7 @@ class TransactionCheckTest extends TestCase
         $transaction = new Transaction;
         $transaction->status = TransactionStatus::PendingApproval;
         $transaction->approved_by = null;
-        $transaction->amount_local = '50000.0000';
+        $transaction->amount_myr = '50000.0000';
         $transaction->setRelation('customer', new Customer);
 
         $this->assertSame([], $check->check($transaction));
@@ -137,7 +137,7 @@ class TransactionCheckTest extends TestCase
         $transaction = new Transaction;
         $transaction->status = TransactionStatus::Completed;
         $transaction->approved_by = 5;
-        $transaction->amount_local = '50000.0000';
+        $transaction->amount_myr = '50000.0000';
         $transaction->setRelation('customer', new Customer);
 
         $this->assertSame([], $check->check($transaction));

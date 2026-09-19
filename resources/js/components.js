@@ -115,7 +115,7 @@ export function registerComponents(Alpine) {
     // Pool availability arrives as {"branchId:CCY": amount} so the hint
     // follows whichever branch the selected teller belongs to.
     Alpine.data('allocationCreate', () => ({
-        lines: [{ currency: '', amount: '' }],
+        lines: [{ currency: '', quantity: '' }],
         pool: {},
         tellerBranches: {},
         userId: '',
@@ -127,7 +127,7 @@ export function registerComponents(Alpine) {
             this.branchId = this.$el.dataset.branch || '';
         },
         addLine() {
-            this.lines.push({ currency: '', amount: '' });
+            this.lines.push({ currency: '', quantity: '' });
         },
         removeLine(index) {
             if (this.lines.length > 1) this.lines.splice(index, 1);
@@ -140,9 +140,9 @@ export function registerComponents(Alpine) {
     }));
 
     Alpine.data('budgetRows', () => ({
-        rows: [{ account_code: '', amount: '' }],
+        rows: [{ account_code: '', budget_myr: '' }],
         addRow() {
-            this.rows.push({ account_code: '', amount: '' });
+            this.rows.push({ account_code: '', budget_myr: '' });
         },
         removeRow(index) {
             if (this.rows.length > 1) this.rows.splice(index, 1);
@@ -294,7 +294,7 @@ export function registerComponents(Alpine) {
             customer_id: '',
             type: '',
             currency_code: '',
-            amount_foreign: '',
+            quantity: '',
             rate: '',
             till_id: '',
             purpose: '',
@@ -303,7 +303,7 @@ export function registerComponents(Alpine) {
             occupation: '',
             employer_name: '',
             employer_address: '',
-            annual_volume_estimate: '',
+            annual_volume_myr: '',
             beneficial_owner: '',
             source_of_wealth: '',
             expected_frequency: '',
@@ -353,8 +353,8 @@ export function registerComponents(Alpine) {
         currencyInverse() {
             return !!this.currencyInverses[this.formData.currency_code];
         },
-        get amountLocal() {
-            const f = parseFloat(this.formData.amount_foreign) || 0;
+        get amountMyr() {
+            const f = parseFloat(this.formData.quantity) || 0;
             const r = parseFloat(this.formData.rate) || 0;
             if (r === 0) {
                 return '0.00';
@@ -366,8 +366,8 @@ export function registerComponents(Alpine) {
                 ? (f / r * this.currencyUnit()).toFixed(2)
                 : (f / this.currencyUnit() * r).toFixed(2);
         },
-        get foreignFormatted() {
-            const f = parseFloat(this.formData.amount_foreign);
+        get quantityFormatted() {
+            const f = parseFloat(this.formData.quantity);
             return isNaN(f) ? '—' : (this.formData.currency_code + ' ' + f.toFixed(2));
         },
         get cddLevel() { return (this.wizard.cdd_level || '').toLowerCase(); },
@@ -379,7 +379,7 @@ export function registerComponents(Alpine) {
                 customer_id: parseInt(this.formData.customer_id) || null,
                 type: this.formData.type,
                 currency_code: this.formData.currency_code,
-                amount_foreign: parseFloat(this.formData.amount_foreign),
+                quantity: parseFloat(this.formData.quantity),
                 rate: parseFloat(this.formData.rate),
                 till_id: this.formData.till_id,
                 purpose: this.formData.purpose,
@@ -388,7 +388,7 @@ export function registerComponents(Alpine) {
         },
         validStep1() {
             const p = this.payload();
-            return p.customer_id && p.type && p.currency_code && p.amount_foreign > 0 && p.rate > 0 && p.till_id && p.purpose && p.source_of_funds;
+            return p.customer_id && p.type && p.currency_code && p.quantity > 0 && p.rate > 0 && p.till_id && p.purpose && p.source_of_funds;
         },
         validStep2() {
             if (!this.formData.occupation) return false;
@@ -445,7 +445,7 @@ export function registerComponents(Alpine) {
                 fd.append('customer[occupation]', this.formData.occupation);
                 fd.append('customer[employer_name]', this.formData.employer_name);
                 fd.append('customer[employer_address]', this.formData.employer_address);
-                fd.append('customer[annual_volume_estimate]', this.formData.annual_volume_estimate);
+                fd.append('customer[annual_volume_myr]', this.formData.annual_volume_myr);
                 if (this.requireEnhanced) {
                     fd.append('customer[beneficial_owner]', this.formData.beneficial_owner);
                     fd.append('customer[source_of_wealth]', this.formData.source_of_wealth);
@@ -489,7 +489,7 @@ export function registerComponents(Alpine) {
             this.wizard = { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' };
             this.summary = {};
             this.result = { id: '', number: '', status: '' };
-            this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', amount_foreign: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_estimate: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: this.idempotencyKey };
+            this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', quantity: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_myr: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: this.idempotencyKey };
             this.files = { proof_of_address: null, passport: null };
         },
     }));

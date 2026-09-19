@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 
 interface TellerAllocationServiceInterface
 {
-    public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedAmount, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation;
+    public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedQuantity, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation;
 
     public function approveAllocation(TellerAllocation $allocation, User $approver, string $approvedAmount, ?string $dailyLimitMyr = null): TellerAllocation;
 
@@ -33,7 +33,7 @@ interface TellerAllocationServiceInterface
 
     public function transferToTeller(TellerAllocation $allocation, User $toTeller): TellerAllocation;
 
-    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy, ?string $amountForeign = null): AllocationValidationResult;
+    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy, ?string $quantity = null): AllocationValidationResult;
 
     public function canManageAllocations(User $user): bool;
 

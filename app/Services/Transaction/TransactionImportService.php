@@ -100,7 +100,7 @@ class TransactionImportService
             }
 
             // Validate header
-            $expectedHeader = ['customer_id', 'type', 'currency_code', 'amount_foreign', 'rate', 'purpose', 'source_of_funds', 'till_id'];
+            $expectedHeader = ['customer_id', 'type', 'currency_code', 'quantity', 'rate', 'purpose', 'source_of_funds', 'till_id'];
             $headerLower = array_map(fn ($column): string => strtolower((string) $column), $header);
             if (count(array_diff($expectedHeader, $headerLower)) > 0) {
                 throw new ImportValidationException('Invalid CSV header. Expected columns: '.implode(', ', $expectedHeader));
@@ -167,18 +167,18 @@ class TransactionImportService
 
                 $this->assertMarketRate($data, $counter, $context->importUser->role);
 
-                [$data, $amountLocal] = $this->convertRowAmount($data, $convention);
+                [$data, $amountMyr] = $this->convertRowAmount($data, $convention);
 
-                $this->assertTillLiquidity($counter, $tillBalance, $data, $amountLocal);
+                $this->assertTillLiquidity($counter, $tillBalance, $data, $amountMyr);
                 $this->assertSanctionsClear($customer);
 
                 // Compliance checks
                 $cddLevel = $this->complianceService->determineCDDLevel(
-                    $amountLocal,
+                    $amountMyr,
                     $customer
                 );
 
-                $initialStatus = $this->resolveInitialStatus($amountLocal, $customer);
+                $initialStatus = $this->resolveInitialStatus($amountMyr, $customer);
 
                 // Create transaction using TransactionCreationService to avoid duplicate logic.
                 // The importing user is resolved once in process() and passed in.
@@ -188,7 +188,7 @@ class TransactionImportService
                     tillBalance: $tillBalance,
                     cddLevel: $cddLevel,
                     status: $initialStatus->status,
-                    amountLocal: $amountLocal,
+                    amountMyr: $amountMyr,
                     user: $context->importUser,
                     holdReason: $initialStatus->holdReason,
                 );
@@ -209,10 +209,10 @@ class TransactionImportService
      * Normalize a raw CSV row into the transaction data array, including the
      * idempotency key derived from the normalized columns.
      *
-     * Expected columns: customer_id, type, currency_code, amount_foreign, rate, purpose, source_of_funds, till_id
+     * Expected columns: customer_id, type, currency_code, quantity, rate, purpose, source_of_funds, till_id
      *
      * @param  array<int, string|null>  $row
-     * @return array{customer_id: string, type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, till_id: string, idempotency_key: string}
+     * @return array{customer_id: string, type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, till_id: string, idempotency_key: string}
      */
     private function mapRow(array $row): array
     {
@@ -224,7 +224,7 @@ class TransactionImportService
             'customer_id' => trim($row[0]),
             'type' => trim($row[1]), // Buy or Sell
             'currency_code' => strtoupper(trim($row[2])),
-            'amount_foreign' => trim($row[3]),
+            'quantity' => trim($row[3]),
             'rate' => trim($row[4]),
             'purpose' => trim($row[5]),
             'source_of_funds' => trim($row[6]),
@@ -253,12 +253,12 @@ class TransactionImportService
      * customer and the currency's quote convention.
      *
      * @param  array<string, mixed>  $data
-     * @return array{0: array{type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: Customer, 2: QuoteConvention}
+     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: Customer, 2: QuoteConvention}
      */
     private function validateRowShape(ImportContext $context, array $data): array
     {
         if (empty($data['customer_id']) || empty($data['type']) || empty($data['currency_code']) ||
-            empty($data['amount_foreign']) || empty($data['rate']) || empty($data['purpose']) ||
+            empty($data['quantity']) || empty($data['rate']) || empty($data['purpose']) ||
             empty($data['source_of_funds'])) {
             throw new ImportValidationException('Missing required fields');
         }
@@ -279,24 +279,24 @@ class TransactionImportService
             throw new ImportValidationException("Invalid transaction type: {$data['type']}. Must be '".TransactionType::Buy->value."' or '".TransactionType::Sell->value."'");
         }
 
-        if (! is_numeric($data['amount_foreign']) || BcmathHelper::lte((string) $data['amount_foreign'], '0')) {
-            throw new ImportValidationException("Invalid amount_foreign: {$data['amount_foreign']}");
+        if (! is_numeric($data['quantity']) || BcmathHelper::lte((string) $data['quantity'], '0')) {
+            throw new ImportValidationException("Invalid quantity: {$data['quantity']}");
         }
 
         if (! is_numeric($data['rate']) || BcmathHelper::lte((string) $data['rate'], '0')) {
             throw new ImportValidationException("Invalid rate: {$data['rate']}");
         }
 
-        /** @var numeric-string $amountForeign */
-        $amountForeign = (string) $data['amount_foreign'];
+        /** @var numeric-string $quantity */
+        $quantity = (string) $data['quantity'];
         /** @var numeric-string $rate */
         $rate = (string) $data['rate'];
 
         // Upper bounds so a single malformed row cannot create unbounded entries.
-        /** @var numeric-string $maxAmountForeign */
-        $maxAmountForeign = (string) config('transactions.import.max_amount_foreign');
-        if (BcmathHelper::gt($amountForeign, $maxAmountForeign)) {
-            throw new ImportValidationException("amount_foreign {$amountForeign} exceeds maximum allowed ({$maxAmountForeign})");
+        /** @var numeric-string $maxQuantity */
+        $maxQuantity = (string) config('transactions.import.max_quantity');
+        if (BcmathHelper::gt($quantity, $maxQuantity)) {
+            throw new ImportValidationException("quantity {$quantity} exceeds maximum allowed ({$maxQuantity})");
         }
 
         /** @var numeric-string $maxRate */
@@ -305,7 +305,7 @@ class TransactionImportService
             throw new ImportValidationException("rate {$rate} exceeds maximum allowed ({$maxRate})");
         }
 
-        /** @var array{type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string} $data */
+        /** @var array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string} $data */
         return [$data, $customer, QuoteConvention::for($currency)];
     }
 
@@ -353,15 +353,15 @@ class TransactionImportService
      * CSV rates are unit-quoted per currencies.rate_unit; the stored
      * transaction keeps the normalized per-unit rate.
      *
-     * @param  array{type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
-     * @return array{0: array{type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: string} normalized data (rate rewritten per-unit) and amount_local
+     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
+     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: string} normalized data (rate rewritten per-unit) and amount_myr
      */
     private function convertRowAmount(array $data, QuoteConvention $convention): array
     {
         $exchangeResult = $this->resolveExchangeCalculator()->calculate(
             TransactionType::from((string) $data['type']),
             $data['currency_code'],
-            (string) $data['amount_foreign'],
+            (string) $data['quantity'],
             (string) $data['rate'],
             null,
             $convention
@@ -369,7 +369,7 @@ class TransactionImportService
 
         $data['rate'] = $exchangeResult['rate'];
 
-        return [$data, $exchangeResult['amount_local']];
+        return [$data, $exchangeResult['amount_myr']];
     }
 
     /**
@@ -377,19 +377,19 @@ class TransactionImportService
      *
      * @param  array<string, mixed>  $data
      */
-    private function assertTillLiquidity(Counter $counter, TillBalance $tillBalance, array $data, string $amountLocal): void
+    private function assertTillLiquidity(Counter $counter, TillBalance $tillBalance, array $data, string $amountMyr): void
     {
-        $amountForeign = (string) $data['amount_foreign'];
+        $quantity = (string) $data['quantity'];
 
         if ($data['type'] === TransactionType::Buy->value) {
             // Buy: customer buys foreign currency with MYR - check till has enough MYR
             $tillMyrBalance = $this->tillBalanceManager->currentBalance($counter, Currency::baseCurrency());
-            if (! $tillMyrBalance || $this->mathService->compare((string) $tillMyrBalance->opening_balance, $amountLocal) < 0) {
+            if (! $tillMyrBalance || $this->mathService->compare((string) $tillMyrBalance->opening_balance, $amountMyr) < 0) {
                 throw new ImportValidationException('Insufficient MYR balance in till for buy transaction');
             }
         } else {
             // Sell: customer sells foreign currency for MYR - check till has enough foreign currency
-            if ($this->mathService->compare((string) $tillBalance->opening_balance, $amountForeign) < 0) {
+            if ($this->mathService->compare((string) $tillBalance->opening_balance, $quantity) < 0) {
                 throw new ImportValidationException("Insufficient {$data['currency_code']} balance in till for sell transaction");
             }
         }
@@ -411,15 +411,15 @@ class TransactionImportService
      * High/unknown risk rating, or amount at the auto-approve threshold all
      * land in PendingApproval.
      */
-    private function resolveInitialStatus(string $amountLocal, Customer $customer): InitialStatusResult
+    private function resolveInitialStatus(string $amountMyr, Customer $customer): InitialStatusResult
     {
         $holdCheck = $this->complianceService->requiresHold(
-            $amountLocal,
+            $amountMyr,
             $customer
         );
 
         return $this->statusResolver->resolve(
-            $amountLocal,
+            $amountMyr,
             $holdCheck->requiresHold,
             $customer->risk_rating,
             $holdCheck->reasons

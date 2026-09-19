@@ -38,45 +38,45 @@ class BranchPool extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function hasAvailable(string $amount): bool
+    public function hasAvailable(string $quantity): bool
     {
-        return BcmathHelper::compare($this->available_balance, $amount) >= 0;
+        return BcmathHelper::compare($this->available_balance, $quantity) >= 0;
     }
 
-    public function allocate(string $amount): bool
+    public function allocate(string $quantity): bool
     {
-        if (! $this->hasAvailable($amount)) {
+        if (! $this->hasAvailable($quantity)) {
             return false;
         }
 
-        $this->available_balance = BcmathHelper::subtract($this->available_balance, $amount);
-        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::subtract($this->available_balance, $quantity);
+        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $quantity);
         $this->save();
 
         return true;
     }
 
-    public function deallocate(string $amount): bool
+    public function deallocate(string $quantity): bool
     {
-        if (BcmathHelper::compare($this->allocated_balance, $amount) < 0) {
+        if (BcmathHelper::compare($this->allocated_balance, $quantity) < 0) {
             return false;
         }
 
-        $this->available_balance = BcmathHelper::add($this->available_balance, $amount);
-        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::add($this->available_balance, $quantity);
+        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $quantity);
         $this->save();
 
         return true;
     }
 
-    public function releaseFunds(string $amount): bool
+    public function releaseFunds(string $quantity): bool
     {
-        if (BcmathHelper::compare($this->allocated_balance, $amount) < 0) {
+        if (BcmathHelper::compare($this->allocated_balance, $quantity) < 0) {
             return false;
         }
 
-        $this->available_balance = BcmathHelper::add($this->available_balance, $amount);
-        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $amount);
+        $this->available_balance = BcmathHelper::add($this->available_balance, $quantity);
+        $this->allocated_balance = BcmathHelper::subtract($this->allocated_balance, $quantity);
         $this->save();
 
         return true;
@@ -89,10 +89,10 @@ class BranchPool extends BaseModel
      * on hand. Clamps at zero (pools may carry historical drift) and
      * returns the amount actually consumed.
      */
-    public function consumeAllocated(string $amount): string
+    public function consumeAllocated(string $quantity): string
     {
-        $consumed = BcmathHelper::compare($this->allocated_balance, $amount) >= 0
-            ? $amount
+        $consumed = BcmathHelper::compare($this->allocated_balance, $quantity) >= 0
+            ? $quantity
             : $this->allocated_balance;
 
         if (BcmathHelper::compare($consumed, '0') <= 0) {
@@ -110,9 +110,9 @@ class BranchPool extends BaseModel
      * pool — a buy brings in foreign currency the customer sold to the
      * teller, which was never drawn from available.
      */
-    public function growAllocated(string $amount): void
+    public function growAllocated(string $quantity): void
     {
-        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $amount);
+        $this->allocated_balance = BcmathHelper::add($this->allocated_balance, $quantity);
         $this->save();
     }
 }

@@ -21,7 +21,7 @@ class HandoverCounterRequest extends AuthorizedFormRequest
         if (is_array($counts) && $counts !== [] && ! array_is_list($counts)) {
             $this->merge([
                 'physical_counts' => array_map(
-                    static fn (string|int $code, mixed $amount): array => ['currency_id' => (string) $code, 'amount' => $amount],
+                    static fn (string|int $code, mixed $quantity): array => ['currency_id' => (string) $code, 'quantity' => $quantity],
                     array_keys($counts),
                     $counts,
                 ),
@@ -64,7 +64,7 @@ class HandoverCounterRequest extends AuthorizedFormRequest
             'supervisor_id' => 'required|exists:users,id',
             'physical_counts' => 'required|array',
             'physical_counts.*.currency_id' => 'required|exists:currencies,code',
-            'physical_counts.*.amount' => 'required|numeric|min:0',
+            'physical_counts.*.quantity' => 'required|numeric|min:0',
             'variance_notes' => 'nullable|string',
             'notes' => 'nullable|string|max:500',
         ];

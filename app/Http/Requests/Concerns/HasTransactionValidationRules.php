@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\TransactionType;
-use App\Rules\ValidAmountForeign;
 use App\Rules\ValidCurrencyCode;
+use App\Rules\ValidQuantity;
 use App\Rules\ValidRate;
 use App\Rules\ValidTill;
 
@@ -60,9 +60,9 @@ trait HasTransactionValidationRules
     /**
      * Common foreign amount rule for the web and wizard workflows.
      *
-     * The API exposes a stricter variant via {@see amountForeignRuleStrict()}.
+     * The API exposes a stricter variant via {@see quantityRuleStrict()}.
      */
-    protected function amountForeignRule(): string
+    protected function quantityRule(): string
     {
         return 'required|numeric|min:0.01|max:9999999999.9999';
     }
@@ -122,11 +122,11 @@ trait HasTransactionValidationRules
     /**
      * Strict foreign amount rule used by the API.
      *
-     * @return array<array-key, string|ValidAmountForeign>
+     * @return array<array-key, string|ValidQuantity>
      */
-    protected function amountForeignRuleStrict(): array
+    protected function quantityRuleStrict(): array
     {
-        return ['required', new ValidAmountForeign];
+        return ['required', new ValidQuantity];
     }
 
     /**

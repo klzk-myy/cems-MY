@@ -3,7 +3,7 @@
 namespace Tests\Unit\FormRequests;
 
 use App\Http\Requests\StoreTransactionRequest;
-use App\Rules\ValidAmountForeign;
+use App\Rules\ValidQuantity;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class StoreTransactionRequestTest extends TestCase
         $this->assertArrayHasKey('customer_id', $rules);
         $this->assertArrayHasKey('type', $rules);
         $this->assertArrayHasKey('currency_code', $rules);
-        $this->assertArrayHasKey('amount_foreign', $rules);
+        $this->assertArrayHasKey('quantity', $rules);
         $this->assertArrayHasKey('rate', $rules);
         $this->assertArrayHasKey('purpose', $rules);
         $this->assertArrayHasKey('source_of_funds', $rules);
@@ -48,16 +48,16 @@ class StoreTransactionRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_amount_foreign_with_strict_rule(): void
+    public function it_requires_quantity_with_strict_rule(): void
     {
         $request = new StoreTransactionRequest;
         $rules = $request->rules();
 
-        // Web and API now share the strict rule set: required + ValidAmountForeign.
-        $this->assertContains('required', $rules['amount_foreign']);
+        // Web and API now share the strict rule set: required + ValidQuantity.
+        $this->assertContains('required', $rules['quantity']);
         $this->assertContainsOnlyInstancesOf(
-            ValidAmountForeign::class,
-            array_filter($rules['amount_foreign'], fn ($rule) => is_object($rule))
+            ValidQuantity::class,
+            array_filter($rules['quantity'], fn ($rule) => is_object($rule))
         );
     }
 }

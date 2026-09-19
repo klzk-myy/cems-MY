@@ -233,7 +233,7 @@ class BranchAllocationWorkflowTest extends TestCase
             $this->tellerA,
             $this->tellerB,
             $this->manager,
-            [['currency_id' => 'USD', 'amount' => $approvedAmount]]
+            [['currency_id' => 'USD', 'quantity' => $approvedAmount]]
         );
 
         $this->assertArrayHasKey('handover', $result);
@@ -298,7 +298,7 @@ class BranchAllocationWorkflowTest extends TestCase
         $this->counterService->closeSessionAndReturnToPool(
             $session,
             $this->tellerA,
-            [['currency_id' => 'USD', 'amount' => $approvedAmount]]
+            [['currency_id' => 'USD', 'quantity' => $approvedAmount]]
         );
 
         $allocation = TellerAllocation::where('user_id', $this->tellerA->id)
@@ -346,8 +346,8 @@ class BranchAllocationWorkflowTest extends TestCase
         );
 
         $allocation->refresh();
-        $this->assertEquals('30000.0000', $allocation->current_balance);
-        $this->assertEquals('10000.0000', $allocation->loaded_balance);
+        $this->assertEquals('30000.0000', $allocation->current_quantity);
+        $this->assertEquals('10000.0000', $allocation->loaded_quantity);
 
         // A second teller's custody on the same branch must survive the close.
         /** @var TellerAllocation $allocationB */
@@ -356,20 +356,20 @@ class BranchAllocationWorkflowTest extends TestCase
             'branch_id' => $this->branch->id,
             'currency_code' => 'USD',
             'status' => TellerAllocationStatus::Active,
-            'allocated_amount' => '5000.0000',
-            'current_balance' => '5000.0000',
-            'requested_amount' => '5000.0000',
+            'allocated_quantity' => '5000.0000',
+            'current_quantity' => '5000.0000',
+            'requested_quantity' => '5000.0000',
         ]);
 
         $this->counterService->closeSession(
             $session,
             $this->tellerA,
-            [['currency_id' => 'USD', 'amount' => '50000.0000']]
+            [['currency_id' => 'USD', 'quantity' => '50000.0000']]
         );
 
         $allocation->refresh();
         $this->assertEquals(TellerAllocationStatus::Returned, $allocation->status);
-        $this->assertEquals('0.0000', $allocation->loaded_balance);
+        $this->assertEquals('0.0000', $allocation->loaded_quantity);
 
         // Custody (30,000) + loaded stock (10,000) both released the earmark.
         $this->pool->refresh();
@@ -383,7 +383,7 @@ class BranchAllocationWorkflowTest extends TestCase
     #[Test]
     public function close_session_counts_myr_cash_movement_in_expected_balance(): void
     {
-        // Regression: expected MYR at close is opening + transaction_total
+        // Regression: expected MYR at close is opening + transaction_total_myr
         // (net MYR movement), not the foreign buy/sell formula — an honest
         // count after trading must read zero variance, not forced red.
         $myrPool = BranchPool::factory()->create([
@@ -396,20 +396,20 @@ class BranchAllocationWorkflowTest extends TestCase
         $session = $this->counterService->openSession(
             $this->counter,
             $this->tellerA,
-            [['currency_id' => 'MYR', 'amount' => '10000.0000']]
+            [['currency_id' => 'MYR', 'quantity' => '10000.0000']]
         );
 
         $myrTill = TillBalance::where('till_id', $session->tillCode())
             ->where('currency_code', 'MYR')
             ->firstOrFail();
 
-        // A sell paid RM 2,405 into the drawer (transaction_total tracks net MYR).
-        $myrTill->update(['transaction_total' => '2405.0000']);
+        // A sell paid RM 2,405 into the drawer (transaction_total_myr tracks net MYR).
+        $myrTill->update(['transaction_total_myr' => '2405.0000']);
 
         $session = $this->counterService->closeSession(
             $session,
             $this->tellerA,
-            [['currency_id' => 'MYR', 'amount' => '12405.0000']]
+            [['currency_id' => 'MYR', 'quantity' => '12405.0000']]
         );
 
         $myrTill->refresh();

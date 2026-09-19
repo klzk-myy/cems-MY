@@ -93,7 +93,7 @@ class TellerAllocationWebTest extends TestCase
         $this->actingAs($this->teller)
             ->post(route('my-allocations.request.store'), [
                 'lines' => [
-                    ['currency_code' => 'USD', 'amount' => '5000.0000'],
+                    ['currency_code' => 'USD', 'quantity' => '5000.0000'],
                 ],
                 'counter_id' => $this->counter->id,
             ])
@@ -103,7 +103,7 @@ class TellerAllocationWebTest extends TestCase
 
         $this->assertNotNull($allocation);
         $this->assertEquals(TellerAllocationStatus::Pending, $allocation->status);
-        $this->assertEquals('5000.0000', $allocation->requested_amount);
+        $this->assertEquals('5000.0000', $allocation->requested_quantity);
         $this->assertEquals($this->branch->id, $allocation->branch_id);
     }
 
@@ -114,14 +114,14 @@ class TellerAllocationWebTest extends TestCase
 
         $this->actingAs($this->manager)
             ->post(route('allocations.approve', $allocation->id), [
-                'approved_amount' => '4000.0000',
+                'approved_quantity' => '4000.0000',
                 'daily_limit_myr' => '20000.00',
             ])
             ->assertRedirect();
 
         $allocation->refresh();
         $this->assertEquals(TellerAllocationStatus::Approved, $allocation->status);
-        $this->assertEquals('4000.0000', $allocation->allocated_amount);
+        $this->assertEquals('4000.0000', $allocation->allocated_quantity);
         $this->assertEquals($this->manager->id, $allocation->approved_by);
     }
 
@@ -148,7 +148,7 @@ class TellerAllocationWebTest extends TestCase
 
         $this->actingAs($this->otherBranchManager)
             ->post(route('allocations.approve', $allocation->id), [
-                'approved_amount' => '4000.0000',
+                'approved_quantity' => '4000.0000',
             ])
             ->assertForbidden();
 
@@ -180,8 +180,8 @@ class TellerAllocationWebTest extends TestCase
         $allocation = $this->pendingAllocation();
         $allocation->update([
             'status' => TellerAllocationStatus::Active->value,
-            'allocated_amount' => '5000.0000',
-            'current_balance' => '5000.0000',
+            'allocated_quantity' => '5000.0000',
+            'current_quantity' => '5000.0000',
             'approved_by' => $this->manager->id,
             'approved_at' => now(),
         ]);
@@ -208,9 +208,9 @@ class TellerAllocationWebTest extends TestCase
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
             'currency_code' => 'USD',
-            'requested_amount' => '5000.0000',
-            'allocated_amount' => '5000.0000',
-            'current_balance' => '0',
+            'requested_quantity' => '5000.0000',
+            'allocated_quantity' => '5000.0000',
+            'current_quantity' => '0',
             'daily_used_myr' => '0',
             'status' => TellerAllocationStatus::Approved->value,
             'session_date' => now()->toDateString(),
@@ -238,9 +238,9 @@ class TellerAllocationWebTest extends TestCase
             'branch_id' => $this->branch->id,
             'counter_id' => $this->counter->id,
             'currency_code' => 'USD',
-            'requested_amount' => '5000.0000',
-            'allocated_amount' => '5000.0000',
-            'current_balance' => '0',
+            'requested_quantity' => '5000.0000',
+            'allocated_quantity' => '5000.0000',
+            'current_quantity' => '0',
             'daily_used_myr' => '0',
             'status' => TellerAllocationStatus::Pending->value,
             'session_date' => now()->toDateString(),

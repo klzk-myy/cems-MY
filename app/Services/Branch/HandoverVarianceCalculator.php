@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 final class HandoverVarianceCalculator
 {
     /**
-     * @param  array<int, array{currency_id: mixed, amount: string}>  $physicalCounts
+     * @param  array<int, array{currency_id: mixed, quantity: string}>  $physicalCounts
      * @param  array<mixed, string>  $currencies  input currency_id => currency_code
      * @param  Collection<string, TillBalance>  $openBalances  keyed by currency_code
      * @param  Collection<string, TillBalance>  $closedBalances  keyed by currency_code
@@ -39,14 +39,14 @@ final class HandoverVarianceCalculator
                 continue;
             }
 
-            $closingBalance = $count['amount'];
+            $closingBalance = $count['quantity'];
             $balanceRow = $openBalances->get($currencyCode) ?? $closedBalances->get($currencyCode);
 
             if ($balanceRow) {
-                // Expected = opening + buy_total_foreign - sell_total_foreign
+                // Expected = opening + buy_quantity - sell_quantity
                 $netForeign = BcmathHelper::subtract(
-                    (string) ($balanceRow->buy_total_foreign ?? '0'),
-                    (string) ($balanceRow->sell_total_foreign ?? '0')
+                    (string) ($balanceRow->buy_quantity ?? '0'),
+                    (string) ($balanceRow->sell_quantity ?? '0')
                 );
                 $expected = BcmathHelper::add((string) $balanceRow->opening_balance, $netForeign);
                 $variance = BcmathHelper::subtract((string) $closingBalance, $expected);

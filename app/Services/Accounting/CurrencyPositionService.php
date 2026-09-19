@@ -83,7 +83,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      * For 'Sell' transactions, decreases position (cost basis unchanged).
      *
      * @param  string  $currencyCode  Currency code (e.g., 'USD', 'EUR')
-     * @param  string  $amount  Transaction amount as string
+     * @param  string  $quantity  Transaction amount as string
      * @param  string  $rate  Exchange rate for this transaction
      * @param  string  $type  Transaction type: 'Buy' or 'Sell'
      * @param  string|null  $branchId  Owning branch id; null tracks the company-wide position
@@ -93,13 +93,13 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
      */
     public function updatePosition(
         string $currencyCode,
-        string $amount,
+        string $quantity,
         string $rate,
         string $type,
         ?string $branchId = null,
         ?Transaction $snapshotFor = null,
     ): CurrencyPosition {
-        $position = DB::transaction(function () use ($currencyCode, $amount, $rate, $type, $branchId, $snapshotFor) {
+        $position = DB::transaction(function () use ($currencyCode, $quantity, $rate, $type, $branchId, $snapshotFor) {
             if ($type === TransactionType::Buy->value) {
                 // Buying foreign currency - lock or create the position
                 $position = $this->lockService->lock($branchId, $currencyCode);
@@ -111,14 +111,14 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                     $newAvgCost = $this->mathService->calculateAverageCost(
                         $oldBalance,
                         $oldAvgCost,
-                        $amount,
+                        $quantity,
                         $rate
                     );
                 } else {
                     $newAvgCost = $rate;
                 }
 
-                $position = $this->lockService->adjust($position, $amount, 'add');
+                $position = $this->lockService->adjust($position, $quantity, 'add');
             } else {
                 // Selling foreign currency - only lock an existing position; do not
                 // create a zero-quantity row when no position exists.
@@ -127,15 +127,15 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 if ($position === null || $this->mathService->compare($position->quantity, '0') <= 0) {
                     throw new InsufficientStockException(
                         $currencyCode,
-                        $amount,
+                        $quantity,
                         $position === null ? '0' : (string) $position->quantity
                     );
                 }
 
-                if ($this->mathService->compare($position->quantity, $amount) < 0) {
+                if ($this->mathService->compare($position->quantity, $quantity) < 0) {
                     throw new InsufficientStockException(
                         $currencyCode,
-                        $amount,
+                        $quantity,
                         (string) $position->quantity
                     );
                 }
@@ -144,7 +144,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 $newAvgCost = $oldAvgCost; // Cost basis doesn't change on sale
                 $oldBalance = $position->quantity;
 
-                $position = $this->lockService->adjust($position, $amount, 'subtract');
+                $position = $this->lockService->adjust($position, $quantity, 'subtract');
             }
 
             if ($snapshotFor !== null) {
@@ -190,7 +190,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     /**
      * Reverse the position impact of a transaction (release/cancellation).
      *
-     * Sign convention mirrors updatePosition: a Buy added amount_foreign to
+     * Sign convention mirrors updatePosition: a Buy added quantity to
      * the position, so reversing it subtracts the same amount; a Sell removed
      * it, so reversing it adds it back.
      *
@@ -220,13 +220,13 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             }
 
             $isBuyReversal = $transaction->type === TransactionType::Buy;
-            $amount = (string) $transaction->amount_foreign;
+            $quantity = (string) $transaction->quantity;
 
             $qtyBeforeAdjust = $position->quantity;
             $avgBeforeAdjust = $position->average_cost;
 
             $direction = $isBuyReversal ? 'subtract' : 'add';
-            $position = $this->lockService->adjust($position, $amount, $direction);
+            $position = $this->lockService->adjust($position, $quantity, $direction);
 
             $newBalance = $position->quantity;
             $restoredAvgCost = $avgBeforeAdjust;
@@ -249,7 +249,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 if ($this->mathService->compare($newBalance, '0') > 0) {
                     $numerator = $this->mathService->subtract(
                         $this->mathService->multiply($avgBeforeAdjust, $qtyBeforeAdjust),
-                        $this->mathService->multiply((string) $transaction->rate, $amount)
+                        $this->mathService->multiply((string) $transaction->rate, $quantity)
                     );
                     $candidate = $this->mathService->divide($numerator, $newBalance);
 
@@ -591,7 +591,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 ->where('status', StockReservationStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
-                ->sum('amount_foreign');
+                ->sum('quantity');
 
             $result = $this->mathService->subtract($quantity, (string) $reserved);
 
@@ -611,7 +611,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             throw new \InvalidArgumentException('Invalid currency code for stock reservation');
         }
 
-        if (! $transaction->amount_foreign || $this->mathService->compare((string) $transaction->amount_foreign, '0') <= 0) {
+        if (! $transaction->quantity || $this->mathService->compare((string) $transaction->quantity, '0') <= 0) {
             throw new \InvalidArgumentException('Amount foreign must be positive for stock reservation');
         }
 
@@ -620,7 +620,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
             'currency_code' => $transaction->currency_code,
             'branch_id' => $transaction->branch_id,
             'till_id' => $transaction->till_id,
-            'amount_foreign' => $transaction->amount_foreign,
+            'quantity' => $transaction->quantity,
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => $transaction->user_id,

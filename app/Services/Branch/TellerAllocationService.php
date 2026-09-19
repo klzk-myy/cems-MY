@@ -34,7 +34,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         protected TillService $tillService,
     ) {}
 
-    public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedAmount, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation
+    public function requestAllocation(User $teller, User $approver, string $currencyCode, string $requestedQuantity, ?string $dailyLimitMyr = null, ?Counter $counter = null): TellerAllocation
     {
         $branch = $teller->branch;
 
@@ -44,8 +44,8 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
         $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currencyCode);
 
-        if (! $pool->hasAvailable($requestedAmount)) {
-            throw new InsufficientPoolBalanceException($currencyCode, (string) $pool->available_balance, $requestedAmount);
+        if (! $pool->hasAvailable($requestedQuantity)) {
+            throw new InsufficientPoolBalanceException($currencyCode, (string) $pool->available_balance, $requestedQuantity);
         }
 
         $allocationData = [
@@ -53,9 +53,9 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             'branch_id' => $branch->id,
             'counter_id' => $counter?->id,
             'currency_code' => $currencyCode,
-            'requested_amount' => $requestedAmount,
-            'allocated_amount' => $requestedAmount,
-            'current_balance' => 0,
+            'requested_quantity' => $requestedQuantity,
+            'allocated_quantity' => $requestedQuantity,
+            'current_quantity' => 0,
             'daily_used_myr' => 0,
             'status' => TellerAllocationStatus::Pending->value,
             'session_date' => now()->toDateString(),
@@ -65,7 +65,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             $allocationData['daily_limit_myr'] = $dailyLimitMyr;
         }
 
-        return DB::transaction(function () use ($allocationData, $teller, $approver, $currencyCode, $requestedAmount) {
+        return DB::transaction(function () use ($allocationData, $teller, $approver, $currencyCode, $requestedQuantity) {
             $allocation = TellerAllocation::create($allocationData);
 
             $this->auditService->log(
@@ -78,7 +78,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                     'requested_by' => $teller->id,
                     'approver_id' => $approver->id,
                     'currency_code' => $currencyCode,
-                    'requested_amount' => $requestedAmount,
+                    'requested_quantity' => $requestedQuantity,
                 ]
             );
 
@@ -129,10 +129,10 @@ class TellerAllocationService implements TellerAllocationServiceInterface
     public function moveBetweenTillAndAllocation(
         TellerAllocation $allocation,
         CounterSession $session,
-        string $amount,
+        string $quantity,
         bool $toTill
     ): TellerAllocation {
-        return DB::transaction(function () use ($allocation, $session, $amount, $toTill) {
+        return DB::transaction(function () use ($allocation, $session, $quantity, $toTill) {
             $locked = TellerAllocation::where('id', $allocation->id)
                 ->lockForUpdate()
                 ->first();
@@ -149,9 +149,9 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->first();
 
             if ($toTill) {
-                if ($this->mathService->compare($amount, (string) $locked->current_balance) > 0) {
+                if ($this->mathService->compare($quantity, (string) $locked->current_quantity) > 0) {
                     throw new AllocationValidationException(
-                        "Load of {$amount} exceeds allocation balance of {$locked->current_balance}"
+                        "Load of {$quantity} exceeds allocation balance of {$locked->current_quantity}"
                     );
                 }
 
@@ -166,9 +166,9 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                     );
                 }
 
-                $till->opening_balance = $this->mathService->add((string) $till->opening_balance, $amount);
-                $locked->current_balance = $this->mathService->subtract((string) $locked->current_balance, $amount);
-                $locked->loaded_balance = $this->mathService->add((string) ($locked->loaded_balance ?? '0'), $amount);
+                $till->opening_balance = $this->mathService->add((string) $till->opening_balance, $quantity);
+                $locked->current_quantity = $this->mathService->subtract((string) $locked->current_quantity, $quantity);
+                $locked->loaded_quantity = $this->mathService->add((string) ($locked->loaded_quantity ?? '0'), $quantity);
             } else {
                 if (! $till) {
                     throw new AllocationValidationException(
@@ -178,20 +178,20 @@ class TellerAllocationService implements TellerAllocationServiceInterface
 
                 $expected = $this->tillService->expectedClosingForBalance($till);
 
-                if ($this->mathService->compare($amount, $expected) > 0) {
+                if ($this->mathService->compare($quantity, $expected) > 0) {
                     throw new AllocationValidationException(
-                        "Unload of {$amount} exceeds till balance of {$expected}"
+                        "Unload of {$quantity} exceeds till balance of {$expected}"
                     );
                 }
 
-                $till->opening_balance = $this->mathService->subtract((string) $till->opening_balance, $amount);
-                $locked->current_balance = $this->mathService->add((string) $locked->current_balance, $amount);
+                $till->opening_balance = $this->mathService->subtract((string) $till->opening_balance, $quantity);
+                $locked->current_quantity = $this->mathService->add((string) $locked->current_quantity, $quantity);
                 // Unloading more than was loaded converts plain drawer cash
                 // into custody, so the loaded tracker clamps at zero rather
                 // than going negative.
-                $loaded = (string) ($locked->loaded_balance ?? '0');
-                $locked->loaded_balance = $this->mathService->compare($amount, $loaded) < 0
-                    ? $this->mathService->subtract($loaded, $amount)
+                $loaded = (string) ($locked->loaded_quantity ?? '0');
+                $locked->loaded_quantity = $this->mathService->compare($quantity, $loaded) < 0
+                    ? $this->mathService->subtract($loaded, $quantity)
                     : '0';
             }
 
@@ -214,13 +214,13 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             }
 
             // A decrease may never exceed the remaining allocation: otherwise
-            // allocated_amount would go negative while the pool is only
+            // allocated_quantity would go negative while the pool is only
             // credited min(newAmount, unspent balance). Reject before any
             // math or pool movement happens.
             if (! $isIncrease
-                && $this->mathService->compare($newAmount, $locked->allocated_amount) > 0) {
+                && $this->mathService->compare($newAmount, $locked->allocated_quantity) > 0) {
                 throw new AllocationValidationException(
-                    "Decrease of {$newAmount} exceeds the allocated amount of {$locked->allocated_amount}"
+                    "Decrease of {$newAmount} exceeds the allocated amount of {$locked->allocated_quantity}"
                 );
             }
 
@@ -230,34 +230,34 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 if (! $this->branchPoolService->allocateToTeller($branch, $locked->currency_code, $newAmount)) {
                     throw new PoolAllocationException('Failed to allocate additional amount from branch pool');
                 }
-                $locked->current_balance = $this->mathService->add($locked->current_balance, $newAmount);
-                $locked->allocated_amount = $this->mathService->add($locked->allocated_amount, $newAmount);
+                $locked->current_quantity = $this->mathService->add($locked->current_quantity, $newAmount);
+                $locked->allocated_quantity = $this->mathService->add($locked->allocated_quantity, $newAmount);
             } else {
                 // Only physically unspent float may return to the branch pool.
                 // Amounts already sold were paid out to customers; crediting
-                // them back would mint phantom funds. The allocated_amount
+                // them back would mint phantom funds. The allocated_quantity
                 // reduction below is pure bookkeeping and independent of the
                 // pool return.
-                $unspentBalance = $this->mathService->compare($locked->current_balance, '0') > 0
-                    ? $locked->current_balance
+                $unspentBalance = $this->mathService->compare($locked->current_quantity, '0') > 0
+                    ? $locked->current_quantity
                     : '0';
                 $returnAmount = $this->mathService->compare($newAmount, $unspentBalance) < 0 ? $newAmount : $unspentBalance;
 
                 if ($this->mathService->compare($returnAmount, '0') > 0) {
                     $this->branchPoolService->deallocateFromTeller($branch, $locked->currency_code, $returnAmount);
-                    $locked->current_balance = $this->mathService->subtract($locked->current_balance, $returnAmount);
+                    $locked->current_quantity = $this->mathService->subtract($locked->current_quantity, $returnAmount);
                 }
 
-                $locked->allocated_amount = $this->mathService->subtract($locked->allocated_amount, $newAmount);
+                $locked->allocated_quantity = $this->mathService->subtract($locked->allocated_quantity, $newAmount);
             }
 
-            // NOTE: allocated_amount is per-allocation bookkeeping; the pool's
+            // NOTE: allocated_quantity is per-allocation bookkeeping; the pool's
             // allocated_balance tracks live custody — applyTransactionAllocation
             // consumes the earmark on sells and grows it on buys, so the pool
-            // earmark always equals current_balance + loaded_balance across
+            // earmark always equals current_quantity + loaded_quantity across
             // active allocations plus outstanding approved earmarks. There is
-            // deliberately no assert here: current_balance may exceed
-            // allocated_amount after intraday buys (buy adds float, not allocation).
+            // deliberately no assert here: current_quantity may exceed
+            // allocated_quantity after intraday buys (buy adds float, not allocation).
 
             $locked->save();
 
@@ -299,8 +299,8 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 ->firstOrFail();
 
             if ($locked->status->value === TellerAllocationStatus::Approved->value) {
-                if ($this->mathService->compare((string) $locked->allocated_amount, '0') > 0) {
-                    $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, (string) $locked->allocated_amount);
+                if ($this->mathService->compare((string) $locked->allocated_quantity, '0') > 0) {
+                    $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, (string) $locked->allocated_quantity);
                 }
             } elseif ($locked->status->value !== TellerAllocationStatus::Pending->value) {
                 throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
@@ -328,15 +328,15 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             // cash is ordinary drawer/branch stock again, no longer earmarked
             // to this teller.
             $returnAmount = $this->mathService->add(
-                (string) $locked->current_balance,
-                (string) ($locked->loaded_balance ?? '0')
+                (string) $locked->current_quantity,
+                (string) ($locked->loaded_quantity ?? '0')
             );
 
             if ($this->mathService->compare($returnAmount, '0') > 0) {
                 $this->branchPoolService->deallocateFromTeller($this->allocationBranchOrFail($locked), $locked->currency_code, $returnAmount);
             }
 
-            $locked->loaded_balance = '0';
+            $locked->loaded_quantity = '0';
             $locked->returnToPool();
 
             return $locked;
@@ -356,7 +356,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             ->where('currency_code', $currencyCode)
             ->where('status', TellerAllocationStatus::Active->value)
             ->whereDate('session_date', now()->toDateString())
-            ->orderByDesc('current_balance')
+            ->orderByDesc('current_quantity')
             ->orderByDesc('id')
             ->first();
     }
@@ -416,7 +416,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         });
     }
 
-    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy, ?string $amountForeign = null): AllocationValidationResult
+    public function validateTransaction(User $teller, string $currencyCode, string $amountMyr, bool $isBuy, ?string $quantity = null): AllocationValidationResult
     {
         $allocation = $this->getActiveAllocation($teller, $currencyCode);
 
@@ -437,7 +437,7 @@ class TellerAllocationService implements TellerAllocationServiceInterface
         }
 
         // Selling: the teller hands over foreign currency from their allocated float.
-        $checkAmount = $amountForeign ?? $amountMyr;
+        $checkAmount = $quantity ?? $amountMyr;
 
         if (! $allocation->hasAvailable($checkAmount)) {
             return new AllocationValidationResult(valid: false, reason: "No {$allocation->currency_code} balance available to sell");
@@ -458,18 +458,18 @@ class TellerAllocationService implements TellerAllocationServiceInterface
      * limit; sells attach the teller's active allocation for the currency.
      *
      * @param  array{type: string, currency_code: string}  $data  Validated transaction data.
-     * @param  string  $amountLocal  Local currency amount as a numeric string.
+     * @param  string  $amountMyr  Local currency amount as a numeric string.
      *
      * @throws AllocationValidationException When the active allocation cannot cover the transaction.
      */
-    public function resolveForTransaction(User $user, array $data, string $amountLocal): ?TellerAllocation
+    public function resolveForTransaction(User $user, array $data, string $amountMyr): ?TellerAllocation
     {
         if (! $user->isTeller()) {
             return null;
         }
 
         if ($data['type'] === TransactionType::Buy->value) {
-            $result = $this->validateTransaction($user, $data['currency_code'], $amountLocal, true);
+            $result = $this->validateTransaction($user, $data['currency_code'], $amountMyr, true);
 
             if (! $result->valid) {
                 throw new AllocationValidationException($result->reason);
@@ -509,22 +509,22 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             // brings in stock the customer sold to the teller (earmark grows).
             // Without this the spent/earned amounts drift in allocated_balance.
             if ($transaction->type === TransactionType::Buy) {
-                $lockedAllocation->add((string) $transaction->amount_foreign);
+                $lockedAllocation->add((string) $transaction->quantity);
                 $this->branchPoolService->growTellerEarmark(
                     $this->allocationBranchOrFail($lockedAllocation),
                     $lockedAllocation->currency_code,
-                    (string) $transaction->amount_foreign
+                    (string) $transaction->quantity
                 );
             } else {
-                $lockedAllocation->deduct((string) $transaction->amount_foreign);
+                $lockedAllocation->deduct((string) $transaction->quantity);
                 $this->branchPoolService->consumeTellerEarmark(
                     $this->allocationBranchOrFail($lockedAllocation),
                     $lockedAllocation->currency_code,
-                    (string) $transaction->amount_foreign
+                    (string) $transaction->quantity
                 );
             }
 
-            $lockedAllocation->addDailyUsed((string) $transaction->amount_local);
+            $lockedAllocation->addDailyUsed((string) $transaction->amount_myr);
         });
     }
 
@@ -544,22 +544,22 @@ class TellerAllocationService implements TellerAllocationServiceInterface
             // Mirror applyTransactionAllocation: reversing a buy consumes the
             // earmark the buy created; reversing a sell restores it.
             if ($transaction->type === TransactionType::Buy) {
-                $lockedAllocation->deduct((string) $transaction->amount_foreign);
+                $lockedAllocation->deduct((string) $transaction->quantity);
                 $this->branchPoolService->consumeTellerEarmark(
                     $this->allocationBranchOrFail($lockedAllocation),
                     $lockedAllocation->currency_code,
-                    (string) $transaction->amount_foreign
+                    (string) $transaction->quantity
                 );
             } else {
-                $lockedAllocation->add((string) $transaction->amount_foreign);
+                $lockedAllocation->add((string) $transaction->quantity);
                 $this->branchPoolService->growTellerEarmark(
                     $this->allocationBranchOrFail($lockedAllocation),
                     $lockedAllocation->currency_code,
-                    (string) $transaction->amount_foreign
+                    (string) $transaction->quantity
                 );
             }
 
-            $lockedAllocation->subtractDailyUsed((string) $transaction->amount_local);
+            $lockedAllocation->subtractDailyUsed((string) $transaction->amount_myr);
         });
     }
 

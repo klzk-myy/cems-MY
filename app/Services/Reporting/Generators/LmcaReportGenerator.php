@@ -47,14 +47,14 @@ class LmcaReportGenerator
         foreach ($currencies as $currency) {
             $currencyTxns = $allTxns->get($currency->code, collect());
             $myrVolumes = $transactionQuery->buySellVolumes($currencyTxns);
-            $foreignVolumes = $transactionQuery->buySellVolumes($currencyTxns, 'amount_foreign');
+            $foreignVolumes = $transactionQuery->buySellVolumes($currencyTxns, 'quantity');
 
             $openingPosition = $positions->get($currency->code);
 
             // No historical position snapshots exist, so the opening stock is
             // reconstructed backwards from today's live position. Sign
             // convention mirrors CurrencyPositionService::updatePosition:
-            // a Buy adds amount_foreign to the position, a Sell subtracts it,
+            // a Buy adds quantity to the position, a Sell subtracts it,
             // hence closing = opening + buys - sells.
             $closingStock = $openingPosition ? (string) $openingPosition->quantity : '0';
             $netMovement = $this->mathService->subtract(

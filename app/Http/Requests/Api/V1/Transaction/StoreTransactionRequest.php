@@ -21,7 +21,7 @@ class StoreTransactionRequest extends ApiFormRequest
             'customer_id' => $this->customerIdRule(),
             'type' => $this->transactionTypeRule(),
             'currency_code' => $this->currencyCodeRuleStrict(),
-            'amount_foreign' => $this->amountForeignRuleStrict(),
+            'quantity' => $this->quantityRuleStrict(),
             'rate' => $this->rateRuleStrict(),
             'purpose' => $this->purposeRule(),
             'source_of_funds' => $this->sourceOfFundsRule(),

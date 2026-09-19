@@ -132,16 +132,16 @@ class TransactionBatchController extends Controller
         $template = implode(',', $columns)."\n";
         $typeIdx = array_search('type', $columns);
         $currencyIdx = array_search('currency_code', $columns);
-        $amountIdx = array_search('amount_foreign', $columns);
+        $quantityIdx = array_search('quantity', $columns);
 
         foreach ($sampleCurrencies as $i => $currency) {
             $type = $i % 2 === 0 ? 'Buy' : 'Sell';
-            $amount = $i % 2 === 0 ? 1000 : 500;
+            $quantity = $i % 2 === 0 ? 1000 : 500;
             $row = array_fill(0, count($columns), '');
             $row[0] = '1';
             $row[$typeIdx] = $type;
             $row[$currencyIdx] = $currency;
-            $row[$amountIdx] = $amount;
+            $row[$quantityIdx] = $quantity;
             $row[array_search('purpose', $columns)] = 'Sample';
             $row[array_search('source_of_funds', $columns)] = 'Sample';
             $row[array_search('till_id', $columns)] = 'MAIN';

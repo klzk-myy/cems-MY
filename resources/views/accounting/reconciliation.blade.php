@@ -74,7 +74,7 @@
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
                                 <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? $item['description'] }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount_myr'], 2) }}</td>
                                 <td class="px-4 py-3 text-center">
                                     @if ($canManageAccounting)
                                     <div class="flex items-center justify-center gap-1">
@@ -116,7 +116,7 @@
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
                                 <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? $item['description'] }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount_myr'], 2) }}</td>
                                 <td class="px-4 py-3 text-center">
                                     @if ($canManageAccounting)
                                     <div class="flex items-center justify-center gap-1">

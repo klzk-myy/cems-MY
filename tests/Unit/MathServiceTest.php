@@ -10,8 +10,8 @@ use Tests\TestCase;
 /**
  * MathService scale decision:
  *
- * Database schema uses decimal(18,4) for monetary amounts (amount_local,
- * amount_foreign, balance, unrealized_pnl) and decimal(18,6) for rates
+ * Database schema uses decimal(18,4) for monetary amounts (amount_myr,
+ * quantity, balance, unrealized_pnl) and decimal(18,6) for rates
  * (rate, avg_cost_rate, last_valuation_rate).
  *
  * MathService default scale=4 was chosen to match the DB monetary precision.

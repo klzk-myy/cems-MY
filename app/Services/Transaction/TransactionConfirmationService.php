@@ -36,7 +36,7 @@ class TransactionConfirmationService
     {
         $threshold = $this->thresholdService->getStrThreshold();
 
-        return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
+        return $this->mathService->compare($transaction->amount_myr, $threshold) >= 0;
     }
 
     /**
@@ -112,7 +112,7 @@ class TransactionConfirmationService
                 'entity_id' => $lockedTransaction->id,
                 'new_values' => [
                     'confirmation_id' => $confirmation->id,
-                    'amount_local' => $lockedTransaction->amount_local,
+                    'amount_myr' => $lockedTransaction->amount_myr,
                 ],
             ], 'INFO');
 

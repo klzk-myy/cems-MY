@@ -65,12 +65,12 @@ class CurrencyPositionLockService
         });
     }
 
-    public function adjust(CurrencyPosition $position, string $amount, string $operation): CurrencyPosition
+    public function adjust(CurrencyPosition $position, string $quantity, string $operation): CurrencyPosition
     {
         $currentQuantity = (string) $position->quantity;
         $newQuantity = match ($operation) {
-            'add' => $this->mathService->add($currentQuantity, $amount),
-            'subtract' => $this->mathService->subtract($currentQuantity, $amount),
+            'add' => $this->mathService->add($currentQuantity, $quantity),
+            'subtract' => $this->mathService->subtract($currentQuantity, $quantity),
             default => throw new \InvalidArgumentException("Unknown position operation: {$operation}"),
         };
 

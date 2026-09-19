@@ -44,12 +44,12 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
                 ->whereHas('transactions', function ($query) use ($cutoffTime) {
                     $query->where('created_at', '>=', $cutoffTime)
                         ->where('status', '!=', TransactionStatus::Cancelled->value)
-                        ->where('amount_local', '>=', $this->highValueThreshold);
+                        ->where('amount_myr', '>=', $this->highValueThreshold);
                 })
                 ->with(['transactions' => function ($query) use ($cutoffTime) {
                     $query->where('created_at', '>=', $cutoffTime)
                         ->where('status', '!=', TransactionStatus::Cancelled->value)
-                        ->where('amount_local', '>=', $this->highValueThreshold);
+                        ->where('amount_myr', '>=', $this->highValueThreshold);
                 }])
                 ->get();
 
@@ -84,9 +84,9 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
         // 1. Multiple different currencies in short period (suggesting travel)
         // 2. Very high amounts compared to customer's annual volume estimate
         $currencies = $recentTransactions->pluck('currency_code')->unique();
-        $totalAmount = '0';
+        $totalAmountMyr = '0';
         foreach ($recentTransactions as $txn) {
-            $totalAmount = $this->math->add($totalAmount, (string) $txn->amount_local);
+            $totalAmountMyr = $this->math->add($totalAmountMyr, (string) $txn->amount_myr);
         }
         $transactionCount = $recentTransactions->count();
 
@@ -100,13 +100,13 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
         }
 
         // Check against annual volume estimate if available
-        $annualEstimate = $customer->annual_volume_estimate;
+        $annualEstimate = $customer->annual_volume_myr;
         if ($annualEstimate !== null) {
             $weeklyEstimate = $this->math->divide((string) $annualEstimate, '52');
             $lookbackProportion = $this->math->divide((string) self::LOOKBACK_DAYS, '7');
             $expectedWeekly = $this->math->multiply($weeklyEstimate, $lookbackProportion);
 
-            if ($this->math->compare($totalAmount, $expectedWeekly) > 0) {
+            if ($this->math->compare($totalAmountMyr, $expectedWeekly) > 0) {
                 $anomalyDetected = true;
                 $anomalyReasons[] = 'Transaction volume exceeds proportional annual estimate';
             }
@@ -131,7 +131,7 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
                 'customer_name' => $customer->full_name,
                 'customer_nationality' => $customer->nationality,
                 'transaction_count' => $transactionCount,
-                'total_amount' => (string) $totalAmount,
+                'total_amount_myr' => (string) $totalAmountMyr,
                 'currencies_used' => $currencies->toArray(),
                 'anomaly_reasons' => $anomalyReasons,
                 'recommendation' => 'Verify customer location if unusual travel pattern confirmed',

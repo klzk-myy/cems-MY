@@ -18,7 +18,7 @@ class StockReservationFactory extends Factory
             'transaction_id' => Transaction::factory(),
             'currency_code' => 'USD',
             'till_id' => 'MAIN',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => User::factory(),

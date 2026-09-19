@@ -28,13 +28,13 @@ class InitialStatusResolver
     ) {}
 
     /**
-     * @param  string  $amountLocal  Local currency amount as a numeric string.
+     * @param  string  $amountMyr  Local currency amount as a numeric string.
      * @param  bool  $holdRequired  Whether a compliance hold is required.
      * @param  RiskRating|null  $riskRating  Customer risk rating; null fails closed to approval.
      * @param  array<int, string>  $holdReasons  Upstream hold reasons (e.g. requiresHold details).
      */
     public function resolve(
-        string $amountLocal,
+        string $amountMyr,
         bool $holdRequired,
         ?RiskRating $riskRating,
         array $holdReasons = []
@@ -51,7 +51,7 @@ class InitialStatusResolver
             $reasons[] = 'Customer risk rating is '.$riskRating->value;
         }
 
-        if ($this->mathService->compare($amountLocal, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
+        if ($this->mathService->compare($amountMyr, $this->thresholdService->getAutoApproveThreshold()) >= 0) {
             $reasons[] = 'Transaction amount exceeds auto-approve threshold';
         }
 

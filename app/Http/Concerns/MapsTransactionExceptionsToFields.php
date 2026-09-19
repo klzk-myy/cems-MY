@@ -40,7 +40,7 @@ trait MapsTransactionExceptionsToFields
             $e instanceof TransactionValidationException => $e->field,
             $e instanceof InvalidRateException => 'rate',
             $e instanceof InsufficientStockException,
-            $e instanceof PositionLimitExceededException => 'amount_foreign',
+            $e instanceof PositionLimitExceededException => 'quantity',
             $e instanceof InvalidCurrencyException,
             $e instanceof CurrencyNotFoundException => 'currency_code',
             $e instanceof CustomerBlockedException,

@@ -46,8 +46,8 @@
                                        x-text="'Pool available: ' + availableFor(line.currency)"></p>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <input type="number" :name="'lines[' + index + '][amount]'" step="0.0001" min="0.0001"
-                                           x-model="line.amount" required placeholder="0.0000"
+                                    <input type="number" :name="'lines[' + index + '][quantity]'" step="0.0001" min="0.0001"
+                                           x-model="line.quantity" required placeholder="0.0000"
                                            class="w-full rounded-md border-border bg-surface text-ink text-sm text-right focus:border-primary focus:ring-primary" />
                                 </td>
                                 <td class="px-4 py-3 text-center">

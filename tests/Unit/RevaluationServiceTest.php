@@ -380,7 +380,7 @@ class RevaluationServiceTest extends TestCase
         $this->assertSame('4.40000000', $position->current_rate);
         $this->assertDatabaseHas('revaluation_entries', [
             'currency_code' => 'USD',
-            'gain_loss_amount' => '20',
+            'gain_loss_myr' => '20',
             'revaluation_date' => $testDate.' 00:00:00',
         ]);
     }

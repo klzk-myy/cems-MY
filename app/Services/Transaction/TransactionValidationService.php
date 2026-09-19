@@ -121,9 +121,9 @@ class TransactionValidationService implements TransactionValidationInterface
      * - Historical risk analysis (for returning customers)
      * - Hold status determination
      *
-     * @param  string  $amount  Transaction amount in MYR (as string for precision)
+     * @param  string  $amountMyr  Transaction amount in MYR (as string for precision)
      */
-    public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult
+    public function preValidate(Customer $customer, string $amountMyr, string $currencyCode): PreValidationResult
     {
         $result = new PreValidationResult;
 
@@ -137,7 +137,7 @@ class TransactionValidationService implements TransactionValidationInterface
                 $customer->id,
                 ['new_values' => [
                     'customer_id' => $customer->id,
-                    'amount' => $amount,
+                    'amount_myr' => $amountMyr,
                     'currency_code' => $currencyCode,
                     'block_reason' => 'sanctions',
                     'message' => $sanctionResult->getMessage(),
@@ -151,12 +151,12 @@ class TransactionValidationService implements TransactionValidationInterface
         }
 
         // 2. CDD level determination
-        $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
+        $cddLevel = $this->complianceService->determineCDDLevel($amountMyr, $customer);
         $result->setCDDLevel($cddLevel);
 
         // 3. Historical risk analysis (for returning customers)
         if ($this->isReturningCustomer($customer)) {
-            $riskResult = $this->historicalRiskAnalysisService->analyze($customer, $amount);
+            $riskResult = $this->historicalRiskAnalysisService->analyze($customer, $amountMyr);
             $result->setRiskFlags($riskResult->getFlags());
         }
 
@@ -185,7 +185,7 @@ class TransactionValidationService implements TransactionValidationInterface
             $customer->id,
             ['new_values' => [
                 'customer_id' => $customer->id,
-                'amount' => $amount,
+                'amount_myr' => $amountMyr,
                 'cdd_level' => $cddLevel->value,
                 'hold_required' => $holdRequired,
                 'risk_flags' => $result->getRiskFlags(),

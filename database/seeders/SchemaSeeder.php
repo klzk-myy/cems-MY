@@ -251,7 +251,7 @@ class SchemaSeeder extends Seeder
             $table->string('email')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_main')->default(false);
-            $table->decimal('petty_cash_float', 18, 4)->default(0);
+            $table->decimal('petty_cash_myr', 18, 4)->default(0);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
@@ -494,7 +494,7 @@ class SchemaSeeder extends Seeder
             $table->string('occupation')->nullable();
             $table->string('employer_name')->nullable();
             $table->text('employer_address')->nullable();
-            $table->decimal('annual_volume_estimate', 20, 4)->nullable();
+            $table->decimal('annual_volume_myr', 20, 4)->nullable();
             $table->timestamp('sanctions_screened_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->string('customer_type')->default('individual');
@@ -552,8 +552,8 @@ class SchemaSeeder extends Seeder
             $table->string('till_id')->default('MAIN');
             $table->string('type', 64);
             $table->string('currency_code', 8);
-            $table->decimal('amount_local', 18, 4);
-            $table->decimal('amount_foreign', 18, 4);
+            $table->decimal('amount_myr', 18, 4);
+            $table->decimal('quantity', 18, 4);
             $table->decimal('rate', 18, 8);
             $table->text('purpose')->nullable();
             $table->string('source_of_funds')->nullable();
@@ -601,8 +601,8 @@ class SchemaSeeder extends Seeder
             // The teller allocation validated at creation time — pinned so
             // apply/reverse act on the same allocation that passed validation.
             $table->unsignedBigInteger('teller_allocation_id')->nullable();
-            $table->index(['user_id', 'created_at', 'amount_local'], 'idx_duplicate_check');
-            $table->index('amount_local', 'transactions_amount_local_index');
+            $table->index(['user_id', 'created_at', 'amount_myr'], 'idx_duplicate_check');
+            $table->index('amount_myr', 'transactions_amount_myr_index');
             $table->index('approval_sync_failed', 'transactions_approval_sync_failed_index');
             $table->index('approved_by', 'transactions_approved_by_index');
             $table->index('compliance_cleared_by', 'transactions_compliance_cleared_by_index');
@@ -871,7 +871,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('from_branch_id');
             $table->unsignedBigInteger('to_branch_id');
             $table->string('currency_code', 8);
-            $table->decimal('amount', 20, 4);
+            $table->decimal('amount_myr', 20, 4);
             $table->enum('status', ['pending', 'acknowledged', 'cancelled'])->default('pending');
             $table->unsignedBigInteger('initiated_by');
             $table->timestamp('initiated_at')->nullable();
@@ -906,8 +906,8 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->string('account_code');
             $table->string('period_code');
-            $table->decimal('budget_amount', 15, 2);
-            $table->decimal('actual_amount', 15, 2)->default(0);
+            $table->decimal('budget_myr', 15, 2);
+            $table->decimal('actual_myr', 15, 2)->default(0);
             $table->text('notes')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamp('created_at')->nullable();
@@ -1029,10 +1029,10 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('counter_id')->nullable();
             $table->string('currency_code', 8);
-            $table->decimal('allocated_amount', 20, 4);
-            $table->decimal('current_balance', 20, 4);
-            $table->decimal('loaded_balance', 20, 4)->default(0);
-            $table->decimal('requested_amount', 20, 4);
+            $table->decimal('allocated_quantity', 20, 4);
+            $table->decimal('current_quantity', 20, 4);
+            $table->decimal('loaded_quantity', 20, 4)->default(0);
+            $table->decimal('requested_quantity', 20, 4);
             $table->decimal('daily_limit_myr', 20, 4)->default(0);
             $table->decimal('daily_used_myr', 20, 4)->default(0);
             $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected', 'cancelled'])->default('pending');
@@ -1405,7 +1405,7 @@ class SchemaSeeder extends Seeder
             $table->string('account_code');
             $table->string('category');
             $table->string('description');
-            $table->decimal('amount', 18, 4);
+            $table->decimal('amount_myr', 18, 4);
             $table->date('expense_date');
             $table->unsignedBigInteger('journal_entry_id')->nullable();
             $table->unsignedBigInteger('created_by');
@@ -1670,8 +1670,8 @@ class SchemaSeeder extends Seeder
             $table->string('till_id')->default('MAIN');
             $table->decimal('old_rate', 18, 8);
             $table->decimal('new_rate', 18, 8);
-            $table->decimal('position_amount', 18, 4);
-            $table->decimal('gain_loss_amount', 18, 4);
+            $table->decimal('position_quantity', 18, 4);
+            $table->decimal('gain_loss_myr', 18, 4);
             $table->date('revaluation_date');
             $table->unsignedBigInteger('posted_by');
             $table->timestamp('posted_at')->useCurrent();
@@ -1793,7 +1793,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->string('analysis_type');
             $table->integer('transaction_count')->default(0);
-            $table->decimal('total_amount', 20, 4)->default(0);
+            $table->decimal('total_amount_myr', 20, 4)->default(0);
             $table->timestamp('analyzed_at')->useCurrent();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -1848,7 +1848,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('transaction_id');
             $table->string('currency_code', 8);
             $table->string('till_id');
-            $table->decimal('amount_foreign', 18, 4);
+            $table->decimal('quantity', 18, 4);
             $table->string('status', 64)->default('pending');
             $table->timestamp('expires_at')->nullable();
             $table->unsignedBigInteger('created_by');
@@ -1918,7 +1918,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('case_id')->nullable();
             $table->unsignedBigInteger('customer_id');
-            $table->decimal('trigger_amount', 18, 4)->default(0);
+            $table->decimal('trigger_amount_myr', 18, 4)->default(0);
             $table->text('trigger_reason');
             $table->string('status', 64)->default('draft');
             $table->string('bnm_reference')->nullable();
@@ -2054,12 +2054,12 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('closed_by')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->text('notes')->nullable();
-            $table->decimal('transaction_total', 18, 4)->default(0);
-            $table->decimal('foreign_total', 18, 4)->default(0);
+            $table->decimal('transaction_total_myr', 18, 4)->default(0);
+            $table->decimal('total_quantity', 18, 4)->default(0);
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('teller_allocation_id')->nullable();
-            $table->decimal('buy_total_foreign', 18, 4)->default(0);
-            $table->decimal('sell_total_foreign', 18, 4)->default(0);
+            $table->decimal('buy_quantity', 18, 4)->default(0);
+            $table->decimal('sell_quantity', 18, 4)->default(0);
             $table->index('branch_id', 'till_balances_branch_id_index');
             $table->index('closed_at', 'till_balances_closed_at_index');
             $table->index(['currency_code', 'date'], 'till_balances_currency_date_idx');

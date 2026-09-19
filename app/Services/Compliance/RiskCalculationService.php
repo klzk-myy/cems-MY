@@ -55,7 +55,7 @@ class RiskCalculationService
         $score = $this->amountRiskService->calculateScore($transactions, $customer);
 
         if ($currentAmount !== null) {
-            $avgAmount = (string) ($transactions->avg('amount_local') ?? '0');
+            $avgAmount = (string) ($transactions->avg('amount_myr') ?? '0');
             if ($this->mathService->compare($avgAmount, '0') > 0) {
                 $escalation = $this->mathService->divide($currentAmount, $avgAmount);
                 if ($this->mathService->compare($escalation, '2.0') >= 0) {
@@ -75,7 +75,7 @@ class RiskCalculationService
         $weekTotal = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $window)
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->sum('amount_local');
+            ->sum('amount_myr');
 
         $weekTotalFormatted = sprintf('%0.2f', $weekTotal);
         $currentAmountFormatted = $currentAmount ?? '0';

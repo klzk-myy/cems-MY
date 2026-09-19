@@ -24,14 +24,14 @@ class AnalyticsControllerTest extends TestCase
 
         $completed = Transaction::factory()->completed()->create([
             'type' => TransactionType::Buy->value,
-            'amount_local' => 1500.00,
+            'amount_myr' => 1500.00,
             'created_at' => $date,
         ]);
 
         Transaction::factory()->create([
             'status' => TransactionStatus::Cancelled->value,
             'type' => TransactionType::Buy->value,
-            'amount_local' => 2500.00,
+            'amount_myr' => 2500.00,
             'created_at' => $date,
         ]);
 

@@ -94,7 +94,7 @@ class TransactionApprovedListener implements ShouldQueue
                     'entity_id' => $transaction->id,
                     'new_values' => [
                         'transaction_id' => $transaction->id,
-                        'amount_local' => $transaction->amount_local,
+                        'amount_myr' => $transaction->amount_myr,
                         'currency' => $transaction->currency_code,
                         'status' => $transaction->status->value,
                         'approved_by' => $transaction->approved_by,

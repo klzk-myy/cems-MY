@@ -9,7 +9,7 @@ return [
     ],
 
     'import' => [
-        'max_amount_foreign' => env('TRANSACTION_IMPORT_MAX_AMOUNT_FOREIGN', '1000000'),
+        'max_quantity' => env('TRANSACTION_IMPORT_MAX_QUANTITY', env('TRANSACTION_IMPORT_MAX_AMOUNT_FOREIGN', '1000000')),
         'max_rate' => env('TRANSACTION_IMPORT_MAX_RATE', '1000000'),
     ],
 

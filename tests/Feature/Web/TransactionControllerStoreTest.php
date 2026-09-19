@@ -59,8 +59,8 @@ class TransactionControllerStoreTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => $currencyCode,
-            'allocated_amount' => $allocationBalance,
-            'current_balance' => $allocationBalance,
+            'allocated_quantity' => $allocationBalance,
+            'current_quantity' => $allocationBalance,
             'daily_limit_myr' => '500000.0000',
             'daily_used_myr' => '0.0000',
             'status' => TellerAllocationStatus::Active,
@@ -76,7 +76,7 @@ class TransactionControllerStoreTest extends TestCase
             'customer_id' => $customer->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => $currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -110,8 +110,8 @@ class TransactionControllerStoreTest extends TestCase
             'user_id' => $teller->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => $currency->code,
-            'amount_foreign' => '100.00',
-            'amount_local' => '450.0000',
+            'quantity' => '100.00',
+            'amount_myr' => '450.0000',
             'status' => TransactionStatus::Completed->value,
         ]);
     }
@@ -132,7 +132,7 @@ class TransactionControllerStoreTest extends TestCase
         $this->setMfaVerification($teller);
 
         $payload = $this->basePayload($customer, $counter, $currency);
-        $payload['amount_foreign'] = '2500.00';
+        $payload['quantity'] = '2500.00';
         $payload['rate'] = '4.500000';
 
         $response = $this->post('/transactions', $payload);
@@ -141,8 +141,8 @@ class TransactionControllerStoreTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('transactions', [
             'customer_id' => $customer->id,
-            'amount_foreign' => '2500.00',
-            'amount_local' => '11250.0000',
+            'quantity' => '2500.00',
+            'amount_myr' => '11250.0000',
             'status' => TransactionStatus::PendingApproval->value,
         ]);
     }

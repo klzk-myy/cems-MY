@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $transaction_id
  * @property string $currency_code
  * @property string $till_id
- * @property string $amount_foreign
+ * @property string $quantity
  * @property StockReservationStatus $status
  * @property Carbon|null $expires_at
  * @property int $created_by
@@ -28,14 +28,14 @@ class StockReservation extends BaseModel
         'transaction_id',
         'currency_code',
         'till_id',
-        'amount_foreign',
+        'quantity',
         'status',
         'expires_at',
         'created_by',
     ];
 
     protected $casts = [
-        'amount_foreign' => MoneyCast::class,
+        'quantity' => MoneyCast::class,
         'expires_at' => 'datetime',
         'status' => StockReservationStatus::class,
     ];

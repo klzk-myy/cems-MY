@@ -206,7 +206,7 @@ class TransactionAccountingVerificationTest extends TestCase
                 'branch_id' => $branch->id,
                 'date' => today(),
                 'opening_balance' => '100000.0000',
-                'transaction_total' => '0',
+                'transaction_total_myr' => '0',
                 'opened_by' => $teller->id,
             ]);
 
@@ -216,7 +216,7 @@ class TransactionAccountingVerificationTest extends TestCase
                 'branch_id' => $branch->id,
                 'date' => today(),
                 'opening_balance' => '50000.0000',
-                'foreign_total' => '0',
+                'total_quantity' => '0',
                 'opened_by' => $teller->id,
             ]);
 
@@ -264,7 +264,7 @@ class TransactionAccountingVerificationTest extends TestCase
             for ($i = 0; $i < 20; $i++) {
                 $customer = $customers[$i % count($customers)];
                 $type = ($i % 2 === 0) ? TransactionType::Sell : TransactionType::Buy;
-                $amountForeign = (string) (100 + ($i * 50)); // Vary amounts: 100, 150, 200, ...
+                $quantity = (string) (100 + ($i * 50)); // Vary amounts: 100, 150, 200, ...
                 // Use different rates for buy vs sell to test spread revenue
                 // Sell at higher rate (we profit from spread), buy at lower rate
                 $rate = ($type === TransactionType::Sell) ? '4.5500' : '4.4500';
@@ -281,7 +281,7 @@ class TransactionAccountingVerificationTest extends TestCase
                         'customer_id' => $customer->id,
                         'type' => $type->value,
                         'currency_code' => 'USD',
-                        'amount_foreign' => $amountForeign,
+                        'quantity' => $quantity,
                         'rate' => $rate,
                         'purpose' => 'Test transaction '.$i,
                         'source_of_funds' => 'salary',
@@ -300,7 +300,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
             $this->results['branches'][$branchCode] = [
                 'transactions_created' => count($branchTransactions),
-                'total_amount' => $this->sumTransactionAmounts($branchTransactions),
+                'total_amount_myr' => $this->sumTransactionAmounts($branchTransactions),
             ];
         }
 
@@ -318,11 +318,11 @@ class TransactionAccountingVerificationTest extends TestCase
 
         foreach ($transactions as $txn) {
             if ($txn->type === TransactionType::Sell) {
-                $totalSellMYR = $this->mathService->add($totalSellMYR, (string) $txn->amount_local);
-                $totalSellUSD = $this->mathService->add($totalSellUSD, (string) $txn->amount_foreign);
+                $totalSellMYR = $this->mathService->add($totalSellMYR, (string) $txn->amount_myr);
+                $totalSellUSD = $this->mathService->add($totalSellUSD, (string) $txn->quantity);
             } else {
-                $totalBuyMYR = $this->mathService->add($totalBuyMYR, (string) $txn->amount_local);
-                $totalBuyUSD = $this->mathService->add($totalBuyUSD, (string) $txn->amount_foreign);
+                $totalBuyMYR = $this->mathService->add($totalBuyMYR, (string) $txn->amount_myr);
+                $totalBuyUSD = $this->mathService->add($totalBuyUSD, (string) $txn->quantity);
             }
         }
 
@@ -437,7 +437,7 @@ class TransactionAccountingVerificationTest extends TestCase
                 'entries_count' => $entries->count(),
                 'total_debits' => $totalDebits,
                 'total_credits' => $totalCredits,
-                'current_balance' => $currentBalance,
+                'current_quantity' => $currentBalance,
                 'trial_balance_balance' => $trialBalanceBalance,
                 'account_type' => $account->account_type,
             ];
@@ -467,8 +467,8 @@ class TransactionAccountingVerificationTest extends TestCase
         foreach ($this->results['branches'] as $branchCode => $data) {
             echo "  Branch {$branchCode}:\n";
             echo "    Transactions: {$data['transactions_created']}\n";
-            echo "    Sell: {$data['total_amount']['sell_usd']} USD ({$data['total_amount']['sell_myr']} MYR)\n";
-            echo "    Buy: {$data['total_amount']['buy_usd']} USD ({$data['total_amount']['buy_myr']} MYR)\n";
+            echo "    Sell: {$data['total_amount_myr']['sell_usd']} USD ({$data['total_amount_myr']['sell_myr']} MYR)\n";
+            echo "    Buy: {$data['total_amount_myr']['buy_usd']} USD ({$data['total_amount_myr']['buy_myr']} MYR)\n";
         }
         echo "\n";
 
@@ -492,7 +492,7 @@ class TransactionAccountingVerificationTest extends TestCase
             echo "    Entries: {$data['entries_count']}\n";
             echo "    Total Debits: {$data['total_debits']}\n";
             echo "    Total Credits: {$data['total_credits']}\n";
-            echo "    Balance (from ledger): {$data['current_balance']}\n";
+            echo "    Balance (from ledger): {$data['current_quantity']}\n";
             echo "    Balance (from trial balance): {$data['trial_balance_balance']}\n";
         }
         echo "\n";

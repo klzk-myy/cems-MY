@@ -27,7 +27,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'created_at' => now(),
         ]);
 
@@ -37,7 +37,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_local' => '9999.00',
+            'amount_myr' => '9999.00',
             'created_at' => now(),
         ]);
         Transaction::factory()->create([
@@ -45,7 +45,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_local' => '9999.00',
+            'amount_myr' => '9999.00',
             'created_at' => now(),
         ]);
         Transaction::factory()->create([
@@ -53,7 +53,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_local' => '9999.00',
+            'amount_myr' => '9999.00',
             'created_at' => now(),
         ]);
 
@@ -72,14 +72,14 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Buy->value,
-            'amount_local' => '500.00',
+            'amount_myr' => '500.00',
             'created_at' => now(),
         ]);
         Transaction::factory()->completed()->create([
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_local' => '200.00',
+            'amount_myr' => '200.00',
             'created_at' => now(),
         ]);
 
@@ -99,7 +99,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'created_at' => now(),
         ]);
 
@@ -122,7 +122,7 @@ class TillServiceTest extends TestCase
             'branch_id' => $branch->id,
             'opening_balance' => '10000.00',
             'closing_balance' => '10500.00',
-            'transaction_total' => '500.00',
+            'transaction_total_myr' => '500.00',
             'date' => today()->toDateString(),
             'opened_by' => $opener->id,
         ]);
@@ -133,8 +133,8 @@ class TillServiceTest extends TestCase
             'branch_id' => $branch->id,
             'opening_balance' => '1000.00',
             'closing_balance' => '950.00',
-            'buy_total_foreign' => '100.00',
-            'sell_total_foreign' => '150.00',
+            'buy_quantity' => '100.00',
+            'sell_quantity' => '150.00',
             'date' => today()->toDateString(),
             'opened_by' => $opener->id,
         ]);
@@ -150,14 +150,14 @@ class TillServiceTest extends TestCase
         $this->assertArrayHasKey('total_fcy_variance', $result);
         $this->assertArrayHasKey('is_balanced', $result);
 
-        // MYR: expected = opening + transaction_total = 10000 + 500 = 10500;
+        // MYR: expected = opening + transaction_total_myr = 10000 + 500 = 10500;
         // actual closing 10500 -> zero variance.
         $myrRow = collect($result['currency_reconciliation'])->firstWhere('currency_code', 'MYR');
         $this->assertSame(0, bccomp($myrRow['expected'], '10500', 4));
         $this->assertSame(0, bccomp($myrRow['actual'], '10500', 4));
         $this->assertSame(0, bccomp($myrRow['variance'], '0', 4));
 
-        // USD: expected = opening + buy_total_foreign - sell_total_foreign
+        // USD: expected = opening + buy_quantity - sell_quantity
         // = 1000 + 100 - 150 = 950; actual closing 950 -> zero variance.
         $usdRow = collect($result['currency_reconciliation'])->firstWhere('currency_code', 'USD');
         $this->assertSame(0, bccomp($usdRow['expected'], '950', 4));
@@ -182,7 +182,7 @@ class TillServiceTest extends TestCase
             'branch_id' => $branch->id,
             'opening_balance' => '10000.00',
             'closing_balance' => '10400.00', // 100.00 short of expected 10500
-            'transaction_total' => '500.00',
+            'transaction_total_myr' => '500.00',
             'date' => today()->toDateString(),
             'opened_by' => $opener->id,
         ]);
@@ -207,7 +207,7 @@ class TillServiceTest extends TestCase
             'till_id' => $counter->code,
             'currency_code' => 'USD',
             'type' => TransactionType::Buy->value,
-            'amount_local' => '500.00',
+            'amount_myr' => '500.00',
             'status' => TransactionStatus::Completed->value,
             'created_at' => now()->subDay(),
             'approved_at' => now(),

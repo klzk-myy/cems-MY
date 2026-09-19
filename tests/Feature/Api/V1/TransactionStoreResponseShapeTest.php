@@ -48,8 +48,8 @@ class TransactionStoreResponseShapeTest extends TestCase
             'user_id' => $user->id,
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
-            'allocated_amount' => '10000.00',
-            'current_balance' => '10000.00',
+            'allocated_quantity' => '10000.00',
+            'current_quantity' => '10000.00',
             'daily_used_myr' => '0.00',
             'status' => TellerAllocationStatus::Active,
             'session_date' => today(),
@@ -59,7 +59,7 @@ class TransactionStoreResponseShapeTest extends TestCase
             'customer_id' => $customer->id,
             'type' => 'Buy',
             'currency_code' => $currency->code,
-            'amount_foreign' => 100,
+            'quantity' => 100,
             'rate' => 1.5,
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
@@ -76,7 +76,7 @@ class TransactionStoreResponseShapeTest extends TestCase
         $response->assertJsonStructure([
             'success',
             'message',
-            'data' => ['id', 'customer_id', 'type', 'currency_code', 'amount_foreign'],
+            'data' => ['id', 'customer_id', 'type', 'currency_code', 'quantity'],
         ]);
     }
 }

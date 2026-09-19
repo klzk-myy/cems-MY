@@ -52,8 +52,8 @@ class RegulatoryReportController extends Controller
             ->buySellSummary(
                 Transaction::completed()->forDateRange($date, $date)->select('currency_code'),
                 'currency_code',
-                'amount_foreign',
-                'amount_local'
+                'quantity',
+                'amount_myr'
             );
 
         $summary = $rows->mapWithKeys(function ($row) {

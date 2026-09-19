@@ -27,11 +27,11 @@ class ProfileDeviationCheck implements TransactionCheck
 
     protected function isProfileDeviation(Transaction $transaction): bool
     {
-        if (! $transaction->customer || ! $transaction->customer->annual_volume_estimate) {
+        if (! $transaction->customer || ! $transaction->customer->annual_volume_myr) {
             return false;
         }
 
-        $annualEstimate = (string) $transaction->customer->annual_volume_estimate;
+        $annualEstimate = (string) $transaction->customer->annual_volume_myr;
 
         if ($this->mathService->compare($annualEstimate, '0') <= 0) {
             return false;
@@ -43,7 +43,7 @@ class ProfileDeviationCheck implements TransactionCheck
         $startOfMonth = now()->startOfMonth();
         $currentMonthVolume = Transaction::where('customer_id', $transaction->customer_id)
             ->where('created_at', '>=', $startOfMonth)
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
+            ->selectRaw('CAST(SUM(amount_myr) AS CHAR) as total')
             ->value('total') ?? '0';
 
         return $this->mathService->compare((string) $currentMonthVolume, $monthlyThreshold) > 0;

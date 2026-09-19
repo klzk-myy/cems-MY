@@ -13,7 +13,7 @@ class BudgetFloatTest extends TestCase
 
         $content = file_get_contents($file);
         $this->assertStringContainsString('BcmathHelper::', $content);
-        $this->assertStringNotContainsString('(float) $this->budget_amount', $content);
-        $this->assertStringNotContainsString('(float) $this->actual_amount', $content);
+        $this->assertStringNotContainsString('(float) $this->budget_myr', $content);
+        $this->assertStringNotContainsString('(float) $this->actual_myr', $content);
     }
 }

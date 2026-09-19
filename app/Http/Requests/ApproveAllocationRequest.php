@@ -15,7 +15,7 @@ class ApproveAllocationRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'approved_amount' => ['required', 'numeric', 'min:0.0001'],
+            'approved_quantity' => ['required', 'numeric', 'min:0.0001'],
             'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
 
         ];

@@ -158,7 +158,7 @@ class AmlRuleEvaluator
         }
 
         if ($cumulativeThreshold !== null) {
-            $cumulativeAmount = $query->sum('amount_local');
+            $cumulativeAmount = $query->sum('amount_myr');
             if ($this->mathService->compare((string) $cumulativeAmount, (string) $cumulativeThreshold) >= 0) {
                 return true;
             }
@@ -195,12 +195,12 @@ class AmlRuleEvaluator
         // float, which can flip the comparison near the aggregate threshold.
         $recentSum = '0';
         foreach ($recentTransactions as $recentTransaction) {
-            $recentSum = $this->mathService->add($recentSum, (string) $recentTransaction->amount_local);
+            $recentSum = $this->mathService->add($recentSum, (string) $recentTransaction->amount_myr);
         }
 
-        $totalAmount = $this->mathService->add($recentSum, (string) $transaction->amount_local);
+        $totalAmountMyr = $this->mathService->add($recentSum, (string) $transaction->amount_myr);
 
-        return $this->mathService->compare($totalAmount, (string) $aggregateThreshold) >= 0;
+        return $this->mathService->compare($totalAmountMyr, (string) $aggregateThreshold) >= 0;
     }
 
     /**
@@ -217,7 +217,7 @@ class AmlRuleEvaluator
             return false;
         }
 
-        return $this->mathService->compare((string) $transaction->amount_local, (string) $minAmount) >= 0;
+        return $this->mathService->compare((string) $transaction->amount_myr, (string) $minAmount) >= 0;
     }
 
     /**

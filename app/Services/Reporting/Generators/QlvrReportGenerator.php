@@ -50,7 +50,7 @@ class QlvrReportGenerator
             ['Quarter', $data['quarter']],
             ['Period', $data['period_start'].' to '.$data['period_end']],
             ['Total Transactions', $data['total_transactions']],
-            ['Total Amount (MYR)', number_format($data['total_amount'], 2)],
+            ['Total Amount (MYR)', number_format($data['total_amount_myr'], 2)],
         ];
 
         $headers = ['Transaction_ID', 'Date', 'Customer_Name', 'Amount_Local', 'Currency', 'Transaction_Type'];
@@ -79,17 +79,17 @@ class QlvrReportGenerator
         $base = fn () => $this->transactionReportQuery
             ->completed()
             ->forDateRange($startDate->toDateString(), $endDate->toDateString())
-            ->where('amount_local', '>=', $this->thresholdService->getLargeTransactionThreshold());
+            ->where('amount_myr', '>=', $this->thresholdService->getLargeTransactionThreshold());
 
         $monthlyAggregates = $base()
-            ->selectRaw("{$monthExpr} as month, COUNT(*) as count, SUM(amount_local) as total")
+            ->selectRaw("{$monthExpr} as month, COUNT(*) as count, SUM(amount_myr) as total")
             ->groupBy('month')
             ->get()
             ->keyBy('month');
 
         $monthlyBreakdown = [];
         $totalTransactions = 0;
-        $totalAmount = '0';
+        $totalAmountMyr = '0';
 
         for ($m = 0; $m < 3; $m++) {
             $monthDate = $startDate->copy()->addMonths($m);
@@ -101,23 +101,23 @@ class QlvrReportGenerator
             $total = (string) ($aggregate?->getAttribute('total') ?? '0');
 
             $totalTransactions += $count;
-            $totalAmount = $this->mathService->add($totalAmount, $total);
+            $totalAmountMyr = $this->mathService->add($totalAmountMyr, $total);
 
             $monthlyBreakdown[] = [
                 'month' => $key,
                 'count' => $count,
-                'total_amount' => $total,
+                'total_amount_myr' => $total,
             ];
         }
 
         $byCurrency = $base()
-            ->selectRaw('currency_code, COUNT(*) as count, SUM(amount_local) as total')
+            ->selectRaw('currency_code, COUNT(*) as count, SUM(amount_myr) as total')
             ->groupBy('currency_code')
             ->get()
             ->map(fn ($row) => [
                 'currency' => $row->currency_code,
                 'count' => (int) $row->getAttribute('count'),
-                'total_amount' => (string) $row->getAttribute('total'),
+                'total_amount_myr' => (string) $row->getAttribute('total'),
             ])
             ->values();
 
@@ -127,7 +127,7 @@ class QlvrReportGenerator
             'period_end' => $endDate->toDateString(),
             'generated_at' => now()->toIso8601String(),
             'total_transactions' => $totalTransactions,
-            'total_amount' => $totalAmount,
+            'total_amount_myr' => $totalAmountMyr,
             'monthly_breakdown' => $monthlyBreakdown,
             'by_currency' => $byCurrency,
         ];
@@ -153,8 +153,8 @@ class QlvrReportGenerator
             ->completed()
             ->forDateRange($startDate->toDateString(), $endDate->toDateString())
             ->with('customer:id,full_name')
-            ->select(['id', 'created_at', 'customer_id', 'amount_local', 'currency_code', 'type'])
-            ->where('amount_local', '>=', $this->thresholdService->getLargeTransactionThreshold())
+            ->select(['id', 'created_at', 'customer_id', 'amount_myr', 'currency_code', 'type'])
+            ->where('amount_myr', '>=', $this->thresholdService->getLargeTransactionThreshold())
             ->lazyById()
             ->map(
                 /** @return array<string, mixed> */
@@ -162,7 +162,7 @@ class QlvrReportGenerator
                     'Transaction_ID' => 'TXN-'.str_pad((string) $txn->id, 8, '0', STR_PAD_LEFT),
                     'Date' => $txn->created_at->format('Y-m-d'),
                     'Customer_Name' => $this->maskName($txn->customer->full_name),
-                    'Amount_Local' => $txn->amount_local,
+                    'Amount_Local' => $txn->amount_myr,
                     'Currency' => $txn->currency_code,
                     'Transaction_Type' => $txn->type,
                 ]

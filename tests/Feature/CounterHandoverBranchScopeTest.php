@@ -59,7 +59,7 @@ class CounterHandoverBranchScopeTest extends TestCase
                 'to_user_id' => $toUser->id,
                 'supervisor_id' => $supervisor->id,
                 'physical_counts' => [
-                    ['currency_id' => $currency->code, 'amount' => '100'],
+                    ['currency_id' => $currency->code, 'quantity' => '100'],
                 ],
             ])
             ->assertSessionHas('error');

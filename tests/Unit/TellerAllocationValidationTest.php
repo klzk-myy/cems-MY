@@ -35,8 +35,8 @@ class TellerAllocationValidationTest extends TestCase
         return TellerAllocation::factory()->active()->create(array_merge([
             'user_id' => $teller->id,
             'currency_code' => 'USD',
-            'current_balance' => '1000.0000',
-            'allocated_amount' => '1000.0000',
+            'current_quantity' => '1000.0000',
+            'allocated_quantity' => '1000.0000',
             'daily_limit_myr' => '50000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -72,7 +72,7 @@ class TellerAllocationValidationTest extends TestCase
     public function sell_is_checked_against_foreign_float(): void
     {
         $teller = User::factory()->create();
-        $this->createActiveAllocation($teller, ['current_balance' => '1000.0000']);
+        $this->createActiveAllocation($teller, ['current_quantity' => '1000.0000']);
 
         // Selling USD 2,000 - exceeds the USD 1,000 foreign float
         $result = $this->service->validateTransaction($teller, 'USD', '8400.0000', false, '2000.0000');

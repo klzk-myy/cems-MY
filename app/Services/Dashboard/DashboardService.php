@@ -22,11 +22,11 @@ class DashboardService
             'buy_volume' => Transaction::completed()->today()
                 ->buy()
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                ->sum('amount_local'),
+                ->sum('amount_myr'),
             'sell_volume' => Transaction::completed()->today()
                 ->sell()
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-                ->sum('amount_local'),
+                ->sum('amount_myr'),
             'flagged' => $user && $user->role->canAccessCompliance()
                 ? FlaggedTransaction::where('status', FlagStatus::Open->value)->count()
                 : 0,

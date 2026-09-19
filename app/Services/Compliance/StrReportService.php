@@ -54,18 +54,18 @@ class StrReportService
             );
         }
 
-        $triggerAmount = $this->computeTriggerAmount($case);
+        $triggerAmountMyr = $this->computeTriggerAmountMyr($case);
 
-        if (! $this->meetsThreshold($triggerAmount)) {
+        if (! $this->meetsThreshold($triggerAmountMyr)) {
             throw new CaseManagementException(
-                'Case '.$case->case_number.' aggregate MYR '.$triggerAmount.' is below the '.self::THRESHOLD.' threshold'
+                'Case '.$case->case_number.' aggregate MYR '.$triggerAmountMyr.' is below the '.self::THRESHOLD.' threshold'
             );
         }
 
         $report = StrReport::create([
             'case_id' => $case->id,
             'customer_id' => $case->customer_id,
-            'trigger_amount' => $triggerAmount,
+            'trigger_amount_myr' => $triggerAmountMyr,
             'trigger_reason' => $this->buildTriggerReason($case),
             'status' => StrReportStatus::Draft,
             'created_by' => $by->id,
@@ -76,7 +76,7 @@ class StrReportService
             'new_values' => [
                 'case_id' => $case->id,
                 'customer_id' => $report->customer_id,
-                'trigger_amount' => $triggerAmount,
+                'trigger_amount_myr' => $triggerAmountMyr,
                 'status' => StrReportStatus::Draft->value,
             ],
         ]);
@@ -167,7 +167,7 @@ class StrReportService
      * primary flag plus each alert-linked flag. Missing or zero-amount links
      * contribute nothing rather than aborting the aggregation.
      */
-    public function computeTriggerAmount(ComplianceCase $case): string
+    public function computeTriggerAmountMyr(ComplianceCase $case): string
     {
         $flagIds = Alert::where('case_id', $case->id)
             ->pluck('flagged_transaction_id')
@@ -185,14 +185,14 @@ class StrReportService
             return $total;
         }
 
-        FlaggedTransaction::with('transaction:id,amount_local')
+        FlaggedTransaction::with('transaction:id,amount_myr')
             ->whereIn('id', $flagIds)
             ->get()
             ->each(function (FlaggedTransaction $flag) use (&$total): void {
-                $amount = $flag->transaction?->amount_local;
+                $amountMyr = $flag->transaction?->amount_myr;
 
-                if ($amount !== null && is_numeric($amount) && bccomp($amount, '0', 4) > 0) {
-                    $total = bcadd($total, $amount, 4);
+                if ($amountMyr !== null && is_numeric($amountMyr) && bccomp($amountMyr, '0', 4) > 0) {
+                    $total = bcadd($total, $amountMyr, 4);
                 }
             });
 
@@ -202,13 +202,13 @@ class StrReportService
     /**
      * Whether an aggregate MYR amount meets the pd-00 section 22 threshold.
      */
-    public function meetsThreshold(string $amount): bool
+    public function meetsThreshold(string $amountMyr): bool
     {
-        if (! is_numeric($amount)) {
+        if (! is_numeric($amountMyr)) {
             throw new \InvalidArgumentException('STR aggregate amount must be numeric.');
         }
 
-        return bccomp($amount, self::THRESHOLD, 4) >= 0;
+        return bccomp($amountMyr, self::THRESHOLD, 4) >= 0;
     }
 
     /**
@@ -240,7 +240,7 @@ class StrReportService
                 return null;
             }
 
-            if (! $this->meetsThreshold($this->computeTriggerAmount($case))) {
+            if (! $this->meetsThreshold($this->computeTriggerAmountMyr($case))) {
                 return null;
             }
 

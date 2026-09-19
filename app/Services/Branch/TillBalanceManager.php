@@ -178,10 +178,10 @@ class TillBalanceManager
         $allowedFields = [
             'opening_balance',
             'closing_balance',
-            'foreign_total',
-            'transaction_total',
-            'buy_total_foreign',
-            'sell_total_foreign',
+            'total_quantity',
+            'transaction_total_myr',
+            'buy_quantity',
+            'sell_quantity',
         ];
 
         if (! in_array($field, $allowedFields, true)) {
@@ -228,14 +228,14 @@ class TillBalanceManager
     public function applyTransaction(
         TillBalance $tillBalance,
         TransactionType $type,
-        string $amountLocal,
-        string $amountForeign,
+        string $amountMyr,
+        string $quantity,
         bool $lock = true
     ): void {
         // All adjustments happen exactly once, inside a single DB transaction.
         // Rows are read with lockForUpdate() inside that transaction so the row
         // locks are held until commit and concurrent bookings serialize.
-        DB::transaction(function () use ($tillBalance, $type, $amountLocal, $amountForeign, $lock) {
+        DB::transaction(function () use ($tillBalance, $type, $amountMyr, $quantity, $lock) {
             $counter = $this->resolveCounter($tillBalance->till_id);
 
             if (! $counter) {
@@ -253,30 +253,30 @@ class TillBalanceManager
             }
 
             if ($type === TransactionType::Buy) {
-                $this->adjustBalance($foreignBalance, 'buy_total_foreign', $amountForeign, 'add', false);
-                $this->adjustBalance($foreignBalance, 'foreign_total', $amountForeign, 'add', false);
+                $this->adjustBalance($foreignBalance, 'buy_quantity', $quantity, 'add', false);
+                $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'add', false);
             } else {
-                $this->adjustBalance($foreignBalance, 'sell_total_foreign', $amountForeign, 'add', false);
-                $this->adjustBalance($foreignBalance, 'foreign_total', $amountForeign, 'subtract', false);
+                $this->adjustBalance($foreignBalance, 'sell_quantity', $quantity, 'add', false);
+                $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'subtract', false);
             }
 
             $myrOperation = $type === TransactionType::Buy ? 'subtract' : 'add';
 
-            $this->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
+            $this->adjustBalance($myrBalance, 'transaction_total_myr', $amountMyr, $myrOperation, false);
         });
     }
 
     public function reverseTransaction(
         TillBalance $tillBalance,
         TransactionType $type,
-        string $amountLocal,
-        string $amountForeign,
+        string $amountMyr,
+        string $quantity,
         bool $lock = true
     ): void {
         // A single transaction holds the locked reads and applies exactly one
         // set of adjustments covering both the FX and MYR legs. Missing counter
         // or till balances throw so callers know the books were not corrected.
-        DB::transaction(function () use ($tillBalance, $type, $amountLocal, $amountForeign, $lock) {
+        DB::transaction(function () use ($tillBalance, $type, $amountMyr, $quantity, $lock) {
             $counter = $this->resolveCounter($tillBalance->till_id);
 
             if (! $counter) {
@@ -309,16 +309,16 @@ class TillBalanceManager
             }
 
             if ($type === TransactionType::Buy) {
-                $this->adjustBalance($foreignBalance, 'foreign_total', $amountForeign, 'subtract', false);
-                $this->adjustBalance($foreignBalance, 'buy_total_foreign', $amountForeign, 'subtract', false);
+                $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'subtract', false);
+                $this->adjustBalance($foreignBalance, 'buy_quantity', $quantity, 'subtract', false);
             } else {
-                $this->adjustBalance($foreignBalance, 'foreign_total', $amountForeign, 'add', false);
-                $this->adjustBalance($foreignBalance, 'sell_total_foreign', $amountForeign, 'subtract', false);
+                $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'add', false);
+                $this->adjustBalance($foreignBalance, 'sell_quantity', $quantity, 'subtract', false);
             }
 
             $myrOperation = $type === TransactionType::Buy ? 'add' : 'subtract';
 
-            $this->adjustBalance($myrBalance, 'transaction_total', $amountLocal, $myrOperation, false);
+            $this->adjustBalance($myrBalance, 'transaction_total_myr', $amountMyr, $myrOperation, false);
         });
     }
 }

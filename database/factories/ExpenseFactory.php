@@ -27,7 +27,7 @@ class ExpenseFactory extends Factory
             'account_code' => AccountCode::OPERATING_EXPENSES->value,
             'category' => 'operating',
             'description' => $this->faker->sentence(),
-            'amount' => $this->faker->randomFloat(2, 10, 500),
+            'amount_myr' => $this->faker->randomFloat(2, 10, 500),
             'expense_date' => $this->faker->date(),
             'journal_entry_id' => null,
             'created_by' => User::factory(),

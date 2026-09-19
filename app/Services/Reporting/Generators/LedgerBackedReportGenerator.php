@@ -66,12 +66,12 @@ class LedgerBackedReportGenerator
 
         $rows = [];
         foreach ($pnl['revenues'] as $revenue) {
-            $rows[] = ['Revenue', $revenue['account_code'], $revenue['account_name'], $revenue['amount']];
+            $rows[] = ['Revenue', $revenue['account_code'], $revenue['account_name'], $revenue['amount_myr']];
         }
         $rows[] = ['Total Revenue', '', '', $pnl['total_revenue']];
 
         foreach ($pnl['expenses'] as $expense) {
-            $rows[] = ['Expense', $expense['account_code'], $expense['account_name'], $expense['amount']];
+            $rows[] = ['Expense', $expense['account_code'], $expense['account_name'], $expense['amount_myr']];
         }
         $rows[] = ['Total Expenses', '', '', $pnl['total_expenses']];
         $rows[] = ['Net Profit', '', '', $pnl['net_profit']];

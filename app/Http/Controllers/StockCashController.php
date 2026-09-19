@@ -297,16 +297,16 @@ class StockCashController extends Controller
             'opening_balance' => $tillBalance->opening_balance,
             'total_buy_count' => $buyTransactions->count(),
             'total_buy_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Buy),
-            // Foreign-currency totals: calculateTransactionSum() sums amount_local
+            // Foreign-currency totals: calculateTransactionSum() sums amount_myr
             // (MYR), so these are computed separately for the FCY summary rows.
             'total_buy_foreign' => $buyTransactions->reduce(
-                fn (string $carry, Transaction $transaction) => $this->mathService->add($carry, (string) $transaction->amount_foreign),
+                fn (string $carry, Transaction $transaction) => $this->mathService->add($carry, (string) $transaction->quantity),
                 '0'
             ),
             'total_sell_count' => $sellTransactions->count(),
             'total_sell_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Sell),
             'total_sell_foreign' => $sellTransactions->reduce(
-                fn (string $carry, Transaction $transaction) => $this->mathService->add($carry, (string) $transaction->amount_foreign),
+                fn (string $carry, Transaction $transaction) => $this->mathService->add($carry, (string) $transaction->quantity),
                 '0'
             ),
             'total_transactions' => $transactions->count(),

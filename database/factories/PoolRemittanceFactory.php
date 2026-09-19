@@ -25,7 +25,7 @@ class PoolRemittanceFactory extends Factory
             'from_branch_id' => null,
             'to_branch_id' => null,
             'currency_code' => 'MYR',
-            'amount' => '100.0000',
+            'amount_myr' => '100.0000',
             'status' => PoolRemittanceStatus::Pending,
             'initiated_by' => null,
             'initiated_at' => now(),

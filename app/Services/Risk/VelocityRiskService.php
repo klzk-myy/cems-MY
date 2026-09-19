@@ -33,7 +33,7 @@ class VelocityRiskService
         $dailyAmounts = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subHours($windowHours))
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->selectRaw('DATE(created_at) as day, CAST(SUM(amount_local) AS CHAR) as total')
+            ->selectRaw('DATE(created_at) as day, CAST(SUM(amount_myr) AS CHAR) as total')
             ->groupBy(DB::raw('DATE(created_at)'))
             ->pluck('total', 'day');
 
@@ -41,12 +41,12 @@ class VelocityRiskService
             return 0;
         }
 
-        foreach ($dailyAmounts as $date => $amount) {
-            if ($this->mathService->compare((string) $amount, $this->thresholdService->getRiskHighThreshold()) >= 0) {
+        foreach ($dailyAmounts as $date => $amountMyr) {
+            if ($this->mathService->compare((string) $amountMyr, $this->thresholdService->getRiskHighThreshold()) >= 0) {
                 $score += 30;
-            } elseif ($this->mathService->compare((string) $amount, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
+            } elseif ($this->mathService->compare((string) $amountMyr, $this->thresholdService->getRiskMediumThreshold()) >= 0) {
                 $score += 20;
-            } elseif ($this->mathService->compare((string) $amount, $this->thresholdService->getRiskLowThreshold()) >= 0) {
+            } elseif ($this->mathService->compare((string) $amountMyr, $this->thresholdService->getRiskLowThreshold()) >= 0) {
                 $score += 10;
             }
         }
@@ -87,7 +87,7 @@ class VelocityRiskService
         $velocity = Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', $startTime)
             ->whereIn('status', [TransactionStatus::Completed, TransactionStatus::Finalized])
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
+            ->selectRaw('CAST(SUM(amount_myr) AS CHAR) as total')
             ->value('total') ?? '0';
 
         $total = $this->mathService->add((string) $velocity, $newAmount);
@@ -108,7 +108,7 @@ class VelocityRiskService
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subHours($this->thresholdService->getVelocityAmountWindowHours()))
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) as total')
+            ->selectRaw('CAST(SUM(amount_myr) AS CHAR) as total')
             ->value('total') ?? '0';
     }
 

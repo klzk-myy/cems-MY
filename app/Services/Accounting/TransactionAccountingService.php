@@ -127,14 +127,14 @@ class TransactionAccountingService
             return [
                 [
                     'account_code' => $inventoryAccount,
-                    'debit' => (string) $transaction->amount_local,
+                    'debit' => (string) $transaction->amount_myr,
                     'credit' => '0',
-                    'description' => "Buy {$transaction->amount_foreign} {$transaction->currency_code} @ {$transaction->rate}",
+                    'description' => "Buy {$transaction->quantity} {$transaction->currency_code} @ {$transaction->rate}",
                 ],
                 [
                     'account_code' => $cashAccount,
                     'debit' => '0',
-                    'credit' => (string) $transaction->amount_local,
+                    'credit' => (string) $transaction->amount_myr,
                     'description' => "Payment for {$transaction->currency_code} purchase",
                 ],
             ];
@@ -155,16 +155,16 @@ class TransactionAccountingService
             throw new AccountingPeriodException('Cannot calculate cost basis: no position or rate available for transaction');
         }
 
-        $costBasis = $this->mathService->multiply((string) $transaction->amount_foreign, $avgCost);
-        $revenue = $this->mathService->subtract((string) $transaction->amount_local, $costBasis);
+        $costBasis = $this->mathService->multiply((string) $transaction->quantity, $avgCost);
+        $revenue = $this->mathService->subtract((string) $transaction->amount_myr, $costBasis);
         $isGain = $this->mathService->compare($revenue, '0') >= 0;
 
         $entries = [
             [
                 'account_code' => $cashAccount,
-                'debit' => (string) $transaction->amount_local,
+                'debit' => (string) $transaction->amount_myr,
                 'credit' => '0',
-                'description' => "Sale of {$transaction->amount_foreign} {$transaction->currency_code}",
+                'description' => "Sale of {$transaction->quantity} {$transaction->currency_code}",
             ],
             [
                 'account_code' => $inventoryAccount,

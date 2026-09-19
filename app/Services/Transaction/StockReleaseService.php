@@ -65,8 +65,8 @@ class StockReleaseService
         $this->tillBalanceManager->reverseTransaction(
             $tillBalance,
             $transaction->type,
-            (string) $transaction->amount_local,
-            (string) $transaction->amount_foreign
+            (string) $transaction->amount_myr,
+            (string) $transaction->quantity
         );
 
         Log::info('Till balance released for cancelled transaction', [

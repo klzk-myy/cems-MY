@@ -17,10 +17,10 @@ use Illuminate\Support\Carbon;
  * @property int $branch_id
  * @property int|null $counter_id
  * @property string $currency_code
- * @property string $allocated_amount
- * @property string $current_balance
- * @property string $loaded_balance
- * @property string $requested_amount
+ * @property string $allocated_quantity
+ * @property string $current_quantity
+ * @property string $loaded_quantity
+ * @property string $requested_quantity
  * @property string $daily_limit_myr
  * @property string $daily_used_myr
  * @property TellerAllocationStatus $status 'pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected'
@@ -53,10 +53,10 @@ class TellerAllocation extends BaseModel
         'branch_id',
         'counter_id',
         'currency_code',
-        'allocated_amount',
-        'current_balance',
-        'loaded_balance',
-        'requested_amount',
+        'allocated_quantity',
+        'current_quantity',
+        'loaded_quantity',
+        'requested_quantity',
         'daily_limit_myr',
         'daily_used_myr',
         'status',
@@ -71,10 +71,10 @@ class TellerAllocation extends BaseModel
     ];
 
     protected $casts = [
-        'allocated_amount' => MoneyCast::class,
-        'current_balance' => MoneyCast::class,
-        'loaded_balance' => MoneyCast::class,
-        'requested_amount' => MoneyCast::class,
+        'allocated_quantity' => MoneyCast::class,
+        'current_quantity' => MoneyCast::class,
+        'loaded_quantity' => MoneyCast::class,
+        'requested_quantity' => MoneyCast::class,
         'daily_limit_myr' => MoneyCast::class,
         'daily_used_myr' => MoneyCast::class,
         'status' => TellerAllocationStatus::class,
@@ -137,15 +137,15 @@ class TellerAllocation extends BaseModel
         return $this->status->isReturned();
     }
 
-    public function hasAvailable(float|string $amount): bool
+    public function hasAvailable(float|string $quantity): bool
     {
-        return BcmathHelper::compare($this->current_balance, (string) $amount) >= 0;
+        return BcmathHelper::compare($this->current_quantity, (string) $quantity) >= 0;
     }
 
     /**
-     * Atomically decrement current_balance only when sufficient funds exist.
+     * Atomically decrement current_quantity only when sufficient funds exist.
      *
-     * Uses a single conditional UPDATE (WHERE current_balance >= amount) so
+     * Uses a single conditional UPDATE (WHERE current_quantity >= amount) so
      * concurrent bookings can never drive the balance negative, closing the
      * hasAvailable()-then-deduct() race.
      *
@@ -156,29 +156,29 @@ class TellerAllocation extends BaseModel
      *
      * @throws InsufficientAllocationBalanceException When the balance is insufficient.
      */
-    public function deduct(float|string $amount): bool
+    public function deduct(float|string $quantity): bool
     {
         $affected = static::query()
             ->where($this->getKeyName(), $this->getKey())
-            ->where('current_balance', '>=', $amount)
-            ->decrement('current_balance', $this->toNumericAmount($amount));
+            ->where('current_quantity', '>=', $quantity)
+            ->decrement('current_quantity', $this->toNumericAmount($quantity));
 
         $this->refresh();
 
         if ($affected === 0) {
             throw new InsufficientAllocationBalanceException(
                 $this->currency_code,
-                (string) $this->current_balance,
-                (string) $amount
+                (string) $this->current_quantity,
+                (string) $quantity
             );
         }
 
         return true;
     }
 
-    public function add(float|string $amount): void
+    public function add(float|string $quantity): void
     {
-        $this->increment('current_balance', $this->toNumericAmount($amount));
+        $this->increment('current_quantity', $this->toNumericAmount($quantity));
         $this->refresh();
     }
 
@@ -198,14 +198,14 @@ class TellerAllocation extends BaseModel
      * Normalize a validated numeric amount into the float|int shape the
      * query builder's increment/decrement expects.
      */
-    private function toNumericAmount(float|int|string $amount): float|int
+    private function toNumericAmount(float|int|string $quantity): float|int
     {
-        if (is_int($amount) || is_float($amount)) {
-            return $amount;
+        if (is_int($quantity) || is_float($quantity)) {
+            return $quantity;
         }
 
-        if (is_numeric($amount)) {
-            return (float) $amount;
+        if (is_numeric($quantity)) {
+            return (float) $quantity;
         }
 
         throw new \InvalidArgumentException('Allocation amount must be numeric.');
@@ -221,13 +221,13 @@ class TellerAllocation extends BaseModel
         return BcmathHelper::compare($remaining, (string) $amountMyr) >= 0;
     }
 
-    public function approve(User $approver, float|string $allocatedAmount, float|string|null $dailyLimitMyr = null): void
+    public function approve(User $approver, float|string $allocatedQuantity, float|string|null $dailyLimitMyr = null): void
     {
         $data = [
             'approved_by' => $approver->id,
             'approved_at' => now(),
-            'allocated_amount' => $allocatedAmount,
-            'current_balance' => $allocatedAmount,
+            'allocated_quantity' => $allocatedQuantity,
+            'current_quantity' => $allocatedQuantity,
             'status' => TellerAllocationStatus::Approved,
         ];
 

@@ -39,7 +39,7 @@
             <x-stat-card label="Total Transactions" :value="number_format($reportData['total_transactions'] ?? 0)" />
             <x-stat-card
                 label="Total Volume (MYR)"
-                :value="'MYR ' . number_format((float) ($reportData['total_amount'] ?? 0), 2)"
+                :value="'MYR ' . number_format((float) ($reportData['total_amount_myr'] ?? 0), 2)"
             />
             <x-stat-card
                 label="Period"
@@ -71,7 +71,7 @@
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink font-medium">{{ \Carbon\Carbon::parse($month['month'] . '-01')->format('F Y') }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($month['count']) }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $month['total_amount'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $month['total_amount_myr'], 2) }}</td>
                             </tr>
                         @endforeach
                     </x-slot:tbody>
@@ -92,7 +92,7 @@
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink font-medium">{{ $currency['currency'] }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format($currency['count']) }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $currency['total_amount'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $currency['total_amount_myr'], 2) }}</td>
                             </tr>
                         @endforeach
                     </x-slot:tbody>

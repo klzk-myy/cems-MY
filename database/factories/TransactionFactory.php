@@ -23,9 +23,9 @@ class TransactionFactory extends Factory
 
     public function definition(): array
     {
-        $amountLocal = fake()->randomFloat(2, 100, 100000);
+        $amountMyr = fake()->randomFloat(2, 100, 100000);
         $rate = fake()->randomFloat(6, 3.5, 5.0);
-        $amountForeign = round($amountLocal / $rate, 4);
+        $quantity = round($amountMyr / $rate, 4);
 
         return [
             'customer_id' => Customer::factory(),
@@ -38,8 +38,8 @@ class TransactionFactory extends Factory
             ]),
             'currency_code' => fn () => (Currency::query()->inRandomOrder()->first()->code)
                 ?? Currency::factory()->create()->code,
-            'amount_local' => $amountLocal,
-            'amount_foreign' => $amountForeign,
+            'amount_myr' => $amountMyr,
+            'quantity' => $quantity,
             'rate' => $rate,
             'purpose' => fake()->sentence(3),
             'source_of_funds' => fake()->randomElement(['Salary', 'Business', 'Savings', 'Investment']),
@@ -118,7 +118,7 @@ class TransactionFactory extends Factory
     public function largeAmount(): static
     {
         return $this->state(fn (array $attributes) => [
-            'amount_local' => fake()->randomFloat(2, 50000, 200000),
+            'amount_myr' => fake()->randomFloat(2, 50000, 200000),
         ]);
     }
 }

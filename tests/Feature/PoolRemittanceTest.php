@@ -235,7 +235,7 @@ class PoolRemittanceTest extends TestCase
         // Another branch's manager cannot remit out of this pool.
         $this->actingAs($otherManager)
             ->post(route('branch-pools.remit', $pool), [
-                'amount' => '100.00',
+                'amount_myr' => '100.00',
                 'to_branch_id' => $this->hq->id,
             ])
             ->assertForbidden();
@@ -244,7 +244,7 @@ class PoolRemittanceTest extends TestCase
         // The owning manager can.
         $this->actingAs($this->manager)
             ->post(route('branch-pools.remit', $pool), [
-                'amount' => '400.00',
+                'amount_myr' => '400.00',
                 'to_branch_id' => $this->hq->id,
             ])
             ->assertRedirect();

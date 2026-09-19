@@ -6367,7 +6367,7 @@ parameters:
 			path: app/Services/Branch/BranchService.php
 
 		-
-			message: '#^Method App\\Services\\Branch\\CounterOpeningWorkflowService\:\:approveAndOpen\(\) has parameter \$approvedAmounts with no value type specified in iterable type array\.$#'
+			message: '#^Method App\\Services\\Branch\\CounterOpeningWorkflowService\:\:approveAndOpen\(\) has parameter \$approvedQuantities with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Branch/CounterOpeningWorkflowService.php
@@ -6385,7 +6385,7 @@ parameters:
 			path: app/Services/Branch/CounterOpeningWorkflowService.php
 
 		-
-			message: '#^Method App\\Services\\Branch\\CounterOpeningWorkflowService\:\:initiateOpeningRequest\(\) has parameter \$requestedAmounts with no value type specified in iterable type array\.$#'
+			message: '#^Method App\\Services\\Branch\\CounterOpeningWorkflowService\:\:initiateOpeningRequest\(\) has parameter \$requestedQuantities with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Branch/CounterOpeningWorkflowService.php
@@ -9985,7 +9985,7 @@ parameters:
 			path: tests/Feature/Audit/ComplianceControllersFixTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_balance\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_quantity\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Audit/ConcurrencyFixesTest.php
@@ -12544,7 +12544,7 @@ parameters:
 			message: '#^Parameter \#3 \$fail of method Illuminate\\Contracts\\Validation\\ValidationRule\:\:validate\(\) expects Closure\(string, string\|null\=\)\: Illuminate\\Translation\\PotentiallyTranslatedString, Closure\(mixed\)\: void given\.$#'
 			identifier: argument.type
 			count: 1
-			path: tests/Unit/Rules/ValidAmountForeignTest.php
+			path: tests/Unit/Rules/ValidQuantityTest.php
 
 		-
 			message: '#^Parameter \#3 \$fail of method Illuminate\\Contracts\\Validation\\ValidationRule\:\:validate\(\) expects Closure\(string, string\|null\=\)\: Illuminate\\Translation\\PotentiallyTranslatedString, Closure\(mixed\)\: void given\.$#'
@@ -12901,7 +12901,7 @@ parameters:
 			path: tests/Unit/Transaction/ProcessTransactionRetryTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_balance\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_quantity\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Unit/Transaction/TransactionApprovalServiceTest.php

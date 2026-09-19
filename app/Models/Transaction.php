@@ -28,8 +28,8 @@ use Illuminate\Support\Carbon;
  * @property TransactionType $type
  * @property string $currency_code
  * @property string|null $counterparty_country ISO 3-letter country code
- * @property string $amount_local MYR amount
- * @property string $amount_foreign Foreign currency amount
+ * @property string $amount_myr MYR amount
+ * @property string $quantity Foreign currency amount
  * @property string $rate Exchange rate applied
  * @property string|null $purpose Transaction purpose
  * @property string|null $source_of_funds Source of funds
@@ -96,8 +96,8 @@ class Transaction extends TransactionModel
         'till_id',
         'type',
         'counterparty_country',
-        'amount_local',
-        'amount_foreign',
+        'amount_myr',
+        'quantity',
         'rate',
         'purpose',
         'source_of_funds',
@@ -123,8 +123,8 @@ class Transaction extends TransactionModel
      * @var array<string, string>
      */
     protected $casts = [
-        'amount_local' => MoneyCast::class,
-        'amount_foreign' => MoneyCast::class,
+        'amount_myr' => MoneyCast::class,
+        'quantity' => MoneyCast::class,
         'rate' => MoneyCast::class.':8',
         'base_rate' => MoneyCast::class.':8',
         'rate_override' => 'boolean',

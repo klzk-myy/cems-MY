@@ -19,7 +19,7 @@
 
                 <x-input name="description" label="Description" placeholder="Expense description" required maxlength="500" />
 
-                <x-input name="amount" label="Amount (MYR)" type="number" step="0.01" min="0.01" required />
+                <x-input name="amount_myr" label="Amount (MYR)" type="number" step="0.01" min="0.01" required />
 
                 <x-input name="expense_date" label="Expense Date" type="date" :value="now()->toDateString()" />
 

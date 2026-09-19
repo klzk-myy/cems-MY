@@ -128,18 +128,18 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
                         $report['fixed_count']++;
                         $report['total_amount_fixed'] = $this->mathService->add(
                             $report['total_amount_fixed'],
-                            (string) $transaction->amount_local
+                            (string) $transaction->amount_myr
                         );
                         $report['fixed_transactions'][] = [
                             'transaction_id' => $transaction->id,
-                            'amount_local' => (string) $transaction->amount_local,
+                            'amount_myr' => (string) $transaction->amount_myr,
                             'currency' => $transaction->currency_code,
                         ];
                     } elseif ($reconciliationResult['can_reconcile'] === false) {
                         $report['cannot_reconcile_count']++;
                         $report['cannot_reconcile'][] = [
                             'transaction_id' => $transaction->id,
-                            'amount_local' => (string) $transaction->amount_local,
+                            'amount_myr' => (string) $transaction->amount_myr,
                             'currency' => $transaction->currency_code,
                             'reason' => $reconciliationResult['reason'],
                         ];
@@ -147,7 +147,7 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
                         $report['still_missing_count']++;
                         $report['still_missing'][] = [
                             'transaction_id' => $transaction->id,
-                            'amount_local' => (string) $transaction->amount_local,
+                            'amount_myr' => (string) $transaction->amount_myr,
                             'currency' => $transaction->currency_code,
                             'reason' => $reconciliationResult['reason'],
                         ];
@@ -194,7 +194,7 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
                         'entity_id' => $transaction->id,
                         'new_values' => [
                             'transaction_id' => $transaction->id,
-                            'amount_local' => (string) $transaction->amount_local,
+                            'amount_myr' => (string) $transaction->amount_myr,
                             'currency' => $transaction->currency_code,
                             'cdd_level' => $transaction->cdd_level->value,
                             'reconciled_at' => now()->toIso8601String(),

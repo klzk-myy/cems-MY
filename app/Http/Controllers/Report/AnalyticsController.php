@@ -53,7 +53,7 @@ class AnalyticsController extends Controller
             ->buySellSummary(
                 $query->select(DB::raw("{$monthColumn} as month")),
                 DB::raw($monthColumn),
-                'amount_local'
+                'amount_myr'
             )
             ->map(function ($row) {
                 $volume = $this->mathService->add((string) $row->buy_volume, (string) $row->sell_volume);
@@ -126,7 +126,7 @@ class AnalyticsController extends Controller
             ->forDateRange($startDate, $endDate)
             ->sell()
             ->whereIn('currency_code', $currencyCodes)
-            ->select('currency_code', 'rate', 'amount_foreign', 'amount_local')
+            ->select('currency_code', 'rate', 'quantity', 'amount_myr')
             ->get()
             ->groupBy('currency_code');
 
@@ -145,7 +145,7 @@ class AnalyticsController extends Controller
             foreach ($sells as $sell) {
                 $gain = $this->mathService->multiply(
                     $this->mathService->subtract((string) $sell->rate, $avgCost),
-                    (string) $sell->amount_foreign
+                    (string) $sell->quantity
                 );
                 $realizedPnl = $this->mathService->add($realizedPnl, $gain);
             }
@@ -216,7 +216,7 @@ class AnalyticsController extends Controller
         $topCustomers = $this->cacheOptimizationService->remember(
             'analytics.top-customers', 300, ['analytics', 'customers'],
             fn () => Customer::withCount('transactions')
-                ->withSum('transactions', 'amount_local')
+                ->withSum('transactions', 'amount_myr')
                 ->withMin('transactions', 'created_at')
                 ->withMax('transactions', 'created_at')
                 ->orderBy('transactions_count', 'desc')
@@ -230,10 +230,10 @@ class AnalyticsController extends Controller
                 'customer_code' => sprintf('CUST-%06d', $customer->id),
                 'id_number' => $customer->id_number_masked,
                 'transaction_count' => $customer->transactions_count,
-                'total_volume' => $customer->transactions_sum_amount_local,
+                'total_volume' => $customer->transactions_sum_amount_myr,
                 'avg_value' => $customer->transactions_count > 0
                     ? $this->mathService->divide(
-                        (string) $customer->transactions_sum_amount_local,
+                        (string) $customer->transactions_sum_amount_myr,
                         (string) $customer->transactions_count
                     )
                     : '0',

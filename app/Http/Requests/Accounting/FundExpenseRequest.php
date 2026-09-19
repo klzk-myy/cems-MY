@@ -18,7 +18,7 @@ class FundExpenseRequest extends AuthorizedFormRequest
     {
         return [
             'branch_id' => 'required|integer|exists:branches,id',
-            'amount' => 'required|numeric|min:0.0001',
+            'amount_myr' => 'required|numeric|min:0.0001',
             'description' => 'nullable|string|max:500',
 
         ];

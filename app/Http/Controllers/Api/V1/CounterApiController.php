@@ -65,13 +65,13 @@ class CounterApiController extends Controller
         }
 
         // The API takes closing_floats as a currency => amount map; the
-        // service expects [{currency_id, amount}] items. A raw map would be
+        // service expects [{currency_id, quantity}] items. A raw map would be
         // indexed as $float['currency_id'] on a scalar and 500.
         $closingFloats = [];
-        foreach ($validated['closing_floats'] as $currencyCode => $amount) {
+        foreach ($validated['closing_floats'] as $currencyCode => $quantity) {
             $closingFloats[] = [
                 'currency_id' => $currencyCode,
-                'amount' => $amount,
+                'quantity' => $quantity,
             ];
         }
 

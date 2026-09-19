@@ -308,7 +308,7 @@ class RiskScoringEngine
             ->where('created_at', '>=', now()->subDays(30))
             ->where('status', '!=', TransactionStatus::Cancelled->value);
 
-        $recentAvg = (string) ($transactions->avg('amount_local') ?? '0');
+        $recentAvg = (string) ($transactions->avg('amount_myr') ?? '0');
         $baselineAvg = (string) $baseline->avg_transaction_size_myr;
 
         if ($this->math->compare($recentAvg, '0') === 0

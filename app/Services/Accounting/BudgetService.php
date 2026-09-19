@@ -45,12 +45,12 @@ class BudgetService
      *
      * @param  string  $accountCode  Unique identifier for the chart of account
      * @param  string  $periodCode  Accounting period identifier (e.g., "2024-01")
-     * @param  string  $amount  Budget amount as string for precision
+     * @param  string  $budgetMyr  Budget amount (MYR) as string for precision
      * @param  int  $userId  ID of the user creating/updating the budget
      * @param  string|null  $notes  Optional notes or comments about the budget
      * @return Budget The created or updated budget model
      */
-    public function setBudget(string $accountCode, string $periodCode, string $amount, int $userId, ?string $notes = null): Budget
+    public function setBudget(string $accountCode, string $periodCode, string $budgetMyr, int $userId, ?string $notes = null): Budget
     {
         return Budget::updateOrCreate(
             [
@@ -58,7 +58,7 @@ class BudgetService
                 'period_code' => $periodCode,
             ],
             [
-                'budget_amount' => $amount,
+                'budget_myr' => $budgetMyr,
                 'created_by' => $userId,
                 'notes' => $notes,
             ]
@@ -95,7 +95,7 @@ class BudgetService
         );
 
         foreach ($budgets as $budget) {
-            $budget->update(['actual_amount' => $activity[$budget->account_code] ?? '0']);
+            $budget->update(['actual_myr' => $activity[$budget->account_code] ?? '0']);
         }
     }
 
@@ -124,7 +124,7 @@ class BudgetService
             ->where('period_code', $periodCode)
             ->get();
 
-        // Compute actuals live from ledger activity — the stored actual_amount
+        // Compute actuals live from ledger activity — the stored actual_myr
         // is only refreshed by updateActuals(), which nothing calls, so the
         // report must not trust the column.
         $period = AccountingPeriod::where('period_code', $periodCode)->first();
@@ -142,23 +142,23 @@ class BudgetService
 
         $overBudgetCount = 0;
         foreach ($budgets as $budget) {
-            $actual = (string) ($liveActivity[$budget->account_code] ?? $budget->actual_amount);
-            $variance = $this->mathService->subtract((string) $budget->budget_amount, $actual);
+            $actual = (string) ($liveActivity[$budget->account_code] ?? $budget->actual_myr);
+            $variance = $this->mathService->subtract((string) $budget->budget_myr, $actual);
             $overBudget = $this->mathService->compare($variance, '0') < 0;
             $overBudgetCount += $overBudget ? 1 : 0;
             $items[] = [
                 'id' => $budget->id,
                 'account_code' => $budget->account_code,
                 'account_name' => $budget->account->account_name,
-                'budget' => (string) $budget->budget_amount,
+                'budget' => (string) $budget->budget_myr,
                 'actual' => $actual,
                 'variance' => $variance,
-                'variance_pct' => $this->mathService->compare((string) $budget->budget_amount, '0') > 0
-                    ? (float) $this->mathService->multiply($this->mathService->divide($variance, (string) $budget->budget_amount), '100')
+                'variance_pct' => $this->mathService->compare((string) $budget->budget_myr, '0') > 0
+                    ? (float) $this->mathService->multiply($this->mathService->divide($variance, (string) $budget->budget_myr), '100')
                     : null,
                 'over_budget' => $overBudget,
             ];
-            $totalBudget = $this->mathService->add($totalBudget, (string) $budget->budget_amount);
+            $totalBudget = $this->mathService->add($totalBudget, (string) $budget->budget_myr);
             $totalActual = $this->mathService->add($totalActual, $actual);
         }
 

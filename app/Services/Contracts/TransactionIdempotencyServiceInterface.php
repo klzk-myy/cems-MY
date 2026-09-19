@@ -22,7 +22,7 @@ interface TransactionIdempotencyServiceInterface
      * Looks for transactions by same user with same currency, type, and foreign amount
      * within the last 30 seconds.
      *
-     * @param  array  $data  Must contain 'currency_code', 'type', 'amount_foreign'
+     * @param  array  $data  Must contain 'currency_code', 'type', 'quantity'
      * @param  int  $windowSeconds  Time window in seconds (default 30)
      * @return Transaction|null Returns recent duplicate or null
      */

@@ -549,7 +549,7 @@ class CustomerService implements CustomerServiceInterface
     public function getTransactionStats(Customer $customer): array
     {
         $stats = $customer->transactions()
-            ->selectRaw('COUNT(*) as total_transactions, SUM(amount_local) as total_volume, AVG(amount_local) as avg_transaction')
+            ->selectRaw('COUNT(*) as total_transactions, SUM(amount_myr) as total_volume, AVG(amount_myr) as avg_transaction')
             ->first();
 
         return [
@@ -610,7 +610,7 @@ class CustomerService implements CustomerServiceInterface
 
         $stats = [
             'total_transactions' => $customer->transactions_count,
-            'total_value' => (float) ($customer->transactions_sum_amount_local ?? 0),
+            'total_value' => (float) ($customer->transactions_sum_amount_myr ?? 0),
             'alerts' => Alert::where('customer_id', $customer->id)->count(),
             'str_filed' => StrReport::where('customer_id', $customer->id)
                 ->where('status', '!=', StrReportStatus::Draft->value)

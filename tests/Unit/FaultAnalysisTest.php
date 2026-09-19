@@ -188,13 +188,13 @@ class FaultAnalysisTest extends TestCase
 
         $recent = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '0.1000',
+            'amount_myr' => '0.1000',
             'status' => TransactionStatus::Completed,
         ]);
 
         $current = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '0.2001',
+            'amount_myr' => '0.2001',
             'status' => TransactionStatus::Completed,
         ]);
 

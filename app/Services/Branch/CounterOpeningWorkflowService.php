@@ -24,7 +24,7 @@ class CounterOpeningWorkflowService
         protected AuditService $auditService,
     ) {}
 
-    public function initiateOpeningRequest(User $teller, Counter $counter, array $requestedAmounts): array
+    public function initiateOpeningRequest(User $teller, Counter $counter, array $requestedQuantities): array
     {
         $branch = $teller->branch;
 
@@ -32,20 +32,20 @@ class CounterOpeningWorkflowService
             throw new TellerBranchRequiredException;
         }
 
-        $requests = DB::transaction(function () use ($branch, $teller, $requestedAmounts, $counter) {
+        $requests = DB::transaction(function () use ($branch, $teller, $requestedQuantities, $counter) {
             $requests = [];
-            foreach ($requestedAmounts as $currency => $amount) {
+            foreach ($requestedQuantities as $currency => $quantity) {
                 $pool = $this->branchPoolService->getOrCreateForBranch($branch, $currency);
 
-                if (! $pool->hasAvailable($amount)) {
-                    throw new InsufficientPoolBalanceException($currency, (string) $pool->available_balance, $amount);
+                if (! $pool->hasAvailable($quantity)) {
+                    throw new InsufficientPoolBalanceException($currency, (string) $pool->available_balance, $quantity);
                 }
 
                 $allocation = $this->tellerAllocationService->requestAllocation(
                     $teller,
                     $teller,
                     $currency,
-                    $amount,
+                    $quantity,
                     null,
                     $counter
                 );
@@ -59,11 +59,11 @@ class CounterOpeningWorkflowService
         return $requests;
     }
 
-    public function approveAndOpen(User $manager, Counter $counter, User $teller, array $approvedAmounts, array $dailyLimits = []): CounterSession
+    public function approveAndOpen(User $manager, Counter $counter, User $teller, array $approvedQuantities, array $dailyLimits = []): CounterSession
     {
-        return DB::transaction(function () use ($manager, $counter, $teller, $approvedAmounts, $dailyLimits) {
+        return DB::transaction(function () use ($manager, $counter, $teller, $approvedQuantities, $dailyLimits) {
             $today = now()->toDateString();
-            $currencyCodes = array_keys($approvedAmounts);
+            $currencyCodes = array_keys($approvedQuantities);
 
             $allocations = TellerAllocation::where('user_id', $teller->id)
                 ->where('branch_id', $teller->branch_id)
@@ -77,14 +77,14 @@ class CounterOpeningWorkflowService
                 ->keyBy('currency_code');
 
             $tellerAllocations = [];
-            foreach ($approvedAmounts as $currency => $amount) {
+            foreach ($approvedQuantities as $currency => $quantity) {
                 $allocation = $allocations->get($currency);
                 if (! $allocation) {
                     throw new PendingAllocationNotFoundException($currency);
                 }
 
                 $dailyLimit = $dailyLimits[$currency] ?? null;
-                $allocation = $this->tellerAllocationService->approveAllocation($allocation, $manager, $amount, $dailyLimit);
+                $allocation = $this->tellerAllocationService->approveAllocation($allocation, $manager, $quantity, $dailyLimit);
                 $this->tellerAllocationService->activateAllocation($allocation);
 
                 $tellerAllocations[] = $allocation;
@@ -94,7 +94,7 @@ class CounterOpeningWorkflowService
             foreach ($tellerAllocations as $allocation) {
                 $openingFloats[] = [
                     'currency_id' => $allocation->currency_code,
-                    'amount' => $allocation->current_balance,
+                    'quantity' => $allocation->current_quantity,
                 ];
             }
 
@@ -114,7 +114,7 @@ class CounterOpeningWorkflowService
                 [
                     'teller_id' => $teller->id,
                     'counter_id' => $counter->id,
-                    'approved_amounts' => $approvedAmounts,
+                    'approved_quantities' => $approvedQuantities,
                     'daily_limits' => $dailyLimits,
                     'action' => 'manager_approved_and_opened',
                 ]

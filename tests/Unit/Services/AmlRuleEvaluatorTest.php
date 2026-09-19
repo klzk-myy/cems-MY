@@ -76,14 +76,14 @@ class AmlRuleEvaluatorTest extends TestCase
         foreach ($amounts as $amount) {
             Transaction::factory()->create([
                 'customer_id' => $customer->id,
-                'amount_local' => $amount,
+                'amount_myr' => $amount,
                 'created_at' => $now->copy()->subHours(12),
             ]);
         }
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => 5000,
+            'amount_myr' => 5000,
             'created_at' => $now,
         ]);
 
@@ -117,7 +117,7 @@ class AmlRuleEvaluatorTest extends TestCase
         for ($i = 0; $i < 3; $i++) {
             Transaction::factory()->create([
                 'customer_id' => $customer->id,
-                'amount_local' => '20000',
+                'amount_myr' => '20000',
                 'created_at' => $now->copy()->subDay(),
                 'status' => 'completed',
             ]);
@@ -125,7 +125,7 @@ class AmlRuleEvaluatorTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '20000',
+            'amount_myr' => '20000',
             'created_at' => $now,
             'status' => 'completed',
         ]);
@@ -157,7 +157,7 @@ class AmlRuleEvaluatorTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '100000',
+            'amount_myr' => '100000',
             'currency_code' => 'MYR',
         ]);
 
@@ -186,7 +186,7 @@ class AmlRuleEvaluatorTest extends TestCase
 
         $transaction = Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '100000',
+            'amount_myr' => '100000',
             'currency_code' => 'USD',
         ]);
 

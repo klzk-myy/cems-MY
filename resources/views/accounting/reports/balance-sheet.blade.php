@@ -46,7 +46,7 @@
                         @forelse ($assets as $asset)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $asset['account_code'] }} - {{ $asset['account_name'] }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $asset['amount'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $asset['amount_myr'], 2) }}</td>
                             </tr>
                         @empty
                             <x-empty-state message="No assets" :colspan="2" />
@@ -70,7 +70,7 @@
                             @forelse ($liabilities as $liability)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-4 py-3 text-sm text-ink">{{ $liability['account_code'] }} - {{ $liability['account_name'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $liability['amount'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $liability['amount_myr'], 2) }}</td>
                                 </tr>
                             @empty
                                 <x-empty-state message="No liabilities" :colspan="2" />
@@ -93,7 +93,7 @@
                             @forelse ($equity as $eq)
                                 <tr class="hover:bg-canvas-subtle">
                                     <td class="px-4 py-3 text-sm text-ink">{{ $eq['account_code'] !== '' ? $eq['account_code'].' - ' : '' }}{{ $eq['account_name'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $eq['amount'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $eq['amount_myr'], 2) }}</td>
                                 </tr>
                             @empty
                                 <x-empty-state message="No equity accounts" :colspan="2" />

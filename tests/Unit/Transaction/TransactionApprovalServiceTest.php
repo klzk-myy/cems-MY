@@ -108,8 +108,8 @@ class TransactionApprovalServiceTest extends TestCase
             'status' => TransactionStatus::PendingApproval,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
-            'amount_local' => '450.00',
+            'quantity' => '100.00',
+            'amount_myr' => '450.00',
             'rate' => '4.5000',
             'till_id' => $counter->code,
             'branch_id' => $counter->branch_id,
@@ -266,7 +266,7 @@ class TransactionApprovalServiceTest extends TestCase
         // 75k is above the large-transaction threshold — only compliance may approve.
         $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
-        $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
+        $transaction = $this->pendingTransaction($counter, ['amount_myr' => '75000.00']);
 
         $monitoring = Mockery::mock(TransactionMonitoringService::class);
         $monitoring->shouldReceive('monitorTransaction')->never();
@@ -284,7 +284,7 @@ class TransactionApprovalServiceTest extends TestCase
         config(['thresholds.reporting.str' => '50000']);
         $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
-        $transaction = $this->pendingTransaction($counter, ['amount_local' => '75000.00']);
+        $transaction = $this->pendingTransaction($counter, ['amount_myr' => '75000.00']);
 
         TransactionConfirmation::factory()->create([
             'transaction_id' => $transaction->id,
@@ -405,7 +405,7 @@ class TransactionApprovalServiceTest extends TestCase
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '500.00',
+            'quantity' => '500.00',
         ]);
 
         $position = Mockery::mock(CurrencyPositionService::class);
@@ -431,7 +431,7 @@ class TransactionApprovalServiceTest extends TestCase
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, [
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
 
         $position = Mockery::mock(CurrencyPositionService::class);
@@ -461,8 +461,8 @@ class TransactionApprovalServiceTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
-            'allocated_amount' => '10000.00',
-            'current_balance' => '10000.00',
+            'allocated_quantity' => '10000.00',
+            'current_quantity' => '10000.00',
             'daily_limit_myr' => '50000.00',
             'daily_used_myr' => '0.00',
             'status' => TellerAllocationStatus::Active,
@@ -472,8 +472,8 @@ class TransactionApprovalServiceTest extends TestCase
         $transaction = $this->pendingTransaction($counter, [
             'user_id' => $teller->id,
             'type' => TransactionType::Buy->value,
-            'amount_foreign' => '100.00',
-            'amount_local' => '450.00',
+            'quantity' => '100.00',
+            'amount_myr' => '450.00',
         ]);
 
         $position = Mockery::mock(CurrencyPositionService::class);
@@ -496,7 +496,7 @@ class TransactionApprovalServiceTest extends TestCase
         $this->assertTrue($result->success);
 
         $allocation->refresh();
-        $this->assertEquals('10100.0000', (string) $allocation->current_balance);
+        $this->assertEquals('10100.0000', (string) $allocation->current_quantity);
         $this->assertEquals('450.0000', (string) $allocation->daily_used_myr);
     }
 
@@ -696,7 +696,7 @@ class TransactionApprovalServiceTest extends TestCase
             'transaction_id' => $transaction->id,
             'currency_code' => 'USD',
             'till_id' => $counter->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'status' => StockReservationStatus::Consumed,
         ]);
 

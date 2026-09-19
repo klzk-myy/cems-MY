@@ -99,7 +99,7 @@ class ConcurrencyFixesTest extends TestCase
         $branch = Branch::factory()->create();
         $allocation = TellerAllocation::factory()->for($branch)->active()->create([
             'currency_code' => 'USD',
-            'current_balance' => '100.00',
+            'current_quantity' => '100.00',
         ]);
         BranchPool::factory()->for($branch)->create([
             'currency_code' => 'USD',
@@ -129,8 +129,8 @@ class ConcurrencyFixesTest extends TestCase
         ]);
         $allocation = TellerAllocation::factory()->for($branch)->for($teller)->active()->create([
             'currency_code' => 'USD',
-            'allocated_amount' => '2000.00',
-            'current_balance' => '1000.00',
+            'allocated_quantity' => '2000.00',
+            'current_quantity' => '1000.00',
             'session_date' => now()->toDateString(),
         ]);
         $counter = Counter::factory()->for($branch)->create();
@@ -140,9 +140,9 @@ class ConcurrencyFixesTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'date' => today(),
-            'foreign_total' => '0',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'total_quantity' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
         ]);
 
         // Create TillBalance for MYR (local currency)
@@ -150,7 +150,7 @@ class ConcurrencyFixesTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'date' => today(),
-            'transaction_total' => '10000',
+            'transaction_total_myr' => '10000',
         ]);
 
         // Create CurrencyPosition for USD with sufficient stock
@@ -178,8 +178,8 @@ class ConcurrencyFixesTest extends TestCase
         $this->assertNotNull($active, 'Active allocation should be found via service');
 
         $amounts = ['9.99', '10.00', '10.01'];
-        foreach ($amounts as $amountForeign) {
-            $amountLocal = bcmul($amountForeign, '4.70', 4);
+        foreach ($amounts as $quantity) {
+            $amountMyr = bcmul($quantity, '4.70', 4);
 
             $context = new TransactionCreationContext(
                 data: [
@@ -187,7 +187,7 @@ class ConcurrencyFixesTest extends TestCase
                     'till_id' => $counter->code,
                     'type' => TransactionType::Sell->value,
                     'currency_code' => 'USD',
-                    'amount_foreign' => $amountForeign,
+                    'quantity' => $quantity,
                     'rate' => '4.70',
                     'purpose' => 'Test transaction',
                     'source_of_funds' => 'salary',
@@ -198,7 +198,7 @@ class ConcurrencyFixesTest extends TestCase
                 cddLevel: CddLevel::Simplified,
                 holdRequired: false,
                 status: TransactionStatus::Completed,
-                amountLocal: $amountLocal,
+                amountMyr: $amountMyr,
                 user: $teller,
                 allocation: $allocation,
             );
@@ -207,7 +207,7 @@ class ConcurrencyFixesTest extends TestCase
         }
 
         // Total allocated: 1000 - 30 = 970
-        $this->assertSame('970.0000', $allocation->fresh()->current_balance);
+        $this->assertSame('970.0000', $allocation->fresh()->current_quantity);
     }
 
     public function test_concurrent_reversal_attempts_are_serialized(): void
@@ -256,7 +256,7 @@ class ConcurrencyFixesTest extends TestCase
         $transaction = Transaction::factory()->for($branch)->for($customer)->create([
             'type' => TransactionType::Buy->value,
             'status' => TransactionStatus::PendingApproval->value,
-            'amount_local' => '50000.00',
+            'amount_myr' => '50000.00',
         ]);
 
         $service = app(TransactionConfirmationService::class);
@@ -337,8 +337,8 @@ class ConcurrencyFixesTest extends TestCase
             ->completed()
             ->create([
                 'currency_code' => 'USD',
-                'amount_foreign' => '100.00',
-                'amount_local' => '470.00',
+                'quantity' => '100.00',
+                'amount_myr' => '470.00',
                 'rate' => '4.70',
             ]);
     }

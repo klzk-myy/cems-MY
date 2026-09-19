@@ -44,22 +44,22 @@ class ExpenseService
         string $accountCode,
         string $category,
         string $description,
-        string $amount,
+        string $amountMyr,
         ?string $expenseDate = null
     ): Expense {
         $expenseDate = $expenseDate ?? now()->toDateString();
 
-        return DB::transaction(function () use ($branch, $poster, $accountCode, $category, $description, $amount, $expenseDate) {
+        return DB::transaction(function () use ($branch, $poster, $accountCode, $category, $description, $amountMyr, $expenseDate) {
             $lockedBranch = Branch::where('id', $branch->id)->lockForUpdate()->firstOrFail();
 
-            if ($this->mathService->compare($amount, '0') <= 0) {
+            if ($this->mathService->compare($amountMyr, '0') <= 0) {
                 throw new AccountingPeriodException('Expense amount must be positive');
             }
 
-            if ($this->mathService->compare((string) $lockedBranch->petty_cash_float, $amount) < 0) {
+            if ($this->mathService->compare((string) $lockedBranch->petty_cash_myr, $amountMyr) < 0) {
                 throw new InsufficientPettyCashException(
-                    (string) $lockedBranch->petty_cash_float,
-                    $amount
+                    (string) $lockedBranch->petty_cash_myr,
+                    $amountMyr
                 );
             }
 
@@ -67,14 +67,14 @@ class ExpenseService
                 [
                     [
                         'account_code' => $accountCode,
-                        'debit' => $amount,
+                        'debit' => $amountMyr,
                         'credit' => '0',
                         'description' => $description,
                     ],
                     [
                         'account_code' => $this->accountMappingService->code(AccountMappingKey::CashPetty),
                         'debit' => '0',
-                        'credit' => $amount,
+                        'credit' => $amountMyr,
                         'description' => $description,
                     ],
                 ],
@@ -91,15 +91,15 @@ class ExpenseService
                 'account_code' => $accountCode,
                 'category' => $category,
                 'description' => $description,
-                'amount' => $amount,
+                'amount_myr' => $amountMyr,
                 'expense_date' => $expenseDate,
                 'journal_entry_id' => $journal->id,
                 'created_by' => $poster->id,
             ]);
 
-            $lockedBranch->petty_cash_float = $this->mathService->subtract(
-                (string) $lockedBranch->petty_cash_float,
-                $amount
+            $lockedBranch->petty_cash_myr = $this->mathService->subtract(
+                (string) $lockedBranch->petty_cash_myr,
+                $amountMyr
             );
             $lockedBranch->save();
 
@@ -112,7 +112,7 @@ class ExpenseService
                 [
                     'branch_id' => $lockedBranch->id,
                     'account_code' => $accountCode,
-                    'amount' => $amount,
+                    'amount_myr' => $amountMyr,
                     'journal_entry_id' => $journal->id,
                 ]
             );
@@ -125,12 +125,12 @@ class ExpenseService
      * Top up a branch petty-cash float (Dr petty cash, Cr cash on hand).
      * Admin-only — funding moves company money into branch floats.
      */
-    public function fundPettyCash(Branch $branch, User $poster, string $amount, ?string $description = null): JournalEntry
+    public function fundPettyCash(Branch $branch, User $poster, string $amountMyr, ?string $description = null): JournalEntry
     {
-        return DB::transaction(function () use ($branch, $poster, $amount, $description) {
+        return DB::transaction(function () use ($branch, $poster, $amountMyr, $description) {
             $lockedBranch = Branch::where('id', $branch->id)->lockForUpdate()->firstOrFail();
 
-            if ($this->mathService->compare($amount, '0') <= 0) {
+            if ($this->mathService->compare($amountMyr, '0') <= 0) {
                 throw new AccountingPeriodException('Funding amount must be positive');
             }
 
@@ -138,14 +138,14 @@ class ExpenseService
                 [
                     [
                         'account_code' => $this->accountMappingService->code(AccountMappingKey::CashPetty),
-                        'debit' => $amount,
+                        'debit' => $amountMyr,
                         'credit' => '0',
                         'description' => $description ?? 'Petty cash funding',
                     ],
                     [
                         'account_code' => $this->accountMappingService->code(AccountMappingKey::CashMyr),
                         'debit' => '0',
-                        'credit' => $amount,
+                        'credit' => $amountMyr,
                         'description' => $description ?? 'Petty cash funding',
                     ],
                 ],
@@ -157,9 +157,9 @@ class ExpenseService
                 $lockedBranch->id
             );
 
-            $lockedBranch->petty_cash_float = $this->mathService->add(
-                (string) $lockedBranch->petty_cash_float,
-                $amount
+            $lockedBranch->petty_cash_myr = $this->mathService->add(
+                (string) $lockedBranch->petty_cash_myr,
+                $amountMyr
             );
             $lockedBranch->save();
 
@@ -171,7 +171,7 @@ class ExpenseService
                 [],
                 [
                     'branch_id' => $lockedBranch->id,
-                    'amount' => $amount,
+                    'amount_myr' => $amountMyr,
                 ]
             );
 

@@ -25,7 +25,7 @@ class BudgetSeeder extends Seeder
                     'period_code' => $currentPeriod,
                 ],
                 [
-                    'budget_amount' => $amount,
+                    'budget_myr' => $amount,
                     'notes' => 'Monthly expense budget',
                     'created_by' => 1,
                 ]
@@ -45,7 +45,7 @@ class BudgetSeeder extends Seeder
                     'period_code' => $currentPeriod,
                 ],
                 [
-                    'budget_amount' => $amount,
+                    'budget_myr' => $amount,
                     'notes' => 'Monthly revenue target',
                     'created_by' => 1,
                 ]

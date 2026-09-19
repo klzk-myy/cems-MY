@@ -302,8 +302,8 @@ class RevaluationService
             'branch_id' => $position->branch_id,
             'old_rate' => $oldRate,
             'new_rate' => $newRate,
-            'position_amount' => $position->quantity,
-            'gain_loss_amount' => $gainLoss,
+            'position_quantity' => $position->quantity,
+            'gain_loss_myr' => $gainLoss,
             'revaluation_date' => $date,
             'posted_by' => $postedBy,
         ]);
@@ -432,35 +432,35 @@ class RevaluationService
     protected function checkPositionLimitBreach(array $result, int|string|null $branchId = null): void
     {
         $currencyCode = $result['currency'] ?? null;
-        $positionAmount = $result['quantity'] ?? '0';
+        $positionQuantity = $result['quantity'] ?? '0';
 
-        if ($this->mathService->compare($positionAmount, '0') <= 0) {
+        if ($this->mathService->compare($positionQuantity, '0') <= 0) {
             return;
         }
 
         $limit = $this->thresholdService->getPositionLimit((string) $currencyCode);
 
         // Check if this currency has a configured limit
-        if ($limit === null || $this->mathService->compare($positionAmount, $limit) <= 0) {
+        if ($limit === null || $this->mathService->compare($positionQuantity, $limit) <= 0) {
             return;
         }
 
         $positionLimit = $limit;
-        $breachAmount = $this->mathService->subtract($positionAmount, $positionLimit);
+        $breachQuantity = $this->mathService->subtract($positionQuantity, $positionLimit);
 
         $this->auditService->logPositionEvent('position_limit_breach', [
             'new' => [
                 'currency_code' => $currencyCode,
-                'quantity' => $positionAmount,
+                'quantity' => $positionQuantity,
                 'limit' => $positionLimit,
-                'breach_amount' => $breachAmount,
+                'breach_quantity' => $breachQuantity,
             ],
         ]);
 
         // Severity by breach magnitude: >10% over the limit is Critical.
         $overRatio = '0';
         if ($this->mathService->compare($positionLimit, '0') > 0) {
-            $overRatio = $this->mathService->divide($breachAmount, $positionLimit);
+            $overRatio = $this->mathService->divide($breachQuantity, $positionLimit);
         }
         $level = $this->mathService->compare($overRatio, '0.10') > 0 ? SystemAlertLevel::Critical : SystemAlertLevel::Warning;
 
@@ -468,16 +468,16 @@ class RevaluationService
             $this->alertService->send(
                 "Position limit breached for {$currencyCode}"
                 .($branchId !== null ? " at branch {$branchId}" : '')
-                .": position {$positionAmount} exceeds limit {$positionLimit} (breach {$breachAmount})",
+                .": position {$positionQuantity} exceeds limit {$positionLimit} (breach {$breachQuantity})",
                 $level->value,
                 [
                     'source' => 'revaluation',
                     'metadata' => [
                         'branch_id' => $branchId,
                         'currency_code' => $currencyCode,
-                        'quantity' => $positionAmount,
+                        'quantity' => $positionQuantity,
                         'limit' => $positionLimit,
-                        'breach_amount' => $breachAmount,
+                        'breach_quantity' => $breachQuantity,
                         'severity_ratio' => $overRatio,
                     ],
                 ]

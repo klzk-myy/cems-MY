@@ -203,7 +203,7 @@ class ComprehensiveSetup extends Command
      *
      * @return array<string, int>
      */
-    protected function openingStockAmounts(): array
+    protected function openingStockQuantities(): array
     {
         return ['USD' => 10000, 'EUR' => 7000, 'GBP' => 5000];
     }
@@ -239,24 +239,24 @@ class ComprehensiveSetup extends Command
     {
         $this->info("Initializing opening stock for {$branch->code}...");
 
-        foreach ($this->openingStockAmounts() as $currencyCode => $amount) {
+        foreach ($this->openingStockQuantities() as $currencyCode => $quantity) {
             $pool = BranchPool::firstOrCreate(
                 ['branch_id' => $branch->id, 'currency_code' => $currencyCode],
                 ['available_balance' => '0', 'allocated_balance' => '0']
             );
 
             // Update available balance
-            $newBalance = $this->mathService->add($pool->available_balance, (string) $amount);
+            $newBalance = $this->mathService->add($pool->available_balance, (string) $quantity);
             $pool->available_balance = $newBalance;
             $pool->save();
 
             $this->logger->log('STOCK_INITIALIZED', null, 'BranchPool', $pool->id, [], [
                 'branch_code' => $branch->code,
                 'currency' => $currencyCode,
-                'amount' => $amount,
+                'quantity' => $quantity,
             ]);
 
-            $this->info("    - {$currencyCode}: {$amount}");
+            $this->info("    - {$currencyCode}: {$quantity}");
         }
     }
 
@@ -269,7 +269,7 @@ class ComprehensiveSetup extends Command
         // account_ledger rows are always written atomically.
         $this->setupService->createOpeningBalance([
             'opening_balance_myr' => '0',
-            'opening_balance_foreign' => $this->openingStockAmounts(),
+            'opening_balance_foreign' => $this->openingStockQuantities(),
         ]);
 
         $this->logger->log('OPENING_BALANCE', null, 'Branch', $branch->id, [], [

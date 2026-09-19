@@ -41,9 +41,9 @@ class PoolRemittanceService
         protected BranchPoolService $poolService,
     ) {}
 
-    public function initiate(Branch $from, Branch $to, string $currencyCode, float|string $amount, int $initiatedBy, ?string $notes = null): PoolRemittance
+    public function initiate(Branch $from, Branch $to, string $currencyCode, float|string $amountMyr, int $initiatedBy, ?string $notes = null): PoolRemittance
     {
-        $amount = (string) $amount;
+        $amountMyr = (string) $amountMyr;
 
         if ($from->id === $to->id) {
             throw new TransactionValidationException(message: 'A branch cannot remit to itself');
@@ -57,7 +57,7 @@ class PoolRemittanceService
             throw new TransactionValidationException(message: 'Remittances move MYR capital only — head office holds no foreign stock; move foreign currency via stock transfer');
         }
 
-        if ($this->mathService->compare($amount, '0') <= 0) {
+        if ($this->mathService->compare($amountMyr, '0') <= 0) {
             throw new TransactionValidationException(message: 'Remittance amount must be a positive number');
         }
 
@@ -67,17 +67,17 @@ class PoolRemittanceService
         // transaction (number regenerated) rather than surfacing a 500.
         for ($attempt = 0; ; $attempt++) {
             try {
-                return DB::transaction(function () use ($from, $to, $currencyCode, $amount, $initiatedBy, $notes) {
+                return DB::transaction(function () use ($from, $to, $currencyCode, $amountMyr, $initiatedBy, $notes) {
                     $pool = BranchPool::where('branch_id', $from->id)
                         ->where('currency_code', $currencyCode)
                         ->lockForUpdate()
                         ->first();
 
-                    if (! $pool || $this->mathService->compare($pool->available_balance, $amount) < 0) {
+                    if (! $pool || $this->mathService->compare($pool->available_balance, $amountMyr) < 0) {
                         throw new TransactionValidationException(message: "Insufficient available balance in the {$currencyCode} pool");
                     }
 
-                    $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amount);
+                    $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amountMyr);
                     $pool->save();
 
                     $remittance = PoolRemittance::create([
@@ -85,7 +85,7 @@ class PoolRemittanceService
                         'from_branch_id' => $from->id,
                         'to_branch_id' => $to->id,
                         'currency_code' => $currencyCode,
-                        'amount' => $amount,
+                        'amount_myr' => $amountMyr,
                         'status' => PoolRemittanceStatus::Pending,
                         'initiated_by' => $initiatedBy,
                         'initiated_at' => now(),
@@ -100,7 +100,7 @@ class PoolRemittanceService
                         'from_branch_id' => $from->id,
                         'to_branch_id' => $to->id,
                         'currency_code' => $currencyCode,
-                        'amount' => $amount,
+                        'amount_myr' => $amountMyr,
                         'initiated_by' => $initiatedBy,
                     ]);
 
@@ -112,7 +112,7 @@ class PoolRemittanceService
                             'remittance_number' => $remittance->remittance_number,
                             'to_branch_id' => $to->id,
                             'currency_code' => $currencyCode,
-                            'amount' => $amount,
+                            'amount_myr' => $amountMyr,
                             'initiated_by' => $initiatedBy,
                         ]
                     );
@@ -144,7 +144,7 @@ class PoolRemittanceService
             $pool = $this->poolService->getOrCreateForBranch($to, $remittance->currency_code);
             $pool = BranchPool::whereKey($pool->id)->lockForUpdate()->firstOrFail();
 
-            $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount);
+            $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount_myr);
             $pool->save();
 
             $remittance->ack_journal_entry_id = $this->postRemittanceGl($remittance, $to, RemittanceGlLeg::Receipt, $acknowledgedBy)->id;
@@ -167,7 +167,7 @@ class PoolRemittanceService
                     'remittance_number' => $remittance->remittance_number,
                     'from_branch_id' => $remittance->from_branch_id,
                     'currency_code' => $remittance->currency_code,
-                    'amount' => (string) $remittance->amount,
+                    'amount_myr' => (string) $remittance->amount_myr,
                     'acknowledged_by' => $acknowledgedBy,
                 ]
             );
@@ -191,7 +191,7 @@ class PoolRemittanceService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount);
+            $pool->available_balance = $this->mathService->add($pool->available_balance, (string) $remittance->amount_myr);
             $pool->save();
 
             $remittance->cancel_journal_entry_id = $this->postRemittanceGl($remittance, $from, RemittanceGlLeg::Reversal, $cancelledBy)->id;
@@ -217,7 +217,7 @@ class PoolRemittanceService
                     'remittance_number' => $remittance->remittance_number,
                     'to_branch_id' => $remittance->to_branch_id,
                     'currency_code' => $remittance->currency_code,
-                    'amount' => (string) $remittance->amount,
+                    'amount_myr' => (string) $remittance->amount_myr,
                     'cancelled_by' => $cancelledBy,
                     'reason' => $reason,
                 ]
@@ -240,7 +240,7 @@ class PoolRemittanceService
     private function postRemittanceGl(PoolRemittance $remittance, Branch $branch, RemittanceGlLeg $leg, int $actorId): JournalEntry
     {
         $clearingAccount = $this->accountMappingService->code(AccountMappingKey::SuspenseHq);
-        $amount = (string) $remittance->amount;
+        $amountMyr = (string) $remittance->amount_myr;
 
         $accountCode = $remittance->currency_code === Currency::baseCurrency()
             ? $this->accountMappingService->code(AccountMappingKey::CashMyr)
@@ -248,11 +248,11 @@ class PoolRemittanceService
 
         $lines = [
             $leg->isInbound()
-                ? ['account_code' => $accountCode, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"]
-                : ['account_code' => $accountCode, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"],
+                ? ['account_code' => $accountCode, 'debit' => $amountMyr, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"]
+                : ['account_code' => $accountCode, 'credit' => $amountMyr, 'description' => "Remittance {$remittance->remittance_number} — {$remittance->currency_code} {$leg->verb()}"],
             $leg->isInbound()
-                ? ['account_code' => $clearingAccount, 'credit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"]
-                : ['account_code' => $clearingAccount, 'debit' => $amount, 'description' => "Remittance {$remittance->remittance_number} — in transit"],
+                ? ['account_code' => $clearingAccount, 'credit' => $amountMyr, 'description' => "Remittance {$remittance->remittance_number} — in transit"]
+                : ['account_code' => $clearingAccount, 'debit' => $amountMyr, 'description' => "Remittance {$remittance->remittance_number} — in transit"],
         ];
 
         return $this->accountingService->createJournalEntry(

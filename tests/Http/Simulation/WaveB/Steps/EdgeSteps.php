@@ -46,8 +46,8 @@ trait EdgeSteps
         $this->openCounterOverWeb();
 
         foreach ([
-            'zero amount' => ['amount_foreign' => '0'],
-            'negative amount' => ['amount_foreign' => '-100.00'],
+            'zero amount' => ['quantity' => '0'],
+            'negative amount' => ['quantity' => '-100.00'],
             'unknown currency' => ['currency_code' => 'XXX'],
             'missing customer' => ['customer_id' => 999999],
         ] as $label => $overrides) {
@@ -132,7 +132,7 @@ trait EdgeSteps
         $this->openCounterOverWeb();
         // Large amount so the booking lands in PendingApproval (small amounts
         // auto-complete and never exercise the approval state).
-        $txId = $this->bookOverWeb('wave-b-no-cancel-', ['amount_foreign' => '3000.00']);
+        $txId = $this->bookOverWeb('wave-b-no-cancel-', ['quantity' => '3000.00']);
 
         // As in B9, web rejection is a redirect + flash error; the oracle
         // assertion is the verdict: nothing may change without a pending

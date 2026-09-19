@@ -27,7 +27,7 @@ class TransactionWizardStep2Request extends AuthorizedFormRequest
         $rules['customer.occupation'] = ['required', 'string', 'max:255'];
         $rules['customer.employer_name'] = ['nullable', 'string', 'max:255'];
         $rules['customer.employer_address'] = ['nullable', 'string', 'max:1000'];
-        $rules['customer.annual_volume_estimate'] = ['nullable', 'numeric', 'min:0'];
+        $rules['customer.annual_volume_myr'] = ['nullable', 'numeric', 'min:0'];
 
         // KYC uploads are always validated (type/size) whenever present, even
         // when optional for the current CDD level; presence is only required

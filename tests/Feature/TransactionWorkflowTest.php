@@ -105,9 +105,9 @@ class TransactionWorkflowTest extends TestCase
         $response = $this->postJson('/api/v1/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
-            'amount_local' => '450.00',
+            'amount_myr' => '450.00',
             'customer_id' => $this->customer->id,
         ]);
 
@@ -122,9 +122,9 @@ class TransactionWorkflowTest extends TestCase
         Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
-            'amount_local' => '450.00',
+            'amount_myr' => '450.00',
             'customer_id' => $this->customer->id,
             'user_id' => $this->teller->id,
             'till_id' => $this->counter->code,
@@ -145,9 +145,9 @@ class TransactionWorkflowTest extends TestCase
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
-            'amount_local' => '450.00',
+            'amount_myr' => '450.00',
             'customer_id' => $this->customer->id,
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
@@ -211,7 +211,7 @@ class TransactionWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'rate' => '10.50', // 1000 * 10.5 = 10500 >= 10000 = PendingApproval
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -228,7 +228,7 @@ class TransactionWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '800.00',
+            'quantity' => '800.00',
             'rate' => '10.50',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -291,7 +291,7 @@ class TransactionWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '1000.00', // 1000 * 10.00 = 10000 exactly
+            'quantity' => '1000.00', // 1000 * 10.00 = 10000 exactly
             'rate' => '10.00',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',
@@ -400,7 +400,7 @@ class TransactionWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'currency_code' => 'USD',
             'type' => TransactionType::Sell->value,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '10.00',
             'purpose' => 'Test',
             'source_of_funds' => 'salary',

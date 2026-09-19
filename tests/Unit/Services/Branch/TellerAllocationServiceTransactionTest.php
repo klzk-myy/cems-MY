@@ -34,22 +34,22 @@ class TellerAllocationServiceTransactionTest extends TestCase
             app(AuditService::class), app(TillService::class));
     }
 
-    private function activeAllocation(User $teller, Branch $branch, string $currencyCode, string $currentBalance, string $dailyLimitMyr = '50000.0000'): TellerAllocation
+    private function activeAllocation(User $teller, Branch $branch, string $currencyCode, string $currentQuantity, string $dailyLimitMyr = '50000.0000'): TellerAllocation
     {
         return TellerAllocation::factory()->create([
             'user_id' => $teller->id,
             'branch_id' => $branch->id,
             'currency_code' => $currencyCode,
             'status' => TellerAllocationStatus::Active,
-            'allocated_amount' => $currentBalance,
-            'current_balance' => $currentBalance,
+            'allocated_quantity' => $currentQuantity,
+            'current_quantity' => $currentQuantity,
             'daily_limit_myr' => $dailyLimitMyr,
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
         ]);
     }
 
-    private function transaction(User $user, Branch $branch, TransactionType $type, string $currencyCode, string $amountForeign, string $amountLocal): Transaction
+    private function transaction(User $user, Branch $branch, TransactionType $type, string $currencyCode, string $quantity, string $amountMyr): Transaction
     {
         return Transaction::factory()->create([
             'customer_id' => Customer::factory(),
@@ -57,8 +57,8 @@ class TellerAllocationServiceTransactionTest extends TestCase
             'branch_id' => $branch->id,
             'type' => $type->value,
             'currency_code' => $currencyCode,
-            'amount_foreign' => $amountForeign,
-            'amount_local' => $amountLocal,
+            'quantity' => $quantity,
+            'amount_myr' => $amountMyr,
         ]);
     }
 
@@ -73,7 +73,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->applyTransactionAllocation($transaction, $allocation);
 
         $allocation->refresh();
-        $this->assertEquals('1100.0000', (string) $allocation->current_balance);
+        $this->assertEquals('1100.0000', (string) $allocation->current_quantity);
         $this->assertEquals('450.0000', (string) $allocation->daily_used_myr);
     }
 
@@ -88,7 +88,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->applyTransactionAllocation($transaction, $allocation);
 
         $allocation->refresh();
-        $this->assertEquals('900.0000', (string) $allocation->current_balance);
+        $this->assertEquals('900.0000', (string) $allocation->current_quantity);
         $this->assertEquals('450.0000', (string) $allocation->daily_used_myr);
     }
 
@@ -103,7 +103,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->applyTransactionAllocation($transaction);
 
         $allocation->refresh();
-        $this->assertEquals('1100.0000', (string) $allocation->current_balance);
+        $this->assertEquals('1100.0000', (string) $allocation->current_quantity);
     }
 
     #[Test]
@@ -130,7 +130,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->reverseTransactionAllocation($transaction);
 
         $allocation->refresh();
-        $this->assertEquals('1000.0000', (string) $allocation->current_balance);
+        $this->assertEquals('1000.0000', (string) $allocation->current_quantity);
         $this->assertEquals('0.0000', (string) $allocation->daily_used_myr);
     }
 
@@ -146,7 +146,7 @@ class TellerAllocationServiceTransactionTest extends TestCase
         $this->service->reverseTransactionAllocation($transaction);
 
         $allocation->refresh();
-        $this->assertEquals('1000.0000', (string) $allocation->current_balance);
+        $this->assertEquals('1000.0000', (string) $allocation->current_quantity);
         $this->assertEquals('0.0000', (string) $allocation->daily_used_myr);
     }
 
@@ -170,8 +170,8 @@ class TellerAllocationServiceTransactionTest extends TestCase
 
         $pinned->refresh();
         $richer->refresh();
-        $this->assertEquals('400.0000', (string) $pinned->current_balance);
-        $this->assertEquals('9000.0000', (string) $richer->current_balance);
+        $this->assertEquals('400.0000', (string) $pinned->current_quantity);
+        $this->assertEquals('9000.0000', (string) $richer->current_quantity);
     }
 
     #[Test]
@@ -194,8 +194,8 @@ class TellerAllocationServiceTransactionTest extends TestCase
 
         $active->refresh();
         $returned->refresh();
-        $this->assertEquals('9100.0000', (string) $active->current_balance);
-        $this->assertEquals('500.0000', (string) $returned->current_balance);
+        $this->assertEquals('9100.0000', (string) $active->current_quantity);
+        $this->assertEquals('500.0000', (string) $returned->current_quantity);
     }
 
     #[Test]

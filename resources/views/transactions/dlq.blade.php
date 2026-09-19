@@ -34,7 +34,7 @@
                                     {{ $transaction->type->label() }}
                                 </x-badge>
                             </td>
-                            <td class="px-4 py-3">{{ number_format($transaction->amount_foreign, 2) }} {{ $transaction->currency_code }}</td>
+                            <td class="px-4 py-3">{{ number_format($transaction->quantity, 2) }} {{ $transaction->currency_code }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted max-w-xs">
                                 <span class="block truncate" title="{{ $transaction->failure_reason }}">
                                     {{ $transaction->failure_reason ?? $transaction->transactionErrors->first()?->error_message ?? 'Unknown error' }}

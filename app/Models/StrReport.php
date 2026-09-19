@@ -21,10 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property int|null $case_id
  * @property int $customer_id
- * @property string $trigger_amount MYR aggregate (decimal(18,4) as string)
+ * @property string $trigger_amount_myr MYR aggregate (decimal(18,4) as string)
  * @property string $trigger_reason
  * @property StrReportStatus $status
- * @property string $trigger_amount
+ * @property string $trigger_amount_myr
  * @property string|null $bnm_reference
  * @property Carbon|null $submitted_at
  * @property Carbon|null $acknowledged_at
@@ -50,7 +50,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property array|null $supporting_documents
  * @property StrReportStatus $status
  * @property \Illuminate\Support\Carbon|null $submitted_at
- * @property string $trigger_amount
+ * @property string $trigger_amount_myr
  * @property string|null $bnm_reference
  * @property int $created_by
  * @property int|null $reviewed_by
@@ -70,7 +70,7 @@ class StrReport extends BaseModel
     protected $fillable = [
         'case_id',
         'customer_id',
-        'trigger_amount',
+        'trigger_amount_myr',
         'trigger_reason',
         'status',
         'bnm_reference',
@@ -80,7 +80,7 @@ class StrReport extends BaseModel
     ];
 
     protected $casts = [
-        'trigger_amount' => MoneyCast::class,
+        'trigger_amount_myr' => MoneyCast::class,
         'status' => StrReportStatus::class,
         'submitted_at' => 'datetime',
         'acknowledged_at' => 'datetime',

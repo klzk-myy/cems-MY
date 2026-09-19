@@ -17,7 +17,7 @@ class VelocityCheck implements TransactionCheck
     {
         $velocityCheck = $this->complianceService->checkVelocity(
             $transaction->customer_id,
-            $transaction->amount_local
+            $transaction->amount_myr
         );
 
         if (! $velocityCheck['threshold_exceeded']) {

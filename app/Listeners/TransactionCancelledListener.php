@@ -29,7 +29,7 @@ class TransactionCancelledListener
                 'user_id' => $event->cancelledBy,
                 'new_values' => [
                     'transaction_id' => $event->transaction->id,
-                    'amount_local' => $event->transaction->amount_local,
+                    'amount_myr' => $event->transaction->amount_myr,
                     'currency' => $event->transaction->currency_code,
                     'status' => $event->transaction->status->value,
                     'cancellation_reason' => $event->reason,

@@ -112,8 +112,11 @@ jobs:
             fi
 
             # Idempotent schema upgrades for live databases — each command
-            # no-ops when its column/table already exists.
-            php artisan allocations:install-loaded-balance
+            # no-ops when its column/table already exists. Column renames
+            # must run first so add-if-missing installers never create the
+            # new column next to an un-renamed old one.
+            php artisan db:rename-amount-columns
+            php artisan allocations:install-loaded-quantity
             php artisan allocations:install-cancelled-status
             php artisan statuses:install-lowercase-values
             php artisan pools:install-remittances-table

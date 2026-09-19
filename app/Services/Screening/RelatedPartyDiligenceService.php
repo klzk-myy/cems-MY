@@ -69,16 +69,16 @@ class RelatedPartyDiligenceService
 
         $transactionCount = $transactions->count();
         // Sum with bcmath to avoid float precision loss on large monetary totals
-        $totalAmount = '0';
+        $totalAmountMyr = '0';
         foreach ($transactions as $transaction) {
-            $totalAmount = $this->math->add($totalAmount, (string) $transaction->amount_local);
+            $totalAmountMyr = $this->math->add($totalAmountMyr, (string) $transaction->amount_myr);
         }
 
         // Store analysis via customer relation additional_info
         $analysis = [
             'analysis_date' => now()->toIso8601String(),
             'transaction_count' => $transactionCount,
-            'total_amount_myrr' => $totalAmount,
+            'total_amount_myr' => $totalAmountMyr,
             'analysis_type' => 'related_party_due_diligence',
         ];
 
@@ -95,7 +95,7 @@ class RelatedPartyDiligenceService
             'customer_id' => $relatedParty->id,
             'analysis_type' => 'related_party_due_diligence',
             'transaction_count' => $transactionCount,
-            'total_amount' => $totalAmount,
+            'total_amount_myr' => $totalAmountMyr,
             'analyzed_at' => now(),
         ]);
 

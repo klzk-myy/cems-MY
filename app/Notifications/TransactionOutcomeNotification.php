@@ -42,7 +42,7 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
             ->greeting("Hello {$notifiable->username},")
             ->line($this->summaryLine())
             ->line('Reference: '.$this->transaction->reference)
-            ->line('Amount: '.$this->transaction->amount_local.' '.$this->transaction->currency_code)
+            ->line('Amount: '.$this->transaction->amount_myr.' '.$this->transaction->currency_code)
             ->line('Actioned by: '.$this->actorName);
 
         if ($this->reason) {
@@ -62,7 +62,7 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
             'outcome' => $this->outcome,
             'transaction_id' => $this->transaction->id,
             'transaction_reference' => $this->transaction->reference,
-            'amount_local' => $this->transaction->amount_local,
+            'amount_myr' => $this->transaction->amount_myr,
             'currency_code' => $this->transaction->currency_code,
             'actor_name' => $this->actorName,
             'reason' => $this->reason,

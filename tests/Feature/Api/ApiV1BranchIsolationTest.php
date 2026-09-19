@@ -57,7 +57,7 @@ class ApiV1BranchIsolationTest extends TestCase
 
         $response = $this->actingAs($managerB, 'sanctum')
             ->postJson("/api/v1/allocations/{$allocationInA->id}/approve", [
-                'approved_amount' => '50000',
+                'approved_quantity' => '50000',
             ]);
 
         $response->assertForbidden();
@@ -155,7 +155,7 @@ class ApiV1BranchIsolationTest extends TestCase
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
-                'amount_foreign' => '100.00',
+                'quantity' => '100.00',
                 'rate' => '4.50',
                 'till_id' => $counter->code,
                 'purpose' => 'Travel',
@@ -197,7 +197,7 @@ class ApiV1BranchIsolationTest extends TestCase
                 'customer_id' => 999999,
                 'type' => 'Buy',
                 'currency_code' => 'USD',
-                'amount_foreign' => '100.00',
+                'quantity' => '100.00',
                 'rate' => '4.50',
                 'till_id' => $counter->code,
                 'purpose' => 'Travel',

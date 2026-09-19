@@ -62,7 +62,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '1000',
+                'amount_myr' => '1000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -79,7 +79,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '15000',
+                'amount_myr' => '15000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -96,7 +96,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '60000',
+                'amount_myr' => '60000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -114,7 +114,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '60000',
+                    'amount_myr' => '60000',
                     'created_at' => now()->addMinutes($i),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -142,7 +142,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '2000',
+                'amount_myr' => '2000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -161,7 +161,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '2000',
+                    'amount_myr' => '2000',
                     'created_at' => $baseTime->copy()->addMinutes($i),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -181,7 +181,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '2000',
+                    'amount_myr' => '2000',
                     'created_at' => $baseTime->copy()->addMinutes($i),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -209,7 +209,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '60000',
+                'amount_myr' => '60000',
                 'created_at' => now()->subDays(10),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -229,7 +229,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '10000',
+                    'amount_myr' => '10000',
                     'created_at' => now()->subDays($i + 1),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -263,7 +263,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '10000',
+                    'amount_myr' => '10000',
                     'created_at' => now()->subHours($i + 1),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -282,7 +282,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '20000',
+                    'amount_myr' => '20000',
                     'created_at' => now()->subHours($i + 1),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -300,7 +300,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '40000',
+                'amount_myr' => '40000',
                 'created_at' => now()->subHours(1),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -331,7 +331,7 @@ class RiskCalculationServiceTest extends TestCase
             Transaction::factory()
                 ->for($customer)
                 ->create([
-                    'amount_local' => '5000',
+                    'amount_myr' => '5000',
                     'created_at' => now()->subMinutes($i + 1),
                     'status' => TransactionStatus::Completed,
                 ]);
@@ -363,7 +363,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '60000',
+                'amount_myr' => '60000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Cancelled,
             ]);
@@ -372,7 +372,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '1000',
+                'amount_myr' => '1000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);
@@ -396,7 +396,7 @@ class RiskCalculationServiceTest extends TestCase
         Transaction::factory()
             ->for($customer)
             ->create([
-                'amount_local' => '60000',
+                'amount_myr' => '60000',
                 'created_at' => now(),
                 'status' => TransactionStatus::Completed,
             ]);

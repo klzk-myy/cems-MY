@@ -21,7 +21,7 @@ class HandoverVarianceCalculatorTest extends TestCase
     public function currency_with_no_prior_balance_has_zero_variance(): void
     {
         $result = $this->calculator->compute(
-            [['currency_id' => 'USD', 'amount' => '500.00']],
+            [['currency_id' => 'USD', 'quantity' => '500.00']],
             ['USD' => 'USD'],
             collect(),
             collect(),
@@ -38,12 +38,12 @@ class HandoverVarianceCalculatorTest extends TestCase
         $myr = new TillBalance([
             'currency_code' => 'MYR',
             'opening_balance' => '1000.0000',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
         ]);
 
         $result = $this->calculator->compute(
-            [['currency_id' => 'MYR', 'amount' => '1025.50']],
+            [['currency_id' => 'MYR', 'quantity' => '1025.50']],
             ['MYR' => 'MYR'],
             collect(['MYR' => $myr]),
             collect(),
@@ -62,13 +62,13 @@ class HandoverVarianceCalculatorTest extends TestCase
         $usd = new TillBalance([
             'currency_code' => 'USD',
             'opening_balance' => '1000.0000',
-            'buy_total_foreign' => '300.0000',
-            'sell_total_foreign' => '100.0000',
+            'buy_quantity' => '300.0000',
+            'sell_quantity' => '100.0000',
         ]);
 
         // Expected = 1000 + 300 - 100 = 1200; count 1150 => variance -50.
         $result = $this->calculator->compute(
-            [['currency_id' => 'USD', 'amount' => '1150.0000']],
+            [['currency_id' => 'USD', 'quantity' => '1150.0000']],
             ['USD' => 'USD'],
             collect(['USD' => $usd]),
             collect(),
@@ -85,20 +85,20 @@ class HandoverVarianceCalculatorTest extends TestCase
         $myr = new TillBalance([
             'currency_code' => 'MYR',
             'opening_balance' => '100.0000',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
         ]);
         $usd = new TillBalance([
             'currency_code' => 'USD',
             'opening_balance' => '200.0000',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
         ]);
 
         $result = $this->calculator->compute(
             [
-                ['currency_id' => 'MYR', 'amount' => '90.0000'],
-                ['currency_id' => 'USD', 'amount' => '210.0000'],
+                ['currency_id' => 'MYR', 'quantity' => '90.0000'],
+                ['currency_id' => 'USD', 'quantity' => '210.0000'],
             ],
             ['MYR' => 'MYR', 'USD' => 'USD'],
             collect(['MYR' => $myr, 'USD' => $usd]),
@@ -118,13 +118,13 @@ class HandoverVarianceCalculatorTest extends TestCase
         $closed = new TillBalance([
             'currency_code' => 'USD',
             'opening_balance' => '1000.0000',
-            'buy_total_foreign' => '0',
-            'sell_total_foreign' => '0',
+            'buy_quantity' => '0',
+            'sell_quantity' => '0',
             'closed_at' => now(),
         ]);
 
         $result = $this->calculator->compute(
-            [['currency_id' => 'USD', 'amount' => '995.0000']],
+            [['currency_id' => 'USD', 'quantity' => '995.0000']],
             ['USD' => 'USD'],
             collect(),
             collect(['USD' => $closed]),
@@ -139,7 +139,7 @@ class HandoverVarianceCalculatorTest extends TestCase
     public function unresolvable_currency_ids_are_skipped(): void
     {
         $result = $this->calculator->compute(
-            [['currency_id' => 'ZZZ', 'amount' => '100.00']],
+            [['currency_id' => 'ZZZ', 'quantity' => '100.00']],
             [],
             collect(),
             collect(),

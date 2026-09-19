@@ -32,7 +32,7 @@
                                     {{ $transaction->type?->label() ?? 'N/A' }}
                                 </x-badge>
                             </td>
-                            <td class="px-4 py-3 text-right font-medium">{{ number_format((float) $transaction->amount_local, 2) }} MYR</td>
+                            <td class="px-4 py-3 text-right font-medium">{{ number_format((float) $transaction->amount_myr, 2) }} MYR</td>
                             <td class="px-4 py-3">
                                 <x-badge :variant="match ($transaction->status) {
                                     \App\Enums\TransactionStatus::Completed => 'success',

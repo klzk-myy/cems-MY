@@ -191,7 +191,7 @@
                         <td>{{ $tx['id'] ?? 'N/A' }}</td>
                         <td>{{ $tx['customer_name'] ?? $tx['customer_id'] ?? 'N/A' }}</td>
                         <td>{{ $tx['type'] ?? 'N/A' }}</td>
-                        <td class="text-right">{{ number_format($tx['amount_local'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($tx['amount_myr'] ?? 0, 2) }}</td>
                         <td>{{ $tx['currency_code'] ?? 'MYR' }}</td>
                         <td>{{ $tx['status'] ?? 'N/A' }}</td>
                     </tr>
@@ -219,7 +219,7 @@
                         <td>{{ $flag['flag_type'] ?? 'N/A' }}</td>
                         <td>{{ $flag['status'] ?? 'N/A' }}</td>
                         <td>{{ $flag['transaction_id'] ?? 'N/A' }}</td>
-                        <td class="text-right">{{ number_format($flag['transaction']['amount_local'] ?? 0, 2) }}</td>
+                        <td class="text-right">{{ number_format($flag['transaction']['amount_myr'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>

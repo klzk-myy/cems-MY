@@ -15,13 +15,13 @@ class SanctionsAnalysis extends BaseModel
         'customer_id',
         'analysis_type',
         'transaction_count',
-        'total_amount',
+        'total_amount_myr',
         'analyzed_at',
     ];
 
     protected $casts = [
         'transaction_count' => 'integer',
-        'total_amount' => MoneyCast::class,
+        'total_amount_myr' => MoneyCast::class,
         'analyzed_at' => 'datetime',
         'analysis_type' => AnalysisType::class,
     ];

@@ -17,7 +17,7 @@ class AggregateTransactionsCheck implements TransactionCheck
     {
         $aggregateCheck = $this->complianceService->checkAggregateTransactions(
             $transaction->customer_id,
-            $transaction->amount_local
+            $transaction->amount_myr
         );
 
         if (! $aggregateCheck['has_aggregate_concern']) {

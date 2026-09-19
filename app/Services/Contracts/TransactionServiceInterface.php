@@ -8,7 +8,7 @@ use App\Services\DTOs\PreValidationResult;
 
 interface TransactionServiceInterface
 {
-    public function preValidate(Customer $customer, string $amount, string $currencyCode): PreValidationResult;
+    public function preValidate(Customer $customer, string $amountMyr, string $currencyCode): PreValidationResult;
 
     public function createTransaction(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction;
 

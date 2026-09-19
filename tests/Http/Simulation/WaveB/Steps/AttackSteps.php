@@ -73,7 +73,7 @@ trait AttackSteps
         $this->openCounterOverWeb();
         // A large amount stays PendingApproval; small amounts auto-complete
         // below the approval threshold and never exercise the approval route.
-        $txId = $this->bookOverWeb('wave-b-self-approve-', ['amount_foreign' => '3000.00']);
+        $txId = $this->bookOverWeb('wave-b-self-approve-', ['quantity' => '3000.00']);
 
         if ($this->surfaceAllows('web')) {
             $resp = $this->webClient->post('/transactions/'.$txId.'/approve', []);
@@ -134,7 +134,7 @@ trait AttackSteps
             'customer_id' => $this->state->customerId,
             'type' => 'Buy',
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'purpose' => 'Wave B probe',
             'source_of_funds' => 'Salary',
@@ -183,10 +183,10 @@ trait AttackSteps
     {
         $resp = $this->webClient->post('/counters/'.$this->counterCode().'/open', [
             'opening_floats' => [
-                ['currency_id' => 'USD', 'amount' => 100000],
-                ['currency_id' => 'EUR', 'amount' => 100000],
-                ['currency_id' => 'GBP', 'amount' => 100000],
-                ['currency_id' => 'MYR', 'amount' => 100000],
+                ['currency_id' => 'USD', 'quantity' => 100000],
+                ['currency_id' => 'EUR', 'quantity' => 100000],
+                ['currency_id' => 'GBP', 'quantity' => 100000],
+                ['currency_id' => 'MYR', 'quantity' => 100000],
             ],
             'notes' => 'Wave B open',
         ]);

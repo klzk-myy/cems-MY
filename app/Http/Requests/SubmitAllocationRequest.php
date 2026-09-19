@@ -17,7 +17,7 @@ class SubmitAllocationRequest extends AuthorizedFormRequest
         return [
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
-            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
+            'lines.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'counter_id' => ['nullable', 'integer', 'exists:counters,id'],
 
         ];

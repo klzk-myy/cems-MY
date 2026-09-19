@@ -54,7 +54,7 @@ class TransactionImportProcessTest extends TestCase
 
         $this->actingAs($user);
 
-        $csv = UploadedFile::fake()->createWithContent('transactions.csv', "customer_id,type,currency_code,amount_foreign,rate,purpose,source_of_funds,till_id\n{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN\n");
+        $csv = UploadedFile::fake()->createWithContent('transactions.csv', "customer_id,type,currency_code,quantity,rate,purpose,source_of_funds,till_id\n{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN\n");
 
         $response = $this->postJson(route('transactions.batch-upload.store'), [
             'csv_file' => $csv,

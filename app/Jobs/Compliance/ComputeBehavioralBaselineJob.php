@@ -43,7 +43,7 @@ class ComputeBehavioralBaselineJob implements ShouldQueue
             ->where('status', TransactionStatus::Completed->value)
             ->where('created_at', '>=', $windowStart)
             ->selectRaw('COUNT(*) as txn_count')
-            ->selectRaw('COALESCE(AVG(amount_local), 0) as avg_size')
+            ->selectRaw('COALESCE(AVG(amount_myr), 0) as avg_size')
             ->first();
 
         // Frequency: transactions per week over the trailing window.

@@ -150,7 +150,7 @@ class TellerAllocationController extends Controller
             operation: fn ($allocation, $user) => $this->allocationService->approveAllocation(
                 $allocation,
                 $user,
-                $request->validated()['approved_amount'],
+                $request->validated()['approved_quantity'],
                 $request->validated()['daily_limit_myr'] ?? null
             )
         );
@@ -187,7 +187,7 @@ class TellerAllocationController extends Controller
             operation: fn ($allocation, $user) => $this->allocationService->modifyAllocation(
                 $allocation,
                 $user,
-                $request->validated()['new_amount'],
+                $request->validated()['new_quantity'],
                 $request->validated()['is_increase']
             )
         );
@@ -245,7 +245,7 @@ class TellerAllocationController extends Controller
                 $user,
                 $user,
                 $validated['currency_code'],
-                $validated['requested_amount'],
+                $validated['requested_quantity'],
                 null,
                 $counter
             );

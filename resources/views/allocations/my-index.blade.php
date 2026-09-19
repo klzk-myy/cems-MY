@@ -51,12 +51,12 @@
                         <tr class="border-t border-border hover:bg-canvas-subtle">
                             <td class="px-4 py-3">{{ $allocation->id }}</td>
                             <td class="px-4 py-3">{{ $allocation->currency?->code ?? $allocation->currency_code }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_amount, 4) }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_amount, 4) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_quantity, 4) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_quantity, 4) }}</td>
                             <td class="px-4 py-3 text-right">
-                                {{ $allocation->current_balance !== null ? number_format((float) $allocation->current_balance, 4) : '—' }}
-                                @if((float) ($allocation->loaded_balance ?? 0) > 0)
-                                    <div class="text-xs text-ink-muted">in till: {{ number_format((float) $allocation->loaded_balance, 4) }}</div>
+                                {{ $allocation->current_quantity !== null ? number_format((float) $allocation->current_quantity, 4) : '—' }}
+                                @if((float) ($allocation->loaded_quantity ?? 0) > 0)
+                                    <div class="text-xs text-ink-muted">in till: {{ number_format((float) $allocation->loaded_quantity, 4) }}</div>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -91,7 +91,7 @@
                                         </form>
                                         <form method="POST" action="{{ route('my-allocations.till-transfer', $allocation->id) }}" class="flex gap-1 items-center">
                                             @csrf
-                                            <input type="number" name="amount" step="0.0001" min="0.0001" required placeholder="amt"
+                                            <input type="number" name="quantity" step="0.0001" min="0.0001" required placeholder="amt"
                                                    class="w-24 px-2 py-1 text-xs rounded-md border-border bg-surface text-ink focus:border-primary focus:ring-primary" />
                                             <x-button type="submit" name="direction" value="load" size="sm" title="Move from allocation into the drawer">→ Till</x-button>
                                             <x-button type="submit" name="direction" value="unload" variant="secondary" size="sm" title="Return unspent drawer cash to the allocation">← Till</x-button>

@@ -65,7 +65,7 @@ class TransactionConfirmApiTest extends TestCase
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'till_id' => $this->counter->code,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'status' => TransactionStatus::PendingApproval,
         ]);
     }
@@ -135,7 +135,7 @@ class TransactionConfirmApiTest extends TestCase
             'user_id' => $this->manager->id,
             'branch_id' => $this->branch->id,
             'till_id' => $this->counter->code,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'status' => TransactionStatus::PendingApproval,
         ]);
 

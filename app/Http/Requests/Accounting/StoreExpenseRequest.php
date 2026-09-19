@@ -32,7 +32,7 @@ class StoreExpenseRequest extends AuthorizedFormRequest
             ],
             'category' => 'required|string|max:100',
             'description' => 'required|string|max:500',
-            'amount' => 'required|numeric|min:0.0001',
+            'amount_myr' => 'required|numeric|min:0.0001',
             'expense_date' => 'nullable|date',
         ];
     }

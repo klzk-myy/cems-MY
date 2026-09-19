@@ -45,14 +45,14 @@ class TransactionReportQuery
     public function buySellSummary(
         Builder $query,
         string|Expression|null $groupBy = null,
-        string $volumeColumn = 'amount_local',
+        string $volumeColumn = 'amount_myr',
         ?string $amountColumn = null
     ): Collection {
         // The column names are interpolated into raw SQL fragments; only allow
         // known transaction columns so a caller can never inject SQL through
         // this parameter.
         foreach (array_filter([$volumeColumn, $amountColumn]) as $column) {
-            if (! in_array($column, ['amount_local', 'amount_foreign'], true)) {
+            if (! in_array($column, ['amount_myr', 'quantity'], true)) {
                 throw new ReportValidationException("Unsupported report column '{$column}'.");
             }
         }
@@ -83,7 +83,7 @@ class TransactionReportQuery
      * @param  \Illuminate\Database\Eloquent\Collection<int, Transaction>|Collection<int, Transaction>  $transactions
      * @return array{buy_count: int, buy_volume: string, sell_count: int, sell_volume: string}
      */
-    public function buySellVolumes(Collection $transactions, string $volumeColumn = 'amount_local'): array
+    public function buySellVolumes(Collection $transactions, string $volumeColumn = 'amount_myr'): array
     {
         $buy = $transactions->where('type', TransactionType::Buy->value);
         $sell = $transactions->where('type', TransactionType::Sell->value);
@@ -119,8 +119,8 @@ class TransactionReportQuery
     {
         $query = $this->completed($branchId);
 
-        $buySum = (clone $query)->buy()->sum('amount_foreign');
-        $sellSum = (clone $query)->sell()->sum('amount_foreign');
+        $buySum = (clone $query)->buy()->sum('quantity');
+        $sellSum = (clone $query)->sell()->sum('quantity');
 
         return [
             'buy' => $buySum ?? '0',

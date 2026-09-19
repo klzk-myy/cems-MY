@@ -12,7 +12,7 @@ interface CurrencyPositionServiceInterface
 {
     public function updatePosition(
         string $currencyCode,
-        string $amount,
+        string $quantity,
         string $rate,
         string $type,
         ?string $branchId = null,

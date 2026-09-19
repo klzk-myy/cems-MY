@@ -89,7 +89,7 @@ class CustomerApiTest extends TestCase
         $customer = Customer::factory()->create();
         Transaction::factory()->count(2)->create([
             'customer_id' => $customer->id,
-            'amount_local' => 100.00,
+            'amount_myr' => 100.00,
         ]);
 
         $response = $this->actingAs(User::factory()->create(['role' => 'admin']))

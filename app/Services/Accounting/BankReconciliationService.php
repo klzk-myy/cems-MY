@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * @phpstan-type ReconciliationItem array{id: int, date: string|null, reference: string|null, description: string, debit: string, credit: string, amount: string, status: BankReconciliationStatus, notes: string|null}
+ * @phpstan-type ReconciliationItem array{id: int, date: string|null, reference: string|null, description: string, debit: string, credit: string, amount_myr: string, status: BankReconciliationStatus, notes: string|null}
  */
 class BankReconciliationService
 {
@@ -87,7 +87,7 @@ class BankReconciliationService
      * Create an outstanding check entry (check issued but not yet presented)
      *
      * @param  string  $accountCode  Cash/bank account code
-     * @param  array  $checkData  Check details (check_number, check_date, check_payee, amount, etc.)
+     * @param  array  $checkData  Check details (check_number, check_date, check_payee, amount_myr, etc.)
      * @param  int  $userId  User creating the entry
      */
     public function createOutstandingCheck(string $accountCode, array $checkData, int $userId): BankReconciliation
@@ -97,7 +97,7 @@ class BankReconciliationService
             'statement_date' => $checkData['check_date'] ?? today(),
             'reference' => $checkData['check_number'],
             'description' => 'Check issued: '.($checkData['check_payee'] ?? 'Unknown payee'),
-            'debit' => $checkData['amount'] ?? 0,
+            'debit' => $checkData['amount_myr'] ?? 0,
             'credit' => 0,
             'status' => BankReconciliationStatus::Unmatched->value,
             'created_by' => $userId,
@@ -198,14 +198,14 @@ class BankReconciliationService
             // float coercion here would bind a rounded value against decimal
             // columns and silently miss exact matches.
             $recordAmount = $record->getAmount();
-            $amount = $this->mathService->abs($recordAmount);
+            $amountMyr = $this->mathService->abs($recordAmount);
             $isDebit = $this->mathService->compare($recordAmount, '0') > 0;
             $column = $isDebit ? 'debit' : 'credit';
 
             $matchingEntry = JournalEntry::where('status', JournalEntryStatus::Posted->value)
-                ->whereHas('lines', function ($query) use ($accountCode, $amount, $column) {
+                ->whereHas('lines', function ($query) use ($accountCode, $amountMyr, $column) {
                     $query->where('account_code', $accountCode)
-                        ->where($column, $amount);
+                        ->where($column, $amountMyr);
                 })
                 // A journal entry already matched to another statement line
                 // must not be claimed again — without this, two identical-
@@ -288,7 +288,7 @@ class BankReconciliationService
             'description' => $item->description,
             'debit' => (string) $item->debit,
             'credit' => (string) $item->credit,
-            'amount' => $item->getAmount(),
+            'amount_myr' => $item->getAmount(),
             'status' => $item->status,
             'notes' => $item->notes,
         ];
@@ -355,11 +355,11 @@ class BankReconciliationService
         // Accumulate with BCMath; the previous ltrim('-', ...) sign strip turned
         // negative (reversal) deposits into positives and corrupted the balance.
         $checks = $outstandingChecks->reduce(
-            fn (string $carry, array $item) => $this->mathService->add($carry, (string) $item['amount']),
+            fn (string $carry, array $item) => $this->mathService->add($carry, (string) $item['amount_myr']),
             '0'
         );
         $deposits = $outstandingDeposits->reduce(
-            fn (string $carry, array $item) => $this->mathService->add($carry, (string) $item['amount']),
+            fn (string $carry, array $item) => $this->mathService->add($carry, (string) $item['amount_myr']),
             '0'
         );
 

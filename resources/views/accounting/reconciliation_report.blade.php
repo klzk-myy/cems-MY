@@ -66,7 +66,7 @@
                             <td class="px-4 py-3 text-sm">{{ $item['date'] }}</td>
                             <td class="px-4 py-3 text-sm">{{ $item['reference'] ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm">{{ $item['description'] }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $item['amount_myr'], 2) }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $item['notes'] ?? '—' }}</td>
                         </tr>
                     @empty

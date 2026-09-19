@@ -2,17 +2,17 @@
 
 namespace Tests\Unit\Rules;
 
-use App\Rules\ValidAmountForeign;
+use App\Rules\ValidQuantity;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Tests\TestCase;
 
-class ValidAmountForeignTest extends TestCase
+class ValidQuantityTest extends TestCase
 {
     public function test_passes_for_valid_amount(): void
     {
         $passed = true;
         try {
-            $this->assertRulePasses(new ValidAmountForeign, 'amount_foreign', 100);
+            $this->assertRulePasses(new ValidQuantity, 'quantity', 100);
         } catch (\Throwable $e) {
             $passed = false;
         }
@@ -23,20 +23,20 @@ class ValidAmountForeignTest extends TestCase
     public function test_fails_when_below_minimum(): void
     {
         $this->assertRuleFails(
-            new ValidAmountForeign,
-            'amount_foreign',
+            new ValidQuantity,
+            'quantity',
             0,
-            'The amount_foreign must be at least 0.01.'
+            'The quantity must be at least 0.01.'
         );
     }
 
     public function test_fails_for_non_numeric_value(): void
     {
         $this->assertRuleFails(
-            new ValidAmountForeign,
-            'amount_foreign',
+            new ValidQuantity,
+            'quantity',
             'abc',
-            'The amount_foreign must be a number.'
+            'The quantity must be a number.'
         );
     }
 

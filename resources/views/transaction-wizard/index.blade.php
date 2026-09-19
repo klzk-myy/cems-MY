@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Foreign Amount</label>
-                        <input type="number" step="0.01" x-model="formData.amount_foreign" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
+                        <input type="number" step="0.01" x-model="formData.quantity" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Exchange Rate</label>
@@ -72,7 +72,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Local Amount (MYR)</label>
-                        <input type="text" :value="amountLocal" readonly class="w-full px-4 py-2.5 text-sm border border-border rounded-lg bg-canvas-subtle">
+                        <input type="text" :value="amountMyr" readonly class="w-full px-4 py-2.5 text-sm border border-border rounded-lg bg-canvas-subtle">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Till / Counter</label>
@@ -136,7 +136,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Estimated Annual Volume</label>
-                        <input type="number" step="0.01" x-model="formData.annual_volume_estimate" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
+                        <input type="number" step="0.01" x-model="formData.annual_volume_myr" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
                     </div>
 
                     <!-- Enhanced CDD only -->
@@ -200,9 +200,9 @@
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Customer</span><span x-text="summary.customer_name || '—'"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Type</span><span x-text="summary.type || '—'"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Currency</span><span x-text="summary.currency || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Foreign Amount</span><span x-text="(summary.currency || '') + ' ' + (summary.amount_foreign || '—')"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Foreign Amount</span><span x-text="(summary.currency || '') + ' ' + (summary.quantity || '—')"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Rate</span><span x-text="summary.rate || '—'"></span></div>
-                    <div class="flex justify-between py-2 border-b border-border font-bold"><span class="text-ink-muted">Local Amount (MYR)</span><span x-text="summary.amount_local || '—'"></span></div>
+                    <div class="flex justify-between py-2 border-b border-border font-bold"><span class="text-ink-muted">Local Amount (MYR)</span><span x-text="summary.amount_myr || '—'"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Purpose</span><span x-text="summary.purpose || '—'"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">Source of Funds</span><span x-text="summary.source_of_funds || '—'"></span></div>
                     <div class="flex justify-between py-2 border-b border-border"><span class="text-ink-muted">CDD Level</span><span x-text="(summary.cdd_level || '—').charAt(0).toUpperCase() + (summary.cdd_level || '').slice(1)"></span></div>

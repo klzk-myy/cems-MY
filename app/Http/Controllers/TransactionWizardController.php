@@ -88,19 +88,19 @@ class TransactionWizardController extends Controller
         // Calculate local amount (single source of truth for the conversion).
         // The entered rate is quoted per the currency's convention
         // (currencies.rate_unit + rate_inverse).
-        $amountLocal = $this->exchangeCalculator->calculate(
+        $amountMyr = $this->exchangeCalculator->calculate(
             TransactionType::from((string) $validated['type']),
             (string) $validated['currency_code'],
-            (string) $validated['amount_foreign'],
+            (string) $validated['quantity'],
             (string) $validated['rate'],
             null,
             QuoteConvention::forCode((string) $validated['currency_code'])
-        )['amount_local'];
+        )['amount_myr'];
 
         // Run pre-validation (sanctions, CDD, risk)
         $validationResult = $this->validationService->preValidate(
             $customer,
-            $amountLocal,
+            $amountMyr,
             $validated['currency_code']
         );
 
@@ -127,7 +127,7 @@ class TransactionWizardController extends Controller
             'user_id' => auth()->id(),
             'customer_id' => $customer->id,
             'transaction_data' => $validated,
-            'amount_local' => $amountLocal,
+            'amount_myr' => $amountMyr,
             'cdd_level' => $cddLevel->value,
             'risk_flags' => $validationResult->getRiskFlags(),
             'hold_required' => $validationResult->isHoldRequired(),
@@ -206,7 +206,7 @@ class TransactionWizardController extends Controller
         $transactionData = array_merge(
             $sessionData['transaction_data'],
             [
-                'amount_local' => $sessionData['amount_local'],
+                'amount_myr' => $sessionData['amount_myr'],
                 'cdd_level' => $sessionData['cdd_level'],
                 'idempotency_key' => $validated['idempotency_key'],
                 'source_of_wealth' => $sessionData['customer_details']['source_of_wealth'] ?? null,
@@ -236,7 +236,7 @@ class TransactionWizardController extends Controller
                 return $denied;
             }
 
-            $amountLocal = (string) $sessionData['amount_local'];
+            $amountMyr = (string) $sessionData['amount_myr'];
 
             $this->validationService->validatePepRequirements($customer, $transactionData);
 
@@ -247,11 +247,11 @@ class TransactionWizardController extends Controller
                     'type' => (string) $transactionData['type'],
                     'currency_code' => (string) $transactionData['currency_code'],
                 ],
-                $amountLocal
+                $amountMyr
             );
 
             $holdRequired = (bool) $sessionData['hold_required'];
-            $initialStatus = $this->statusResolver->resolve($amountLocal, $holdRequired, $customer->risk_rating);
+            $initialStatus = $this->statusResolver->resolve($amountMyr, $holdRequired, $customer->risk_rating);
 
             $context = new TransactionCreationContext(
                 data: $transactionData,
@@ -260,7 +260,7 @@ class TransactionWizardController extends Controller
                 cddLevel: CddLevel::from($sessionData['cdd_level']),
                 holdRequired: $holdRequired,
                 status: $initialStatus->status,
-                amountLocal: $amountLocal,
+                amountMyr: $amountMyr,
                 user: $user,
                 allocation: $allocation,
                 // hold_reason doubles as the compliance-clear gate — only a
@@ -445,9 +445,9 @@ class TransactionWizardController extends Controller
             'customer_name' => $customer === null ? 'Unknown' : $customer->full_name,
             'type' => $data['type'],
             'currency' => $data['currency_code'],
-            'amount_foreign' => $data['amount_foreign'],
+            'quantity' => $data['quantity'],
             'rate' => $data['rate'],
-            'amount_local' => $sessionData['amount_local'],
+            'amount_myr' => $sessionData['amount_myr'],
             'purpose' => $data['purpose'],
             'source_of_funds' => $data['source_of_funds'],
             'cdd_level' => $sessionData['cdd_level'],

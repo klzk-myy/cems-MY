@@ -22,7 +22,7 @@ class SanctionsAnalysisFactory extends Factory
             'customer_id' => Customer::factory(),
             'analysis_type' => $this->faker->randomElement(['sanction', 'pep', 'risk', 'related_party_due_diligence']),
             'transaction_count' => $this->faker->numberBetween(0, 1000),
-            'total_amount' => $this->faker->randomFloat(2, 1000, 1000000),
+            'total_amount_myr' => $this->faker->randomFloat(2, 1000, 1000000),
             'analyzed_at' => $this->faker->dateTimeThisMonth(),
         ];
     }

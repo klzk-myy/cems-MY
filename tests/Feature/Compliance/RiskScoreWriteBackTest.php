@@ -140,7 +140,7 @@ class RiskScoreWriteBackTest extends TestCase
         // Give the customer enough recent activity to produce a non-zero
         // overall score so the write-back registers an actual change.
         Transaction::factory()->for($customer)->create([
-            'amount_local' => '15000',
+            'amount_myr' => '15000',
             'created_at' => now(),
         ]);
 

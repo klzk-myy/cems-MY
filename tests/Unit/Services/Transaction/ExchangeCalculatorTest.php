@@ -11,12 +11,12 @@ use Tests\TestCase;
 
 /**
  * Characterization tests for ExchangeCalculator — the single source of truth
- * for foreign → local conversion (amount_local = amount_foreign × rate).
+ * for foreign → local conversion (amount_myr = quantity × rate).
  *
  * Expected values are derived from the existing tests that exercised the
- * previously-inlined `MathService::multiply(amount_foreign, rate)`:
+ * previously-inlined `MathService::multiply(quantity, rate)`:
  *   - TransactionServicePrepareTest::prepare_and_create_completes_small_transaction
- *     asserts amount_local '450.0000' for amount_foreign '100.00' @ rate '4.500000'.
+ *     asserts amount_myr '450.0000' for quantity '100.00' @ rate '4.500000'.
  *   - MathServiceTest::it_multiplies_two_numbers_with_precision asserts
  *     multiply('10.50', '3') === '31.50' (here at scale 4: '31.5000').
  *
@@ -43,7 +43,7 @@ class ExchangeCalculatorTest extends TestCase
             '4.500000',
         );
 
-        $this->assertSame('450.0000', $result['amount_local']);
+        $this->assertSame('450.0000', $result['amount_myr']);
     }
 
     #[Test]
@@ -56,7 +56,7 @@ class ExchangeCalculatorTest extends TestCase
             '5.000000',
         );
 
-        $this->assertSame('10000.0000', $result['amount_local']);
+        $this->assertSame('10000.0000', $result['amount_myr']);
     }
 
     #[Test]
@@ -69,7 +69,7 @@ class ExchangeCalculatorTest extends TestCase
             '4.50',
         );
 
-        $this->assertSame('450.0000', $result['amount_local']);
+        $this->assertSame('450.0000', $result['amount_myr']);
     }
 
     #[Test]
@@ -82,7 +82,7 @@ class ExchangeCalculatorTest extends TestCase
             '3',
         );
 
-        $this->assertSame('31.5000', $result['amount_local']);
+        $this->assertSame('31.5000', $result['amount_myr']);
     }
 
     #[Test]
@@ -96,7 +96,7 @@ class ExchangeCalculatorTest extends TestCase
             '4.123456',
         );
 
-        $this->assertSame('412.3456', $result['amount_local']);
+        $this->assertSame('412.3456', $result['amount_myr']);
     }
 
     #[Test]
@@ -111,11 +111,11 @@ class ExchangeCalculatorTest extends TestCase
             '0.555555',
         );
 
-        $this->assertSame('0.5555', $result['amount_local']);
+        $this->assertSame('0.5555', $result['amount_myr']);
     }
 
     #[Test]
-    public function returned_array_preserves_amount_foreign_and_rate_unchanged(): void
+    public function returned_array_preserves_quantity_and_rate_unchanged(): void
     {
         $result = $this->calculator()->calculate(
             TransactionType::Buy,
@@ -124,7 +124,7 @@ class ExchangeCalculatorTest extends TestCase
             '4.500000',
         );
 
-        $this->assertSame('100.00', $result['amount_foreign']);
+        $this->assertSame('100.00', $result['quantity']);
         $this->assertSame('4.50000000', $result['rate']);
     }
 
@@ -135,8 +135,8 @@ class ExchangeCalculatorTest extends TestCase
         $buy = $this->calculator()->calculate(TransactionType::Buy, 'USD', '100.00', '4.500000');
         $sell = $this->calculator()->calculate(TransactionType::Sell, 'USD', '100.00', '4.500000');
 
-        $this->assertSame($buy['amount_local'], $sell['amount_local']);
-        $this->assertSame('450.0000', $buy['amount_local']);
+        $this->assertSame($buy['amount_myr'], $sell['amount_myr']);
+        $this->assertSame('450.0000', $buy['amount_myr']);
     }
 
     #[Test]
@@ -152,7 +152,7 @@ class ExchangeCalculatorTest extends TestCase
             new QuoteConvention(1000000)
         );
 
-        $this->assertSame('235.0000', $result['amount_local']);
+        $this->assertSame('235.0000', $result['amount_myr']);
         $this->assertSame('0.00023500', $result['rate']);
     }
 
@@ -169,7 +169,7 @@ class ExchangeCalculatorTest extends TestCase
             new QuoteConvention(1000000)
         );
 
-        $this->assertSame('117.5000', $result['amount_local']);
+        $this->assertSame('117.5000', $result['amount_myr']);
         $this->assertSame('0.00023500', $result['rate']);
     }
 
@@ -186,7 +186,7 @@ class ExchangeCalculatorTest extends TestCase
     public function inverse_quoted_rate_inverts_the_normalization(): void
     {
         // RM 1 = 4,255 IDR (inverse quote, unit 1) → per-unit truncates to
-        // 0.00023501 at 8dp, and amount_local uses that same stored rate.
+        // 0.00023501 at 8dp, and amount_myr uses that same stored rate.
         $result = $this->calculator()->calculate(
             TransactionType::Buy,
             'IDR',
@@ -196,7 +196,7 @@ class ExchangeCalculatorTest extends TestCase
             new QuoteConvention(1, true)
         );
 
-        $this->assertSame('235.0100', $result['amount_local']);
+        $this->assertSame('235.0100', $result['amount_myr']);
         $this->assertSame('0.00023501', $result['rate']);
     }
 
@@ -214,7 +214,7 @@ class ExchangeCalculatorTest extends TestCase
             new QuoteConvention(100, true)
         );
 
-        $this->assertSame('99.9967', $result['amount_local']);
+        $this->assertSame('99.9967', $result['amount_myr']);
         $this->assertSame('0.00023501', $result['rate']);
     }
 }

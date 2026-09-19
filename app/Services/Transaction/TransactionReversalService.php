@@ -134,15 +134,15 @@ class TransactionReversalService
             ? TransactionType::Sell
             : TransactionType::Buy;
 
-        $amountLocal = $this->exchangeCalculator->calculate(
+        $amountMyr = $this->exchangeCalculator->calculate(
             $oppositeType,
             $original->currency_code,
-            (string) $original->amount_foreign,
+            (string) $original->quantity,
             (string) $original->rate
-        )['amount_local'];
+        )['amount_myr'];
 
         $customer = Customer::findOrFail($original->customer_id);
-        $holdCheck = $this->complianceService->requiresHold($amountLocal, $customer);
+        $holdCheck = $this->complianceService->requiresHold($amountMyr, $customer);
 
         // Refund transactions are inherently high-risk (reversals) and should always
         // require manager approval regardless of amount. This prevents bypassing
@@ -161,8 +161,8 @@ class TransactionReversalService
             'till_id' => $original->till_id,
             'type' => $oppositeType,
             'currency_code' => $original->currency_code,
-            'amount_foreign' => $original->amount_foreign,
-            'amount_local' => $amountLocal,
+            'quantity' => $original->quantity,
+            'amount_myr' => $amountMyr,
             'rate' => $original->rate,
             'purpose' => 'Reversal: '.($original->purpose ?? 'Transaction reversal'),
             'source_of_funds' => $original->source_of_funds,
@@ -183,7 +183,7 @@ class TransactionReversalService
             [
                 'new' => [
                     'original_transaction_id' => $original->id,
-                    'amount_local' => $amountLocal,
+                    'amount_myr' => $amountMyr,
                     'status' => $status->value,
                     'hold_reason' => $holdReason,
                     'compliance_reasons' => $holdCheck->reasons,
@@ -228,7 +228,7 @@ class TransactionReversalService
         Log::info('Positions reversed for transaction', [
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
-            'amount_foreign' => $transaction->amount_foreign,
+            'quantity' => $transaction->quantity,
             'type' => $transaction->type->value,
         ]);
     }
@@ -266,15 +266,15 @@ class TransactionReversalService
         $this->tillBalanceManager->reverseTransaction(
             $tillBalance,
             $transaction->type,
-            (string) $transaction->amount_local,
-            (string) $transaction->amount_foreign
+            (string) $transaction->amount_myr,
+            (string) $transaction->quantity
         );
 
         Log::info('Till balance reversed for transaction', [
             'transaction_id' => $transaction->id,
             'currency_code' => $transaction->currency_code,
-            'amount_foreign' => $transaction->amount_foreign,
-            'amount_local' => $transaction->amount_local,
+            'quantity' => $transaction->quantity,
+            'amount_myr' => $transaction->amount_myr,
         ]);
     }
 

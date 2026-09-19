@@ -56,7 +56,7 @@ class CustomerReportService
         $baseQuery = $customer->transactions()->completed()->getQuery();
         $this->applyDateRangeFilters($baseQuery, $filters);
 
-        $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
+        $transactions = $baseQuery->get(['created_at', 'amount_myr', 'type']);
 
         $volumes = $this->transactionReportQuery->buySellVolumes($transactions);
         $totalCount = $transactions->count();
@@ -86,7 +86,7 @@ class CustomerReportService
         $baseQuery = $customer->transactions()->completed()->getQuery();
         $this->applyDateRangeFilters($baseQuery, $filters);
 
-        $transactions = $baseQuery->get(['created_at', 'amount_local', 'type']);
+        $transactions = $baseQuery->get(['created_at', 'amount_myr', 'type']);
 
         // Get last 12 months of labels
         $chartLabels = [];
@@ -101,18 +101,18 @@ class CustomerReportService
                 fn ($t) => $t->created_at->year === $date->year && $t->created_at->month === $date->month
             );
 
-            $buyTotal = '0';
+            $buyTotalMyr = '0';
             foreach ($monthTransactions->where('type', TransactionType::Buy) as $t) {
-                $buyTotal = $this->mathService->add($buyTotal, (string) $t->amount_local);
+                $buyTotalMyr = $this->mathService->add($buyTotalMyr, (string) $t->amount_myr);
             }
 
-            $sellTotal = '0';
+            $sellTotalMyr = '0';
             foreach ($monthTransactions->where('type', TransactionType::Sell) as $t) {
-                $sellTotal = $this->mathService->add($sellTotal, (string) $t->amount_local);
+                $sellTotalMyr = $this->mathService->add($sellTotalMyr, (string) $t->amount_myr);
             }
 
-            $chartBuyData[] = $buyTotal ?: '0';
-            $chartSellData[] = $sellTotal ?: '0';
+            $chartBuyData[] = $buyTotalMyr ?: '0';
+            $chartSellData[] = $sellTotalMyr ?: '0';
         }
 
         return [
@@ -135,8 +135,8 @@ class CustomerReportService
                 'Date' => $transaction->created_at->format('Y-m-d H:i:s'),
                 'Type' => $transaction->type->label(),
                 'Currency' => $transaction->currency_code,
-                'Foreign Amount' => $transaction->amount_foreign,
-                'MYR Amount' => $transaction->amount_local,
+                'Foreign Amount' => $transaction->quantity,
+                'MYR Amount' => $transaction->amount_myr,
                 'Rate' => $transaction->rate,
                 'Status' => $transaction->status->label(),
                 'Processed By' => $transaction->user->name ?? 'N/A',

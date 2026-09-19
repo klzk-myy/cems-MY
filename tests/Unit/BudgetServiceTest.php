@@ -51,8 +51,8 @@ class BudgetServiceTest extends TestCase
         Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -77,8 +77,8 @@ class BudgetServiceTest extends TestCase
         Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -104,8 +104,8 @@ class BudgetServiceTest extends TestCase
         Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -129,16 +129,16 @@ class BudgetServiceTest extends TestCase
         Budget::factory()->create([
             'account_code' => $expenseAccount->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
         Budget::factory()->create([
             'account_code' => $revenueAccount->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '10000.00',
-            'actual_amount' => '8000.00',
+            'budget_myr' => '10000.00',
+            'actual_myr' => '8000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -182,8 +182,8 @@ class BudgetServiceTest extends TestCase
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00',
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -204,8 +204,8 @@ class BudgetServiceTest extends TestCase
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '6000.00', // Over budget
+            'budget_myr' => '5000.00',
+            'actual_myr' => '6000.00', // Over budget
             'created_by' => $this->adminUser->id,
         ]);
 
@@ -224,8 +224,8 @@ class BudgetServiceTest extends TestCase
         $budget = Budget::factory()->create([
             'account_code' => $account->account_code,
             'period_code' => $periodCode,
-            'budget_amount' => '5000.00',
-            'actual_amount' => '3000.00', // Under budget
+            'budget_myr' => '5000.00',
+            'actual_myr' => '3000.00', // Under budget
             'created_by' => $this->adminUser->id,
         ]);
 

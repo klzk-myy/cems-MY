@@ -271,7 +271,7 @@ class LedgerService
      *         [
      *             'account_code' => '4000',
      *             'account_name' => 'Sales Revenue',
-     *             'amount' => '50000.00'
+     *             'amount_myr' => '50000.00'
      *         ],
      *         // ... more revenue accounts
      *     ],
@@ -280,7 +280,7 @@ class LedgerService
      *         [
      *             'account_code' => '5000',
      *             'account_name' => 'Rent Expense',
-     *             'amount' => '10000.00'
+     *             'amount_myr' => '10000.00'
      *         ],
      *         // ... more expense accounts
      *     ],
@@ -297,9 +297,9 @@ class LedgerService
      * @param  string  $toDate  End date for the P&L period (YYYY-MM-DD format)
      * @param  int|null  $branchId  Optional branch ID to filter by. Null means all branches.
      * @return array{
-     * revenues: array<int, array{account_code: string, account_name: string, amount: string}>,
+     * revenues: array<int, array{account_code: string, account_name: string, amount_myr: string}>,
      * total_revenue: string,
-     * expenses: array<int, array{account_code: string, account_name: string, amount: string}>,
+     * expenses: array<int, array{account_code: string, account_name: string, amount_myr: string}>,
      * total_expenses: string,
      * net_profit: string,
      * period: array{from: string, to: string}
@@ -320,7 +320,7 @@ class LedgerService
             $revenueData[] = [
                 'account_code' => $revenue->account_code,
                 'account_name' => $revenue->account_name,
-                'amount' => $balance,
+                'amount_myr' => $balance,
             ];
             $totalRevenue = $this->mathService->add($totalRevenue, $balance);
         }
@@ -335,7 +335,7 @@ class LedgerService
             $expenseData[] = [
                 'account_code' => $expense->account_code,
                 'account_name' => $expense->account_name,
-                'amount' => $balance,
+                'amount_myr' => $balance,
             ];
             $totalExpenses = $this->mathService->add($totalExpenses, $balance);
         }
@@ -438,7 +438,7 @@ class LedgerService
             'account_code' => '',
             'account_name' => 'Net Income (Current Period)',
             'balance' => $netIncome,
-            'amount' => $netIncome,
+            'amount_myr' => $netIncome,
         ];
         $totalEquity = $this->mathService->add($totalEquity, $netIncome);
 
@@ -466,7 +466,7 @@ class LedgerService
      *
      * @param  \Illuminate\Support\Collection<int, ChartOfAccount>  $accounts
      * @param  \Illuminate\Support\Collection<string, string>  $balances
-     * @return array{0: array<int, array{account_code: string, account_name: string, balance: string, amount: string}>, 1: string}
+     * @return array{0: array<int, array{account_code: string, account_name: string, balance: string, amount_myr: string}>, 1: string}
      */
     private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, string $sign): array
     {
@@ -484,7 +484,7 @@ class LedgerService
                 'account_code' => $account->account_code,
                 'account_name' => $account->account_name,
                 'balance' => $balance,
-                'amount' => $balance,
+                'amount_myr' => $balance,
             ];
             $total = $this->mathService->add($total, $balance);
         }

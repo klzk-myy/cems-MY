@@ -15,10 +15,10 @@ use Illuminate\Support\Carbon;
  * @property int $branch_id
  * @property int|null $counter_id
  * @property string $currency_code
- * @property string|null $allocated_amount
- * @property string|null $current_balance
- * @property string|null $loaded_balance
- * @property string|null $requested_amount
+ * @property string|null $allocated_quantity
+ * @property string|null $current_quantity
+ * @property string|null $loaded_quantity
+ * @property string|null $requested_quantity
  * @property string|null $daily_limit_myr
  * @property string|null $daily_used_myr
  * @property TellerAllocationStatus $status
@@ -46,10 +46,10 @@ class TellerAllocationResource extends JsonResource
             'branch_id' => $this->branch_id,
             'counter_id' => $this->counter_id,
             'currency_code' => $this->currency_code,
-            'allocated_amount' => $this->allocated_amount,
-            'current_balance' => $this->current_balance,
-            'loaded_balance' => $this->loaded_balance,
-            'requested_amount' => $this->requested_amount,
+            'allocated_quantity' => $this->allocated_quantity,
+            'current_quantity' => $this->current_quantity,
+            'loaded_quantity' => $this->loaded_quantity,
+            'requested_quantity' => $this->requested_quantity,
             'daily_limit_myr' => $this->daily_limit_myr,
             'daily_used_myr' => $this->daily_used_myr,
             'status' => $this->status,

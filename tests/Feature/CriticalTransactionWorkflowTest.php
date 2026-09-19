@@ -231,7 +231,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         // Verify reservation exists (2500 USD)
         $this->assertDatabaseHas('stock_reservations', [
             'transaction_id' => $transaction1->id,
-            'amount_foreign' => '2500.00',
+            'quantity' => '2500.00',
             'status' => StockReservationStatus::Pending->value,
         ]);
 
@@ -245,7 +245,7 @@ class CriticalTransactionWorkflowTest extends TestCase
                 'customer_id' => $this->customer->id,
                 'type' => TransactionType::Sell->value,
                 'currency_code' => 'USD',
-                'amount_foreign' => '800.00',
+                'quantity' => '800.00',
                 'rate' => '4.50',
                 'till_id' => (string) $this->counter->code,
                 'purpose' => 'Test transaction',
@@ -283,7 +283,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         // Verify stock reservation exists
         $this->assertDatabaseHas('stock_reservations', [
             'transaction_id' => $transaction1->id,
-            'amount_foreign' => '3000.00',
+            'quantity' => '3000.00',
             'status' => StockReservationStatus::Pending->value,
         ]);
 
@@ -458,7 +458,7 @@ class CriticalTransactionWorkflowTest extends TestCase
                 'customer_id' => $this->customer->id,
                 'type' => $type->value,
                 'currency_code' => 'USD',
-                'amount_foreign' => $amount,
+                'quantity' => $amount,
                 'rate' => '4.50',
                 'till_id' => (string) $this->counter->code,
                 'purpose' => 'Test transaction',
@@ -490,7 +490,7 @@ class CriticalTransactionWorkflowTest extends TestCase
             ->where('till_id', (string) $this->counter->code)
             ->where('status', StockReservationStatus::Pending)
             ->where('expires_at', '>', now())
-            ->sum('amount_foreign');
+            ->sum('quantity');
 
         return number_format((float) bcsub($balance, (string) $reserved, 4), 2, '.', '');
     }
@@ -498,8 +498,8 @@ class CriticalTransactionWorkflowTest extends TestCase
     private function getCddLevel(string $amount, ?Customer $customer = null): CddLevel
     {
         $customer = $customer ?? $this->customer;
-        $amountLocal = bcmul($amount, '4.50', 4);
+        $amountMyr = bcmul($amount, '4.50', 4);
 
-        return CddLevel::determine($amountLocal, $customer->pep_status, $customer->sanction_hit ?? false, $customer->risk_rating);
+        return CddLevel::determine($amountMyr, $customer->pep_status, $customer->sanction_hit ?? false, $customer->risk_rating);
     }
 }

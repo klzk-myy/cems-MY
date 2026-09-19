@@ -16,8 +16,8 @@ class BudgetFactory extends Factory
         return [
             'account_code' => ChartOfAccount::factory(),
             'period_code' => now()->format('Y-m'),
-            'budget_amount' => '5000.00',
-            'actual_amount' => '0.00',
+            'budget_myr' => '5000.00',
+            'actual_myr' => '0.00',
             'notes' => null,
             'created_by' => User::factory(),
         ];

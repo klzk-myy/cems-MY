@@ -14,7 +14,7 @@ use App\Services\Contracts\MathServiceInterface;
  * All monetary amounts are handled as strings to maintain precision.
  *
  * DECISION: Default scale is set to 4 to match database decimal(18,4) storage
- * precision for monetary amounts (amount_local, amount_foreign, balance,
+ * precision for monetary amounts (amount_myr, quantity, balance,
  * unrealized_pnl). This prevents silent rounding mismatches between internal
  * calculations and database storage. Exchange rates use explicit scale=8
  * where needed (decimal(18,8) in DB).
@@ -177,14 +177,14 @@ class MathService implements MathServiceInterface
      *
      * Formula: Position Amount × (New Rate - Old Rate)
      *
-     * @param  string  $positionAmount  Current position balance
+     * @param  string  $positionQuantity  Current position balance
      * @param  string  $oldRate  Previous valuation rate
      * @param  string  $newRate  Current market rate
      * @param  int|null  $precision  Optional precision override (default: scale)
      * @return numeric-string Revaluation P&L (positive = gain, negative = loss)
      */
     public function calculateRevaluationPnl(
-        string $positionAmount,
+        string $positionQuantity,
         string $oldRate,
         string $newRate,
         ?int $precision = null
@@ -198,7 +198,7 @@ class MathService implements MathServiceInterface
         $workingScale = max($this->scale, $outputPrecision);
         $rateDiff = bcsub($this->assertNumeric($newRate), $this->assertNumeric($oldRate), $workingScale);
 
-        return bcmul($this->assertNumeric($positionAmount), $this->assertNumeric($rateDiff), $outputPrecision);
+        return bcmul($this->assertNumeric($positionQuantity), $this->assertNumeric($rateDiff), $outputPrecision);
     }
 
     /**

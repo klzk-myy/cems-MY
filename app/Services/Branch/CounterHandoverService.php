@@ -43,7 +43,7 @@ class CounterHandoverService
      * handover, and opens a new session for the receiving user — all
      * atomically within a transaction.
      *
-     * @param  array<int, array{currency_id: mixed, amount: string}>  $physicalCounts
+     * @param  array<int, array{currency_id: mixed, quantity: string}>  $physicalCounts
      * @return array{handover: CounterHandover, new_session: CounterSession}
      */
     public function initiateHandover(
@@ -260,7 +260,7 @@ class CounterHandoverService
      * Apply the physical counts: close open balances and open successor
      * balances for the incoming teller, or reopen previously closed ones.
      *
-     * @param  array<int, array{currency_id: mixed, amount: string}>  $physicalCounts
+     * @param  array<int, array{currency_id: mixed, quantity: string}>  $physicalCounts
      * @param  array<mixed, string>  $currencies  input currency_id => currency_code
      * @param  Collection<string, TillBalance>  $openBalances
      * @param  Collection<string, TillBalance>  $closedBalances
@@ -284,7 +284,7 @@ class CounterHandoverService
                 continue;
             }
 
-            $closingBalance = $count['amount'];
+            $closingBalance = $count['quantity'];
             $variance = $variances->perCurrency[$currencyCode];
             $open = $openBalances->get($currencyCode);
             $closed = $closedBalances->get($currencyCode);
@@ -389,7 +389,7 @@ class CounterHandoverService
      * Returns a map of [input_id => currency_code].
      * Handles both numeric IDs and string codes for consistency.
      *
-     * @param  array<int, array{currency_id: mixed, amount: string}>  $counts
+     * @param  array<int, array{currency_id: mixed, quantity: string}>  $counts
      * @return array<mixed, string>
      */
     private function resolveCurrenciesForCounts(array $counts): array

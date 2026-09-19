@@ -47,7 +47,7 @@ class ReceiptGenerationService
         try {
             $payload = json_encode([
                 'id' => $transaction->id,
-                'amount' => $transaction->amount_local,
+                'amount' => $transaction->amount_myr,
                 'currency' => $transaction->currency_code,
                 'date' => $transaction->created_at->toIso8601String(),
                 'customer_id' => $transaction->customer_id,

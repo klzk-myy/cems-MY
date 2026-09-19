@@ -68,14 +68,14 @@ class TransactionIdempotencyServiceTest extends TestCase
             'user_id' => $user->id,
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'created_at' => $now->copy()->subSeconds(10),
         ]);
 
         $data = [
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
         ];
 
         $result = $this->service->checkRecentDuplicate($user->id, $data, 30);
@@ -94,14 +94,14 @@ class TransactionIdempotencyServiceTest extends TestCase
             'user_id' => $user->id,
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'created_at' => now()->subSeconds(60),
         ]);
 
         $data = [
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
         ];
 
         $result = $this->service->checkRecentDuplicate($user->id, $data, 30);
@@ -118,14 +118,14 @@ class TransactionIdempotencyServiceTest extends TestCase
             'user_id' => $user->id,
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'created_at' => now()->subSeconds(5),
         ]);
 
         $data = [
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '2000.00', // different amount
+            'quantity' => '2000.00', // different amount
         ];
 
         $result = $this->service->checkRecentDuplicate($user->id, $data, 30);
@@ -142,14 +142,14 @@ class TransactionIdempotencyServiceTest extends TestCase
             'user_id' => $user->id,
             'currency_code' => 'EUR',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'created_at' => now()->subSeconds(5),
         ]);
 
         $data = [
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
         ];
 
         $result = $this->service->checkRecentDuplicate($user->id, $data, 30);
@@ -166,14 +166,14 @@ class TransactionIdempotencyServiceTest extends TestCase
             'user_id' => $user->id,
             'currency_code' => 'USD',
             'type' => 'Sell', // different type
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'created_at' => now()->subSeconds(5),
         ]);
 
         $data = [
             'currency_code' => 'USD',
             'type' => 'Buy',
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
         ];
 
         $result = $this->service->checkRecentDuplicate($user->id, $data, 30);

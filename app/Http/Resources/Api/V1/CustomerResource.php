@@ -38,7 +38,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $occupation
  * @property string|null $employer_name
  * @property string|null $employer_address
- * @property float|null $annual_volume_estimate
+ * @property float|null $annual_volume_myr
  * @property Carbon|null $risk_assessed_at
  * @property Carbon|null $last_transaction_at
  * @property bool $is_frozen
@@ -79,7 +79,7 @@ class CustomerResource extends JsonResource
             'occupation' => $this->occupation,
             'employer_name' => $this->employer_name,
             'employer_address' => $this->employer_address,
-            'annual_volume_estimate' => $this->annual_volume_estimate,
+            'annual_volume_myr' => $this->annual_volume_myr,
             'risk_assessed_at' => $this->risk_assessed_at?->toIso8601String(),
             'last_transaction_at' => $this->last_transaction_at?->toIso8601String(),
             'is_frozen' => $this->is_frozen,

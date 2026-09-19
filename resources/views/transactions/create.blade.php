@@ -30,7 +30,7 @@
             <x-select name="currency_code" label="Currency" :options="$currencies ?? []" :selected="old('currency_code')" required
                 x-model="currency_code" />
 
-            <x-input type="number" name="amount_foreign" label="Foreign Amount" step="0.01" value="{{ old('amount_foreign') }}" required />
+            <x-input type="number" name="quantity" label="Foreign Amount" step="0.01" value="{{ old('quantity') }}" required />
 
             <div>
                 <x-input type="number" name="rate" label="Exchange Rate" step="0.0001" value="{{ old('rate') }}" required />

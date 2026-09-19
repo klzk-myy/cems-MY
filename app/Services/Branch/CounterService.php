@@ -147,7 +147,7 @@ class CounterService
                         (string) $counter->code,
                         $currencyCode,
                         $counter->branch_id,
-                        $float['amount'],
+                        $float['quantity'],
                         $today,
                         $user->id
                     );
@@ -210,8 +210,8 @@ class CounterService
 
                 $tillBalance = $tillBalances->get($currency->code);
                 // Expected drawer = opening + net movement in that currency:
-                // MYR tracks it in transaction_total (buys subtract, sells
-                // add); FCY in buy/sell_total_foreign. Same formula as
+                // MYR tracks it in transaction_total_myr (buys subtract, sells
+                // add); FCY in buy/sell_quantity. Same formula as
                 // TillService::expectedClosingForBalance — the one the My
                 // Till panel and day reconciliation use — so an honest count
                 // reads zero variance instead of a forced red.
@@ -219,7 +219,7 @@ class CounterService
                     ? $this->tillService->expectedClosingForBalance($tillBalance)
                     : '0';
 
-                $closingBalance = $float['amount'];
+                $closingBalance = $float['quantity'];
                 $variance = BcmathHelper::subtract($closingBalance, $expectedBalance);
 
                 // Validate variance thresholds

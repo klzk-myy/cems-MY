@@ -51,7 +51,7 @@ class ExchangeCalculatorTraitTest extends TestCase
             '4.500000'
         );
 
-        $this->assertSame('450.0000', $result['amount_local']);
+        $this->assertSame('450.0000', $result['amount_myr']);
     }
 
     #[Test]

@@ -250,7 +250,7 @@ class SecurityTest extends TestCase
     public function negative_amount_rejected(): void
     {
         $response = $this->actingAs($this->defaultUser)->post('/transactions', [
-            'amount' => '-100',
+            'quantity' => '-100',
         ]);
 
         // Should either redirect (validation) or return error

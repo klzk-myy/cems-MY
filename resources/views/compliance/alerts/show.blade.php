@@ -86,7 +86,7 @@
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at?->format('Y-m-d') ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->type?->label() ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-ink">RM {{ number_format($transaction->amount_local ?? 0, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-ink">RM {{ number_format($transaction->amount_myr ?? 0, 2) }}</td>
                             </tr>
                         @endif
                     </x-slot:tbody>

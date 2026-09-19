@@ -210,7 +210,7 @@ class TransactionApprovalController extends Controller
     {
         $threshold = $this->thresholdService->getStrThreshold();
 
-        return $this->mathService->compare($transaction->amount_local, $threshold) >= 0;
+        return $this->mathService->compare($transaction->amount_myr, $threshold) >= 0;
     }
 
     /**

@@ -164,7 +164,7 @@ class CounterServiceTest extends TestCase
         $floats = [
             // Passing a string that looks numeric - the method should handle it
             // by trying to look it up as a Currency ID (though Currency uses code as PK)
-            ['currency_id' => '999', 'amount' => '1000.00'],
+            ['currency_id' => '999', 'quantity' => '1000.00'],
         ];
 
         $service = app(CounterService::class);
@@ -182,8 +182,8 @@ class CounterServiceTest extends TestCase
     public function resolve_currencies_returns_string_keys_for_string_codes(): void
     {
         $floats = [
-            ['currency_id' => 'EUR', 'amount' => '1000.00'],
-            ['currency_id' => 'GBP', 'amount' => '2000.00'],
+            ['currency_id' => 'EUR', 'quantity' => '1000.00'],
+            ['currency_id' => 'GBP', 'quantity' => '2000.00'],
         ];
 
         $service = app(CounterService::class);
@@ -227,9 +227,9 @@ class CounterServiceTest extends TestCase
     public function resolve_currencies_all_keys_are_strings(): void
     {
         $floats = [
-            ['currency_id' => 'USD', 'amount' => '1000.00'],
-            ['currency_id' => 'EUR', 'amount' => '2000.00'],
-            ['currency_id' => 'GBP', 'amount' => '3000.00'],
+            ['currency_id' => 'USD', 'quantity' => '1000.00'],
+            ['currency_id' => 'EUR', 'quantity' => '2000.00'],
+            ['currency_id' => 'GBP', 'quantity' => '3000.00'],
         ];
 
         $service = app(CounterService::class);

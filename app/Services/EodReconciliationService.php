@@ -146,7 +146,7 @@ class EodReconciliationService
             ->get();
 
         $largeTransactions = $transactions->filter(function ($tx) {
-            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getLargeTransactionThreshold());
+            return BcmathHelper::gte((string) $tx->amount_myr, $this->thresholdService->getLargeTransactionThreshold());
         });
 
         $flaggedTransactions = FlaggedTransaction::with(['transaction', 'transaction.customer'])
@@ -181,7 +181,7 @@ class EodReconciliationService
             'counter_summaries' => $counterSummaries,
             'large_transactions' => [
                 'count' => $largeTransactions->count(),
-                'total_amount' => $this->sumDecimalColumn($largeTransactions, 'amount_local'),
+                'total_amount_myr' => $this->sumDecimalColumn($largeTransactions, 'amount_myr'),
                 'transactions' => $largeTransactions->take(50)->values(),
             ],
             'flagged_transactions' => [
@@ -315,11 +315,11 @@ class EodReconciliationService
         return [
             'received' => $this->sumDecimalColumn(
                 $transactions->filter(fn ($tx) => $tx->type === TransactionType::Sell),
-                'amount_local'
+                'amount_myr'
             ),
             'paid_out' => $this->sumDecimalColumn(
                 $transactions->filter(fn ($tx) => $tx->type === TransactionType::Buy),
-                'amount_local'
+                'amount_myr'
             ),
         ];
     }
@@ -407,18 +407,18 @@ class EodReconciliationService
 
     /**
      * @param  Collection<int, Transaction>  $transactions
-     * @return array{count: int, total_amount: string, transactions: Collection<int, Transaction>}
+     * @return array{count: int, total_amount_myr: string, transactions: Collection<int, Transaction>}
      */
     private function largeTransactionsSection(Collection $transactions): array
     {
         // Large transactions (> RM 10k)
         $largeTransactions = $transactions->filter(function ($tx) {
-            return BcmathHelper::gte((string) $tx->amount_local, $this->thresholdService->getLargeTransactionThreshold());
+            return BcmathHelper::gte((string) $tx->amount_myr, $this->thresholdService->getLargeTransactionThreshold());
         });
 
         return [
             'count' => $largeTransactions->count(),
-            'total_amount' => $this->sumDecimalColumn($largeTransactions, 'amount_local'),
+            'total_amount_myr' => $this->sumDecimalColumn($largeTransactions, 'amount_myr'),
             'transactions' => $largeTransactions->take(50)->values(),
         ];
     }
@@ -494,8 +494,8 @@ class EodReconciliationService
         $baseQuery = $this->reconcilableTransactionsQuery($counterId, $date);
 
         // MYR in on Sell, MYR out on Buy (same convention as the reconciliation).
-        $cashReceived = (string) ((clone $baseQuery)->sell()->sum('amount_local'));
-        $cashPaidOut = (string) ((clone $baseQuery)->buy()->sum('amount_local'));
+        $cashReceived = (string) ((clone $baseQuery)->sell()->sum('amount_myr'));
+        $cashPaidOut = (string) ((clone $baseQuery)->buy()->sum('amount_myr'));
 
         $expectedClosing = BcmathHelper::subtract(
             BcmathHelper::add($openingFloat, $cashReceived),
@@ -662,8 +662,8 @@ class EodReconciliationService
                     'id' => $tx->id,
                     'type' => $tx->type->value,
                     'currency_code' => $tx->currency_code,
-                    'amount_local' => $tx->amount_local,
-                    'amount_foreign' => $tx->amount_foreign,
+                    'amount_myr' => $tx->amount_myr,
+                    'quantity' => $tx->quantity,
                     'branch_id' => $tx->branch_id,
                     'branch_name' => $tx->branch?->name,
                     'user_id' => $tx->user_id,

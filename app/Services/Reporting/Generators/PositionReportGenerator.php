@@ -103,14 +103,14 @@ class PositionReportGenerator
 
         foreach ($positions as $position) {
             $limit = $limits[$position->currency_code] ?? null;
-            $currentBalance = $position->quantity;
-            if ($this->mathService->compare($currentBalance, '0') < 0) {
-                $currentBalance = $this->mathService->multiply($currentBalance, '-1');
+            $currentQuantity = $position->quantity;
+            if ($this->mathService->compare($currentQuantity, '0') < 0) {
+                $currentQuantity = $this->mathService->multiply($currentQuantity, '-1');
             }
             $limitValue = $limit ?? '0';
             $utilization = $this->mathService->compare($limitValue, '0') > 0
                 ? $this->mathService->multiply(
-                    $this->mathService->divide($currentBalance, $limitValue),
+                    $this->mathService->divide($currentQuantity, $limitValue),
                     '100'
                 )
                 : '0';
@@ -118,12 +118,12 @@ class PositionReportGenerator
             $data[] = [
                 'currency_code' => $position->currency_code,
                 'currency_name' => $position->currency->name ?? $position->currency_code,
-                'current_balance' => $position->quantity,
+                'current_quantity' => $position->quantity,
                 'position_limit' => $limit,
                 'utilization_percent' => $utilization,
                 'average_cost' => $position->average_cost,
                 'current_rate' => $position->current_rate,
-                'exposure_myr' => $this->mathService->multiply($currentBalance, $position->current_rate ?? '0'),
+                'exposure_myr' => $this->mathService->multiply($currentQuantity, $position->current_rate ?? '0'),
                 'status' => $this->mathService->compare($utilization, '90') >= 0
                     ? 'Critical'
                     : ($this->mathService->compare($utilization, '75') >= 0 ? 'Warning' : 'Normal'),
@@ -131,7 +131,7 @@ class PositionReportGenerator
 
             $totalExposure = $this->mathService->add(
                 $totalExposure,
-                $this->mathService->multiply($currentBalance, $position->current_rate ?? '0')
+                $this->mathService->multiply($currentQuantity, $position->current_rate ?? '0')
             );
         }
 
@@ -173,7 +173,7 @@ class PositionReportGenerator
         foreach ($data['positions'] as $row) {
             $rows[] = [
                 $row['currency_code'],
-                $row['current_balance'],
+                $row['current_quantity'],
                 $row['position_limit'] ?? 'N/A',
                 $row['utilization_percent'].'%',
                 $row['average_cost'],

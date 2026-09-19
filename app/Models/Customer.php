@@ -42,7 +42,7 @@ use Illuminate\Support\Collection;
  * @property string|null $occupation
  * @property string|null $employer_name
  * @property string|null $employer_address
- * @property float|null $annual_volume_estimate
+ * @property float|null $annual_volume_myr
  * @property string $customer_type 'individual', 'corporate'
  * @property string|null $id_number_hash Blind index for lookups
  * @property string|null $pep_type
@@ -71,7 +71,7 @@ use Illuminate\Support\Collection;
  * @property-read string $id_number_masked PDPA-masked ID number
  * @property-read string|null $ic_number Legacy masked IC number
  * @property-read Branch|null $branch Branch of the latest transaction — eager-load latestTransaction.branch before reading
- * @property-read string|null $transactions_sum_amount_local Result of withSum('transactions', 'amount_local')
+ * @property-read string|null $transactions_sum_amount_myr Result of withSum('transactions', 'amount_myr')
  */
 class Customer extends BaseModel
 {
@@ -100,7 +100,7 @@ class Customer extends BaseModel
         'occupation',
         'employer_name',
         'employer_address',
-        'annual_volume_estimate',
+        'annual_volume_myr',
         'last_transaction_at',
         'customer_type',
         'pep_type',
@@ -124,7 +124,7 @@ class Customer extends BaseModel
         'sanction_hit' => 'boolean',
         'is_active' => 'boolean',
         'risk_score' => 'integer',
-        'annual_volume_estimate' => MoneyCast::class,
+        'annual_volume_myr' => MoneyCast::class,
         'risk_assessed_at' => 'datetime',
         'last_transaction_at' => 'datetime',
         'cdd_level' => CddLevel::class,

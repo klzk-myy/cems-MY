@@ -31,10 +31,10 @@ trait ParitySteps
 
         $resp = $this->webClient->post('/counters/'.$this->counterCode().'/open', [
             'opening_floats' => [
-                ['currency_id' => 'USD', 'amount' => 100000],
-                ['currency_id' => 'EUR', 'amount' => 100000],
-                ['currency_id' => 'GBP', 'amount' => 100000],
-                ['currency_id' => 'MYR', 'amount' => 100000],
+                ['currency_id' => 'USD', 'quantity' => 100000],
+                ['currency_id' => 'EUR', 'quantity' => 100000],
+                ['currency_id' => 'GBP', 'quantity' => 100000],
+                ['currency_id' => 'MYR', 'quantity' => 100000],
             ],
             'notes' => 'Wave C web open',
         ]);
@@ -45,7 +45,7 @@ trait ParitySteps
             'customer_id' => $this->state->customerId,
             'type' => 'Buy',
             'currency_code' => 'USD',
-            'amount_foreign' => self::PARITY_AMOUNT,
+            'quantity' => self::PARITY_AMOUNT,
             'rate' => self::PARITY_RATE,
             'purpose' => 'Wave C parity booking',
             'source_of_funds' => 'Salary',
@@ -85,18 +85,18 @@ trait ParitySteps
         $closingFloats = [];
         foreach (['USD', 'EUR', 'GBP', 'MYR'] as $currency) {
             // Mirror CounterService::closeSession's expected balance formula:
-            // opening + buy_total_foreign - sell_total_foreign.
+            // opening + buy_quantity - sell_quantity.
             $row = $this->state->oracle->query(
-                'SELECT opening_balance, buy_total_foreign, sell_total_foreign
+                'SELECT opening_balance, buy_quantity, sell_quantity
                  FROM till_balances WHERE till_id = ? AND currency_code = ? ORDER BY id DESC LIMIT 1',
                 [$this->counterCode(), $currency]
             );
             $balance = $row === []
                 ? 100000.0
                 : (float) $row[0]['opening_balance']
-                    + (float) $row[0]['buy_total_foreign']
-                    - (float) $row[0]['sell_total_foreign'];
-            $closingFloats[] = ['currency_id' => $currency, 'amount' => $balance];
+                    + (float) $row[0]['buy_quantity']
+                    - (float) $row[0]['sell_quantity'];
+            $closingFloats[] = ['currency_id' => $currency, 'quantity' => $balance];
         }
 
         $this->asWebUser('sim_manager', function () use ($closingFloats): void {
@@ -133,7 +133,7 @@ trait ParitySteps
             'customer_id' => $this->state->customerId,
             'type' => 'Buy',
             'currency_code' => 'USD',
-            'amount_foreign' => self::PARITY_AMOUNT,
+            'quantity' => self::PARITY_AMOUNT,
             'rate' => self::PARITY_RATE,
             'purpose' => 'Wave C parity booking',
             'source_of_funds' => 'Salary',
@@ -168,7 +168,7 @@ trait ParitySteps
     private function deriveState(int $txId, array $positionsBefore, array $positionsAfter): array
     {
         $tx = $this->state->oracle->query(
-            'SELECT type, currency_code, amount_foreign, rate, amount_local, status, customer_id, branch_id
+            'SELECT type, currency_code, quantity, rate, amount_myr, status, customer_id, branch_id
              FROM transactions WHERE id = ?',
             [$txId]
         );

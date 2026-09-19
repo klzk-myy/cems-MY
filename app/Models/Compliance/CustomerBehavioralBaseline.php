@@ -104,9 +104,9 @@ class CustomerBehavioralBaseline extends BaseModel
     {
         $helper = BcmathHelper::class;
         $baseline = (string) $this->avg_transaction_size_myr;
-        $amount = (string) $currentAmount;
+        $amountMyr = (string) $currentAmount;
 
-        $diff = $helper::abs($helper::subtract($amount, $baseline));
+        $diff = $helper::abs($helper::subtract($amountMyr, $baseline));
 
         return (float) $helper::multiply($helper::divide($diff, $baseline), '100');
     }

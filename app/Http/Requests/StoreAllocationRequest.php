@@ -18,7 +18,7 @@ class StoreAllocationRequest extends AuthorizedFormRequest
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.currency_code' => ['required', 'string', 'size:3', 'exists:currencies,code', 'distinct'],
-            'lines.*.amount' => ['required', 'numeric', 'min:0.0001'],
+            'lines.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'daily_limit_myr' => ['nullable', 'numeric', 'min:0'],
 
         ];

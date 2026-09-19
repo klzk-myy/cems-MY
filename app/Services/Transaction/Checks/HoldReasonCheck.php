@@ -20,7 +20,7 @@ class HoldReasonCheck implements TransactionCheck
     public function check(Transaction $transaction): array
     {
         $holdCheck = $this->complianceService->requiresHold(
-            $transaction->amount_local,
+            $transaction->amount_myr,
             $transaction->customer
         );
 

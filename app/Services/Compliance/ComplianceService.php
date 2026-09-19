@@ -137,13 +137,13 @@ class ComplianceService implements ComplianceServiceInterface
      *
      * Delegates to CddLevelDeterminationService.
      *
-     * @param  string  $amount  Transaction amount in MYR (as string for precision)
+     * @param  string  $amountMyr  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
      * @return CddLevel The determined CDD level (Simplified, Specific, Standard, or Enhanced)
      */
-    public function determineCDDLevel(string $amount, Customer $customer): CddLevel
+    public function determineCDDLevel(string $amountMyr, Customer $customer): CddLevel
     {
-        $level = $this->cddLevelService->determineCDDLevel($amount, $customer);
+        $level = $this->cddLevelService->determineCDDLevel($amountMyr, $customer);
         $this->lastCddTriggers = $this->cddLevelService->getLastCddTriggers();
 
         return $level;
@@ -258,7 +258,7 @@ class ComplianceService implements ComplianceServiceInterface
      * (default: RM 3,000) within a 1-hour window. The logic is:
      *
      * 1. Look back 1 hour from current time
-     * 2. Count all transactions with amount_local < structuring_sub_threshold
+     * 2. Count all transactions with amount_myr < structuring_sub_threshold
      * 3. If count >= 3, flag as potential structuring
      *
      * WHY CHECK BELOW THRESHOLD?
@@ -299,14 +299,14 @@ class ComplianceService implements ComplianceServiceInterface
      * - Sanctions list match
      * - High risk customer rating
      *
-     * @param  string  $amount  Transaction amount in MYR (as string for precision)
+     * @param  string  $amountMyr  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
      */
-    public function requiresHold(string $amount, Customer $customer): ComplianceCheckResult
+    public function requiresHold(string $amountMyr, Customer $customer): ComplianceCheckResult
     {
         $reasons = [];
 
-        if ($this->mathService->compare($amount, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
+        if ($this->mathService->compare($amountMyr, $this->thresholdService->getLargeTransactionThreshold()) >= 0) {
             $reasons[] = ComplianceFlagType::EddRequired->value;
         }
 
@@ -401,7 +401,7 @@ class ComplianceService implements ComplianceServiceInterface
             ]);
 
         // Get sum efficiently using SQL
-        $existingSum = (string) ($query->sum('amount_local') ?? '0');
+        $existingSum = (string) ($query->sum('amount_myr') ?? '0');
 
         // Get IDs separately (clone query to avoid stateful issue)
         $relatedIds = (clone $query)->pluck('id')->toArray();
@@ -449,7 +449,7 @@ class ComplianceService implements ComplianceServiceInterface
         }
 
         // Large transaction threshold
-        if ($this->mathService->compare((string) $transaction->amount_local, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
+        if ($this->mathService->compare((string) $transaction->amount_myr, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
             return [
                 'has_duration_concern' => false,
                 'hours_on_hold' => 0,

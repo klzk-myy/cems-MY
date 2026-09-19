@@ -119,7 +119,7 @@
                                     <td class="px-4 py-3 text-sm">{{ $transaction->created_at->format('d M Y') }}</td>
                                     <td class="px-4 py-3 text-sm">{{ $transaction->type?->value ?? $transaction->type }}</td>
                                     <td class="px-4 py-3 text-sm">{{ $transaction->currency_code ?? 'MYR' }}</td>
-                                    <td class="px-4 py-3 text-sm">RM {{ number_format($transaction->amount_local ?? 0, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm">RM {{ number_format($transaction->amount_myr ?? 0, 2) }}</td>
                                     <td class="px-4 py-3">
                                         <x-badge variant="success">Completed</x-badge>
                                     </td>

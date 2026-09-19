@@ -55,11 +55,11 @@ class BranchPoolService
         ];
     }
 
-    public function allocateToTeller(Branch $branch, string $currencyCode, float|string $amount): bool
+    public function allocateToTeller(Branch $branch, string $currencyCode, float|string $quantity): bool
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        return DB::transaction(function () use ($branch, $currencyCode, $amount) {
+        return DB::transaction(function () use ($branch, $currencyCode, $quantity) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -69,15 +69,15 @@ class BranchPoolService
                 return false;
             }
 
-            return $pool->allocate($amount);
+            return $pool->allocate($quantity);
         });
     }
 
-    public function deallocateFromTeller(Branch $branch, string $currencyCode, float|string $amount): bool
+    public function deallocateFromTeller(Branch $branch, string $currencyCode, float|string $quantity): bool
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        return DB::transaction(function () use ($branch, $currencyCode, $amount) {
+        return DB::transaction(function () use ($branch, $currencyCode, $quantity) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -87,7 +87,7 @@ class BranchPoolService
                 return false;
             }
 
-            return $pool->deallocate($amount);
+            return $pool->deallocate($quantity);
         });
     }
 
@@ -98,11 +98,11 @@ class BranchPoolService
      * (historical drift) clamp at zero and log rather than blocking the
      * transaction — currency_positions remains the authoritative gate.
      */
-    public function consumeTellerEarmark(Branch $branch, string $currencyCode, float|string $amount): void
+    public function consumeTellerEarmark(Branch $branch, string $currencyCode, float|string $quantity): void
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        DB::transaction(function () use ($branch, $currencyCode, $amount) {
+        DB::transaction(function () use ($branch, $currencyCode, $quantity) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -112,19 +112,19 @@ class BranchPoolService
                 Log::warning('Branch pool earmark consume skipped — no pool row', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                 ]);
 
                 return;
             }
 
-            $consumed = $pool->consumeAllocated($amount);
+            $consumed = $pool->consumeAllocated($quantity);
 
-            if ($this->mathService->compare($consumed, $amount) < 0) {
+            if ($this->mathService->compare($consumed, $quantity) < 0) {
                 Log::warning('Branch pool earmark consume partially uncovered', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                     'consumed' => $consumed,
                     'pool_id' => $pool->id,
                 ]);
@@ -136,11 +136,11 @@ class BranchPoolService
      * Earmark stock that entered teller custody from outside the pool —
      * a buy brings in foreign currency the customer sold to the teller.
      */
-    public function growTellerEarmark(Branch $branch, string $currencyCode, float|string $amount): void
+    public function growTellerEarmark(Branch $branch, string $currencyCode, float|string $quantity): void
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        DB::transaction(function () use ($branch, $currencyCode, $amount) {
+        DB::transaction(function () use ($branch, $currencyCode, $quantity) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -150,13 +150,13 @@ class BranchPoolService
                 Log::warning('Branch pool earmark grow skipped — no pool row', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                 ]);
 
                 return;
             }
 
-            $pool->growAllocated($amount);
+            $pool->growAllocated($quantity);
         });
     }
 
@@ -170,11 +170,11 @@ class BranchPoolService
      * @return string The amount actually debited (clamped at the pool's
      *                available balance), as a numeric string.
      */
-    public function debit(Branch $branch, string $currencyCode, float|string $amount, ?int $userId = null): string
+    public function debit(Branch $branch, string $currencyCode, float|string $quantity, ?int $userId = null): string
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        return DB::transaction(function () use ($branch, $currencyCode, $amount, $userId) {
+        return DB::transaction(function () use ($branch, $currencyCode, $quantity, $userId) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -184,21 +184,21 @@ class BranchPoolService
                 Log::warning('Branch pool debit skipped — no pool row', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                 ]);
 
                 return '0';
             }
 
-            $covered = $this->mathService->compare($pool->available_balance, $amount) >= 0
-                ? $amount
+            $covered = $this->mathService->compare($pool->available_balance, $quantity) >= 0
+                ? $quantity
                 : $pool->available_balance;
 
             if ($this->mathService->compare($covered, '0') <= 0) {
                 Log::warning('Branch pool debit uncovered — pool is empty', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                     'pool_id' => $pool->id,
                 ]);
 
@@ -208,12 +208,12 @@ class BranchPoolService
             $pool->available_balance = $this->mathService->subtract($pool->available_balance, $covered);
             $pool->save();
 
-            $shortfall = $this->mathService->subtract($amount, $covered);
+            $shortfall = $this->mathService->subtract($quantity, $covered);
             if ($this->mathService->compare($shortfall, '0') > 0) {
                 Log::warning('Branch pool debit partially uncovered', [
                     'branch_id' => $branch->id,
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                     'shortfall' => $shortfall,
                     'pool_id' => $pool->id,
                 ]);
@@ -224,7 +224,7 @@ class BranchPoolService
                 $branch->id,
                 [
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                     'debited' => $covered,
                     'pool_id' => $pool->id,
                     'user_id' => $userId,
@@ -242,23 +242,23 @@ class BranchPoolService
      * Runs the balance check under the row lock inside a transaction and
      * writes a branch_pool_debited audit event.
      */
-    public function debitOrFail(Branch $branch, string $currencyCode, float|string $amount, ?int $userId = null): void
+    public function debitOrFail(Branch $branch, string $currencyCode, float|string $quantity, ?int $userId = null): void
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        DB::transaction(function () use ($branch, $currencyCode, $amount, $userId) {
+        DB::transaction(function () use ($branch, $currencyCode, $quantity, $userId) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
                 ->first();
 
-            if (! $pool || $this->mathService->compare($pool->available_balance, $amount) < 0) {
+            if (! $pool || $this->mathService->compare($pool->available_balance, $quantity) < 0) {
                 throw new TransactionValidationException(
                     message: "Insufficient available balance in the {$currencyCode} pool"
                 );
             }
 
-            $pool->available_balance = $this->mathService->subtract($pool->available_balance, $amount);
+            $pool->available_balance = $this->mathService->subtract($pool->available_balance, $quantity);
             $pool->save();
 
             $this->auditService->logBranchEvent(
@@ -266,8 +266,8 @@ class BranchPoolService
                 $branch->id,
                 [
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
-                    'debited' => $amount,
+                    'quantity' => $quantity,
+                    'debited' => $quantity,
                     'pool_id' => $pool->id,
                     'user_id' => $userId,
                 ]
@@ -275,11 +275,11 @@ class BranchPoolService
         });
     }
 
-    public function replenish(Branch $branch, string $currencyCode, float|string $amount, int $approvedBy): BranchPool
+    public function replenish(Branch $branch, string $currencyCode, float|string $quantity, int $approvedBy): BranchPool
     {
-        $amount = (string) $amount;
+        $quantity = (string) $quantity;
 
-        return DB::transaction(function () use ($branch, $currencyCode, $amount, $approvedBy) {
+        return DB::transaction(function () use ($branch, $currencyCode, $quantity, $approvedBy) {
             $pool = BranchPool::where('branch_id', $branch->id)
                 ->where('currency_code', $currencyCode)
                 ->lockForUpdate()
@@ -298,13 +298,13 @@ class BranchPoolService
                     ->first();
             }
 
-            $pool->available_balance = $this->mathService->add($pool->available_balance, $amount);
+            $pool->available_balance = $this->mathService->add($pool->available_balance, $quantity);
             $pool->save();
 
             Log::info('Branch pool replenished', [
                 'branch_id' => $branch->id,
                 'currency_code' => $currencyCode,
-                'amount' => $amount,
+                'quantity' => $quantity,
                 'approved_by' => $approvedBy,
                 'pool_id' => $pool->id,
             ]);
@@ -314,7 +314,7 @@ class BranchPoolService
                 $branch->id,
                 [
                     'currency_code' => $currencyCode,
-                    'amount' => $amount,
+                    'quantity' => $quantity,
                     'pool_id' => $pool->id,
                     'approved_by' => $approvedBy,
                 ]

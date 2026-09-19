@@ -56,7 +56,7 @@ class TellerAllocationTest extends TestCase
     {
         /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
-            'current_balance' => '5000.0000',
+            'current_quantity' => '5000.0000',
         ]);
 
         $this->assertTrue($allocation->hasAvailable('5000.0000'));
@@ -69,12 +69,12 @@ class TellerAllocationTest extends TestCase
     {
         /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
-            'current_balance' => '10000.0000',
+            'current_quantity' => '10000.0000',
         ]);
 
         $allocation->deduct('2500.0000');
 
-        $this->assertEquals('7500.0000', $allocation->current_balance);
+        $this->assertEquals('7500.0000', $allocation->current_quantity);
     }
 
     #[Test]
@@ -82,12 +82,12 @@ class TellerAllocationTest extends TestCase
     {
         /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
-            'current_balance' => '10000.0000',
+            'current_quantity' => '10000.0000',
         ]);
 
         $allocation->add('1500.0000');
 
-        $this->assertEquals('11500.0000', $allocation->current_balance);
+        $this->assertEquals('11500.0000', $allocation->current_quantity);
     }
 
     #[Test]
@@ -136,15 +136,15 @@ class TellerAllocationTest extends TestCase
         $approver = User::factory()->create();
         /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->pending()->create([
-            'allocated_amount' => '0.0000',
-            'current_balance' => '0.0000',
+            'allocated_quantity' => '0.0000',
+            'current_quantity' => '0.0000',
         ]);
 
         $allocation->approve($approver, '50000.0000', '100000.0000');
 
         $this->assertEquals(TellerAllocationStatus::Approved, $allocation->status);
-        $this->assertEquals('50000.0000', $allocation->allocated_amount);
-        $this->assertEquals('50000.0000', $allocation->current_balance);
+        $this->assertEquals('50000.0000', $allocation->allocated_quantity);
+        $this->assertEquals('50000.0000', $allocation->current_quantity);
         $this->assertEquals('100000.0000', $allocation->daily_limit_myr);
         $this->assertEquals($approver->id, $allocation->approved_by);
         $this->assertNotNull($allocation->approved_at);

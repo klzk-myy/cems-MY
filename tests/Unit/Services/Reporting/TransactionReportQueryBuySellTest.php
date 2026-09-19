@@ -24,16 +24,16 @@ class TransactionReportQueryBuySellTest extends TestCase
         Transaction::factory()->completed()->create([
             'currency_code' => $currency->code,
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
-            'amount_foreign' => '250.00',
+            'amount_myr' => '1000.00',
+            'quantity' => '250.00',
             'created_at' => Carbon::today(),
         ]);
 
         Transaction::factory()->completed()->create([
             'currency_code' => $currency->code,
             'type' => TransactionType::Sell->value,
-            'amount_local' => '500.00',
-            'amount_foreign' => '100.00',
+            'amount_myr' => '500.00',
+            'quantity' => '100.00',
             'created_at' => Carbon::today(),
         ]);
 
@@ -41,8 +41,8 @@ class TransactionReportQueryBuySellTest extends TestCase
         $rows = $query->buySellSummary(
             Transaction::completed()->forDateRange(Carbon::today()->toDateString(), Carbon::today()->toDateString())->select('currency_code'),
             'currency_code',
-            'amount_foreign',
-            'amount_local'
+            'quantity',
+            'amount_myr'
         );
 
         $this->assertCount(1, $rows);
@@ -61,13 +61,13 @@ class TransactionReportQueryBuySellTest extends TestCase
     {
         Transaction::factory()->completed()->create([
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'created_at' => Carbon::today(),
         ]);
 
         Transaction::factory()->completed()->create([
             'type' => TransactionType::Sell->value,
-            'amount_local' => '500.00',
+            'amount_myr' => '500.00',
             'created_at' => Carbon::today(),
         ]);
 
@@ -90,15 +90,15 @@ class TransactionReportQueryBuySellTest extends TestCase
         $transactions = collect([
             Transaction::factory()->make([
                 'type' => TransactionType::Buy->value,
-                'amount_local' => '1000.00',
+                'amount_myr' => '1000.00',
             ]),
             Transaction::factory()->make([
                 'type' => TransactionType::Buy->value,
-                'amount_local' => '500.00',
+                'amount_myr' => '500.00',
             ]),
             Transaction::factory()->make([
                 'type' => TransactionType::Sell->value,
-                'amount_local' => '300.00',
+                'amount_myr' => '300.00',
             ]),
         ]);
 
@@ -116,11 +116,11 @@ class TransactionReportQueryBuySellTest extends TestCase
         $transactions = collect([
             Transaction::factory()->make([
                 'type' => TransactionType::Buy->value,
-                'amount_local' => '0.0001',
+                'amount_myr' => '0.0001',
             ]),
             Transaction::factory()->make([
                 'type' => TransactionType::Buy->value,
-                'amount_local' => '0.0002',
+                'amount_myr' => '0.0002',
             ]),
         ]);
 
@@ -135,7 +135,7 @@ class TransactionReportQueryBuySellTest extends TestCase
         Transaction::factory()->create([
             'status' => TransactionStatus::Cancelled->value,
             'type' => TransactionType::Buy->value,
-            'amount_local' => '1000.00',
+            'amount_myr' => '1000.00',
             'created_at' => Carbon::today(),
         ]);
 

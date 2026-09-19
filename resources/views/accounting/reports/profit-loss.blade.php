@@ -27,7 +27,7 @@
                     @forelse ($report['revenues'] ?? [] as $revenue)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm text-ink">{{ $revenue['account_code'] }} - {{ $revenue['account_name'] }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $revenue['amount'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $revenue['amount_myr'], 2) }}</td>
                         </tr>
                     @empty
                         <x-empty-state message="No revenue accounts" :colspan="2" />
@@ -50,7 +50,7 @@
                     @forelse ($report['expenses'] ?? [] as $expense)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm text-ink">{{ $expense['account_code'] }} - {{ $expense['account_name'] }}</td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $expense['amount'], 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-mono">{{ number_format((float) $expense['amount_myr'], 2) }}</td>
                         </tr>
                     @empty
                         <x-empty-state message="No expense accounts" :colspan="2" />

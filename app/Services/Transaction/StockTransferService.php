@@ -705,18 +705,18 @@ class StockTransferService
      *
      * @throws InsufficientStockException If the subtraction would go below zero
      */
-    private function decrementSourcePosition(string $branchKey, string $currencyCode, string $amount): void
+    private function decrementSourcePosition(string $branchKey, string $currencyCode, string $quantity): void
     {
         $position = $this->positionLocks()->findForUpdate($branchKey, $currencyCode);
 
         $available = $position !== null ? (string) $position->quantity : '0';
 
-        if ($this->mathService->compare($available, $amount) < 0) {
-            throw new InsufficientStockException($currencyCode, $amount, $available);
+        if ($this->mathService->compare($available, $quantity) < 0) {
+            throw new InsufficientStockException($currencyCode, $quantity, $available);
         }
 
         $position->update([
-            'quantity' => $this->mathService->subtract($available, $amount),
+            'quantity' => $this->mathService->subtract($available, $quantity),
         ]);
     }
 
@@ -727,16 +727,16 @@ class StockTransferService
      * lock service's zero-baseline lock-or-create mirrors its Buy path so a
      * branch that never held this currency can still receive it.
      */
-    private function incrementDestinationPosition(string $branchKey, string $currencyCode, string $amount): void
+    private function incrementDestinationPosition(string $branchKey, string $currencyCode, string $quantity): void
     {
-        if ($this->mathService->compare($amount, '0') <= 0) {
+        if ($this->mathService->compare($quantity, '0') <= 0) {
             return;
         }
 
         $position = $this->positionLocks()->lock($branchKey, $currencyCode);
 
         $position->update([
-            'quantity' => $this->mathService->add((string) $position->quantity, $amount),
+            'quantity' => $this->mathService->add((string) $position->quantity, $quantity),
         ]);
     }
 
@@ -781,18 +781,18 @@ class StockTransferService
      * Unresolvable branch identifiers post to the company-wide (null) chain so
      * global account totals still move correctly.
      *
-     * @param  array<string, string>  $currencyAmounts  currency_code => MYR value moved
+     * @param  array<string, string>  $currencyAmountsMyr  currency_code => MYR value moved
      */
-    private function postTransferGl(StockTransfer $transfer, ?Branch $branch, array $currencyAmounts, string $direction): void
+    private function postTransferGl(StockTransfer $transfer, ?Branch $branch, array $currencyAmountsMyr, string $direction): void
     {
         $clearingAccount = $this->accountMappingService->code(AccountMappingKey::SuspenseHq);
 
         $lines = [];
         $total = '0';
-        foreach ($currencyAmounts as $currencyCode => $amount) {
-            $amount = (string) $amount;
+        foreach ($currencyAmountsMyr as $currencyCode => $amountMyr) {
+            $amountMyr = (string) $amountMyr;
 
-            if ($this->mathService->compare($amount, '0') <= 0) {
+            if ($this->mathService->compare($amountMyr, '0') <= 0) {
                 continue;
             }
 
@@ -801,10 +801,10 @@ class StockTransferService
                 : $this->accountMappingService->forCurrency('inventory', $currencyCode);
 
             $lines[] = $direction === 'dispatch'
-                ? ['account_code' => $accountCode, 'credit' => $amount, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} dispatched"]
-                : ['account_code' => $accountCode, 'debit' => $amount, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} received"];
+                ? ['account_code' => $accountCode, 'credit' => $amountMyr, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} dispatched"]
+                : ['account_code' => $accountCode, 'debit' => $amountMyr, 'description' => "Transfer {$transfer->transfer_number} — {$currencyCode} received"];
 
-            $total = $this->mathService->add($total, $amount);
+            $total = $this->mathService->add($total, $amountMyr);
         }
 
         if ($lines === []) {

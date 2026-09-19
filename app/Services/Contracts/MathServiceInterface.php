@@ -29,7 +29,7 @@ interface MathServiceInterface
     ): string;
 
     public function calculateRevaluationPnl(
-        string $positionAmount,
+        string $positionQuantity,
         string $oldRate,
         string $newRate,
         ?int $precision = null

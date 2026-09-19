@@ -70,7 +70,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'customer_id' => $customer->id,
             'purpose' => 'Travel',
@@ -84,7 +84,7 @@ class TransactionTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('transactions', [
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'status' => TransactionStatus::Completed,
         ]);
     }
@@ -109,7 +109,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Sell->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.60',
             'customer_id' => $customer->id,
             'purpose' => 'Travel',
@@ -148,7 +148,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'customer_id' => $customer->id,
             'purpose' => 'Investment',
@@ -187,7 +187,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Sell->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.60',
             'customer_id' => $customer->id,
             'purpose' => 'Travel',
@@ -197,10 +197,10 @@ class TransactionTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ]);
 
-        $response->assertSessionHasErrors('amount_foreign'); // InsufficientStockException maps to the amount field
+        $response->assertSessionHasErrors('quantity'); // InsufficientStockException maps to the amount field
         $this->assertDatabaseMissing('transactions', [
             'type' => TransactionType::Sell,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
     }
 
@@ -216,7 +216,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '-100.00',
+            'quantity' => '-100.00',
             'rate' => '4.50',
             'customer_id' => $customer->id,
             'purpose' => 'Travel',
@@ -226,7 +226,7 @@ class TransactionTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ]);
 
-        $response->assertSessionHasErrors('amount_foreign');
+        $response->assertSessionHasErrors('quantity');
     }
 
     #[Test]
@@ -241,7 +241,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'INVALID',
-            'amount_foreign' => '1000',
+            'quantity' => '1000',
             'rate' => '4.50',
             'customer_id' => $customer->id,
             'purpose' => 'Travel',
@@ -269,7 +269,7 @@ class TransactionTest extends TestCase
         $response = $this->post('/transactions', [
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '12000.00',
+            'quantity' => '12000.00',
             'rate' => '4.50',
             'customer_id' => $customer->id,
             'purpose' => 'Business',
@@ -282,7 +282,7 @@ class TransactionTest extends TestCase
         $response->assertSessionHasNoErrors();
         $response->assertRedirect();
         $this->assertDatabaseHas('transactions', [
-            'amount_foreign' => '12000.00',
+            'quantity' => '12000.00',
             'status' => TransactionStatus::PendingApproval,
         ]);
     }
@@ -316,9 +316,9 @@ class TransactionTest extends TestCase
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '5000.00',
+            'quantity' => '5000.00',
             'rate' => '4.50',
-            'amount_local' => '22500.00',
+            'amount_myr' => '22500.00',
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,
@@ -373,9 +373,9 @@ class TransactionTest extends TestCase
         $transaction = Transaction::factory()->create([
             'type' => TransactionType::Buy,
             'currency_code' => 'USD',
-            'amount_foreign' => '5000.00',
+            'quantity' => '5000.00',
             'rate' => '4.50',
-            'amount_local' => '22500.00',
+            'amount_myr' => '22500.00',
             'customer_id' => $customer->id,
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,

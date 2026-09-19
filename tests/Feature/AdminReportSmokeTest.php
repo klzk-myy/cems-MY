@@ -40,8 +40,8 @@ class AdminReportSmokeTest extends TestCase
         Transaction::factory()->completed()->create([
             'currency_code' => $currency->code,
             'type' => TransactionType::Buy->value,
-            'amount_local' => 1000.00,
-            'amount_foreign' => 250.00,
+            'amount_myr' => 1000.00,
+            'quantity' => 250.00,
             'created_at' => Carbon::parse($date),
         ]);
 
@@ -262,12 +262,12 @@ class AdminReportSmokeTest extends TestCase
 
         Transaction::factory()->completed()->create([
             'type' => TransactionType::Buy->value,
-            'amount_local' => 1000.00,
+            'amount_myr' => 1000.00,
             'created_at' => Carbon::create($year, 2, 15),
         ]);
         Transaction::factory()->completed()->create([
             'type' => TransactionType::Buy->value,
-            'amount_local' => 2000.00,
+            'amount_myr' => 2000.00,
             'created_at' => Carbon::create($year, 3, 10),
         ]);
 
@@ -308,8 +308,8 @@ class AdminReportSmokeTest extends TestCase
             'currency_code' => $currency->code,
             'type' => TransactionType::Sell->value,
             'rate' => '4.6000',
-            'amount_foreign' => '500',
-            'amount_local' => '2300',
+            'quantity' => '500',
+            'amount_myr' => '2300',
             'created_at' => Carbon::parse('2024-01-15 12:00:00'),
         ]);
 

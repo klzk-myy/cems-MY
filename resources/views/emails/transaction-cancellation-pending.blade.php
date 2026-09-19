@@ -7,7 +7,7 @@ A cancellation request has been submitted for a transaction and is awaiting your
 
 **Transaction ID:** {{ $transaction->id }}
 **Customer:** {{ $customer?->full_name ?? 'N/A' }}
-**Amount:** {{ $transaction->amount_local ?? 'N/A' }} {{ $transaction->currency_code ?? '' }}
+**Amount:** {{ $transaction->amount_myr ?? 'N/A' }} {{ $transaction->currency_code ?? '' }}
 **Type:** {{ $transaction->transaction_type?->label() ?? $transaction->type?->label() ?? 'N/A' }}
 
 ## Cancellation Request

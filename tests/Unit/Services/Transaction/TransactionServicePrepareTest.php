@@ -83,8 +83,8 @@ class TransactionServicePrepareTest extends TestCase
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'currency_code' => 'USD',
-            'allocated_amount' => '10000.0000',
-            'current_balance' => '10000.0000',
+            'allocated_quantity' => '10000.0000',
+            'current_quantity' => '10000.0000',
             'daily_limit_myr' => '50000.0000',
             'daily_used_myr' => '0.0000',
             'status' => TellerAllocationStatus::Active,
@@ -99,7 +99,7 @@ class TransactionServicePrepareTest extends TestCase
             'till_id' => $this->counter->code,
             'type' => TransactionType::Buy->value,
             'currency_code' => $this->currency->code,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.500000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Salary',
@@ -114,14 +114,14 @@ class TransactionServicePrepareTest extends TestCase
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
         $this->assertEquals(TransactionType::Buy, $transaction->type);
-        $this->assertEquals('450.0000', $transaction->amount_local);
+        $this->assertEquals('450.0000', $transaction->amount_myr);
     }
 
     #[Test]
     public function prepare_and_create_holds_large_transaction_above_threshold(): void
     {
         $data = $this->baseData();
-        $data['amount_foreign'] = '2000.00';
+        $data['quantity'] = '2000.00';
         $data['rate'] = '5.000000';
 
         $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');
@@ -157,7 +157,7 @@ class TransactionServicePrepareTest extends TestCase
     public function prepare_and_create_holds_low_risk_transaction_at_auto_approve_boundary(): void
     {
         $data = $this->baseData();
-        $data['amount_foreign'] = '2222.22';
+        $data['quantity'] = '2222.22';
         $data['rate'] = '4.500000'; // 9999.99 MYR — just under 10,000
 
         $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');
@@ -169,7 +169,7 @@ class TransactionServicePrepareTest extends TestCase
     public function prepare_and_create_holds_low_risk_transaction_at_ten_thousand(): void
     {
         $data = $this->baseData();
-        $data['amount_foreign'] = '2222.23';
+        $data['quantity'] = '2222.23';
         $data['rate'] = '4.500000'; // 10000.035 MYR >= 10000
 
         $transaction = $this->service->prepareAndCreate($data, $this->teller->id, '127.0.0.1');

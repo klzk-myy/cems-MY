@@ -20,10 +20,10 @@ trait CounterSteps
 
         $resp = $this->webClient->post('/counters/'.$code.'/open', [
             'opening_floats' => [
-                ['currency_id' => 'USD', 'amount' => 100000],
-                ['currency_id' => 'EUR', 'amount' => 100000],
-                ['currency_id' => 'GBP', 'amount' => 100000],
-                ['currency_id' => 'MYR', 'amount' => 100000],
+                ['currency_id' => 'USD', 'quantity' => 100000],
+                ['currency_id' => 'EUR', 'quantity' => 100000],
+                ['currency_id' => 'GBP', 'quantity' => 100000],
+                ['currency_id' => 'MYR', 'quantity' => 100000],
             ],
             'notes' => 'Wave A open',
         ]);
@@ -79,10 +79,10 @@ trait CounterSteps
         $this->asWebUser('sim_manager', function (): void {
             $resp = $this->webClient->post('/counters/'.$this->counterCode().'/close', [
                 'closing_floats' => [
-                    ['currency_id' => 'USD', 'amount' => 100000],
-                    ['currency_id' => 'EUR', 'amount' => 100000],
-                    ['currency_id' => 'GBP', 'amount' => 100000],
-                    ['currency_id' => 'MYR', 'amount' => 100000],
+                    ['currency_id' => 'USD', 'quantity' => 100000],
+                    ['currency_id' => 'EUR', 'quantity' => 100000],
+                    ['currency_id' => 'GBP', 'quantity' => 100000],
+                    ['currency_id' => 'MYR', 'quantity' => 100000],
                 ],
             ]);
 

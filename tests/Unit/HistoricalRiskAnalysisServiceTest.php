@@ -48,7 +48,7 @@ class HistoricalRiskAnalysisServiceTest extends TestCase
         // Create 2 transactions just below RM 3,000
         Transaction::factory()->count(2)->create([
             'customer_id' => $customer->id,
-            'amount_local' => '2900.00',
+            'amount_myr' => '2900.00',
             'created_at' => now()->subMinutes(30),
         ]);
 

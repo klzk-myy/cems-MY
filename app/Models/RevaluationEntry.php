@@ -13,8 +13,8 @@ use Illuminate\Support\Carbon;
  * @property string $till_id
  * @property string $old_rate
  * @property string $new_rate
- * @property string $position_amount
- * @property string $gain_loss_amount
+ * @property string $position_quantity
+ * @property string $gain_loss_myr
  * @property Carbon $revaluation_date
  * @property int $posted_by
  * @property Carbon $posted_at
@@ -30,8 +30,8 @@ class RevaluationEntry extends BaseModel
         'till_id',
         'old_rate',
         'new_rate',
-        'position_amount',
-        'gain_loss_amount',
+        'position_quantity',
+        'gain_loss_myr',
         'revaluation_date',
         'posted_by',
         'posted_at',
@@ -40,8 +40,8 @@ class RevaluationEntry extends BaseModel
     protected $casts = [
         'old_rate' => MoneyCast::class.':8',
         'new_rate' => MoneyCast::class.':8',
-        'position_amount' => MoneyCast::class,
-        'gain_loss_amount' => MoneyCast::class,
+        'position_quantity' => MoneyCast::class,
+        'gain_loss_myr' => MoneyCast::class,
         'revaluation_date' => 'date',
         'posted_at' => 'datetime',
     ];

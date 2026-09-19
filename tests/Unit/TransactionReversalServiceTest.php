@@ -50,7 +50,7 @@ class TransactionReversalServiceTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'type' => TransactionType::Buy,
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'rate' => '4.60',
             'status' => TransactionStatus::Completed,
         ]);
@@ -79,7 +79,7 @@ class TransactionReversalServiceTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'type' => TransactionType::Buy,
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'rate' => '4.60',
             'status' => TransactionStatus::Completed,
         ]);
@@ -128,7 +128,7 @@ class TransactionReversalServiceTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'type' => TransactionType::Buy,
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'rate' => '4.50',
             'status' => TransactionStatus::Completed,
         ]);
@@ -160,7 +160,7 @@ class TransactionReversalServiceTest extends TestCase
             'currency_code' => 'USD',
             'branch_id' => $branch->id,
             'type' => TransactionType::Sell,
-            'amount_foreign' => '200.00',
+            'quantity' => '200.00',
             'rate' => '4.70',
             'status' => TransactionStatus::Completed,
         ]);
@@ -280,14 +280,14 @@ class TransactionReversalServiceTest extends TestCase
     {
         $original = Transaction::factory()->create([
             'type' => TransactionType::Buy,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
         ]);
 
         $refund = $this->service->createRefundTransaction($original, User::factory()->create()->id);
 
         $this->assertEquals(TransactionType::Sell, $refund->type);
-        $this->assertEquals($original->amount_foreign, $refund->amount_foreign);
+        $this->assertEquals($original->quantity, $refund->quantity);
         $this->assertEquals($original->id, $refund->original_transaction_id);
         $this->assertTrue($refund->is_refund);
     }
@@ -313,7 +313,7 @@ class TransactionReversalServiceTest extends TestCase
             'branch_id' => $branch->id,
             'till_id' => $tillId,
             'type' => TransactionType::Buy,
-            'amount_foreign' => '1000.00',
+            'quantity' => '1000.00',
             'rate' => '4.50',
             'status' => TransactionStatus::Completed,
         ]);
@@ -336,7 +336,7 @@ class TransactionReversalServiceTest extends TestCase
             'branch_id' => 99999,
             'till_id' => 'NONEXISTENT-TILL',
             'type' => TransactionType::Sell,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'status' => TransactionStatus::Completed,
         ]);
@@ -363,8 +363,8 @@ class TransactionReversalServiceTest extends TestCase
         $user = User::factory()->create();
         $manager = app(TillBalanceManager::class);
         $currencyCode = 'USD';
-        $amountForeign = '500.00';
-        $amountLocal = '2250.00';
+        $quantity = '500.00';
+        $amountMyr = '2250.00';
         $rate = '4.50';
 
         Currency::factory()->create(['code' => $currencyCode]);
@@ -380,18 +380,18 @@ class TransactionReversalServiceTest extends TestCase
 
         // Simulate the till state after the original Sell transaction.
         $foreignBalance = $manager->openBalance($till, $currencyCode, $user->id);
-        $manager->adjustBalance($foreignBalance, 'sell_total_foreign', $amountForeign, 'add');
+        $manager->adjustBalance($foreignBalance, 'sell_quantity', $quantity, 'add');
 
         $myrBalance = $manager->openBalance($till, 'MYR', $user->id);
-        $manager->adjustBalance($myrBalance, 'transaction_total', $amountLocal, 'add');
+        $manager->adjustBalance($myrBalance, 'transaction_total_myr', $amountMyr, 'add');
 
         $transaction = Transaction::factory()->create([
             'branch_id' => $branch->id,
             'till_id' => $till->code,
             'type' => TransactionType::Sell,
             'currency_code' => $currencyCode,
-            'amount_foreign' => $amountForeign,
-            'amount_local' => $amountLocal,
+            'quantity' => $quantity,
+            'amount_myr' => $amountMyr,
             'rate' => $rate,
             'status' => TransactionStatus::Completed,
             'created_at' => now(),
@@ -402,8 +402,8 @@ class TransactionReversalServiceTest extends TestCase
         $foreignBalance->refresh();
         $myrBalance->refresh();
 
-        $this->assertEquals('0.0000', (string) $foreignBalance->sell_total_foreign);
-        $this->assertEquals('500.0000', (string) $foreignBalance->foreign_total);
-        $this->assertEquals('0.0000', (string) $myrBalance->transaction_total);
+        $this->assertEquals('0.0000', (string) $foreignBalance->sell_quantity);
+        $this->assertEquals('500.0000', (string) $foreignBalance->total_quantity);
+        $this->assertEquals('0.0000', (string) $myrBalance->transaction_total_myr);
     }
 }

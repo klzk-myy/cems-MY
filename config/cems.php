@@ -150,7 +150,7 @@ return [
             'customer_id',
             'type',
             'currency_code',
-            'amount_foreign',
+            'quantity',
             'rate',
             'purpose',
             'source_of_funds',

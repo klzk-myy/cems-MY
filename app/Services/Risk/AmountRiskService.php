@@ -26,7 +26,7 @@ class AmountRiskService
     {
         $score = 0;
 
-        $maxTransaction = (string) ($transactions->max('amount_local') ?? '0');
+        $maxTransaction = (string) ($transactions->max('amount_myr') ?? '0');
 
         if ($this->mathService->compare($maxTransaction, $this->thresholdService->getRiskHighThreshold()) >= 0) {
             $score += 30;
@@ -42,9 +42,9 @@ class AmountRiskService
     /**
      * Check if amount exceeds threshold.
      */
-    public function exceedsThreshold(string $amount, string $threshold): bool
+    public function exceedsThreshold(string $amountMyr, string $threshold): bool
     {
-        return $this->mathService->compare($amount, $threshold) >= 0;
+        return $this->mathService->compare($amountMyr, $threshold) >= 0;
     }
 
     /**
@@ -57,7 +57,7 @@ class AmountRiskService
         return Transaction::where('customer_id', $customerId)
             ->where('created_at', '>=', now()->subDays($days))
             ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->max('amount_local') ?? '0';
+            ->max('amount_myr') ?? '0';
     }
 
     /**
@@ -73,7 +73,7 @@ class AmountRiskService
 
         // CAST to CHAR keeps the DECIMAL exact; sum() would return a PHP float.
         $total = (string) ((clone $query)
-            ->selectRaw('CAST(SUM(amount_local) AS CHAR) AS total')
+            ->selectRaw('CAST(SUM(amount_myr) AS CHAR) AS total')
             ->value('total') ?? '0');
         $count = $query->count();
 

@@ -14,7 +14,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Amount</label>
-                    <p class="text-sm text-ink">{{ number_format($transaction->amount_foreign ?? 0, 2) }}</p>
+                    <p class="text-sm text-ink">{{ number_format($transaction->quantity ?? 0, 2) }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Currency</label>

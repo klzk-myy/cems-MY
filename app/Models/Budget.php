@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property string $account_code
  * @property string $period_code
- * @property string $budget_amount
- * @property string $actual_amount
+ * @property string $budget_myr
+ * @property string $actual_myr
  * @property string|null $notes
  * @property int $created_by
  * @property-read ChartOfAccount $account
@@ -26,15 +26,15 @@ class Budget extends BaseModel
     protected $fillable = [
         'account_code',
         'period_code',
-        'budget_amount',
-        'actual_amount',
+        'budget_myr',
+        'actual_myr',
         'notes',
         'created_by',
     ];
 
     protected $casts = [
-        'budget_amount' => MoneyCast::class,
-        'actual_amount' => MoneyCast::class,
+        'budget_myr' => MoneyCast::class,
+        'actual_myr' => MoneyCast::class,
     ];
 
     public function account(): BelongsTo
@@ -58,8 +58,8 @@ class Budget extends BaseModel
     public function getVariance(): string
     {
         return BcmathHelper::subtract(
-            (string) $this->budget_amount,
-            (string) $this->actual_amount
+            (string) $this->budget_myr,
+            (string) $this->actual_myr
         );
     }
 
@@ -68,7 +68,7 @@ class Budget extends BaseModel
      */
     public function getVariancePercentage(): float
     {
-        $budget = (string) $this->budget_amount;
+        $budget = (string) $this->budget_myr;
 
         if (BcmathHelper::compare($budget, '0') <= 0) {
             return 0.0;

@@ -23,20 +23,20 @@ trait TillBalanceTrait
      *
      * @param  TillBalance  $tillBalance  The till balance to update
      * @param  string  $type  Transaction type ('Buy' or 'Sell')
-     * @param  string  $amountLocal  Local currency amount
-     * @param  string  $amountForeign  Foreign currency amount
+     * @param  string  $amountMyr  Local currency amount
+     * @param  string  $quantity  Foreign currency amount
      */
     protected function updateTillBalance(
         TillBalance $tillBalance,
         string $type,
-        string $amountLocal,
-        string $amountForeign
+        string $amountMyr,
+        string $quantity
     ): void {
         $this->tillBalanceManager->applyTransaction(
             $tillBalance,
             TransactionType::from($type),
-            $amountLocal,
-            $amountForeign
+            $amountMyr,
+            $quantity
         );
     }
 }

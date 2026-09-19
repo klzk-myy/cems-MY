@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $account_code
  * @property string $category
  * @property string $description
- * @property string $amount
+ * @property string $amount_myr
  * @property string $expense_date
  * @property int|null $journal_entry_id
  * @property int $created_by
@@ -33,14 +33,14 @@ class Expense extends BaseModel
         'account_code',
         'category',
         'description',
-        'amount',
+        'amount_myr',
         'expense_date',
         'journal_entry_id',
         'created_by',
     ];
 
     protected $casts = [
-        'amount' => MoneyCast::class,
+        'amount_myr' => MoneyCast::class,
         'expense_date' => 'date',
     ];
 

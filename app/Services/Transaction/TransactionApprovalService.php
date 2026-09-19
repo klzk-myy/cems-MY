@@ -131,7 +131,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         $this->auditService->logComplianceDecision('compliance_hold_cleared', $transaction->id, [
             'cleared_by' => $clearerId,
             'hold_reason' => $transaction->hold_reason,
-            'amount_local' => (string) $transaction->amount_local,
+            'amount_myr' => (string) $transaction->amount_myr,
             'customer_id' => $transaction->customer_id,
         ]);
     }
@@ -412,7 +412,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
             $this->positionService->updatePosition(
                 $transaction->currency_code,
-                (string) $transaction->amount_foreign,
+                (string) $transaction->quantity,
                 (string) $transaction->rate,
                 $transaction->type->value,
                 $transaction->branch_id !== null ? (string) $transaction->branch_id : null,
@@ -422,8 +422,8 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             $this->tillBalanceManager->applyTransaction(
                 $tillBalance,
                 $transaction->type,
-                (string) $transaction->amount_local,
-                (string) $transaction->amount_foreign
+                (string) $transaction->amount_myr,
+                (string) $transaction->quantity
             );
 
             $this->updateTellerAllocation($transaction);
@@ -450,10 +450,10 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             (string) $transaction->till_id
         );
 
-        if ($this->mathService->compare($available, (string) $transaction->amount_foreign) < 0) {
+        if ($this->mathService->compare($available, (string) $transaction->quantity) < 0) {
             throw new InsufficientStockException(
                 $transaction->currency_code,
-                (string) $transaction->amount_foreign,
+                (string) $transaction->quantity,
                 $available
             );
         }

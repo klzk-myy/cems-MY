@@ -48,7 +48,7 @@ class TransactionConfirmationServiceTest extends TestCase
     #[Test]
     public function test_requires_confirmation_returns_true_when_amount_exceeds_threshold(): void
     {
-        $transaction = Transaction::factory()->create(['amount_local' => '75000']);
+        $transaction = Transaction::factory()->create(['amount_myr' => '75000']);
         $this->thresholdService->shouldReceive('getStrThreshold')->once()->andReturn('50000');
         $this->mathService->shouldReceive('compare')->with('75000', '50000')->andReturn(1);
 
@@ -60,7 +60,7 @@ class TransactionConfirmationServiceTest extends TestCase
     #[Test]
     public function test_requires_confirmation_returns_false_when_amount_below_threshold(): void
     {
-        $transaction = Transaction::factory()->create(['amount_local' => '25000']);
+        $transaction = Transaction::factory()->create(['amount_myr' => '25000']);
         $this->thresholdService->shouldReceive('getStrThreshold')->once()->andReturn('50000');
         $this->mathService->shouldReceive('compare')->with('25000', '50000')->andReturn(-1);
 
@@ -142,7 +142,7 @@ class TransactionConfirmationServiceTest extends TestCase
                            $data['entity_type'] === 'Transaction' &&
                            $data['entity_id'] === $transaction->id &&
                            isset($data['new_values']['confirmation_id']) &&
-                           isset($data['new_values']['amount_local']);
+                           isset($data['new_values']['amount_myr']);
                 }),
                 'INFO'
             );

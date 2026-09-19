@@ -47,7 +47,7 @@ class TellerAllocationServiceTest extends TestCase
 
         $this->assertInstanceOf(TellerAllocation::class, $allocation);
         $this->assertEquals(TellerAllocationStatus::Pending, $allocation->status);
-        $this->assertEquals('10000.0000', $allocation->requested_amount);
+        $this->assertEquals('10000.0000', $allocation->requested_quantity);
     }
 
     #[Test]
@@ -67,8 +67,8 @@ class TellerAllocationServiceTest extends TestCase
         $allocation->refresh();
         $this->assertEquals('40000.0000', $pool->available_balance);
         $this->assertEquals(TellerAllocationStatus::Approved, $allocation->status);
-        $this->assertEquals('10000.0000', $allocation->allocated_amount);
-        $this->assertEquals('10000.0000', $allocation->current_balance);
+        $this->assertEquals('10000.0000', $allocation->allocated_quantity);
+        $this->assertEquals('10000.0000', $allocation->current_quantity);
     }
 
     #[Test]
@@ -82,8 +82,8 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Approved,
-            'allocated_amount' => '10000.0000',
-            'current_balance' => '10000.0000',
+            'allocated_quantity' => '10000.0000',
+            'current_quantity' => '10000.0000',
             'session_date' => now()->toDateString(),
         ]);
 
@@ -108,8 +108,8 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '8000.0000',
-            'allocated_amount' => '10000.0000',
+            'current_quantity' => '8000.0000',
+            'allocated_quantity' => '10000.0000',
             'session_date' => now()->toDateString(),
         ]);
 
@@ -131,7 +131,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '5000.0000', // smaller than the requested amount
+            'current_quantity' => '5000.0000', // smaller than the requested amount
             'daily_limit_myr' => '20000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -158,7 +158,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '50000.0000',
+            'current_quantity' => '50000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '9000.0000',
             'session_date' => now()->toDateString(),
@@ -180,7 +180,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '50000.0000',
+            'current_quantity' => '50000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -202,7 +202,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '0.0000',
+            'current_quantity' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -228,7 +228,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '0.0000',
+            'current_quantity' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -238,7 +238,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '3000.0000',
+            'current_quantity' => '3000.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -263,7 +263,7 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'USD',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '0.0000',
+            'current_quantity' => '0.0000',
             'daily_limit_myr' => '10000.0000',
             'daily_used_myr' => '0.0000',
             'session_date' => now()->toDateString(),
@@ -312,8 +312,8 @@ class TellerAllocationServiceTest extends TestCase
             'branch_id' => $branch->id,
             'currency_code' => 'MYR',
             'status' => TellerAllocationStatus::Active,
-            'current_balance' => '8000.0000',
-            'allocated_amount' => '10000.0000',
+            'current_quantity' => '8000.0000',
+            'allocated_quantity' => '10000.0000',
             'session_date' => now()->toDateString(),
         ]);
 
@@ -392,18 +392,18 @@ class TellerAllocationServiceTest extends TestCase
         $this->service->modifyAllocation($allocation, $manager, '5000.0000', true);
         $allocation->refresh();
 
-        $this->assertEquals('15000.0000', $allocation->current_balance);
-        $this->assertEquals('15000.0000', $allocation->allocated_amount);
+        $this->assertEquals('15000.0000', $allocation->current_quantity);
+        $this->assertEquals('15000.0000', $allocation->allocated_quantity);
 
         // Test decrease using modifyAllocation
         $this->service->modifyAllocation($allocation, $manager, '3000.0000', false);
         $allocation->refresh();
 
-        // When decreasing, allocated_amount decreases but current_balance decreases by (newAmount - returnAmount)
+        // When decreasing, allocated_quantity decreases but current_quantity decreases by (newAmount - returnAmount)
         // if newAmount > availableToReturn, returnAmount = availableToReturn
-        // availableToReturn = allocated - current_balance = 15000 - 15000 = 0
-        // So returnAmount = 0, current_balance = 15000 - (3000 - 0) = 12000
-        $this->assertEquals('12000.0000', $allocation->current_balance);
-        $this->assertEquals('12000.0000', $allocation->allocated_amount);
+        // availableToReturn = allocated - current_quantity = 15000 - 15000 = 0
+        // So returnAmount = 0, current_quantity = 15000 - (3000 - 0) = 12000
+        $this->assertEquals('12000.0000', $allocation->current_quantity);
+        $this->assertEquals('12000.0000', $allocation->allocated_quantity);
     }
 }

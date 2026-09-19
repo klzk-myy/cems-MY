@@ -44,7 +44,7 @@ class RoundTripDetector
             foreach ($sells as $sell) {
                 $sellAt = $sell->created_at;
                 $windowEnd = $sellAt->copy()->addHours($timeWindowHours);
-                $sellForeign = ltrim((string) $sell->amount_foreign, '-');
+                $sellForeign = ltrim((string) $sell->quantity, '-');
 
                 // Only buys strictly after the sell and within the window can pair.
                 foreach ($buys as $buy) {
@@ -56,7 +56,7 @@ class RoundTripDetector
 
                     $hoursBetween = $sellAt->diffInHours($buyAt);
 
-                    $buyForeign = ltrim((string) $buy->amount_foreign, '-');
+                    $buyForeign = ltrim((string) $buy->quantity, '-');
                     $roundTripAmount = $this->mathService->compare($sellForeign, $buyForeign) <= 0
                         ? $sellForeign
                         : $buyForeign;
@@ -68,12 +68,12 @@ class RoundTripDetector
                     $patterns[] = [
                         'currency' => $currencyCode,
                         'sell_transaction_id' => $sell->id,
-                        'sell_amount_foreign' => (string) $sell->amount_foreign,
-                        'sell_amount_local' => (string) $sell->amount_local,
+                        'sell_quantity' => (string) $sell->quantity,
+                        'sell_amount_myr' => (string) $sell->amount_myr,
                         'sell_at' => $sellAt->toDateTimeString(),
                         'buy_transaction_id' => $buy->id,
-                        'buy_amount_foreign' => (string) $buy->amount_foreign,
-                        'buy_amount_local' => (string) $buy->amount_local,
+                        'buy_quantity' => (string) $buy->quantity,
+                        'buy_amount_myr' => (string) $buy->amount_myr,
                         'buy_at' => $buyAt->toDateTimeString(),
                         'hours_between' => $hoursBetween,
                         'round_trip_foreign_amount' => $roundTripAmount,

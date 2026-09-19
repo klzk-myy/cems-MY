@@ -143,21 +143,21 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $exchangeResult = $this->resolveExchangeCalculator()->calculate(
             TransactionType::from((string) $data['type']),
             (string) $data['currency_code'],
-            (string) $data['amount_foreign'],
+            (string) $data['quantity'],
             (string) $data['rate'],
             $user->branch_id,
             QuoteConvention::forCode((string) $data['currency_code'])
         );
-        $amountLocal = $exchangeResult['amount_local'];
+        $amountMyr = $exchangeResult['amount_myr'];
 
         // Submitted rates are unit-quoted (per currencies.rate_unit foreign
         // units); transactions store the normalized per-unit rate so the
-        // amount_foreign × rate = amount_local ledger invariant stays exact.
+        // quantity × rate = amount_myr ledger invariant stays exact.
         $data['rate'] = $exchangeResult['rate'];
 
         $this->validationService->validatePepRequirements($customer, $data);
 
-        $validationResult = $this->validationService->preValidate($customer, $amountLocal, $data['currency_code']);
+        $validationResult = $this->validationService->preValidate($customer, $amountMyr, $data['currency_code']);
 
         if ($validationResult->isBlocked()) {
             throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
@@ -169,10 +169,10 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 'type' => (string) $data['type'],
                 'currency_code' => (string) $data['currency_code'],
             ],
-            $amountLocal
+            $amountMyr
         );
         $initialStatus = $this->statusResolver->resolve(
-            $amountLocal,
+            $amountMyr,
             $validationResult->isHoldRequired(),
             $customer->risk_rating
         );
@@ -184,7 +184,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             cddLevel: $validationResult->getCDDLevel(),
             holdRequired: $validationResult->isHoldRequired(),
             status: $initialStatus->status,
-            amountLocal: $amountLocal,
+            amountMyr: $amountMyr,
             user: $user,
             allocation: $allocation,
             // hold_reason doubles as the compliance-clear gate in
@@ -313,7 +313,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 return;
             }
 
-            if ($this->mathService->compare($transaction->amount_local, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
+            if ($this->mathService->compare($transaction->amount_myr, $this->thresholdService->getLargeTransactionThreshold()) < 0) {
                 return;
             }
 
@@ -385,7 +385,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     /**
      * Create a transaction for import (no teller allocation, no request context).
      *
-     * @param  array{type: string, currency_code: string, amount_foreign: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
+     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
      * @param  User  $user  The user performing the import
      */
     public function createForImport(
@@ -394,7 +394,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         TillBalance $tillBalance,
         CddLevel $cddLevel,
         TransactionStatus $status,
-        string $amountLocal,
+        string $amountMyr,
         User $user,
         ?string $holdReason = null,
         ?string $ipAddress = null
@@ -406,7 +406,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             cddLevel: $cddLevel,
             holdRequired: $status === TransactionStatus::PendingApproval,
             status: $status,
-            amountLocal: $amountLocal,
+            amountMyr: $amountMyr,
             user: $user,
             allocation: null, // No teller allocation for imports
             holdReason: $holdReason,
@@ -454,7 +454,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 ->where('status', StockReservationStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
-                ->sum('amount_foreign');
+                ->sum('quantity');
 
             $availableBalance = $this->mathService->subtract($quantity, (string) $reserved);
         } else {
@@ -465,10 +465,10 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             );
         }
 
-        if (bccomp($availableBalance, $data['amount_foreign'], 4) < 0) {
+        if (bccomp($availableBalance, $data['quantity'], 4) < 0) {
             throw new InsufficientStockException(
                 $data['currency_code'],
-                $data['amount_foreign'],
+                $data['quantity'],
                 $availableBalance
             );
         }
@@ -504,11 +504,11 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             return;
         }
 
-        // CurrencyPosition carries the foreign-currency quantity; foreign_total
+        // CurrencyPosition carries the foreign-currency quantity; total_quantity
         // belongs to TillBalance, not positions.
         $projected = $this->mathService->add(
             (string) ($position->quantity ?? '0'),
-            (string) $data['amount_foreign']
+            (string) $data['quantity']
         );
 
         if ($this->mathService->compare($projected, (string) $limit) > 0) {
@@ -542,8 +542,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 'new' => [
                     'customer_id' => $transaction->customer_id,
                     'type' => $transaction->type,
-                    'amount_local' => $transaction->amount_local,
-                    'amount_foreign' => $transaction->amount_foreign,
+                    'amount_myr' => $transaction->amount_myr,
+                    'quantity' => $transaction->quantity,
                     'currency' => $transaction->currency_code,
                     'rate' => $transaction->rate,
                     'status' => $transaction->status->value,
@@ -576,8 +576,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             'counter_id' => $data['counter_id'] ?? null,
             'type' => $data['type'],
             'currency_code' => $data['currency_code'],
-            'amount_foreign' => $data['amount_foreign'],
-            'amount_local' => $context->amountLocal,
+            'quantity' => $data['quantity'],
+            'amount_myr' => $context->amountMyr,
             'rate' => $data['rate'],
             'purpose' => $data['purpose'],
             'source_of_funds' => $data['source_of_funds'],
@@ -602,7 +602,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $this->positionService->updatePosition(
             $data['currency_code'],
-            $data['amount_foreign'],
+            $data['quantity'],
             $data['rate'],
             $data['type'],
             (string) $context->tillBalance->branch_id,
@@ -612,8 +612,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $this->tillBalanceManager->applyTransaction(
             $context->tillBalance,
             TransactionType::from($data['type']),
-            $context->amountLocal,
-            $data['amount_foreign']
+            $context->amountMyr,
+            $data['quantity']
         );
 
         $this->tellerAllocationService->applyTransactionAllocation($transaction, $context->allocation);

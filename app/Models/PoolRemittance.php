@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int $from_branch_id
  * @property int $to_branch_id
  * @property string $currency_code
- * @property string $amount
+ * @property string $amount_myr
  * @property PoolRemittanceStatus $status
  * @property int $initiated_by
  * @property Carbon|null $initiated_at
@@ -53,7 +53,7 @@ class PoolRemittance extends Model
         'from_branch_id',
         'to_branch_id',
         'currency_code',
-        'amount',
+        'amount_myr',
         'status',
         'initiated_by',
         'initiated_at',
@@ -70,7 +70,7 @@ class PoolRemittance extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:4',
+            'amount_myr' => 'decimal:4',
             'status' => PoolRemittanceStatus::class,
             'initiated_at' => 'datetime',
             'acknowledged_at' => 'datetime',

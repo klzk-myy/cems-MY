@@ -176,9 +176,9 @@ class CounterHandoverDeadlockTest extends TestCase
         // Hand over with currencies in non-alphabetical order
         // The service should sort them before locking
         $physicalCounts = [
-            ['currency_id' => 'USD', 'amount' => '10500.00'],
-            ['currency_id' => 'GBP', 'amount' => '3100.00'],
-            ['currency_id' => 'EUR', 'amount' => '5100.00'],
+            ['currency_id' => 'USD', 'quantity' => '10500.00'],
+            ['currency_id' => 'GBP', 'quantity' => '3100.00'],
+            ['currency_id' => 'EUR', 'quantity' => '5100.00'],
         ];
 
         $result = $handoverService->initiateHandover(
@@ -251,8 +251,8 @@ class CounterHandoverDeadlockTest extends TestCase
 
         // First handover: Teller1 -> Teller2 (USD, EUR)
         $physicalCounts1 = [
-            ['currency_id' => 'USD', 'amount' => '10500.00'],
-            ['currency_id' => 'EUR', 'amount' => '5100.00'],
+            ['currency_id' => 'USD', 'quantity' => '10500.00'],
+            ['currency_id' => 'EUR', 'quantity' => '5100.00'],
         ];
 
         $result1 = $handoverService->initiateHandover(
@@ -278,8 +278,8 @@ class CounterHandoverDeadlockTest extends TestCase
 
         // Second handover: Teller2 -> Teller3 (EUR, GBP)
         $physicalCounts2 = [
-            ['currency_id' => 'EUR', 'amount' => '5200.00'],
-            ['currency_id' => 'GBP', 'amount' => '3100.00'],
+            ['currency_id' => 'EUR', 'quantity' => '5200.00'],
+            ['currency_id' => 'GBP', 'quantity' => '3100.00'],
         ];
 
         $result2 = $handoverService->initiateHandover(
@@ -333,9 +333,9 @@ class CounterHandoverDeadlockTest extends TestCase
         // Hand over with currencies in reverse alphabetical order
         // The code should sort them before locking
         $physicalCounts = [
-            ['currency_id' => 'GBP', 'amount' => '5100.00'],
-            ['currency_id' => 'EUR', 'amount' => '5200.00'],
-            ['currency_id' => 'USD', 'amount' => '5100.00'],
+            ['currency_id' => 'GBP', 'quantity' => '5100.00'],
+            ['currency_id' => 'EUR', 'quantity' => '5200.00'],
+            ['currency_id' => 'USD', 'quantity' => '5100.00'],
         ];
 
         $result = $handoverService->initiateHandover(

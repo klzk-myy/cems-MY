@@ -45,7 +45,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(5)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold + '1000'),
+            'amount_myr' => (float) ((string) $subThreshold + '1000'),
             'created_at' => now()->subHours(3),
         ]);
 
@@ -61,7 +61,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(5)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Cancelled->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subHours(3),
         ]);
 
@@ -77,7 +77,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 
@@ -93,7 +93,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(2)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 
@@ -110,14 +110,14 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subHours(3),
         ]);
 
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subHours(1),
         ]);
 
@@ -133,7 +133,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subHours(5),
         ]);
 
@@ -153,7 +153,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 
@@ -173,7 +173,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(2)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 
@@ -192,7 +192,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(3)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 
@@ -208,7 +208,7 @@ class StructuringRiskServiceTest extends TestCase
         Transaction::factory()->count(2)->create([
             'customer_id' => $customer->id,
             'status' => TransactionStatus::Completed->value,
-            'amount_local' => (float) ((string) $subThreshold - '100'),
+            'amount_myr' => (float) ((string) $subThreshold - '100'),
             'created_at' => now()->subMinutes(30),
         ]);
 

@@ -50,7 +50,7 @@
                         @forelse($reportData['positions'] as $position)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink font-medium">{{ $position['currency_code'] }} <span class="text-ink-muted font-normal">{{ $position['currency_name'] }}</span></td>
-                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $position['current_balance'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $position['current_quantity'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ $position['position_limit'] !== null ? number_format((float) $position['position_limit'], 2) : '—' }}</td>
                                 <td class="px-4 py-3 text-sm text-center">
                                     <div class="flex items-center justify-center gap-2">

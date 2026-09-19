@@ -157,7 +157,7 @@ class TestNotification extends Command
     protected function createLargeTransactionNotification(): LargeTransactionNotification
     {
         return new LargeTransactionNotification(
-            Transaction::factory()->make(['id' => 999999, 'amount' => 75000]),
+            Transaction::factory()->make(['id' => 999999, 'amount_myr' => 75000]),
             TransactionConfirmation::factory()->make(['id' => 999999])
         );
     }

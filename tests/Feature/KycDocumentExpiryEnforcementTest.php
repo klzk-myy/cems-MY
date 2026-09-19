@@ -50,7 +50,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
         return $this->post('/transactions', [
             'type' => $type,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.50',
             'customer_id' => $customerId,
             'purpose' => 'Travel',
@@ -74,7 +74,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('transactions', [
             'customer_id' => $customer->id,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
     }
 
@@ -99,7 +99,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('transactions', [
             'customer_id' => $customer->id,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
     }
 
@@ -123,7 +123,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
         $response->assertSessionHasErrors('customer_id');
         $this->assertDatabaseMissing('transactions', [
             'customer_id' => $customer->id,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
     }
 
@@ -147,7 +147,7 @@ class KycDocumentExpiryEnforcementTest extends TestCase
         $response->assertSessionHasErrors('customer_id');
         $this->assertDatabaseMissing('transactions', [
             'customer_id' => $customer->id,
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
         ]);
     }
 

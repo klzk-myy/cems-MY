@@ -98,7 +98,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $customer = Customer::factory()->create();
         Transaction::factory()
             ->for($customer)
-            ->create(['amount_local' => '1000', 'created_at' => now()]);
+            ->create(['amount_myr' => '1000', 'created_at' => now()]);
 
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
@@ -115,7 +115,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $customer = Customer::factory()->create();
         Transaction::factory()
             ->for($customer)
-            ->create(['amount_local' => '15000', 'created_at' => now()]);
+            ->create(['amount_myr' => '15000', 'created_at' => now()]);
 
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
@@ -132,7 +132,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $customer = Customer::factory()->create();
         Transaction::factory()
             ->for($customer)
-            ->create(['amount_local' => '60000', 'created_at' => now()]);
+            ->create(['amount_myr' => '60000', 'created_at' => now()]);
 
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateVelocityScore');
@@ -150,7 +150,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         for ($i = 0; $i < 10; $i++) {
             Transaction::factory()
                 ->for($customer)
-                ->create(['amount_local' => '60000', 'created_at' => now()->addMinutes($i)]);
+                ->create(['amount_myr' => '60000', 'created_at' => now()->addMinutes($i)]);
         }
 
         $reflection = new \ReflectionClass($this->service);
@@ -182,7 +182,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $customer = Customer::factory()->create();
         Transaction::factory()
             ->for($customer)
-            ->create(['amount_local' => '2000', 'created_at' => now()]);
+            ->create(['amount_myr' => '2000', 'created_at' => now()]);
 
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateStructuringScore');
@@ -201,7 +201,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         for ($i = 0; $i < 3; $i++) {
             Transaction::factory()
                 ->for($customer)
-                ->create(['amount_local' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
+                ->create(['amount_myr' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
         }
 
         $reflection = new \ReflectionClass($this->service);
@@ -221,7 +221,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         for ($i = 0; $i < 10; $i++) {
             Transaction::factory()
                 ->for($customer)
-                ->create(['amount_local' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
+                ->create(['amount_myr' => '2000', 'created_at' => $baseTime->copy()->addMinutes($i)]);
         }
 
         $reflection = new \ReflectionClass($this->service);
@@ -255,7 +255,7 @@ class CustomerRiskScoringServiceTest extends TestCase
         $method->setAccessible(true);
 
         $transaction = new Transaction;
-        $transaction->amount_local = '60000';
+        $transaction->amount_myr = '60000';
 
         $customer = new Customer;
 

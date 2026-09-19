@@ -44,7 +44,7 @@ class TellerAllocationMyActiveTest extends TestCase
                 'data' => [
                     'id',
                     'currency_code',
-                    'current_balance',
+                    'current_quantity',
                 ],
             ])
             ->assertJsonPath('success', true)

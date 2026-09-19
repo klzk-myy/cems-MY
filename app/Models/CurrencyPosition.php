@@ -183,7 +183,7 @@ class CurrencyPosition extends BaseModel
             ->where('currency_code', $this->currency_code)
             ->where('status', StockReservationStatus::Pending->value)
             ->whereIn('till_id', $counterCodes)
-            ->sum('amount_foreign');
+            ->sum('quantity');
     }
 
     /**

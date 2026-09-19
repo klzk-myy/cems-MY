@@ -34,7 +34,7 @@ class TransactionIdempotencyService implements TransactionIdempotencyServiceInte
      * Extracted from TransactionService::createTransaction() lines 318-341.
      * Checks within a configurable time window (default 30 seconds) BEFORE acquiring position lock.
      *
-     * @param  array  $data  Must contain 'currency_code', 'type', 'amount_foreign'
+     * @param  array  $data  Must contain 'currency_code', 'type', 'quantity'
      */
     public function checkRecentDuplicate(int $userId, array $data, int $windowSeconds = 30): ?Transaction
     {
@@ -42,7 +42,7 @@ class TransactionIdempotencyService implements TransactionIdempotencyServiceInte
 
         $recentAmount = Transaction::where('user_id', $userId)
             ->where('created_at', '>=', $recentWindow)
-            ->where('amount_foreign', $data['amount_foreign'])
+            ->where('quantity', $data['quantity'])
             ->where('currency_code', $data['currency_code'])
             ->where('type', $data['type'])
             ->lockForUpdate()

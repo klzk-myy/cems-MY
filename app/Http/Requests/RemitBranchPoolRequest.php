@@ -15,7 +15,7 @@ class RemitBranchPoolRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount_myr' => ['required', 'numeric', 'min:0.01'],
             'to_branch_id' => ['required', 'integer', 'exists:branches,id'],
             'notes' => ['nullable', 'string', 'max:500'],
 

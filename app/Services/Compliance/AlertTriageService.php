@@ -81,16 +81,16 @@ class AlertTriageService
         $transaction = $transaction ?? $flaggedTransaction->transaction;
 
         if ($transaction) {
-            $amount = (string) $transaction->amount_local;
+            $amountMyr = (string) $transaction->amount_myr;
             $criticalThreshold = $this->thresholdService->getAlertCriticalThreshold();
             $highThreshold = $this->thresholdService->getAlertHighThreshold();
             $mediumThreshold = $this->thresholdService->getAlertMediumThreshold();
 
-            if ($this->mathService->compare($amount, $criticalThreshold) >= 0) {
+            if ($this->mathService->compare($amountMyr, $criticalThreshold) >= 0) {
                 $score += 30;
-            } elseif ($this->mathService->compare($amount, $highThreshold) >= 0) {
+            } elseif ($this->mathService->compare($amountMyr, $highThreshold) >= 0) {
                 $score += 20;
-            } elseif ($this->mathService->compare($amount, $mediumThreshold) >= 0) {
+            } elseif ($this->mathService->compare($amountMyr, $mediumThreshold) >= 0) {
                 $score += 10;
             }
         }

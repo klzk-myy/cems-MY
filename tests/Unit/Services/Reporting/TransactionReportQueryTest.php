@@ -72,24 +72,24 @@ class TransactionReportQueryTest extends TestCase
             'branch_id' => $branch->id,
             'type' => TransactionType::Buy->value,
             'status' => TransactionStatus::Completed->value,
-            'amount_foreign' => 100,
+            'quantity' => 100,
         ]);
         Transaction::factory()->create([
             'branch_id' => $branch->id,
             'type' => TransactionType::Sell->value,
             'status' => TransactionStatus::Completed->value,
-            'amount_foreign' => 50,
+            'quantity' => 50,
         ]);
         Transaction::factory()->create([
             'type' => TransactionType::Buy->value,
             'status' => TransactionStatus::Completed->value,
-            'amount_foreign' => 999,
+            'quantity' => 999,
         ]);
         Transaction::factory()->create([
             'branch_id' => $branch->id,
             'type' => TransactionType::Buy->value,
             'status' => TransactionStatus::Cancelled->value,
-            'amount_foreign' => 200,
+            'quantity' => 200,
         ]);
 
         $query = new TransactionReportQuery;
@@ -114,9 +114,9 @@ class TransactionReportQueryTest extends TestCase
 
     public function test_completed_sum_by_type(): void
     {
-        Transaction::factory()->create(['type' => TransactionType::Buy->value, 'status' => TransactionStatus::Completed->value, 'amount_foreign' => 100]);
-        Transaction::factory()->create(['type' => TransactionType::Sell->value, 'status' => TransactionStatus::Completed->value, 'amount_foreign' => 50]);
-        Transaction::factory()->create(['type' => TransactionType::Buy->value, 'status' => TransactionStatus::Cancelled->value, 'amount_foreign' => 200]);
+        Transaction::factory()->create(['type' => TransactionType::Buy->value, 'status' => TransactionStatus::Completed->value, 'quantity' => 100]);
+        Transaction::factory()->create(['type' => TransactionType::Sell->value, 'status' => TransactionStatus::Completed->value, 'quantity' => 50]);
+        Transaction::factory()->create(['type' => TransactionType::Buy->value, 'status' => TransactionStatus::Cancelled->value, 'quantity' => 200]);
 
         $query = new TransactionReportQuery;
         $result = $query->sumByType();

@@ -148,7 +148,7 @@ class BranchPoolController extends Controller
             $this->poolService->replenish(
                 $branch,
                 $branchPool->currency_code,
-                (string) $validated['amount'],
+                (string) $validated['quantity'],
                 $request->user()->id,
             );
         } catch (DomainException $e) {
@@ -179,7 +179,7 @@ class BranchPoolController extends Controller
             $this->poolService->debitOrFail(
                 $branch,
                 $branchPool->currency_code,
-                (string) $validated['amount'],
+                (string) $validated['quantity'],
                 $request->user()->id,
             );
         } catch (DomainException $e) {
@@ -213,7 +213,7 @@ class BranchPoolController extends Controller
                 $from,
                 $to,
                 $branchPool->currency_code,
-                (string) $validated['amount'],
+                (string) $validated['amount_myr'],
                 $request->user()->id,
                 $validated['notes'] ?? null,
             );

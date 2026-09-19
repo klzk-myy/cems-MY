@@ -160,8 +160,8 @@ class ViewEnumComparisonTest extends TestCase
             'type' => TransactionType::Buy->value,
             'status' => TransactionStatus::Completed,
             'currency_code' => 'USD',
-            'amount_foreign' => 500,
-            'amount_local' => 2000,
+            'quantity' => 500,
+            'amount_myr' => 2000,
             'rate' => 4.0,
         ]);
 
@@ -172,8 +172,8 @@ class ViewEnumComparisonTest extends TestCase
             'type' => TransactionType::Sell->value,
             'status' => TransactionStatus::Completed,
             'currency_code' => 'USD',
-            'amount_foreign' => 300,
-            'amount_local' => 1500,
+            'quantity' => 300,
+            'amount_myr' => 1500,
             'rate' => 5.0,
         ]);
 

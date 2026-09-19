@@ -81,12 +81,12 @@ class CddLevelDeterminationService
      * for PEP status and sanctions screening. No override parameters are allowed
      * to prevent bypassing Enhanced CDD requirements.
      *
-     * @param  string  $amount  Transaction amount in MYR (as string for precision)
+     * @param  string  $amountMyr  Transaction amount in MYR (as string for precision)
      * @param  Customer  $customer  The customer initiating the transaction
      * @param  string|null  $pepType  Optional PEP type to distinguish foreign vs domestic PEPs
      * @return CddLevel The determined CDD level (Simplified, Specific, Standard, or Enhanced)
      */
-    public function determineCDDLevel(string $amount, Customer $customer, ?string $pepType = null): CddLevel
+    public function determineCDDLevel(string $amountMyr, Customer $customer, ?string $pepType = null): CddLevel
     {
         // Always use customer record - no overrides allowed for security
         $pepStatus = $customer->pep_status ?? false;
@@ -145,12 +145,12 @@ class CddLevelDeterminationService
         }
 
         // Standard CDD: >= RM 10,000 per pd-00.md 14C.12.2
-        if ($this->mathService->compare($amount, $this->thresholdService->getStandardCddThreshold()) >= 0) {
+        if ($this->mathService->compare($amountMyr, $this->thresholdService->getStandardCddThreshold()) >= 0) {
             return CddLevel::Standard;
         }
 
         // Specific CDD: >= RM 3,000 per pd-00.md 14C.12.1
-        if ($this->mathService->compare($amount, $this->thresholdService->getSpecificCddThreshold()) >= 0) {
+        if ($this->mathService->compare($amountMyr, $this->thresholdService->getSpecificCddThreshold()) >= 0) {
             return CddLevel::Specific;
         }
 

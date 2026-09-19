@@ -98,7 +98,7 @@ class CounterOpeningAllocationScopeTest extends TestCase
 
         // Pass currency code (string) as identifier
         $session = $service->openSession($counter, $teller, [
-            ['currency_id' => $currency->code, 'amount' => '1000.00'],
+            ['currency_id' => $currency->code, 'quantity' => '1000.00'],
         ]);
 
         $this->assertDatabaseHas('till_balances', [

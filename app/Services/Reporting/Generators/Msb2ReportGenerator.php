@@ -27,7 +27,7 @@ class Msb2ReportGenerator
                 ->select('currency_code')
                 ->orderBy('currency_code'),
             'currency_code',
-            'amount_foreign'
+            'quantity'
         );
 
         $filename = "MSB2_{$date}.csv";

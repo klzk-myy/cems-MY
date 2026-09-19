@@ -18,7 +18,7 @@ class RequestAllocationRequest extends ApiFormRequest
     {
         return [
             'currency_code' => 'required|string|size:3',
-            'requested_amount' => 'required|numeric|min:0.0001',
+            'requested_quantity' => 'required|numeric|min:0.0001',
             'counter_id' => 'nullable|integer|exists:counters,id',
         ];
     }

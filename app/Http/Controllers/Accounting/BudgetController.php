@@ -36,7 +36,7 @@ class BudgetController extends Controller
             $this->budgetService->setBudget(
                 $budgetData['account_code'],
                 $validated['period_code'],
-                $budgetData['amount'],
+                $budgetData['budget_myr'],
                 (int) auth()->id()
             );
         }
@@ -50,7 +50,7 @@ class BudgetController extends Controller
         $validated = $request->validated();
 
         $budget->update([
-            'budget_amount' => $validated['amount'],
+            'budget_myr' => $validated['budget_myr'],
         ]);
 
         return redirect()->route('accounting.budget')

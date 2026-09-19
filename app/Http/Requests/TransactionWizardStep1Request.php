@@ -19,7 +19,7 @@ class TransactionWizardStep1Request extends AuthorizedFormRequest
             'customer_id' => $this->customerIdRule(true),
             'type' => $this->transactionTypeRule(),
             'currency_code' => $this->currencyCodeRule(),
-            'amount_foreign' => $this->amountForeignRule(),
+            'quantity' => $this->quantityRule(),
             'rate' => $this->rateRule(),
             'till_id' => ['required', 'string', 'exists:counters,code'],
             'purpose' => $this->purposeRule(),
@@ -32,8 +32,8 @@ class TransactionWizardStep1Request extends AuthorizedFormRequest
     {
         return [
             'customer_id.required' => 'Please select a customer',
-            'amount_foreign.min' => 'Transaction amount must be at least RM 0.01',
-            'amount_foreign.max' => 'Transaction amount exceeds maximum limit',
+            'quantity.min' => 'Transaction amount must be at least RM 0.01',
+            'quantity.max' => 'Transaction amount exceeds maximum limit',
             'rate.min' => 'Exchange rate must be greater than 0',
         ];
     }

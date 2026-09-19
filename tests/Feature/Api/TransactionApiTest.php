@@ -57,7 +57,7 @@ class TransactionApiTest extends TestCase
                 'customer_id' => $customer->id,
                 'type' => 'Buy',
                 'currency_code' => $currency->code,
-                'amount_foreign' => $transaction->amount_foreign,
+                'quantity' => $transaction->quantity,
                 'rate' => $transaction->rate,
                 'purpose' => $transaction->purpose,
                 'source_of_funds' => $transaction->source_of_funds,

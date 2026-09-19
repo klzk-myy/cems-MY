@@ -191,8 +191,8 @@ class ResetTestDatabase extends Command
                 'till_id' => (string) $counter->code,
                 'currency_code' => $currencyCode,
                 'opening_balance' => $openingAmount,
-                'transaction_total' => '0.0000',
-                'foreign_total' => '0.0000',
+                'transaction_total_myr' => '0.0000',
+                'total_quantity' => '0.0000',
                 'date' => now()->toDateString(),
                 'opened_by' => $teller->id,
             ]);

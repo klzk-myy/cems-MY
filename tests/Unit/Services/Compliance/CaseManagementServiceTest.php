@@ -186,7 +186,7 @@ class CaseManagementServiceTest extends TestCase
             'customer_id' => $customer->id,
             'transaction_id' => Transaction::factory()->create([
                 'customer_id' => $customer->id,
-                'amount_local' => 60000,
+                'amount_myr' => 60000,
             ])->id,
             'status' => 'open',
         ]);

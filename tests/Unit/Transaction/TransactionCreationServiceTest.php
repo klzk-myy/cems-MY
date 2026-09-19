@@ -115,7 +115,7 @@ class TransactionCreationServiceTest extends TestCase
             'customer_id' => $customer->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.5000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
@@ -129,7 +129,7 @@ class TransactionCreationServiceTest extends TestCase
             cddLevel: $overrides['cddLevel'] ?? CddLevel::Standard,
             holdRequired: $overrides['holdRequired'] ?? false,
             status: $overrides['status'] ?? TransactionStatus::Completed,
-            amountLocal: $overrides['amountLocal'] ?? '450.00',
+            amountMyr: $overrides['amountMyr'] ?? '450.00',
             user: $overrides['user'] ?? $user,
             allocation: $overrides['allocation'] ?? null,
             holdReason: $overrides['holdReason'] ?? null,
@@ -143,8 +143,8 @@ class TransactionCreationServiceTest extends TestCase
             'branch_id' => $counter->branch_id,
             'counter_id' => $counter->id,
             'currency_code' => $currencyCode,
-            'allocated_amount' => '10000.00',
-            'current_balance' => '10000.00',
+            'allocated_quantity' => '10000.00',
+            'current_quantity' => '10000.00',
             'daily_limit_myr' => '50000.00',
             'daily_used_myr' => '0.00',
             'status' => 'active',
@@ -180,8 +180,8 @@ class TransactionCreationServiceTest extends TestCase
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
         $this->assertEquals(TransactionType::Buy->value, $transaction->type->value);
-        $this->assertEquals('100.0000', $transaction->amount_foreign);
-        $this->assertEquals('450.0000', $transaction->amount_local);
+        $this->assertEquals('100.0000', $transaction->quantity);
+        $this->assertEquals('450.0000', $transaction->amount_myr);
     }
 
     #[Test]
@@ -203,12 +203,12 @@ class TransactionCreationServiceTest extends TestCase
         ]);
 
         // 1,000,000 IDR at RM 235 per 1,000,000 → RM 235.00, stored rate
-        // normalized to per-unit 0.00023500 so amount_foreign × rate = amount_local.
+        // normalized to per-unit 0.00023500 so quantity × rate = amount_myr.
         $data = [
             'customer_id' => $customer->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'IDR',
-            'amount_foreign' => '1000000',
+            'quantity' => '1000000',
             'rate' => '235',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
@@ -221,7 +221,7 @@ class TransactionCreationServiceTest extends TestCase
         $transaction = $this->completedBuyService()->prepareAndCreate($data, $user->id);
 
         $this->assertSame('0.00023500', (string) $transaction->rate);
-        $this->assertSame('235.0000', (string) $transaction->amount_local);
+        $this->assertSame('235.0000', (string) $transaction->amount_myr);
     }
 
     #[Test]
@@ -243,13 +243,13 @@ class TransactionCreationServiceTest extends TestCase
         ]);
 
         // RM 1 = 4,255 IDR (inverse). Stored rate normalizes to per-unit
-        // 1/4255 truncated at 8dp = 0.00023501, and amount_local is computed
+        // 1/4255 truncated at 8dp = 0.00023501, and amount_myr is computed
         // from that same stored rate: 4,255,000 × 0.00023501 = 999.9675.
         $data = [
             'customer_id' => $customer->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'IDR',
-            'amount_foreign' => '4255000',
+            'quantity' => '4255000',
             'rate' => '4255',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
@@ -262,7 +262,7 @@ class TransactionCreationServiceTest extends TestCase
         $transaction = $this->completedBuyService()->prepareAndCreate($data, $user->id);
 
         $this->assertSame('0.00023501', (string) $transaction->rate);
-        $this->assertSame('999.9675', (string) $transaction->amount_local);
+        $this->assertSame('999.9675', (string) $transaction->amount_myr);
     }
 
     /**
@@ -306,7 +306,7 @@ class TransactionCreationServiceTest extends TestCase
 
         $transaction = $this->completedBuyService()->create($this->context([
             'status' => TransactionStatus::PendingApproval,
-            'amountLocal' => '50000.00',
+            'amountMyr' => '50000.00',
         ]));
 
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
@@ -326,7 +326,7 @@ class TransactionCreationServiceTest extends TestCase
         $officer = User::factory()->complianceOfficer()->create();
 
         $this->completedBuyService()->create($this->context([
-            'amountLocal' => '50000.00',
+            'amountMyr' => '50000.00',
         ]));
 
         // Scoped assertion: monitoring flags may legitimately produce alert
@@ -343,7 +343,7 @@ class TransactionCreationServiceTest extends TestCase
         $officer = User::factory()->complianceOfficer()->create();
 
         $this->completedBuyService()->create($this->context([
-            'amountLocal' => '450.00',
+            'amountMyr' => '450.00',
         ]));
 
         Notification::assertNotSentTo($officer, LargeTransactionNotification::class);
@@ -365,7 +365,7 @@ class TransactionCreationServiceTest extends TestCase
         try {
             $this->completedBuyService(['audit' => $audit])->create($this->context([
                 'status' => TransactionStatus::Failed,
-                'amountLocal' => '50000.00',
+                'amountMyr' => '50000.00',
             ]));
         } catch (\Throwable) {
             // Booking side effects may reject a Failed context; the guard is
@@ -635,7 +635,7 @@ class TransactionCreationServiceTest extends TestCase
             'audit' => $audit,
         ]);
 
-        $beforeBalance = $allocation->current_balance;
+        $beforeBalance = $allocation->current_quantity;
         $beforeDailyUsed = $allocation->daily_used_myr;
 
         $service->create($this->context([
@@ -647,7 +647,7 @@ class TransactionCreationServiceTest extends TestCase
 
         $this->assertEquals(
             bcadd((string) $beforeBalance, '100.00', 4),
-            (string) $allocation->current_balance
+            (string) $allocation->current_quantity
         );
         $this->assertEquals(
             bcadd((string) $beforeDailyUsed, '450.00', 4),
@@ -684,7 +684,7 @@ class TransactionCreationServiceTest extends TestCase
             'audit' => $audit,
         ]);
 
-        $beforeBalance = $allocation->current_balance;
+        $beforeBalance = $allocation->current_quantity;
         $beforeDailyUsed = $allocation->daily_used_myr;
 
         $service->create($this->context([
@@ -697,7 +697,7 @@ class TransactionCreationServiceTest extends TestCase
 
         $this->assertEquals(
             bcsub((string) $beforeBalance, '100.00', 4),
-            (string) $allocation->current_balance
+            (string) $allocation->current_quantity
         );
         $this->assertEquals(
             bcadd((string) $beforeDailyUsed, '450.00', 4),
@@ -787,7 +787,7 @@ class TransactionCreationServiceTest extends TestCase
             ->withArgs(function (int $transactionId, string $action, array $metadata) {
                 return $action === 'transaction_created'
                     && isset($metadata['new']['type'])
-                    && isset($metadata['new']['amount_local'])
+                    && isset($metadata['new']['amount_myr'])
                     && isset($metadata['new']['status']);
             });
 
@@ -922,7 +922,7 @@ class TransactionCreationServiceTest extends TestCase
             'customer_id' => $customer->id,
             'type' => TransactionType::Buy->value,
             'currency_code' => 'USD',
-            'amount_foreign' => '100.00',
+            'quantity' => '100.00',
             'rate' => '4.5000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
@@ -965,7 +965,7 @@ class TransactionCreationServiceTest extends TestCase
             'transaction_id' => Transaction::factory()->create()->id,
             'currency_code' => 'USD',
             'till_id' => $counter->code,
-            'amount_foreign' => '900.00',
+            'quantity' => '900.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => $customer->id,
@@ -1027,7 +1027,7 @@ class TransactionCreationServiceTest extends TestCase
                 'customer_id' => $customer->id,
                 'type' => TransactionType::Sell->value,
                 'currency_code' => 'USD',
-                'amount_foreign' => '300.00',
+                'quantity' => '300.00',
                 'rate' => '4.5000',
                 'purpose' => 'Travel',
                 'source_of_funds' => 'Savings',
@@ -1038,7 +1038,7 @@ class TransactionCreationServiceTest extends TestCase
             cddLevel: CddLevel::Standard,
             holdRequired: false,
             status: TransactionStatus::Completed,
-            amountLocal: '1350.00',
+            amountMyr: '1350.00',
             user: $user,
             allocation: null,
             holdReason: null,

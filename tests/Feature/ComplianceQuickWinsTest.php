@@ -140,8 +140,8 @@ class ComplianceQuickWinsTest extends TestCase
         $this->assertEquals(SystemAlertLevel::Critical->value, $alert->level->value);
         $this->assertEquals('USD', $alert->metadata['currency_code']);
         $this->assertEquals('HQ', $alert->metadata['branch_id']);
-        $this->assertIsNumeric($alert->metadata['breach_amount']);
-        $this->assertSame(0, bccomp((string) $alert->metadata['breach_amount'], '50', 4));
+        $this->assertIsNumeric($alert->metadata['breach_quantity']);
+        $this->assertSame(0, bccomp((string) $alert->metadata['breach_quantity'], '50', 4));
     }
 
     #[Test]

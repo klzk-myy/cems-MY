@@ -14,7 +14,7 @@ class ModifyAllocationRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'new_amount' => 'required|numeric|min:0.0001',
+            'new_quantity' => 'required|numeric|min:0.0001',
             'is_increase' => 'required|boolean',
         ];
     }

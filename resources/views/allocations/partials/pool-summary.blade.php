@@ -21,7 +21,7 @@
                         <td class="px-4 py-3 text-right">{{ number_format($row['available'], 4) }}</td>
                         <td class="px-4 py-3">
                             @forelse($row['tellers'] as $t)
-                                <span class="inline-block mr-3">{{ $t['name'] }}: {{ number_format($t['amount'], 4) }}</span>
+                                <span class="inline-block mr-3">{{ $t['name'] }}: {{ number_format($t['quantity'], 4) }}</span>
                             @empty
                                 <span class="text-ink-muted">—</span>
                             @endforelse

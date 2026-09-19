@@ -63,12 +63,12 @@ class AmountRiskServiceTest extends TestCase
 
         Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '10000.00',
+            'amount_myr' => '10000.00',
             'status' => TransactionStatus::Completed->value,
         ]);
         Transaction::factory()->create([
             'customer_id' => $customer->id,
-            'amount_local' => '50000.00',
+            'amount_myr' => '50000.00',
             'status' => TransactionStatus::Completed->value,
         ]);
 

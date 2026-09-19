@@ -39,14 +39,14 @@ class UnusualPatternCheck implements TransactionCheck
 
         $customerAvg = Transaction::where('customer_id', $transaction->customer_id)
             ->where('created_at', '>=', now()->subDays($lookbackDays))
-            ->avg('amount_local');
+            ->avg('amount_myr');
 
         if (! $customerAvg || $this->mathService->compare((string) $customerAvg, '0') === 0) {
             return false;
         }
 
         $deviation = $this->mathService->divide(
-            (string) $transaction->amount_local,
+            (string) $transaction->amount_myr,
             (string) $customerAvg
         );
 
