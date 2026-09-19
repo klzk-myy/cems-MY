@@ -13,9 +13,11 @@ use Illuminate\Support\Facades\Schema;
  * store 'Completed', 'Under_Review', 'PendingApproval', etc. — values
  * the normalized enum casts can no longer resolve.
  *
- * ENUM columns are widened to accept both vocabularies, rows are
- * remapped, then the column is narrowed to the new vocabulary. Varchar
- * columns are updated in place. Idempotent — safe to re-run.
+ * ENUM columns are bridged through VARCHAR before remapping and then
+ * re-narrowed: an ENUM cannot hold the old and new vocabularies at
+ * once because case-insensitive collations treat 'Open' and 'open'
+ * as the same member (MySQL error 1291). Varchar columns are updated
+ * in place. Idempotent — safe to re-run.
  */
 class InstallLowercaseStatusValues extends Command
 {
@@ -138,9 +140,10 @@ class InstallLowercaseStatusValues extends Command
                 }
 
                 $newValues = array_values(array_unique($map));
+                $wasEnum = $this->isMysqlEnum($table, $column);
 
-                if ($this->isMysqlEnum($table, $column)) {
-                    $this->alterEnum($table, $column, [...array_keys($map), ...$newValues]);
+                if ($wasEnum) {
+                    $this->bridgeEnumToVarchar($table, $column);
                 }
 
                 $updated = 0;
@@ -148,8 +151,19 @@ class InstallLowercaseStatusValues extends Command
                     $updated += DB::table($table)->where($column, $legacy)->update([$column => $new]);
                 }
 
-                if ($this->isMysqlEnum($table, $column)) {
-                    $this->alterEnum($table, $column, $newValues, $map);
+                if ($wasEnum) {
+                    $unexpected = DB::table($table)
+                        ->whereNotIn($column, $newValues)
+                        ->distinct()
+                        ->pluck($column);
+
+                    if ($unexpected->isNotEmpty()) {
+                        $this->warn("{$table}.{$column}: value(s) outside the new vocabulary remain [{$unexpected->implode(', ')}] — column left as VARCHAR; resolve the rows and re-run.");
+                    } else {
+                        $this->alterEnum($table, $column, $newValues, $map);
+                    }
+                } else {
+                    $this->normalizeColumnDefault($table, $column, $map);
                 }
 
                 $total += $updated;
@@ -171,6 +185,53 @@ class InstallLowercaseStatusValues extends Command
         $definition = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = '{$column}'");
 
         return str_starts_with(strtolower($definition->Type ?? ''), 'enum(');
+    }
+
+    /**
+     * Relax an ENUM column to VARCHAR so legacy and normalized values can
+     * coexist during remapping. Preserves the column's nullability and
+     * default; the column is re-narrowed by alterEnum() afterwards.
+     */
+    protected function bridgeEnumToVarchar(string $table, string $column): void
+    {
+        $columnMeta = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = '{$column}'");
+        $default = $columnMeta->Default ?? null;
+        $nullClause = ($columnMeta->Null ?? 'NO') === 'YES' ? ' NULL' : ' NOT NULL';
+        $defaultClause = $default !== null ? ' DEFAULT '.$this->quote($default) : '';
+
+        DB::statement("ALTER TABLE {$table} MODIFY {$column} VARCHAR(64){$nullClause}{$defaultClause}");
+    }
+
+    /**
+     * Fix a varchar column's stored default when it still holds a legacy
+     * value or has stray quotes baked in (e.g. '''Open''' written by an
+     * older schema revision). Row remapping alone leaves the default
+     * producing unresolvable enum values on default-inserted rows.
+     *
+     * @param  array<string, string>  $map
+     */
+    protected function normalizeColumnDefault(string $table, string $column, array $map): void
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
+        $columnMeta = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = '{$column}'");
+        $rawDefault = $columnMeta->Default ?? null;
+
+        if ($rawDefault === null) {
+            return;
+        }
+
+        $stripped = trim($rawDefault, "'");
+        $translated = $map[$stripped] ?? $stripped;
+
+        if ($stripped === $rawDefault && $translated === $stripped) {
+            return;
+        }
+
+        $nullClause = ($columnMeta->Null ?? 'NO') === 'YES' ? ' NULL' : ' NOT NULL';
+        DB::statement("ALTER TABLE {$table} MODIFY {$column} {$columnMeta->Type}{$nullClause} DEFAULT ".$this->quote($translated));
     }
 
     /**
