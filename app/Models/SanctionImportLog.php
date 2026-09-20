@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ImportStatus;
+use App\Enums\ImportTrigger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -13,9 +15,9 @@ use Illuminate\Support\Carbon;
  * @property int $records_added
  * @property int $records_updated
  * @property int $records_deactivated
- * @property string $status 'success', 'partial', 'failed'
+ * @property ImportStatus $status
  * @property string|null $error_message
- * @property string $triggered_by 'scheduled', 'manual'
+ * @property ImportTrigger $triggered_by
  * @property int|null $user_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -41,6 +43,8 @@ class SanctionImportLog extends BaseModel
         'records_added' => 'integer',
         'records_updated' => 'integer',
         'records_deactivated' => 'integer',
+        'status' => ImportStatus::class,
+        'triggered_by' => ImportTrigger::class,
     ];
 
     public function toSummaryArray(): array
@@ -55,9 +59,10 @@ class SanctionImportLog extends BaseModel
             'records_added' => $this->records_added,
             'records_updated' => $this->records_updated,
             'records_deactivated' => $this->records_deactivated,
-            'status' => $this->status,
+            'status' => $this->status->value,
             'error_message' => $this->error_message,
-            'triggered_by' => $this->triggered_by,
+            'triggered_by' => $this->triggered_by->value,
+            'user_name' => $this->user?->name,
         ];
     }
 

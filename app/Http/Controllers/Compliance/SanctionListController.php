@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSanctionEntryRequest;
@@ -14,12 +14,11 @@ use App\Services\Compliance\SanctionsOrchestrationService;
 use App\Support\LikeEscaper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SanctionListController extends Controller
 {
-    use SanctionEntryNormalizer;
+    use HandlesControllerErrors, SanctionEntryNormalizer;
 
     public function __construct(
         protected SanctionsOrchestrationService $orchestrationService,
@@ -29,13 +28,13 @@ class SanctionListController extends Controller
     {
         $lists = SanctionList::withCount('entries')
             ->orderBy('name')
-            ->get()
-            ->map(fn ($list) => [
+            ->paginate(25)
+            ->through(fn ($list) => [
                 'id' => $list->id,
                 'name' => $list->name,
                 'list_type' => $list->list_type->value,
                 'source_url' => $list->source_url,
-                'source_format' => $list->source_format,
+                'source_format' => $list->source_format?->value,
                 'update_status' => $list->update_status->value,
                 'last_synced_at' => $list->last_updated_at?->toIso8601String(),
                 'status' => $list->update_status->value,
@@ -165,7 +164,7 @@ class SanctionListController extends Controller
 
     public function importLogs(Request $request): View
     {
-        $query = SanctionImportLog::with('sanctionList');
+        $query = SanctionImportLog::with(['sanctionList', 'user']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -177,9 +176,8 @@ class SanctionListController extends Controller
         }
 
         $logs = $query->orderBy('imported_at', 'desc')
-            ->limit(50)
-            ->get()
-            ->map(fn ($log) => $log->toSummaryArray());
+            ->paginate(50)
+            ->through(fn ($log) => $log->toSummaryArray());
 
         $sources = SanctionList::query()
             ->orderBy('name')
@@ -205,10 +203,8 @@ class SanctionListController extends Controller
             }
 
             return redirect()->back()->with('success', 'Import triggered successfully');
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to trigger import. Please try again.');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Sanction import trigger failed', 'Failed to trigger import. Please try again.');
         }
     }
 }

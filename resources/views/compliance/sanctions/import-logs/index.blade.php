@@ -63,7 +63,9 @@
                                         <span class="text-ink-muted">Unknown source</span>
                                     @endisset
                                     @isset($log['triggered_by'])
-                                        <div class="text-xs text-ink-muted">by user #{{ $log['triggered_by'] }}</div>
+                                        <div class="text-xs text-ink-muted">
+                                            {{ ucfirst($log['triggered_by']) }}{{ $log['user_name'] ? ' · '.$log['user_name'] : '' }}
+                                        </div>
                                     @endisset
                                 </td>
                                 <td class="px-4 py-3 text-sm text-ink-muted whitespace-nowrap">
@@ -84,6 +86,7 @@
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
+                <div class="mt-4">{{ $logs->links() }}</div>
             </div>
         </x-card>
     </div>

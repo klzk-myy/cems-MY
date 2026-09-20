@@ -2,7 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\DTO\PepCessationResult;
 use App\Enums\RiskRating;
 use App\Enums\RiskTrend;
 use App\Events\RiskScoreUpdated;
@@ -13,10 +12,10 @@ use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\CustomerScreeningService;
+use App\Services\DTOs\PepCessationResult;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\System\MathService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -179,13 +178,25 @@ class CustomerRiskScoringService
 
     /**
      * Get customers needing rescreening.
+     *
+     * The due check must run against each customer's LATEST snapshot:
+     * whereHas('riskScoreSnapshots') would flag anyone with an old overdue
+     * row even when their most recent screening set a future due date.
      */
     public function getCustomersNeedingRescreening(): Collection
     {
-        return Customer::whereHas('riskScoreSnapshots', function ($query) {
-            /** @var Builder<RiskScoreSnapshot> $query */
-            $query->needsRescreening();
-        })->with('latestRiskSnapshot')->get();
+        return Customer::whereLatestSnapshotNeedsRescreening()
+            ->with('latestRiskSnapshot')
+            // Most overdue first; the subquery mirrors latestRiskSnapshot's
+            // ordering (latest snapshot_date, greatest id on a tie).
+            ->orderBy(
+                RiskScoreSnapshot::select('next_screening_date')
+                    ->whereColumn('customer_id', 'customers.id')
+                    ->latest('snapshot_date')
+                    ->latest('id')
+                    ->limit(1)
+            )
+            ->get();
     }
 
     /**
@@ -242,10 +253,7 @@ class CustomerRiskScoringService
             'medium_risk' => (int) ($today?->getAttribute('medium') ?? 0),
             'low_risk' => (int) ($today?->getAttribute('low') ?? 0),
             'deteriorating_trend' => (int) ($today?->getAttribute('deteriorating') ?? 0),
-            'needs_rescreening' => Customer::whereHas('riskScoreSnapshots', function ($query) {
-                /** @var Builder<RiskScoreSnapshot> $query */
-                $query->needsRescreening();
-            })->count(),
+            'needs_rescreening' => Customer::whereLatestSnapshotNeedsRescreening()->count(),
         ];
     }
 

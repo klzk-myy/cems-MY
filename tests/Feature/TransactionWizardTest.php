@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\CddLevel;
+use App\Enums\CounterSessionStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -36,6 +38,16 @@ class TransactionWizardTest extends TestCase
         $this->counter = Counter::factory()->create([
             'code' => 'T1',
             'branch_id' => $this->teller->branch_id,
+        ]);
+        // The teller is seated at T1 — step 1 resolves the booking till from
+        // this session, so every test below also exercises the session path.
+        CounterSession::factory()->create([
+            'counter_id' => $this->counter->id,
+            'user_id' => $this->teller->id,
+            'opened_by' => $this->teller->id,
+            'session_date' => today(),
+            'opened_at' => now(),
+            'status' => CounterSessionStatus::Open,
         ]);
         TillBalance::factory()->create([
             'till_id' => $this->counter->code,
@@ -92,12 +104,10 @@ class TransactionWizardTest extends TestCase
         }
 
         $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'cdd_level' => CddLevel::Simplified->value,
-                'hold_required' => false,
-            ])
-            ->assertJsonPath('required_documents', function ($docs) {
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.cdd_level', CddLevel::Simplified->value)
+            ->assertJsonPath('data.hold_required', false)
+            ->assertJsonPath('data.required_documents', function ($docs) {
                 return count($docs) === 2; // MyKad front/back only
             });
     }
@@ -153,7 +163,7 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('risk_flags', function ($flags) {
+            ->assertJsonPath('data.risk_flags', function ($flags) {
                 return count($flags) > 0;
             });
     }
@@ -177,9 +187,7 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJson([
-                'cdd_level' => CddLevel::Standard->value,
-            ]);
+            ->assertJsonPath('data.cdd_level', CddLevel::Standard->value);
     }
 
     #[Test]
@@ -200,10 +208,8 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJson([
-                'cdd_level' => CddLevel::Enhanced->value,
-                'hold_required' => true,
-            ]);
+            ->assertJsonPath('data.cdd_level', CddLevel::Enhanced->value)
+            ->assertJsonPath('data.hold_required', true);
     }
 
     #[Test]
@@ -245,8 +251,8 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $step1->assertStatus(200);
-        $sessionId = $step1->json('wizard_session_id');
-        $cddLevel = $step1->json('cdd_level');
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
 
         $response = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step2', [
@@ -263,12 +269,10 @@ class TransactionWizardTest extends TestCase
         }
 
         $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'next_step' => 'review_confirm',
-            ])
-            ->assertJsonPath('transaction_summary.customer_name', $customer->full_name)
-            ->assertJsonPath('transaction_summary.currency', 'USD');
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.next_step', 'review_confirm')
+            ->assertJsonPath('data.transaction_summary.customer_name', $customer->full_name)
+            ->assertJsonPath('data.transaction_summary.currency', 'USD');
     }
 
     #[Test]
@@ -289,8 +293,8 @@ class TransactionWizardTest extends TestCase
             ]);
 
         $step1->assertStatus(200);
-        $sessionId = $step1->json('wizard_session_id');
-        $cddLevel = $step1->json('cdd_level');
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
         $this->assertEquals(CddLevel::Enhanced->value, $cddLevel);
 
         // Missing source_of_wealth should fail validation.
@@ -343,8 +347,8 @@ class TransactionWizardTest extends TestCase
                 'source_of_funds' => 'Salary',
             ]);
 
-        $sessionId = $step1->json('wizard_session_id');
-        $cddLevel = $step1->json('cdd_level');
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
 
         $step2 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step2', [
@@ -375,13 +379,15 @@ class TransactionWizardTest extends TestCase
                 'success' => true,
             ])
             ->assertJsonStructure([
-                'transaction_id',
-                'transaction_number',
-                'transaction_status',
+                'data' => [
+                    'transaction_id',
+                    'transaction_number',
+                    'transaction_status',
+                ],
             ]);
 
-        $transactionNumber = $response->json('transaction_number');
-        $transactionId = $response->json('transaction_id');
+        $transactionNumber = $response->json('data.transaction_number');
+        $transactionId = $response->json('data.transaction_id');
 
         $this->assertNotNull($transactionId);
         $this->assertDatabaseHas('transactions', [
@@ -389,6 +395,50 @@ class TransactionWizardTest extends TestCase
             'customer_id' => $customer->id,
         ]);
         $this->assertNotNull($transactionNumber);
+    }
+
+    #[Test]
+    public function step3_rejects_customer_frozen_after_step1(): void
+    {
+        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+
+        $step1 = $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step1', [
+                'customer_id' => $customer->id,
+                'type' => 'Buy',
+                'currency_code' => 'USD',
+                'quantity' => '100.00',
+                'rate' => '4.50',
+                'till_id' => $this->counter->code,
+                'purpose' => 'Travel',
+                'source_of_funds' => 'Salary',
+            ]);
+        $step1->assertStatus(200);
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
+
+        $step2 = $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step2', [
+                'wizard_session_id' => $sessionId,
+                'cdd_level' => $cddLevel,
+                'customer' => ['occupation' => 'Engineer'],
+            ]);
+        $step2->assertStatus(200);
+
+        // Freeze mid-wizard — the submit gate must re-check customer state.
+        $customer->freeze('BNM freeze order');
+
+        $response = $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step3', [
+                'wizard_session_id' => $sessionId,
+                'confirm_details' => true,
+                'idempotency_key' => (string) Str::uuid(),
+            ]);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseMissing('transactions', [
+            'customer_id' => $customer->id,
+        ]);
     }
 
     #[Test]
@@ -409,8 +459,8 @@ class TransactionWizardTest extends TestCase
                 'source_of_funds' => 'Savings',
             ]);
         $step1->assertStatus(200);
-        $sessionId = $step1->json('wizard_session_id');
-        $cddLevel = $step1->json('cdd_level');
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
 
         // Step 2: Customer details.
         $step2 = $this->actingAs($this->teller)
@@ -423,7 +473,7 @@ class TransactionWizardTest extends TestCase
                 ],
             ]);
         $step2->assertStatus(200);
-        $step2->assertJsonPath('transaction_summary.type', 'Sell');
+        $step2->assertJsonPath('data.transaction_summary.type', 'Sell');
 
         // Step 3: Confirm and create.
         $step3 = $this->actingAs($this->teller)
@@ -433,12 +483,59 @@ class TransactionWizardTest extends TestCase
                 'idempotency_key' => (string) Str::uuid(),
             ]);
         $step3->assertStatus(200);
-        $this->assertNotNull($step3->json('transaction_id'));
+        $this->assertNotNull($step3->json('data.transaction_id'));
 
         // Session should be cleared after successful creation.
         $status = $this->actingAs($this->teller)
             ->getJson("/api/v1/wizard/transactions/{$sessionId}/status");
         $status->assertStatus(404);
+    }
+
+    /**
+     * The counter is transparent: step 1 accepts no till_id at all — the
+     * open session supplies it — and step 3 books on the session counter.
+     */
+    #[Test]
+    public function session_counter_supplies_till_across_wizard(): void
+    {
+        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+
+        $step1 = $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step1', [
+                'customer_id' => $customer->id,
+                'type' => 'Buy',
+                'currency_code' => 'USD',
+                'quantity' => '100.00',
+                'rate' => '4.50',
+                'purpose' => 'Travel',
+                'source_of_funds' => 'Salary',
+            ]);
+
+        $step1->assertStatus(200);
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
+
+        $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step2', [
+                'wizard_session_id' => $sessionId,
+                'cdd_level' => $cddLevel,
+                'customer' => ['occupation' => 'Engineer'],
+            ])
+            ->assertStatus(200);
+
+        $step3 = $this->actingAs($this->teller)
+            ->postJson('/api/v1/wizard/transactions/step3', [
+                'wizard_session_id' => $sessionId,
+                'confirm_details' => true,
+                'idempotency_key' => (string) Str::uuid(),
+            ]);
+
+        $step3->assertStatus(200);
+        $this->assertDatabaseHas('transactions', [
+            'id' => $step3->json('data.transaction_id'),
+            'till_id' => $this->counter->code,
+            'counter_id' => $this->counter->id,
+        ]);
     }
 
     #[Test]
@@ -458,8 +555,8 @@ class TransactionWizardTest extends TestCase
                 'source_of_funds' => 'Salary',
             ]);
 
-        $sessionId = $step1->json('wizard_session_id');
-        $cddLevel = $step1->json('cdd_level');
+        $sessionId = $step1->json('data.wizard_session_id');
+        $cddLevel = $step1->json('data.cdd_level');
 
         $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step2', [

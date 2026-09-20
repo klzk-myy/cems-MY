@@ -29,7 +29,7 @@ class RiskDashboardController extends Controller
 
         $threshold = $request->get('threshold', 60);
 
-        $customers = Customer::whereHas('riskScoreSnapshots', function ($query) use ($threshold) {
+        $customers = Customer::whereHas('latestRiskSnapshot', function ($query) use ($threshold) {
             $query->where('overall_score', '>=', $threshold);
         })
             ->with('latestRiskSnapshot')
@@ -70,7 +70,7 @@ class RiskDashboardController extends Controller
     {
         $this->requirePermission(Permission::ViewRiskDashboard);
 
-        $needsRescreening = $this->riskScoringService->getCustomersNeedingRescreening();
+        $needsRescreening = $this->riskScoringService->getCustomersNeedingRescreening()->paginate(20);
         $highRiskTrend = $this->getHighRiskCustomerTrend();
         $alertVolumeTrend = $this->getAlertVolumeTrend();
 

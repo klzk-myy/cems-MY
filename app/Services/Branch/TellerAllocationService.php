@@ -524,7 +524,10 @@ class TellerAllocationService implements TellerAllocationServiceInterface
                 );
             }
 
-            $lockedAllocation->addDailyUsed((string) $transaction->amount_myr);
+            // The cap is enforced inside the row lock (conditional UPDATE), not
+            // by the pre-flight hasDailyLimitRemaining() read — a concurrent
+            // booking or a stale pending approval can never overshoot it.
+            $lockedAllocation->addDailyUsedWithinLimit((string) $transaction->amount_myr);
         });
     }
 

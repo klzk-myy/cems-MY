@@ -2,7 +2,7 @@
 
 namespace App\Services\Compliance;
 
-use App\Models\RiskScoreSnapshot;
+use App\Models\Customer;
 use Illuminate\Support\Facades\Log;
 
 class CustomerRiskReviewService
@@ -13,21 +13,17 @@ class CustomerRiskReviewService
 
     public function processDueReviews(int $batchSize = 50): array
     {
-        $dueSnapshots = RiskScoreSnapshot::needsRescreening()
-            ->with('customer')
+        // Due-ness is decided by each customer's LATEST snapshot. Querying
+        // risk_score_snapshots directly would keep resurfacing stale overdue
+        // rows from earlier screenings and reprocess customers who are not
+        // actually due.
+        $dueCustomers = Customer::whereLatestSnapshotNeedsRescreening()
             ->take($batchSize)
             ->get();
 
         $results = ['processed' => 0, 'changed' => 0, 'errors' => 0];
 
-        foreach ($dueSnapshots as $snapshot) {
-            $customer = $snapshot->customer;
-
-            if (! $customer) {
-                $results['errors']++;
-
-                continue;
-            }
+        foreach ($dueCustomers as $customer) {
 
             try {
                 $rescreenResult = $this->riskScoringService->rescreenCustomer($customer->id, 'review');

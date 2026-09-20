@@ -232,6 +232,43 @@ class CustomerScreeningServiceTest extends TestCase
     }
 
     #[Test]
+    public function batch_screen_prefilter_keeps_true_matches(): void
+    {
+        $sanctionList = SanctionList::factory()->create(['slug' => 'test-batch']);
+
+        SanctionEntry::factory()->create([
+            'list_id' => $sanctionList->id,
+            'entity_name' => 'John Smith',
+            'normalized_name' => 'john smith',
+            'soundex_code' => soundex('John Smith'),
+            'metaphone_code' => metaphone('John Smith'),
+            'aliases' => [],
+        ]);
+
+        // A second entry sharing no tokens must not hide the real match.
+        SanctionEntry::factory()->create([
+            'list_id' => $sanctionList->id,
+            'entity_name' => 'Xwq Zzzplk',
+            'normalized_name' => 'xwq zzzplk',
+            'aliases' => [],
+        ]);
+
+        $hit = Customer::factory()->create(['full_name' => 'John Smith']);
+        $clear = Customer::factory()->create(['full_name' => 'Alice Johnson']);
+
+        $this->service->batchScreen([$hit->id, $clear->id]);
+
+        $this->assertNotEquals(
+            'clear',
+            ScreeningResult::where('customer_id', $hit->id)->latest('id')->value('result')
+        );
+        $this->assertSame(
+            'clear',
+            ScreeningResult::where('customer_id', $clear->id)->latest('id')->value('result')
+        );
+    }
+
+    #[Test]
     public function batch_screen_fetches_candidate_pools_once_not_per_customer(): void
     {
         $customers = Customer::factory()->count(3)->create();

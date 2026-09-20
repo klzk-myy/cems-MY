@@ -37,10 +37,10 @@ class SanctionListController extends Controller
             'id' => $list->id,
             'name' => $list->name,
             'source_url' => $list->source_url,
-            'source_format' => $list->source_format,
-            'update_frequency' => $list->update_status,
+            'source_format' => $list->source_format?->value,
+            'update_frequency' => $list->update_status->value,
             'last_synced_at' => $list->last_updated_at?->toIso8601String(),
-            'status' => $list->update_status,
+            'status' => $list->update_status->value,
             'entries_count' => $list->entries_count,
         ])->toArray());
     }
@@ -111,7 +111,7 @@ class SanctionListController extends Controller
 
     public function importLogs(): JsonResponse
     {
-        $logs = SanctionImportLog::with('sanctionList')
+        $logs = SanctionImportLog::with(['sanctionList', 'user'])
             ->orderBy('imported_at', 'desc')
             ->limit(50)
             ->get();

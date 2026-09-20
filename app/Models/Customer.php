@@ -68,8 +68,7 @@ use Illuminate\Support\Collection;
  * @property-read bool $is_sanctioned
  * @property-read string $cdd_level_label
  * @property-read string $risk_variant UI risk badge variant
- * @property-read string $id_number_masked PDPA-masked ID number
- * @property-read string|null $ic_number Legacy masked IC number
+ * @property-read string|null $id_number Decrypted ID number for display
  * @property-read Branch|null $branch Branch of the latest transaction — eager-load latestTransaction.branch before reading
  * @property-read string|null $transactions_sum_amount_myr Result of withSum('transactions', 'amount_myr')
  */
@@ -166,6 +165,14 @@ class Customer extends BaseModel
     }
 
     /**
+     * @return HasMany<ScreeningResult, $this>
+     */
+    public function screeningResults(): HasMany
+    {
+        return $this->hasMany(ScreeningResult::class);
+    }
+
+    /**
      * @return HasOne<Transaction, $this>
      */
     public function latestTransaction(): HasOne
@@ -243,6 +250,23 @@ class Customer extends BaseModel
     public function latestRiskSnapshot(): HasOne
     {
         return $this->hasOne(RiskScoreSnapshot::class)->latestOfMany('snapshot_date');
+    }
+
+    /**
+     * Customers whose LATEST risk snapshot is due for re-screening.
+     *
+     * Use this scope — never `whereHas('riskScoreSnapshots', needsRescreening)`:
+     * an overdue historical row must not flag a customer whose latest snapshot
+     * carries a future next_screening_date.
+     *
+     * @param  Builder<Customer>  $query
+     * @return Builder<Customer>
+     */
+    public function scopeWhereLatestSnapshotNeedsRescreening(Builder $query): Builder
+    {
+        return $query->whereHas('latestRiskSnapshot', function ($snapshotQuery) {
+            $snapshotQuery->needsRescreening();
+        });
     }
 
     /**
@@ -398,49 +422,27 @@ class Customer extends BaseModel
     }
 
     /**
-     * Get masked IC number for display (first 4 and last 4 digits).
+     * Get the decrypted ID number for internal display.
      */
-    public function getIcNumberAttribute(): ?string
+    public function getIdNumberAttribute(): ?string
     {
-        if (! $this->id_number_encrypted) {
+        if (empty($this->id_number_encrypted)) {
             return null;
         }
 
         try {
             // Accessors cannot receive DI; resolved intentionally.
-            $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
-            if (strlen($decrypted) >= 8) {
-                return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
-            }
-
-            return '****';
+            return app(EncryptionService::class)->decrypt($this->id_number_encrypted);
         } catch (\Exception $_e) {
-            return '****';
+            return null;
         }
     }
 
     /**
-     * Get masked ID number for PDPA-compliant display (first 4, last 4).
-     *
-     * Returns a format like "9001****1234" for MyKad numbers,
-     * or "****" if decryption fails or the field is empty.
+     * Legacy alias for the decrypted ID number.
      */
-    public function getIdNumberMaskedAttribute(): string
+    public function getIcNumberAttribute(): ?string
     {
-        if (! $this->id_number_encrypted || empty($this->id_number_encrypted)) {
-            return '****';
-        }
-
-        try {
-            // Accessors cannot receive DI; resolved intentionally.
-            $decrypted = app(EncryptionService::class)->decrypt($this->id_number_encrypted);
-            if (! $decrypted || strlen($decrypted) < 8) {
-                return '****';
-            }
-
-            return substr($decrypted, 0, 4).'****'.substr($decrypted, -4);
-        } catch (\Exception $_e) {
-            return '****';
-        }
+        return $this->id_number;
     }
 }

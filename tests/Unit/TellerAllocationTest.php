@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\AllocationValidationException;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -250,5 +251,54 @@ class TellerAllocationTest extends TestCase
         $this->assertNotNull($allocation->approved_at);
         $this->assertNotNull($allocation->opened_at);
         $this->assertNotNull($allocation->closed_at);
+    }
+
+    #[Test]
+    public function add_daily_used_within_limit_enforces_cap_atomically(): void
+    {
+        $allocation = TellerAllocation::factory()->create([
+            'daily_limit_myr' => '1000.0000',
+            'daily_used_myr' => '600.0000',
+        ]);
+
+        $allocation->addDailyUsedWithinLimit('400.0000');
+        $this->assertEquals('1000.0000', $allocation->fresh()->daily_used_myr);
+
+        $this->expectException(AllocationValidationException::class);
+        $allocation->addDailyUsedWithinLimit('0.0001');
+    }
+
+    #[Test]
+    public function add_daily_used_within_limit_matches_preflight_semantics(): void
+    {
+        // daily_limit_myr is NOT NULL default 0 — a zero limit blocks any spend,
+        // same as hasDailyLimitRemaining().
+        $allocation = TellerAllocation::factory()->create([
+            'daily_limit_myr' => '0.0000',
+            'daily_used_myr' => '0.0000',
+        ]);
+
+        $this->expectException(AllocationValidationException::class);
+        $allocation->addDailyUsedWithinLimit('0.0001');
+    }
+
+    #[Test]
+    public function sequential_amounts_preserve_decimal_precision(): void
+    {
+        $allocation = TellerAllocation::factory()->create([
+            'current_quantity' => '0.0000',
+            'daily_used_myr' => '0.0000',
+        ]);
+
+        // Ten additions of a 4-dp amount must land exactly on the decimal
+        // total — a float cast inside increment/decrement would drift.
+        for ($i = 0; $i < 10; $i++) {
+            $allocation->add('0.0001');
+            $allocation->addDailyUsed('1234.5678');
+        }
+
+        $fresh = $allocation->fresh();
+        $this->assertEquals('0.0010', $fresh->current_quantity);
+        $this->assertEquals('12345.6780', $fresh->daily_used_myr);
     }
 }

@@ -6,10 +6,13 @@ use App\Enums\CddLevel;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\TransactionBlockedException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\MapsTransactionExceptionsToFields;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Requests\TransactionWizardStep1Request;
 use App\Http\Requests\TransactionWizardStep2Request;
 use App\Http\Requests\TransactionWizardStep3Request;
+use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\User;
@@ -29,12 +32,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
-use Psr\Log\LoggerInterface;
 
 class TransactionWizardController extends Controller
 {
+    use ApiResponse;
     use Concerns\AuthorizesBranchResource;
+    use HandlesControllerErrors;
     use MapsTransactionExceptionsToFields;
 
     public function __construct(
@@ -47,7 +50,7 @@ class TransactionWizardController extends Controller
         protected TellerAllocationService $tellerAllocationService,
         protected ThresholdService $thresholdService,
         protected InitialStatusResolver $statusResolver,
-        protected LoggerInterface $logger,
+
     ) {}
 
     /**
@@ -73,10 +76,7 @@ class TransactionWizardController extends Controller
         $customer = Customer::find($validated['customer_id']);
 
         if (! $customer instanceof Customer) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Customer not found.',
-            ], 404);
+            return $this->errorResponse('Customer not found.', [], 404);
         }
 
         // Branch isolation: refuse to leak existence/risk flags of customers
@@ -106,12 +106,12 @@ class TransactionWizardController extends Controller
 
         // Check if blocked
         if ($validationResult->isBlocked()) {
-            return response()->json([
-                'success' => false,
-                'blocked' => true,
-                'message' => $validationResult->getBlocks()[0]['message'],
-                'reason' => $validationResult->getBlocks()[0]['type'],
-            ], 403);
+            return $this->errorResponse(
+                $validationResult->getBlocks()[0]['message'],
+                [],
+                403,
+                ['blocked' => true, 'reason' => $validationResult->getBlocks()[0]['type']]
+            );
         }
 
         // Determine CDD level (allow teller override)
@@ -139,8 +139,7 @@ class TransactionWizardController extends Controller
         // Prepare required documents list
         $requiredDocuments = $this->getRequiredDocuments($cddLevel);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'wizard_session_id' => $sessionId,
             'cdd_level' => $cddLevel->value,
             'cdd_description' => $this->getCDDDescription($cddLevel),
@@ -149,7 +148,7 @@ class TransactionWizardController extends Controller
             'required_documents' => $requiredDocuments,
             'customer_is_returning' => $customer->transactions()->exists(),
             'next_step' => 'customer_details',
-        ]);
+        ], 'Step 1 complete');
     }
 
     /**
@@ -181,12 +180,11 @@ class TransactionWizardController extends Controller
         // Prepare summary for review
         $summary = $this->prepareTransactionSummary($sessionData);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'wizard_session_id' => $sessionId,
             'transaction_summary' => $summary,
             'next_step' => 'review_confirm',
-        ]);
+        ], 'Step 2 complete');
     }
 
     /**
@@ -215,32 +213,49 @@ class TransactionWizardController extends Controller
 
         // The session rate is quoted per the currency's convention
         // (currencies.rate_unit + rate_inverse); the stored transaction
-        // keeps the normalized per-unit rate.
-        $transactionData['rate'] = QuoteConvention::forCode((string) $transactionData['currency_code'])
+        // keeps the normalized per-unit rate, carried on the context rather
+        // than mutating the submitted payload in place.
+        $normalizedRate = QuoteConvention::forCode((string) $transactionData['currency_code'])
             ->toPerUnit((string) $transactionData['rate']);
 
         try {
-            $this->validationService->validateCurrency($transactionData['currency_code']);
-            $this->validationService->validateIpAddress(request()->ip());
+            // The live session wins over the step-1 snapshot: a teller who
+            // reseated mid-wizard books on the drawer they are actually at.
+            // With no open session the booking is drawer-less — custody stays
+            // at the teller allocation and no till balance is required.
+            $sessionCounter = CounterSession::openCounterForUser((int) auth()->id());
+            $transactionData['till_id'] = $sessionCounter !== null
+                ? $sessionCounter->code
+                : ($transactionData['till_id'] ?? null);
 
-            $tillBalance = $this->validationService->validateTillBalance(
-                $transactionData['till_id'],
-                $transactionData['currency_code']
-            );
+            $user = User::findOrFail(auth()->id());
 
-            /** @var Customer $customer */
-            $customer = Customer::findOrFail($transactionData['customer_id']);
-
-            // Re-check branch isolation at creation time (fail closed).
-            if ($denied = $this->authorizeAssignedBranch('You are not authorized to create transactions for this customer.')) {
-                return $denied;
-            }
+            // Shared booking gate at submit time — identical to the web, API,
+            // and import paths: currency/IP validation, non-trading branch
+            // rejection, till balance, customer blocked/frozen state, KYC
+            // expiry, branch scope, and rate tolerance. The step-1 checks are
+            // advisory only; a customer frozen or expired while the wizard
+            // was open must fail here, not book.
+            [$tillBalance, $customer] = $this->creationService
+                ->assertBookingEligibility($user, $transactionData, request()->ip());
 
             $amountMyr = (string) $sessionData['amount_myr'];
 
-            $this->validationService->validatePepRequirements($customer, $transactionData);
+            // Re-run the compliance gates fresh — PEP/sanctions/CDD/risk/hold
+            // state may have changed since step 1 cached its result.
+            $validationResult = $this->creationService
+                ->runComplianceGates($customer, $transactionData, $amountMyr);
 
-            $user = User::findOrFail(auth()->id());
+            // Never downgrade due diligence: the effective CDD level is the
+            // higher of the fresh assessment and the step-1 tier (which may
+            // carry a teller-requested upgrade the documents were collected
+            // under).
+            $sessionCddLevel = CddLevel::from($sessionData['cdd_level']);
+            $freshCddLevel = $validationResult->getCDDLevel();
+            $cddLevel = array_search($freshCddLevel, CddLevel::cases(), true) >= array_search($sessionCddLevel, CddLevel::cases(), true)
+                ? $freshCddLevel
+                : $sessionCddLevel;
+
             $allocation = $this->tellerAllocationService->resolveForTransaction(
                 $user,
                 [
@@ -250,14 +265,14 @@ class TransactionWizardController extends Controller
                 $amountMyr
             );
 
-            $holdRequired = (bool) $sessionData['hold_required'];
+            $holdRequired = $validationResult->isHoldRequired();
             $initialStatus = $this->statusResolver->resolve($amountMyr, $holdRequired, $customer->risk_rating);
 
             $context = new TransactionCreationContext(
                 data: $transactionData,
                 customer: $customer,
                 tillBalance: $tillBalance,
-                cddLevel: CddLevel::from($sessionData['cdd_level']),
+                cddLevel: $cddLevel,
                 holdRequired: $holdRequired,
                 status: $initialStatus->status,
                 amountMyr: $amountMyr,
@@ -266,6 +281,7 @@ class TransactionWizardController extends Controller
                 // hold_reason doubles as the compliance-clear gate — only a
                 // genuine hold may populate it, not threshold/risk reasons.
                 holdReason: $holdRequired ? $initialStatus->holdReason : null,
+                normalizedRate: $normalizedRate,
             );
 
             $transaction = $this->creationService->create($context, $user->id, request()->ip());
@@ -273,40 +289,32 @@ class TransactionWizardController extends Controller
             // Clear wizard session
             $this->wizardSessionService->forget($sessionId);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'transaction_id' => $transaction->id,
                 'transaction_number' => $transaction->reference,
                 'transaction_status' => $transaction->status->value,
-                'message' => $holdRequired
-                    ? 'Transaction created and pending approval'
-                    : 'Transaction completed successfully',
-            ]);
+            ], $holdRequired
+                ? 'Transaction created and pending approval'
+                : 'Transaction completed successfully');
 
         } catch (TransactionBlockedException $e) {
-            return response()->json([
-                'success' => false,
-                'field' => 'customer_id',
-                'message' => 'Transaction blocked due to compliance restrictions. Please contact support.',
-            ], 422);
+            return $this->errorResponse(
+                'Transaction blocked due to compliance restrictions. Please contact support.',
+                [],
+                422,
+                ['field' => 'customer_id']
+            );
         } catch (DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'field' => $this->transactionExceptionField($e),
-                'message' => $e->getMessage(),
-            ], $e->getStatusCode());
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            $this->logger->error('Transaction creation failed in wizard', [
+            return $this->errorResponse(
+                $e->getMessage(),
+                [],
+                $e->getStatusCode(),
+                ['field' => $this->transactionExceptionField($e)]
+            );
+        } catch (\Throwable $e) {
+            return $this->handleExceptionApi($e, 'Transaction creation failed in wizard', 'Transaction creation failed. Please try again later.', 500, [
                 'session_id' => $sessionId,
-                'error' => $e->getMessage(),
             ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction creation failed. Please try again later.',
-            ], 500);
         }
     }
 
@@ -321,12 +329,11 @@ class TransactionWizardController extends Controller
             return $sessionData;
         }
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'status' => 'active',
             'current_step' => $sessionData['step'],
             'expires_at' => now()->addHour()->toIso8601String(),
-        ]);
+        ], 'Wizard session active');
     }
 
     /**
@@ -339,11 +346,7 @@ class TransactionWizardController extends Controller
         $sessionData = $this->wizardSessionService->get($sessionId);
 
         if (! $sessionData) {
-            return response()->json([
-                'success' => false,
-                'status' => 'expired',
-                'message' => 'Wizard session expired or invalid',
-            ], 404);
+            return $this->errorResponse('Wizard session expired or invalid', [], 404, ['status' => 'expired']);
         }
 
         // Sessions created before ownership tracking lack user_id and are
@@ -351,11 +354,7 @@ class TransactionWizardController extends Controller
         // migration window negligible, and refusing is safer than trusting an
         // unbound session in an AML workflow.
         if ((int) ($sessionData['user_id'] ?? 0) !== (int) auth()->id()) {
-            return response()->json([
-                'success' => false,
-                'status' => 'forbidden',
-                'message' => 'You do not own this wizard session',
-            ], 403);
+            return $this->errorResponse('You do not own this wizard session', [], 403, ['status' => 'forbidden']);
         }
 
         return $sessionData;
@@ -374,11 +373,7 @@ class TransactionWizardController extends Controller
 
         $this->wizardSessionService->forget($sessionId);
 
-        return response()->json([
-            'success' => true,
-            'status' => 'cancelled',
-            'message' => 'Wizard session cancelled',
-        ]);
+        return $this->successResponse(['status' => 'cancelled'], 'Wizard session cancelled');
     }
 
     // Helper methods

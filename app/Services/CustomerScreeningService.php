@@ -15,6 +15,8 @@ use App\Support\LikeEscaper;
 use App\ValueObjects\ScreeningMatch;
 use App\ValueObjects\ScreeningResponse;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class CustomerScreeningService implements CustomerScreeningServiceInterface
@@ -82,17 +84,67 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         $results = new Collection;
         $customers = Customer::whereIn('id', $customerIds)->get();
 
-        // Fetch candidate pools once per batch instead of once per customer.
-        // The in-memory token ranking applies the same filtering the SQL
-        // prefilter would, so results are identical while avoiding N queries.
-        $sanctionPool = SanctionEntry::with('sanctionList')->orderBy('id')->get();
-        $adversePool = AdverseMediaEntry::where('is_active', true)->orderBy('id')->get();
+        // Single prefilter over the UNION of all customers' name tokens
+        // instead of hydrating the entire sanctions/adverse-media corpus.
+        // The union is a superset of each customer's individual prefilter;
+        // the per-customer in-memory ranking then applies the real filter,
+        // so results are identical while memory stays bounded.
+        $allTokens = $customers
+            ->flatMap(fn (Customer $customer) => $this->nameMatcher->tokenize(
+                $this->nameMatcher->normalizeName((string) $customer->full_name)
+            ))
+            ->unique()
+            ->values()
+            ->all();
+
+        $sanctionPool = $this->tokenPrefilteredPool(
+            SanctionEntry::query()->with('sanctionList'),
+            $allTokens,
+            'normalized_name',
+            'aliases'
+        );
+        $adversePool = $this->tokenPrefilteredPool(
+            AdverseMediaEntry::query()->where('is_active', true),
+            $allTokens,
+            'normalized_name',
+            'alias'
+        );
 
         foreach ($customers as $customer) {
             $results->push($this->screenCustomerWithPools($customer, $sanctionPool, $adversePool));
         }
 
         return $results;
+    }
+
+    /**
+     * Entries matching ANY of the given tokens in any of the given columns —
+     * the same LIKE-escaped prefilter findCandidates applies per customer.
+     *
+     * @param  array<int, string>  $tokens
+     * @return Collection<int, Model>
+     */
+    private function tokenPrefilteredPool(
+        Builder $query,
+        array $tokens,
+        string ...$columns
+    ): Collection {
+        if ($tokens === []) {
+            return new Collection;
+        }
+
+        return $query
+            ->where(function ($q) use ($tokens, $columns) {
+                foreach ($tokens as $token) {
+                    $escapedToken = LikeEscaper::escape($token);
+
+                    foreach ($columns as $column) {
+                        $q->orWhereRaw("{$column} LIKE ? ESCAPE ?", ["%{$escapedToken}%", '\\']);
+                    }
+                }
+            })
+            ->orderBy('id')
+            ->get();
     }
 
     public function getHistory(Customer $customer): Collection

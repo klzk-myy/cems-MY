@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\TellerAllocationStatus;
+use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\InsufficientAllocationBalanceException;
 use App\Models\Traits\BelongsToBranch;
 use App\Support\BcmathHelper;
@@ -188,6 +189,38 @@ class TellerAllocation extends BaseModel
         $this->refresh();
     }
 
+    /**
+     * Atomically consume daily limit capacity only when the spend fits.
+     *
+     * Mirrors deduct()'s conditional-UPDATE pattern: the WHERE clause is
+     * evaluated inside the row lock held by the caller, so two concurrent
+     * bookings can never both pass hasDailyLimitRemaining() against the same
+     * stale daily_used_myr and overshoot the cap.
+     *
+     * @throws AllocationValidationException When the spend would exceed the daily limit.
+     */
+    public function addDailyUsedWithinLimit(float|string $amountMyr): void
+    {
+        if ($this->daily_limit_myr === null) {
+            $this->addDailyUsed($amountMyr);
+
+            return;
+        }
+
+        $affected = static::query()
+            ->where($this->getKeyName(), $this->getKey())
+            ->whereRaw('daily_used_myr + ? <= daily_limit_myr', [$this->toNumericAmount($amountMyr)])
+            ->increment('daily_used_myr', $this->toNumericAmount($amountMyr));
+
+        $this->refresh();
+
+        if ($affected === 0) {
+            throw new AllocationValidationException(
+                "Daily limit exceeded for {$this->currency_code} allocation"
+            );
+        }
+    }
+
     public function subtractDailyUsed(float|string $amountMyr): void
     {
         $this->decrement('daily_used_myr', $this->toNumericAmount($amountMyr));
@@ -195,20 +228,27 @@ class TellerAllocation extends BaseModel
     }
 
     /**
-     * Normalize a validated numeric amount into the float|int shape the
-     * query builder's increment/decrement expects.
+     * Normalize a validated numeric amount to a decimal string for the query
+     * builder's increment/decrement. A string keeps the arithmetic in the
+     * decimal column domain — casting to float would introduce IEEE-754 drift
+     * on money quantities (the project's BCMath-only rule).
      */
-    private function toNumericAmount(float|int|string $quantity): float|int
+    private function toNumericAmount(float|int|string $quantity): string
     {
-        if (is_int($quantity) || is_float($quantity)) {
-            return $quantity;
+        if (is_int($quantity)) {
+            return (string) $quantity;
         }
 
-        if (is_numeric($quantity)) {
-            return (float) $quantity;
+        if (is_float($quantity)) {
+            // %.10F avoids scientific notation for very small/large floats.
+            $quantity = sprintf('%.10F', $quantity);
         }
 
-        throw new \InvalidArgumentException('Allocation amount must be numeric.');
+        if (! is_numeric($quantity)) {
+            throw new \InvalidArgumentException('Allocation amount must be numeric.');
+        }
+
+        return BcmathHelper::add($quantity, '0');
     }
 
     public function hasDailyLimitRemaining(float|string $amountMyr): bool
