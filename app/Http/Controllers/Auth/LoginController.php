@@ -51,7 +51,7 @@ class LoginController extends Controller
         // credentials rather than a 500 on the login page.
         $passwordValid = PasswordHash::check(
             $validated['password'],
-            $user?->password_hash ?? self::DUMMY_PASSWORD_HASH
+            $user->password_hash ?? self::DUMMY_PASSWORD_HASH
         );
 
         if ($user && $user->is_active && $passwordValid) {

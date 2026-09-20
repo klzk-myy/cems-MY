@@ -99,7 +99,9 @@ class Msb2ReportGenerator
             // sells). Emitting the live quantity for both columns filed the
             // same snapshot twice — wrong whenever the report is generated
             // after the business date or intraday.
-            $closingPosition = bcadd((string) ($positions[$currency->code] ?? '0'), '0', 4);
+            /** @var numeric-string $rawClosing */
+            $rawClosing = (string) ($positions[$currency->code] ?? '0');
+            $closingPosition = bcadd($rawClosing, '0', 4);
             $netFlow = bcsub(
                 $this->sumColumn($buyTxns, 'quantity'),
                 $this->sumColumn($sellTxns, 'quantity'),
@@ -166,7 +168,7 @@ class Msb2ReportGenerator
         $total = '0';
         foreach ($txns as $txn) {
             $value = (string) ($txn->{$column} ?? '0');
-            if (is_numeric($value) && $value !== '') {
+            if (is_numeric($value)) {
                 $total = bcadd($total, $value, 4);
             }
         }

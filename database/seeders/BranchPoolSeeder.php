@@ -66,6 +66,7 @@ class BranchPoolSeeder extends Seeder
                 // currency_positions is the authoritative stock gate — a
                 // branch pool without a matching position row cannot sell.
                 // Cost basis = seeded buy rate.
+                /** @var numeric-string $buyRate */
                 $buyRate = (string) (ExchangeRate::where('currency_code', $currency->code)
                     ->latest()->value('rate_buy') ?? '1');
 
