@@ -2,10 +2,8 @@
 
 namespace App\Services\Accounting;
 
-use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
-use App\Exceptions\Domain\AccountNotFoundException;
 use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Models\AccountingPeriod;
 use App\Models\AccountLedger;
@@ -33,12 +31,6 @@ use Illuminate\Support\Facades\DB;
 class AccountingService implements AccountingServiceInterface
 {
     /**
-     * Debit-normal account types for rows whose account_type is stored as a
-     * raw string rather than the AccountType enum.
-     */
-    private const DEBIT_NORMAL_TYPES = ['Asset', 'Expense'];
-
-    /**
      * Math service for high-precision calculations.
      */
     protected MathService $mathService;
@@ -47,6 +39,11 @@ class AccountingService implements AccountingServiceInterface
      * Audit service for tamper-evident logging.
      */
     protected AuditService $auditService;
+
+    /**
+     * Read-side ledger queries (balances, activity, account direction).
+     */
+    protected LedgerQueryService $ledgerQueries;
 
     /**
      * Create a new AccountingService instance.
@@ -58,9 +55,11 @@ class AccountingService implements AccountingServiceInterface
         MathService $mathService,
         AuditService $auditService,
         protected CacheInvalidationService $cacheInvalidationService,
+        ?LedgerQueryService $ledgerQueries = null,
     ) {
         $this->mathService = $mathService;
         $this->auditService = $auditService;
+        $this->ledgerQueries = $ledgerQueries ?? new LedgerQueryService($mathService);
     }
 
     /**
@@ -380,11 +379,9 @@ class AccountingService implements AccountingServiceInterface
 
             // Scope the running balance to the entry's branch so multi-branch
             // ledger activity can never contaminate another branch's balance.
-            $currentBalance = $this->latestChainBalance($line->account_code, $entry->branch_id);
+            $currentBalance = $this->ledgerQueries->latestChainBalance($line->account_code, $entry->branch_id);
 
-            if ($account->account_type instanceof AccountType
-                ? $account->account_type->isDebitNormal()
-                : in_array($account->account_type, self::DEBIT_NORMAL_TYPES)) {
+            if ($this->ledgerQueries->isDebitNormal($account)) {
                 $newBalance = $this->mathService->add(
                     $this->mathService->add($currentBalance, (string) $line->debit),
                     $this->mathService->multiply((string) $line->credit, '-1')
@@ -448,7 +445,7 @@ class AccountingService implements AccountingServiceInterface
      */
     protected function rebuildRunningBalances(string $accountCode, ?int $branchId): void
     {
-        $isDebitNormal = $this->isDebitAccount($accountCode);
+        $isDebitNormal = $this->ledgerQueries->isDebitAccount($accountCode);
 
         $rows = AccountLedger::where('account_code', $accountCode)
             ->when(
@@ -489,33 +486,11 @@ class AccountingService implements AccountingServiceInterface
     }
 
     /**
-     * Determine if an account is a debit-balance account.
-     *
-     * @param  string  $accountCode  The account code to check
-     * @return bool True if account type is Asset or Expense
-     *
-     * @throws \InvalidArgumentException If account is not found
-     */
-    protected function isDebitAccount(string $accountCode): bool
-    {
-        $account = ChartOfAccount::find($accountCode);
-        if (! $account) {
-            throw new AccountNotFoundException($accountCode);
-        }
-
-        return $account->account_type instanceof AccountType
-            ? $account->account_type->isDebitNormal()
-            : in_array($account->account_type, self::DEBIT_NORMAL_TYPES);
-    }
-
-    /**
      * Get the current balance for an account.
      *
-     * Retrieves the running balance from the most recent ledger entry,
-     * optionally filtered by an as-of date and branch. This is the single
-     * canonical implementation; LedgerService, FiscalYearService and
-     * FinancialRatioService all delegate here (previously each duplicated
-     * this query).
+     * Delegates to LedgerQueryService — the single canonical implementation;
+     * LedgerService, FiscalYearService and FinancialRatioService all reach it
+     * through this method or LedgerService's wrapper.
      *
      * @param  string  $accountCode  The account code to query
      * @param  string|null  $asOfDate  Date in YYYY-MM-DD format (default: current date)
@@ -524,72 +499,11 @@ class AccountingService implements AccountingServiceInterface
      */
     public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
     {
-        // All-branches reads: running_balance chains are per-branch, so picking
-        // the latest row across branches would return a single branch's
-        // balance mislabeled as consolidated. Aggregate instead — the sum is
-        // branch-agnostic and also immune to backdated-posting chain repairs.
-        if ($branchId === null) {
-            /** @var object{row_count:int, td:?string, tc:?string} $totals */
-            $totals = AccountLedger::where('account_code', $accountCode)
-                ->when($asOfDate, fn ($q) => $q->whereRaw('DATE(entry_date) <= ?', [$asOfDate]))
-                ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(debit),0) as td, COALESCE(SUM(credit),0) as tc')
-                ->first();
-
-            // No ledger rows at all: plain '0' (matches the previous
-            // no-entry behavior and needs no account lookup).
-            if ((int) $totals->row_count === 0) {
-                return '0';
-            }
-
-            $net = $this->mathService->subtract((string) $totals->td, (string) $totals->tc);
-
-            // A zero net needs no sign flip — skip the account lookup so
-            // unknown account codes still resolve to a zero balance.
-            if ($this->mathService->compare($net, '0') === 0) {
-                return $net;
-            }
-
-            return $this->isDebitAccount($accountCode)
-                ? $net
-                : $this->mathService->multiply($net, '-1');
-        }
-
-        return $this->latestChainBalance($accountCode, $branchId, $asOfDate);
-    }
-
-    /**
-     * Latest running balance on the exact chain for one branch scope.
-     * A null branchId means the unbranched chain only (not consolidated) —
-     * writers must never borrow another branch's chain end.
-     */
-    protected function latestChainBalance(string $accountCode, ?int $branchId, ?string $asOfDate = null): string
-    {
-        $query = AccountLedger::where('account_code', $accountCode)
-            ->when(
-                $branchId === null,
-                fn ($q) => $q->whereNull('branch_id'),
-                fn ($q) => $q->where('branch_id', $branchId)
-            );
-
-        if ($asOfDate) {
-            // Use date function for cross-database compatibility
-            // This ensures proper comparison regardless of datetime vs date storage
-            $query->whereRaw('DATE(entry_date) <= ?', [$asOfDate]);
-        }
-
-        $lastEntry = $query->orderBy('entry_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        return $lastEntry ? (string) $lastEntry->running_balance : '0';
+        return $this->ledgerQueries->getAccountBalance($accountCode, $asOfDate, $branchId);
     }
 
     /**
      * Get net account activity (change in balance) within a date range.
-     *
-     * Calculates the net movement of an account between two dates.
-     * For expense accounts, this returns total debits minus credits.
      *
      * @param  string  $accountCode  The account code to query
      * @param  string  $startDate  Start date in YYYY-MM-DD format (inclusive)
@@ -598,17 +512,7 @@ class AccountingService implements AccountingServiceInterface
      */
     public function getAccountActivity(string $accountCode, string $startDate, string $endDate): string
     {
-        $totals = AccountLedger::where('account_code', $accountCode)
-            ->whereDate('entry_date', '>=', Carbon::parse($startDate)->toDateString())
-            ->whereDate('entry_date', '<=', Carbon::parse($endDate)->toDateString())
-            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
-            ->first();
-
-        // Net activity: debits - credits (expense-normal).
-        return $this->mathService->subtract(
-            (string) ($totals->total_debit ?? 0),
-            (string) ($totals->total_credit ?? 0)
-        );
+        return $this->ledgerQueries->getAccountActivity($accountCode, $startDate, $endDate);
     }
 
     /**
@@ -619,20 +523,6 @@ class AccountingService implements AccountingServiceInterface
      */
     public function getAccountsActivity(array $accountCodes, string $fromDate, string $toDate): array
     {
-        if (empty($accountCodes)) {
-            return [];
-        }
-
-        $rows = AccountLedger::query()
-            ->select('account_code')
-            ->selectRaw('SUM(debit - credit) as activity')
-            ->whereIn('account_code', $accountCodes)
-            ->whereDate('entry_date', '>=', Carbon::parse($fromDate)->toDateString())
-            ->whereDate('entry_date', '<=', Carbon::parse($toDate)->toDateString())
-            ->groupBy('account_code')
-            ->pluck('activity', 'account_code')
-            ->toArray();
-
-        return array_map('strval', $rows);
+        return $this->ledgerQueries->getAccountsActivity($accountCodes, $fromDate, $toDate);
     }
 }

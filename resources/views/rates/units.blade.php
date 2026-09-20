@@ -100,7 +100,7 @@
             </p>
         </x-card>
     </div>
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         // Rate values are quoted under the submitted convention, so a changed
         // unit or direction must not carry the pre-filled old-convention
         // numbers into the save — clear them to force re-entry.

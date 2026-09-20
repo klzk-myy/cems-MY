@@ -2,46 +2,38 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Models\Transaction;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\TransactionImportTestHelpers;
 
 class TransactionImportIdempotencyTest extends TestCase
 {
+    use RefreshDatabase;
+    use TransactionImportTestHelpers;
+
     /**
-     * Test that TransactionImportService includes idempotency check.
+     * Re-processing the same import file must not create duplicate
+     * transactions — rows dedupe on their per-import, per-row
+     * idempotency key.
      */
     public function test_transaction_import_has_idempotency_check(): void
     {
-        $content = $this->readSource('app/Services/Transaction/TransactionImportService.php');
+        ['customer' => $customer, 'import' => $import] = $this->createFixtures();
+        $service = $this->createImportService('10000');
+        $csv = $this->createCsv("{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN");
 
-        $this->assertStringContainsString(
-            "\$data['idempotency_key'] = hash('sha256', \$importId.'|'.\$rowNumber.'|'.\$encoded);",
-            $content,
-            'Should generate a per-import, per-row idempotency key for every import row'
-        );
-        $this->assertStringContainsString(
-            "throw new ImportValidationException('Row data could not be encoded for idempotency key')",
-            $content,
-            'Should fail loudly when a row cannot be encoded for its idempotency key'
-        );
-        $this->assertStringContainsString(
-            'createForImport',
-            $content,
-            'Should delegate dedup to TransactionCreationService via createForImport'
-        );
-    }
+        try {
+            $service->process($import, $csv);
+            $service->process($import->fresh(), $csv);
 
-    private function readSource(string $relativePath): string
-    {
-        $path = base_path($relativePath);
-
-        $this->assertFileExists($path);
-
-        $content = file_get_contents($path);
-
-        if ($content === false) {
-            $this->fail("Unable to read {$relativePath}");
+            $this->assertSame(
+                1,
+                Transaction::where('customer_id', $customer->id)->count(),
+                'Re-running the same import must not duplicate transactions'
+            );
+        } finally {
+            unlink($csv);
         }
-
-        return $content;
     }
 }

@@ -2,32 +2,41 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\TransactionStatus;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\TransactionImportTestHelpers;
 
 class TransactionImportBranchFixTest extends TestCase
 {
+    use RefreshDatabase;
+    use TransactionImportTestHelpers;
+
     /**
-     * Test that stock check uses correct branch_id from tillBalance.
+     * Stock/position effects of an imported transaction must land on the
+     * till's branch, not wherever the importer happens to be scoped.
      */
     public function test_transaction_import_uses_branch_id_for_position(): void
     {
-        $file = base_path('app/Services/Transaction/TransactionImportService.php');
-        $this->assertFileExists($file);
+        ['customer' => $customer, 'import' => $import, 'counter' => $counter] = $this->createFixtures();
+        $service = $this->createImportService('10000');
+        $csv = $this->createCsv("{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN");
 
-        $content = file_get_contents($file);
-        $this->assertStringContainsString(
-            'createForImport',
-            $content,
-            'Should delegate stock check to TransactionCreationService'
-        );
+        try {
+            $service->process($import, $csv);
 
-        $creationFile = base_path('app/Services/Transaction/TransactionCreationService.php');
-        $this->assertFileExists($creationFile);
-        $creationContent = file_get_contents($creationFile);
-        $this->assertStringContainsString(
-            'tillBalance?->branch_id',
-            $creationContent,
-            'Should use the till balance branch_id for position lookup'
-        );
+            $this->assertDatabaseHas('transactions', [
+                'customer_id' => $customer->id,
+                'branch_id' => $counter->branch_id,
+                'status' => TransactionStatus::Completed->value,
+            ]);
+
+            $this->assertDatabaseHas('currency_positions', [
+                'currency_code' => 'USD',
+                'branch_id' => $counter->branch_id,
+            ]);
+        } finally {
+            unlink($csv);
+        }
     }
 }

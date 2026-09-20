@@ -209,6 +209,12 @@ class SimulationSeeder extends Seeder
                 'nationality' => 'MY',
                 'date_of_birth' => '1990-01-01',
                 'customer_type' => 'individual',
+                // Standard-CDD fields so wave bookings above the simplified
+                // threshold pass the CDD gate.
+                'address' => '1 Jalan Simulation, Kuala Lumpur',
+                'phone' => '+60312345678',
+                'occupation' => 'Engineer',
+                'employer_name' => 'Sim Employer Sdn Bhd',
                 'is_active' => true,
                 'pep_status' => false,
                 'is_pep_associate' => false,

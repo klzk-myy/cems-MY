@@ -29,7 +29,7 @@ class SecurityHeaders
         'Referrer-Policy' => 'strict-origin-when-cross-origin',
 
         // Permissions Policy (formerly Feature-Policy)
-        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self)',
+        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), fullscreen=(self)',
 
         // Cache control for sensitive pages
         'Cache-Control' => 'no-store, no-cache, must-revalidate, proxy-revalidate',

@@ -5,8 +5,9 @@ namespace Tests\Http\Simulation\WaveC\Steps;
 /**
  * ParitySteps — Wave C cross-surface parity.
  *
- * Runs the same booking workflow (open counter → book USD buy → manager
- * approval) once per surface and derives a normalized state snapshot from
+ * Runs the same booking workflow (book USD buy → compliance approval)
+ * once per surface — drawerless, no counter session — and derives a
+ * normalized state snapshot from
  * the oracle for each run. Identifiers, timestamps, and idempotency keys are
  * stripped, leaving only the semantic truth both surfaces must write
  * identically.
@@ -29,17 +30,9 @@ trait ParitySteps
 
         $before = $this->positionSnapshot();
 
-        $resp = $this->webClient->post('/counters/'.$this->counterCode().'/open', [
-            'opening_floats' => [
-                ['currency_id' => 'USD', 'quantity' => 100000],
-                ['currency_id' => 'EUR', 'quantity' => 100000],
-                ['currency_id' => 'GBP', 'quantity' => 100000],
-                ['currency_id' => 'MYR', 'quantity' => 100000],
-            ],
-            'notes' => 'Wave C web open',
-        ]);
-        $this->assertSurfaceStatus($resp, 302, 'Wave C web counter open');
-
+        // Drawerless custody: no counter session is opened on either surface —
+        // booking settles against the teller allocation, so parity compares
+        // the identical drawerless path on both surfaces.
         $key = 'wave-c-web-'.uniqid();
         $resp = $this->webClient->post('/transactions', [
             'customer_id' => $this->state->customerId,
@@ -51,7 +44,6 @@ trait ParitySteps
             'source_of_funds' => 'Salary',
             'source_of_wealth' => 'Employer',
             'branch_id' => $this->state->branchId,
-            'counter_id' => $this->state->counterId,
             'idempotency_key' => $key,
         ]);
         $this->assertSurfaceStatus($resp, 302, 'Wave C web booking');
@@ -71,61 +63,13 @@ trait ParitySteps
 
     /**
      * Run the same workflow on the API surface and return its normalized
-     * state. Preconditions (counter close then API open) are plumbing, not
-     * part of the proven surface behaviour.
+     * state.
      *
      * @return array<string, mixed>
      */
     protected function runBookingWorkflowOnApi(): array
     {
-        // Close the web-run session so the API can open the counter. The web
-        // run's booking moved USD, so closing floats must mirror the till's
-        // *current* balances (via the read-only oracle) to keep the variance
-        // at zero — otherwise the close needs supervisor escalation.
-        $closingFloats = [];
-        foreach (['USD', 'EUR', 'GBP', 'MYR'] as $currency) {
-            // Mirror CounterService::closeSession's expected balance formula:
-            // opening + buy_quantity - sell_quantity.
-            $row = $this->state->oracle->query(
-                'SELECT opening_balance, buy_quantity, sell_quantity
-                 FROM till_balances WHERE till_id = ? AND currency_code = ? ORDER BY id DESC LIMIT 1',
-                [$this->counterCode(), $currency]
-            );
-            $balance = $row === []
-                ? 100000.0
-                : (float) $row[0]['opening_balance']
-                    + (float) $row[0]['buy_quantity']
-                    - (float) $row[0]['sell_quantity'];
-            $closingFloats[] = ['currency_id' => $currency, 'quantity' => $balance];
-        }
-
-        $this->asWebUser('sim_manager', function () use ($closingFloats): void {
-            $resp = $this->webClient->post('/counters/'.$this->counterCode().'/close', [
-                'closing_floats' => $closingFloats,
-            ]);
-            $this->assertSurfaceStatus($resp, 302, 'Wave C API precondition: web close');
-
-            $open = (int) $this->state->oracle->scalar(
-                "SELECT COUNT(*) FROM counter_sessions WHERE status = 'open'"
-            );
-            $this->assertSame(0, $open, 'Wave C API precondition: no session may remain open');
-        }, 'sim_manager');
-
         $before = $this->positionSnapshot();
-
-        $api = $this->newApiClient($this->tokenFor('teller'));
-        $resp = $api->post('/counters/'.$this->state->counterId.'/opening-request', [
-            'requested_floats' => ['USD' => 100000, 'EUR' => 100000, 'GBP' => 100000, 'MYR' => 100000],
-        ]);
-        $this->assertSurfaceStatus($resp, 200, 'Wave C API opening-request');
-
-        $manager = $this->newApiClient($this->tokenFor('manager'));
-        $resp = $manager->post('/counters/'.$this->state->counterId.'/approve-and-open', [
-            'teller_id' => $this->state->tellerId,
-            'approved_floats' => ['USD' => 100000, 'EUR' => 100000, 'GBP' => 100000, 'MYR' => 100000],
-            'daily_limits' => ['USD' => 500000, 'EUR' => 500000, 'GBP' => 500000, 'MYR' => 500000],
-        ]);
-        $this->assertSurfaceStatus($resp, 200, 'Wave C API approve-and-open');
 
         $key = 'wave-c-api-'.uniqid();
         $teller = $this->newApiClient($this->tokenFor('teller'));
@@ -138,7 +82,6 @@ trait ParitySteps
             'purpose' => 'Wave C parity booking',
             'source_of_funds' => 'Salary',
             'source_of_wealth' => 'Employer',
-            'till_id' => $this->counterCode(),
             'idempotency_key' => $key,
         ]);
         $this->assertSurfaceStatus($resp, 201, 'Wave C API booking');

@@ -156,68 +156,46 @@ class CounterHandoverAcknowledgeTest extends TestCase
         $response->assertStatus(422);
     }
 
+    /**
+     * The designated recipient (to_user_id) may acknowledge — not only the
+     * supervisor. The web acknowledge route was removed with the drawerless
+     * UI; the API surface is the sole entry point.
+     */
     #[Test]
-    public function web_route_manager_can_acknowledge_handover(): void
+    public function recipient_teller_can_acknowledge_handover(): void
     {
-        // Create handover where to_user_id is the manager
-        $session = CounterSession::factory()->create([
-            'counter_id' => $this->counter->id,
-            'user_id' => $this->teller1->id,
-            'session_date' => now()->toDateString(),
-            'opened_at' => now()->subMinutes(45),
-            'opened_by' => $this->teller1->id,
-            'status' => CounterSessionStatus::PendingHandover,
-        ]);
+        $result = $this->createPendingHandover();
+        $handover = $result['handover'];
 
-        $handover = CounterHandover::factory()->create([
-            'counter_session_id' => $session->id,
-            'from_user_id' => $this->teller1->id,
-            'to_user_id' => $this->manager->id,
-            'supervisor_id' => $this->manager->id,
-            'handover_time' => now(),
-            'physical_count_verified' => true,
-            'variance_myr' => '0.00',
-        ]);
-
-        $response = $this->actingAs($this->manager)
-            ->post("/counters/{$this->counter->code}/handover/acknowledge", [
+        $response = $this->actingAs($this->teller2, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$handover->id}/acknowledge", [
                 'verified' => true,
-                'notes' => 'Verified via web',
+                'notes' => 'Received and verified',
             ]);
 
-        $response->assertRedirect();
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
 
         $handover->refresh();
         $this->assertNotNull($handover->acknowledged_at);
     }
 
+    /**
+     * A yellow-variance handover cannot be acknowledged with verified=false —
+     * the variance must be explicitly accepted (S7).
+     */
     #[Test]
-    public function web_route_show_acknowledge_form(): void
+    public function yellow_variance_handover_requires_explicit_verification(): void
     {
-        // Create handover where to_user_id is the manager
-        $session = CounterSession::factory()->create([
-            'counter_id' => $this->counter->id,
-            'user_id' => $this->teller1->id,
-            'session_date' => now()->toDateString(),
-            'opened_at' => now()->subMinutes(45),
-            'opened_by' => $this->teller1->id,
-            'status' => CounterSessionStatus::PendingHandover,
-        ]);
+        $result = $this->createPendingHandover();
+        $result['handover']->update(['yellow_variance' => true]);
 
-        $handover = CounterHandover::factory()->create([
-            'counter_session_id' => $session->id,
-            'from_user_id' => $this->teller1->id,
-            'to_user_id' => $this->manager->id,
-            'supervisor_id' => $this->manager->id,
-            'handover_time' => now(),
-            'physical_count_verified' => true,
-            'variance_myr' => '0.00',
-        ]);
+        $response = $this->actingAs($this->teller2, 'sanctum')
+            ->postJson("/api/v1/counters/{$this->counter->id}/handover/{$result['handover']->id}/acknowledge", [
+                'verified' => false,
+            ]);
 
-        $response = $this->actingAs($this->manager)
-            ->get("/counters/{$this->counter->code}/handover/acknowledge");
-
-        $response->assertStatus(200);
+        $response->assertStatus(422);
     }
 
     #[Test]

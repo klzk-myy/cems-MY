@@ -3,38 +3,34 @@
 namespace Tests\Http\Simulation\WaveA\Steps;
 
 /**
- * CounterLifecycleSteps — Wave A steps A12, A13.
+ * CounterLifecycleSteps — Wave A step A13.
  *
- * A12 counter handover (web + API acknowledge)
- * A13 emergency close (web + API)
+ * A13 emergency close via the API emergency-close route. The web handover
+ * (A12) and web emergency-close routes were retired with the drawerless UI;
+ * handover acknowledge coverage lives in
+ * tests/Feature/CounterHandoverAcknowledgeTest.
  */
 trait CounterLifecycleSteps
 {
     /**
-     * A12 — web: counter handover.
-     */
-    protected function itHandsOverCounter(): void
-    {
-        $code = $this->counterCode();
-        $resp = $this->webClient->post('/counters/'.$code.'/handover', [
-            'from_user_id' => $this->state->tellerId,
-            'to_user_id' => $this->state->tellerId,
-            'supervisor_id' => $this->state->managerId,
-            'physical_counts' => [],
-            'notes' => 'Wave A handover',
-        ]);
-        $this->assertContains($resp['status'], [302, 200], 'A12 web handover');
-    }
-
-    /**
-     * A13 — web: emergency close.
+     * A13 — emergency close via the API surface.
+     *
+     * The service rejects sessions younger than 30 minutes
+     * (EmergencyCloseSessionTooNewException), so the test clock travels
+     * forward before closing and back afterwards.
      */
     protected function itEmergencyClosesCounter(): void
     {
-        $code = $this->counterCode();
-        $resp = $this->webClient->post('/counters/'.$code.'/emergency', [
-            'reason' => 'Wave A emergency closure.',
-        ]);
-        $this->assertContains($resp['status'], [302, 200], 'A13 web emergency close');
+        $this->travel(31)->minutes();
+
+        try {
+            $api = $this->newApiClient($this->tokenFor('teller'));
+            $resp = $api->post('/counters/'.$this->state->counterId.'/emergency-close', [
+                'reason' => 'Wave A emergency closure.',
+            ]);
+            $this->assertContains($resp['status'], [200, 201, 202], 'A13 API emergency close');
+        } finally {
+            $this->travelBack();
+        }
     }
 }

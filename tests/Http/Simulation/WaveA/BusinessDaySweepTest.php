@@ -80,7 +80,11 @@ class BusinessDaySweepTest extends SimulationTestCase
         // via SIM_SURFACE). Single-surface steps always run; mixed steps gate
         // their API assertions internally (see AuthSteps).
         $this->itAuthenticates();                       // A1
-        $this->runOnSurface('web', fn () => $this->itOpensCounter());                        // A2
+        // A2 opens via the API opening-request + approve-and-open flow on
+        // every surface selection — the web counter routes were removed in
+        // the drawerless rework, and downstream steps need the session's
+        // till balances regardless of which surface is under test.
+        $this->itOpensCounter();                        // A2
         $this->runOnSurface('api', fn () => $this->itOpensCounterViaApi());                  // A2b
         $this->runOnSurface('web', fn () => $this->itViewsAllocations());                    // A3
         $this->runOnSurface('api', fn () => $this->itViewsAllocationsViaApi());              // A3b
@@ -98,7 +102,9 @@ class BusinessDaySweepTest extends SimulationTestCase
         $this->itRunsMonthEndReports();                 // A9
         $this->itClosesBranch();                        // A10
         $this->itManagesStockTransfers();               // A11
-        $this->itHandsOverCounter();                    // A12
+        // A12 counter handover removed: the handover initiate route was web-
+        // only and was retired with the drawerless UI. Acknowledge coverage
+        // lives in tests/Feature/CounterHandoverAcknowledgeTest.
         $this->itEmergencyClosesCounter();              // A13
         $this->itManagesBankReconciliation();           // A14
         $this->itManagesBudgets();                      // A15

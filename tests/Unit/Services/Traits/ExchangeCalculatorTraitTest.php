@@ -57,14 +57,20 @@ class ExchangeCalculatorTraitTest extends TestCase
     #[Test]
     public function no_service_defines_its_own_resolver_copy(): void
     {
+        // A trait-imported method reports the trait's file as its definition
+        // site; a class-defined copy would report the service's own file.
+        $traitFile = (new \ReflectionClass(ExchangeCalculatorTrait::class))->getFileName();
+
         foreach ([
-            'app/Services/Transaction/TransactionCreationService.php',
-            'app/Services/Transaction/TransactionImportService.php',
-        ] as $relativePath) {
-            $this->assertStringNotContainsString(
-                'function resolveExchangeCalculator',
-                $this->readSource($relativePath),
-                "{$relativePath} should not carry a duplicate resolver; use ExchangeCalculatorTrait"
+            app(TransactionCreationServiceInterface::class),
+            app(TransactionImportService::class),
+        ] as $service) {
+            $method = new \ReflectionMethod($service, 'resolveExchangeCalculator');
+
+            $this->assertSame(
+                $traitFile,
+                $method->getFileName(),
+                get_class($service).' should not carry a duplicate resolver; use ExchangeCalculatorTrait'
             );
         }
     }
@@ -77,21 +83,6 @@ class ExchangeCalculatorTraitTest extends TestCase
         );
 
         $this->assertTrue(method_exists($service, 'resolveExchangeCalculator'));
-    }
-
-    private function readSource(string $relativePath): string
-    {
-        $path = base_path($relativePath);
-
-        $this->assertFileExists($path);
-
-        $content = file_get_contents($path);
-
-        if ($content === false) {
-            $this->fail("Unable to read {$relativePath}");
-        }
-
-        return $content;
     }
 }
 

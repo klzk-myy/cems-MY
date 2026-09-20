@@ -32,14 +32,18 @@ class PatternRiskServiceTest extends TestCase
     #[Test]
     public function round_trip_detector_uses_math_service_api(): void
     {
-        // The shared detector must use the consistent MathService API, not a
-        // legacy `$this->math->compare` property.
-        $file = base_path('app/Services/Compliance/RoundTripDetector.php');
-        $this->assertFileExists($file);
+        // The shared detector must expose the consistent MathService API, not a
+        // legacy `$math` property.
+        $reflection = new \ReflectionClass(RoundTripDetector::class);
 
-        $content = file_get_contents($file);
-        $this->assertStringContainsString('$this->mathService->compare', $content);
-        $this->assertStringNotContainsString('$this->math->compare', $content);
+        $this->assertTrue(
+            $reflection->hasProperty('mathService'),
+            'RoundTripDetector must hold its MathService on a mathService property'
+        );
+        $this->assertFalse(
+            $reflection->hasProperty('math'),
+            'RoundTripDetector must not carry a legacy $math property'
+        );
     }
 
     #[Test]

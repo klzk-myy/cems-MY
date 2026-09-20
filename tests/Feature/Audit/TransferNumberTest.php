@@ -2,18 +2,26 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Models\StockTransfer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TransferNumberTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_generate_transfer_number_uses_lock_and_retry(): void
     {
-        $file = base_path('app/Models/StockTransfer.php');
-        $this->assertFileExists($file);
+        $date = now()->format('Ymd');
 
-        $content = file_get_contents($file);
-        $this->assertStringContainsString('lockForUpdate()', $content);
-        $this->assertStringContainsString('while (true)', $content);
-        $this->assertStringContainsString('$maxRetries', $content);
+        $first = StockTransfer::generateTransferNumber();
+        $this->assertSame("TRF-{$date}-0001", $first);
+
+        // Persisting the first number must bump the sequence for the next call.
+        StockTransfer::factory()->create(['transfer_number' => $first]);
+
+        $second = StockTransfer::generateTransferNumber();
+        $this->assertSame("TRF-{$date}-0002", $second);
+        $this->assertNotSame($first, $second);
     }
 }

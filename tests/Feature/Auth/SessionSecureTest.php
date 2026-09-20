@@ -11,11 +11,8 @@ class SessionSecureTest extends TestCase
      */
     public function test_session_secure_has_production_fallback(): void
     {
-        $configFile = file_get_contents(base_path('config/session.php'));
-        $this->assertStringContainsString(
-            "'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production')",
-            $configFile,
-            'Session secure config should fallback to production environment check'
-        );
+        // APP_ENV=testing under phpunit: the secure flag must resolve from the
+        // environment (production-only default), not be hardcoded on.
+        $this->assertFalse(config('session.secure'));
     }
 }

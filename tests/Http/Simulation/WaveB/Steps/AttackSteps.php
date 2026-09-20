@@ -177,19 +177,26 @@ trait AttackSteps
     }
 
     /**
-     * Open the HQ counter on the web surface (booking precondition).
+     * Open the HQ counter (booking precondition). The web counter routes were
+     * removed in the drawerless rework — the API opening-request +
+     * approve-and-open flow is the only entry point.
      */
     private function openCounterOverWeb(): void
     {
-        $resp = $this->webClient->post('/counters/'.$this->counterCode().'/open', [
-            'opening_floats' => [
-                ['currency_id' => 'USD', 'quantity' => 100000],
-                ['currency_id' => 'EUR', 'quantity' => 100000],
-                ['currency_id' => 'GBP', 'quantity' => 100000],
-                ['currency_id' => 'MYR', 'quantity' => 100000],
-            ],
-            'notes' => 'Wave B open',
+        $api = $this->newApiClient($this->tokenFor('teller'));
+        $resp = $api->post('/counters/'.$this->state->counterId.'/opening-request', [
+            'requested_floats' => ['USD' => 100000, 'EUR' => 100000, 'GBP' => 100000, 'MYR' => 100000],
         ]);
-        $this->assertSurfaceStatus($resp, 302, 'Wave B counter open');
+        $this->assertSurfaceStatus($resp, 200, 'Wave B counter opening-request');
+
+        $manager = $this->newApiClient($this->tokenFor('manager'));
+        $resp = $manager->post('/counters/'.$this->state->counterId.'/approve-and-open', [
+            'teller_id' => $this->state->tellerId,
+            'approved_floats' => ['USD' => 100000, 'EUR' => 100000, 'GBP' => 100000, 'MYR' => 100000],
+            'daily_limits' => [
+                'USD' => 500000, 'EUR' => 500000, 'GBP' => 500000, 'MYR' => 500000,
+            ],
+        ]);
+        $this->assertSurfaceStatus($resp, 200, 'Wave B counter approve-and-open');
     }
 }

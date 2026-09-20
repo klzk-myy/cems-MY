@@ -2,18 +2,34 @@
 
 namespace Tests\Feature\Audit;
 
+use App\Enums\UserRole;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class TransactionWizardStep3Test extends TestCase
 {
-    public function test_wizard_step3_passes_user_id_and_ip(): void
-    {
-        $file = base_path('app/Http/Controllers/TransactionWizardController.php');
-        $this->assertFileExists($file);
+    use RefreshDatabase;
 
-        $content = file_get_contents($file);
-        $this->assertStringContainsString('creationService->create(', $content, 'Should call creation service to create transaction');
-        $this->assertStringContainsString('auth()->id()', $content, 'Should use auth()->id() for user identification');
-        $this->assertStringContainsString('request()->ip()', $content, 'Should pass request IP address');
+    /**
+     * The submit step must fail closed on sessions it cannot resolve to the
+     * authenticated user — an expired or unknown session id is a 404.
+     * (Full submit coverage lives in tests/Feature/TransactionWizardTest.)
+     */
+    public function test_step3_rejects_unknown_wizard_session(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+
+        $response = $this->postJson('/api/v1/wizard/transactions/step3', [
+            'wizard_session_id' => 'nonexistent-session-'.Str::random(8),
+            'confirm_details' => true,
+            'idempotency_key' => (string) Str::uuid(),
+        ]);
+
+        $response->assertStatus(404);
     }
 }
