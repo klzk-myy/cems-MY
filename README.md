@@ -1,6 +1,6 @@
 # CEMS-MY
 
-Currency Exchange Management System for Malaysian Money Services Businesses (MSB), compliant with Bank Negara Malaysia (BNM) AML/CFT requirements. Handles foreign currency trading, till management, compliance reporting, and double-entry accounting.
+Currency Exchange Management System for Malaysian Money Services Businesses (MSB), compliant with Bank Negara Malaysia (BNM) AML/CFT requirements. Handles foreign currency trading, teller stock custody, compliance reporting, and double-entry accounting.
 
 ## Demo
 - Url: https://cems.schnellnetz.com
@@ -33,10 +33,11 @@ Currency Exchange Management System for Malaysian Money Services Businesses (MSB
   - PendingApproval workflow for transactions ≥ RM 10,000
   - **Rate Management**: Per-branch rate cards set by the branch manager; configurable spread, teller override limits, copy previous rates
 
-- **Till/Counter Management**
-  - Full lifecycle: open, close, handover
-  - Float management and reconciliation
-  - Real-time till status monitoring
+- **Teller Stock Custody**
+  - Drawerless custody chain: branch pool → teller allocation → transaction — no counter session or till balance required to book
+  - Teller allocation lifecycle: request → manager approval → teller accept → return to pool
+  - `/my-stock` shows the teller's cash + foreign holdings valued in MYR at the latest board sell rate
+  - Counter/till lifecycle (open, handover, close, emergency) remains available on the **API** (`/api/v1/counters/*`); the web UI no longer exposes counters
   - End-of-day (EOD) reconciliation per counter and per date
   - Merged **Day Close** on the branch-closing page: inline reconciliation → settle → finalize, which freezes the branch's business date (audited reopen for cross-branch users)
 
@@ -441,9 +442,9 @@ See `.gitnexus/` for index data. GitNexus enables:
 
 | Role | Scope | Can | Cannot |
 |------|-------|-----|--------|
-| **Teller** | Own counter | Create transactions, view own balancing/stock, request stock, request cancellation | Profit, reports, approvals |
-| **Manager** | Own branch | Approve cancellations, set branch rates, post branch expenses/petty cash, approve/assign/return teller stock, create/accept stock transfers, manage in-transit stock, EOD sign-off | Other branches, create transactions, approve transactions, reversals |
-| **Compliance Officer** | Own branch | Approve/reject all pending transactions, clear high-risk holds, approve cancellations, reverse completed transactions, PEP sign-off, STR filing, KYC verify/reject | Create transactions |
+| **Teller** | Own branch | Create transactions, view own stock (`/my-stock`), request stock, request cancellation, view screening results (read-only) | Profit, reports, approvals, screening dispositions |
+| **Manager** | Own branch | Approve cancellations, reverse completed transactions, set branch rates, post branch expenses/petty cash, approve/assign/return teller stock, create/accept stock transfers, manage in-transit stock, EOD sign-off | Other branches, create transactions, approve transactions |
+| **Compliance Officer** | Own branch | Approve/reject all pending transactions, clear high-risk holds, approve cancellations, reverse completed transactions, confirm/dismiss screening matches, PEP sign-off, STR filing, KYC verify/reject | Create transactions |
 | **Accountant** | Company-wide | GL, journals, period/fiscal close, consolidation, bank reconciliation, budgets, all financial reports | Create transactions |
 | **Admin** | Company-wide | Everything except creating transactions: users, branches, company-wide journals, configuration, audit | Create transactions |
 
