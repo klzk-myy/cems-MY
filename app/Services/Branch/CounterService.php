@@ -93,6 +93,13 @@ class CounterService
                 throw new BusinessDateFrozenException($counter->branch->code ?? (string) $counter->branch_id, $today);
             }
 
+            // Serialize session opens on stable anchor rows: there is no
+            // unique index on open sessions, so locking the counter and user
+            // rows makes the existence checks below atomic against
+            // concurrent inserts (a no-op under SQLite).
+            Counter::whereKey($counter->id)->lockForUpdate()->firstOrFail();
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+
             // Lock and check if counter is already open (prevents race condition)
             $existingSession = CounterSession::where('counter_id', $counter->id)
                 ->where('status', CounterSessionStatus::Open->value)

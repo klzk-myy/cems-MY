@@ -3,6 +3,7 @@
 namespace Tests\Http\Simulation\Support;
 
 use App\Models\User;
+use Database\Seeders\SchemaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -61,7 +62,10 @@ abstract class SimulationTestCase extends TestCase
      */
     protected function migrateDatabases()
     {
-        $this->artisan('db:seed', ['--class' => 'Database\Seeders\SchemaSeeder']);
+        // seedNow builds the schema and layers the reference-data baseline
+        // (currencies, CoA, account mappings) — SchemaSeeder itself is pure
+        // DDL now.
+        SchemaSeeder::seedNow($this->app);
         $this->artisan('db:seed', ['--class' => 'Database\Seeders\FiscalYearSeeder']);
         $this->artisan('db:seed', ['--class' => 'Database\Seeders\AccountingPeriodSeeder']);
     }

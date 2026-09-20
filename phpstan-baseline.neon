@@ -552,11 +552,6 @@ parameters:
 			count: 1
 			path: app/Events/CustomerRecordUpdated.php
 
-		-
-			message: '#^Method App\\Events\\RiskScoreCalculated\:\:__construct\(\) has parameter \$profile with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Events/RiskScoreCalculated.php
 
 		-
 			message: '#^Method App\\Exceptions\\Domain\\MonthEndPreCheckFailedException\:\:__construct\(\) has parameter \$failures with no value type specified in iterable type array\.$#'
@@ -1128,11 +1123,6 @@ parameters:
 			count: 1
 			path: app/Http/Requests/AcknowledgeHandoverWebRequest.php
 
-		-
-			message: '#^Method App\\Http\\Requests\\AddCaseLinkRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Requests/AddCaseLinkRequest.php
 
 		-
 			message: '#^Method App\\Http\\Requests\\Api\\V1\\BranchClosingRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
@@ -1488,11 +1478,6 @@ parameters:
 			count: 1
 			path: app/Http/Requests/EmergencyCloseRequest.php
 
-		-
-			message: '#^Method App\\Http\\Requests\\EscalateAlertRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Requests/EscalateAlertRequest.php
 
 		-
 			message: '#^Method App\\Http\\Requests\\ExportTransactionRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
@@ -1536,11 +1521,6 @@ parameters:
 			count: 1
 			path: app/Http/Requests/InitiateBranchClosingRequest.php
 
-		-
-			message: '#^Method App\\Http\\Requests\\LinkAlertToCaseRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Requests/LinkAlertToCaseRequest.php
 
 		-
 			message: '#^Method App\\Http\\Requests\\LmcaGenerateRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
@@ -1560,11 +1540,6 @@ parameters:
 			count: 1
 			path: app/Http/Requests/LoginRequest.php
 
-		-
-			message: '#^Method App\\Http\\Requests\\MergeCasesRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Requests/MergeCasesRequest.php
 
 		-
 			message: '#^Method App\\Http\\Requests\\Mfa\\DisableMfaRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
@@ -1914,11 +1889,6 @@ parameters:
 			count: 1
 			path: app/Http/Requests/UpdateUserRequest.php
 
-		-
-			message: '#^Method App\\Http\\Requests\\UploadCaseDocumentRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Requests/UploadCaseDocumentRequest.php
 
 		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\BranchResource\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
@@ -6601,18 +6571,6 @@ parameters:
 			path: app/Services/Compliance/CaseManagementService.php
 
 		-
-			message: '#^Method App\\Services\\Compliance\\CaseManagementService\:\:getCaseDocuments\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/CaseManagementService.php
-
-		-
-			message: '#^Method App\\Services\\Compliance\\CaseManagementService\:\:getCaseLinks\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Services/Compliance/CaseManagementService.php
-
-		-
 			message: '#^Method App\\Services\\Compliance\\CaseManagementService\:\:getCaseSummary\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -9576,11 +9534,6 @@ parameters:
 			count: 1
 			path: app/ValueObjects/ScreeningResponse.php
 
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/View/Components/ErrorsLayout.php
 
 		-
 			message: '#^Class Database\\Factories\\AlertFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
@@ -11580,23 +11533,8 @@ parameters:
 			count: 1
 			path: tests/Unit/Models/Traits/BelongsToUserTest.php
 
-		-
-			message: '#^Access to an undefined property App\\Models\\BaseModel@anonymous/tests/Unit/Models/Traits/HasClosedByTest\.php\:50\:\:\$closed_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Unit/Models/Traits/HasClosedByTest.php
 
-		-
-			message: '#^Method App\\Models\\BaseModel@anonymous/tests/Unit/Models/Traits/HasClosedByTest\.php\:33\:\:closedBy\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Models/Traits/HasClosedByTest.php
 
-		-
-			message: '#^Method App\\Models\\BaseModel@anonymous/tests/Unit/Models/Traits/HasClosedByTest\.php\:50\:\:closedBy\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: tests/Unit/Models/Traits/HasClosedByTest.php
 
 		-
 			message: '#^Method App\\Models\\BaseModel@anonymous/tests/Unit/Models/Traits/HasCreatorTest\.php\:32\:\:creator\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'

@@ -97,7 +97,6 @@ Route::prefix('setup')->name('setup.')->middleware(['setup.accessible'])->group(
     Route::post('/step/5', [SetupController::class, 'step5InitialStock'])->name('step5');
     Route::post('/step/6', [SetupController::class, 'step6OpeningBalance'])->name('step6');
     Route::post('/complete', [SetupController::class, 'completeSetup'])->name('complete');
-    Route::get('/status', [SetupController::class, 'checkStatus'])->name('status');
     Route::post('/reset', [SetupController::class, 'resetSetup'])->middleware(['auth', 'role:manage_system', 'password.confirm'])->name('reset');
 
 });
@@ -235,7 +234,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/', [CustomerController::class, 'store'])->name('store');
         Route::get('/search', [CustomerSearchController::class, 'search'])->name('search');
         Route::post('/quick-create', [CustomerSearchController::class, 'quickCreate'])->name('quick-create');
-        Route::get('/exchange-rates', [CustomerController::class, 'getExchangeRates'])->name('exchange-rates');
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
         Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
         Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
@@ -315,17 +313,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/', [StockTransferController::class, 'store'])->name('store');
         Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
 
-        Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showStep'])->defaults('step', 'dispatch')->name('dispatch.show')
-            ->middleware('role:manage_stock_transfers');
-        Route::get('/{stockTransfer}/receive', [StockTransferController::class, 'showStep'])->defaults('step', 'receive')->name('receive.show')
-            ->middleware('role:manage_stock_transfers');
-        Route::get('/{stockTransfer}/approve-bm', [StockTransferController::class, 'showStep'])->defaults('step', 'approve-bm')->name('approve-bm.show')
-            ->middleware('role:manage_stock_transfers');
-        Route::get('/{stockTransfer}/cancel', [StockTransferController::class, 'showStep'])->defaults('step', 'cancel')->name('cancel.show')
-            ->middleware('role:manage_stock_transfers');
-        Route::get('/{stockTransfer}/complete', [StockTransferController::class, 'showStep'])->defaults('step', 'complete')->name('complete.show')
-            ->middleware('role:manage_stock_transfers');
-
         Route::post('/{stockTransfer}/approve-bm', [StockTransferController::class, 'approveBm'])->name('approve-bm')
             ->middleware('role:manage_stock_transfers');
         Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'dispatch'])->name('dispatch')
@@ -355,7 +342,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::post('/{alert}/assign', [AlertTriageController::class, 'assign'])->name('assign');
             Route::post('/{alert}/resolve', [AlertTriageController::class, 'resolve'])->name('resolve');
             Route::post('/{alert}/dismiss', [AlertTriageController::class, 'dismiss'])->name('dismiss');
-            Route::post('/{alert}/escalate', [AlertTriageController::class, 'escalate'])->name('escalate');
         });
 
         Route::get('/compliance/unified', [UnifiedAlertController::class, 'index'])->name('compliance.unified.index');
@@ -365,14 +351,8 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::post('/', [CaseManagementController::class, 'store'])->name('store');
             Route::get('/{case}', [CaseManagementController::class, 'show'])->name('show');
             Route::patch('/{case}', [CaseManagementController::class, 'update'])->name('update');
-            Route::post('/{case}/merge', [CaseManagementController::class, 'merge'])->name('merge');
-            Route::post('/{case}/link-alert', [CaseManagementController::class, 'linkAlert'])->name('link-alert');
             Route::post('/{case}/escalate', [CaseManagementController::class, 'escalate'])->name('escalate');
             Route::post('/{case}/notes', [CaseManagementController::class, 'addNote'])->name('notes.store');
-            Route::post('/{case}/documents', [CaseManagementController::class, 'uploadDocument'])->name('documents.upload');
-            Route::post('/{case}/documents/{document}/verify', [CaseManagementController::class, 'verifyDocument'])->name('documents.verify');
-            Route::post('/{case}/links', [CaseManagementController::class, 'addLink'])->name('links.add');
-            Route::delete('/{case}/links/{link}', [CaseManagementController::class, 'removeLink'])->name('links.remove');
         });
 
         Route::prefix('compliance/sanctions')->name('compliance.sanctions.')->group(function () {
@@ -414,7 +394,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::get('/export', [StrReportController::class, 'exportCsv'])->name('export')
                 ->middleware('password.confirm');
             Route::get('/{strReport}', [StrReportController::class, 'show'])->name('show');
-            Route::post('/from-case/{case}', [StrReportController::class, 'createFromCase'])->name('create-from-case');
             Route::patch('/{strReport}/submit', [StrReportController::class, 'submit'])->name('submit');
             Route::patch('/{strReport}/acknowledge', [StrReportController::class, 'acknowledge'])->name('acknowledge');
         });
@@ -510,7 +489,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/reconciliation/import', [ReconciliationController::class, 'importBankStatement'])->name('reconciliation.import');
         Route::post('/reconciliation/{reconciliation}/exception', [ReconciliationController::class, 'markAsException'])->name('reconciliation.exception');
         Route::post('/reconciliation/{reconciliation}/match', [ReconciliationController::class, 'manualMatch'])->name('reconciliation.match');
-        Route::post('/reconciliation/{reconciliation}/unmatch', [ReconciliationController::class, 'unmatch'])->name('reconciliation.unmatch');
         Route::get('/reconciliation/export', [ReconciliationController::class, 'exportReconciliation'])->name('reconciliation.export')
             ->middleware('password.confirm');
 

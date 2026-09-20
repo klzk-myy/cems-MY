@@ -81,13 +81,13 @@
                     @forelse($stockTransfer->items as $item)
                         <tr class="hover:bg-canvas-subtle">
                             <td class="px-4 py-3 text-sm font-mono">{{ $item->currency_code }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->quantity }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->rate }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format((float) $item->quantity, 2) }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format((float) $item->rate, 8) }}</td>
                             <td class="px-4 py-3 text-sm">RM {{ number_format((float) $item->value_myr, 2) }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->quantity_received ?? '0' }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $item->quantity_in_transit ?? '0' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format((float) ($item->quantity_received ?? 0), 2) }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format((float) ($item->quantity_in_transit ?? 0), 2) }}</td>
                             <td class="px-4 py-3 text-sm {{ $item->hasVariance() ? 'text-danger-text font-medium' : 'text-ink-muted' }}">
-                                {{ $item->variance }}
+                                {{ number_format((float) $item->variance, 2) }}
                                 @if($item->variance_notes)
                                     <span class="block text-xs text-ink-muted">{{ $item->variance_notes }}</span>
                                 @endif
@@ -267,7 +267,7 @@
                                 @foreach($stockTransfer->items as $item)
                                     <tr class="border-t border-border">
                                         <td class="px-4 py-3 text-sm font-mono">{{ $item->currency_code }}</td>
-                                        <td class="px-4 py-3 text-sm">{{ $item->quantity }}</td>
+                                        <td class="px-4 py-3 text-sm">{{ number_format((float) $item->quantity, 2) }}</td>
                                         <td class="px-4 py-3">
                                             <input type="hidden" name="items[{{ $item->id }}][id]" value="{{ $item->id }}">
                                             <input type="number" name="items[{{ $item->id }}][quantity_received]"

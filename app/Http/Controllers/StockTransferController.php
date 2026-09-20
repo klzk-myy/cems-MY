@@ -125,16 +125,6 @@ class StockTransferController extends Controller
         return view('stock-transfers.show', compact('stockTransfer'));
     }
 
-    public function showStep(StockTransfer $stockTransfer, string $step): View
-    {
-        $this->requirePermission(Permission::ManageStockTransfers);
-        $this->authorize('view', $stockTransfer);
-
-        $stockTransfer->load(['items', 'requestedBy', 'branchManagerApprovedBy', 'hqApprovedBy']);
-
-        return view('stock-transfers.show', compact('stockTransfer', 'step'));
-    }
-
     public function approveBm(ApproveStockTransferRequest $request, StockTransfer $stockTransfer): RedirectResponse
     {
         $this->requirePermission(Permission::ManageStockTransfers);

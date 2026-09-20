@@ -16,7 +16,7 @@ A transaction has been flagged and requires compliance review.
 
 @if($transaction)
 **Transaction ID:** {{ $transaction->id }}
-**Amount:** {{ $transaction->amount_myr ?? 'N/A' }} {{ $transaction->currency_code ?? '' }}
+**Amount:** {{ $transaction->amount_myr !== null ? number_format((float) $transaction->amount_myr, 2) : 'N/A' }} {{ $transaction->currency_code ?? '' }}
 @endif
 
 @if($flaggedBy)

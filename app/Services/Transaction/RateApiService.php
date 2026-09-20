@@ -74,11 +74,26 @@ class RateApiService
      */
     private const FAILURE_CACHE_SECONDS = 30;
 
+    /**
+     * The single source for the upstream "latest MYR" URL: the configured
+     * endpoint when an API key is set, the provider's open endpoint
+     * otherwise. Both fetch and preview must agree on it.
+     */
+    private function rateSourceUrl(): string
+    {
+        return $this->apiKey !== ''
+            ? "{$this->baseUrl}/latest/MYR"
+            : 'https://open.er-api.com/v6/latest/MYR';
+    }
+
     public function fetchLatestRates(?int $branchId = null): array
     {
-        if (empty($this->apiKey)) {
-            throw new InvalidRateException('EXCHANGE_RATE_API_KEY is not configured. Set it in .env');
-        }
+        // The provider key selects the endpoint — it is not a hard
+        // requirement. Keyless installs fall back to the provider's open
+        // endpoint, the same contract previewRates() already uses, so the
+        // daily-rate workflow no longer deadlocks on an unset key while
+        // previews work fine.
+        $url = $this->rateSourceUrl();
 
         $cacheKey = CacheKeys::exchangeRates($branchId);
         $failureKey = $cacheKey.':failure';
@@ -98,20 +113,22 @@ class RateApiService
         }
 
         try {
-            return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId) {
-                $response = Http::timeout(30)
-                    ->connectTimeout(10)
-                    ->retry(3, 100)
-                    ->get("{$this->baseUrl}/latest/MYR");
-
-                if (! $response->successful()) {
-                    throw new InvalidRateException('Failed to fetch exchange rates: '.$response->body());
+            return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId, $url) {
+                try {
+                    $response = Http::timeout(30)
+                        ->connectTimeout(10)
+                        ->retry(3, 100)
+                        ->get($url);
+                } catch (\Throwable $e) {
+                    // Normalize transport errors (ConnectionException etc.)
+                    // into the domain type callers already handle.
+                    throw new InvalidRateException('Failed to fetch exchange rates: '.$e->getMessage());
                 }
 
                 $data = $response->json();
 
-                if (! isset($data['rates'])) {
-                    throw new InvalidRateException('Invalid API response format');
+                if (! $response->successful() || ! isset($data['rates']) || ! is_array($data['rates'])) {
+                    throw new InvalidRateException('Failed to fetch exchange rates: '.$response->body());
                 }
 
                 $processed = $this->processRates($data['rates'], $data['time_last_updated'] ?? time());
@@ -153,11 +170,13 @@ class RateApiService
     {
         // With no API key configured, fall back to the provider's open
         // endpoint so the lookup still works in keyless environments.
-        $url = $this->apiKey !== ''
-            ? "{$this->baseUrl}/latest/MYR"
-            : 'https://open.er-api.com/v6/latest/MYR';
+        $url = $this->rateSourceUrl();
 
-        $response = Http::timeout(15)->connectTimeout(5)->get($url);
+        try {
+            $response = Http::timeout(15)->connectTimeout(5)->get($url);
+        } catch (\Throwable $e) {
+            throw new InvalidRateException('Failed to fetch exchange rates: '.$e->getMessage());
+        }
 
         $data = $response->json();
 

@@ -14,8 +14,6 @@ use App\Events\CaseOpened;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\Compliance\ComplianceCaseDocument;
-use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Compliance\ComplianceCaseNote;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\User;
@@ -27,10 +25,8 @@ use App\Support\ActorContext;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * Service for managing compliance cases and their lifecycle.
@@ -38,12 +34,6 @@ use Illuminate\Support\Str;
  */
 class CaseManagementService
 {
-    /**
-     * Storage extension allowlist for case documents.
-     * Mirrors UploadCaseDocumentRequest validation.
-     */
-    private const ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
-
     public function __construct(
         protected SystemAlertService $alertService,
         protected AuditService $auditService,
@@ -361,53 +351,6 @@ class CaseManagementService
     }
 
     /**
-     * Merge two cases together.
-     *
-     * @throws CaseManagementException for self-merges, closed targets or
-     *                                 cases belonging to different customers
-     */
-    public function mergeCases(ComplianceCase $sourceCase, ComplianceCase $targetCase): ComplianceCase
-    {
-        if ($sourceCase->is($targetCase)) {
-            throw new CaseManagementException('Cannot merge a case into itself');
-        }
-
-        if ($targetCase->status === ComplianceCaseStatus::Closed) {
-            throw new CaseManagementException('Cannot merge into a closed case');
-        }
-
-        if ($sourceCase->customer_id !== $targetCase->customer_id) {
-            throw new CaseManagementException('Cannot merge cases for different customers');
-        }
-
-        return DB::transaction(function () use ($sourceCase, $targetCase) {
-            Alert::where('case_id', $sourceCase->id)
-                ->update(['case_id' => $targetCase->id]);
-
-            // Move evidence with the case so it stays visible on the target.
-            ComplianceCaseDocument::where('case_id', $sourceCase->id)
-                ->update(['case_id' => $targetCase->id]);
-            ComplianceCaseLink::where('case_id', $sourceCase->id)
-                ->update(['case_id' => $targetCase->id]);
-
-            // The merge audit record doubles as the source case's close audit.
-            $this->transitionTo($sourceCase, ComplianceCaseStatus::Closed, fn () => null, [
-                'action' => 'compliance_case_merged',
-                'data' => [
-                    'description' => "Compliance case {$sourceCase->case_number} merged into {$targetCase->case_number}",
-                    'source_case_id' => $sourceCase->id,
-                    'target_case_id' => $targetCase->id,
-                ],
-            ]);
-
-            $this->recalculateCasePriority($targetCase);
-            $this->recalculateCaseSla($targetCase);
-
-            return $targetCase->fresh()->load(['alerts', 'documents', 'links']);
-        });
-    }
-
-    /**
      * Update case status, enforcing the model's allowed transitions.
      *
      * @throws CaseManagementException when the transition is not allowed
@@ -671,95 +614,6 @@ class CaseManagementService
         }
 
         return $query->get();
-    }
-
-    /**
-     * Add a document to a case.
-     */
-    public function addDocument(
-        int $caseId,
-        UploadedFile $file,
-        int $uploadedBy
-    ): ComplianceCaseDocument {
-        $case = ComplianceCase::findOrFail($caseId);
-
-        // Never trust the client-supplied filename: it can contain traversal
-        // sequences that escape the case directory via storeAs. Store under a
-        // generated UUID with a vetted extension and keep the original name
-        // only in the database. The MIME type is derived server-side because
-        // getClientMimeType() reflects the spoofable Content-Type header.
-        $extension = strtolower($file->getClientOriginalExtension());
-
-        if (! in_array($extension, self::ALLOWED_DOCUMENT_EXTENSIONS, true)) {
-            throw new CaseManagementException(
-                "Unsupported document type: '{$extension}'. Allowed types: "
-                .implode(', ', self::ALLOWED_DOCUMENT_EXTENSIONS).'.'
-            );
-        }
-
-        $storagePath = "compliance_cases/{$caseId}/documents";
-        $filename = Str::uuid().'.'.$extension;
-        $path = $file->storeAs($storagePath, $filename);
-
-        $document = $case->documents()->create([
-            'file_name' => $file->getClientOriginalName(),
-            'file_path' => $path,
-            'file_type' => $file->getMimeType(),
-            'uploaded_by' => $uploadedBy,
-            'uploaded_at' => now(),
-        ]);
-
-        assert($document instanceof ComplianceCaseDocument);
-
-        return $document;
-    }
-
-    /**
-     * Verify a document.
-     */
-    public function verifyDocument(int $documentId, int $verifiedBy): ComplianceCaseDocument
-    {
-        $document = ComplianceCaseDocument::findOrFail($documentId);
-        $document->update([
-            'verified_at' => now(),
-            'verified_by' => $verifiedBy,
-        ]);
-
-        return $document->fresh();
-    }
-
-    /**
-     * Add a link to a case.
-     */
-    public function addLink(int $caseId, string $linkedType, int $linkedId): ComplianceCaseLink
-    {
-        $case = ComplianceCase::findOrFail($caseId);
-
-        return $case->addLink($linkedType, $linkedId);
-    }
-
-    /**
-     * Remove a link from a case.
-     */
-    public function removeLink(int $linkId): void
-    {
-        ComplianceCaseLink::findOrFail($linkId)->delete();
-    }
-
-    /**
-     * Get all documents for a case.
-     */
-    public function getCaseDocuments(int $caseId): Collection
-    {
-        return ComplianceCase::findOrFail($caseId)->documents()->get();
-    }
-
-    /**
-     * Get all links for a case.
-     */
-    public function getCaseLinks(int $caseId): Collection
-    {
-        return ComplianceCase::findOrFail($caseId)->links()->get();
     }
 
     /**

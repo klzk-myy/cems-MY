@@ -74,7 +74,9 @@ class ReportingServiceTest extends TestCase
         $this->assertSame(1, $row['Sell_Count']);
         $this->assertSame('4.00000000', $row['Avg_Buy_Rate']);
         $this->assertSame('4.20000000', $row['Avg_Sell_Rate']);
-        $this->assertSame('5000.0000', $row['Opening_Position']);
+        // Closing is the summed live position (5000); opening is derived as
+        // closing minus the day's net currency flow (buy 250 − sell 100).
+        $this->assertSame('4850.0000', $row['Opening_Position']);
         $this->assertSame('5000.0000', $row['Closing_Position']);
 
         $emptyRow = collect($result['data'])->firstWhere('Currency', 'EUR');

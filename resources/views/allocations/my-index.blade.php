@@ -32,10 +32,10 @@
                         <tr class="border-t border-border hover:bg-canvas-subtle">
                             <td class="px-4 py-3">{{ $allocation->id }}</td>
                             <td class="px-4 py-3">{{ $allocation->currency?->code ?? $allocation->currency_code }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_quantity, 4) }}</td>
-                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_quantity, 4) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->requested_quantity, 2) }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format((float) $allocation->allocated_quantity, 2) }}</td>
                             <td class="px-4 py-3 text-right">
-                                {{ $allocation->current_quantity !== null ? number_format((float) $allocation->current_quantity, 4) : '—' }}
+                                {{ $allocation->current_quantity !== null ? number_format((float) $allocation->current_quantity, 2) : '—' }}
                             </td>
                             <td class="px-4 py-3 text-right">
                                 @if($allocation->daily_limit_myr !== null)

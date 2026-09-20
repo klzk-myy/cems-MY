@@ -6,7 +6,6 @@ use App\Enums\StrReportStatus;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStrReportRequest;
-use App\Models\Compliance\ComplianceCase;
 use App\Models\StrReport;
 use App\Services\AuditService;
 use App\Services\Compliance\StrReportService;
@@ -68,20 +67,6 @@ class StrReportController extends Controller
         $strReport->load(['customer', 'createdBy', 'case']);
 
         return view('compliance.str.show', ['report' => $strReport]);
-    }
-
-    public function createFromCase(Request $request, ComplianceCase $case): RedirectResponse
-    {
-        $this->authorize('create', StrReport::class);
-
-        try {
-            $report = $this->strReportService->createFromCase($case, $request->user());
-        } catch (\Throwable $e) {
-            return $this->handleExceptionWeb($e, 'STR draft creation failed', 'Failed to create STR draft.', ['case_id' => $case->id]);
-        }
-
-        return redirect()->route('compliance.str.show', $report)
-            ->with('success', 'STR draft created from case '.$case->case_number.'.');
     }
 
     public function submit(SubmitStrReportRequest $request, StrReport $strReport): RedirectResponse

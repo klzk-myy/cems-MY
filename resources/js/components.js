@@ -250,6 +250,12 @@ export function registerComponents(Alpine) {
             this.existing = null;
             this.has = {};
         },
+        editedLookup(field) {
+            // The CSP build cannot evaluate "a(); b()" expression sequences,
+            // so the two calls are folded into one handler.
+            this.markEdited();
+            this.lookup(field);
+        },
         lookup(field) {
             const q = (this.fields[field] || '').trim();
             if (q.length < 2 || ! this.searchUrl) {

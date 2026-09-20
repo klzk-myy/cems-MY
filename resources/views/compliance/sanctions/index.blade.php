@@ -3,7 +3,11 @@
         <x-page-header
             title="Sanctions Lists"
             description="Manage and monitor sanctions list sources"
-        />
+        >
+            <x-slot:actions>
+                <x-button variant="secondary" href="{{ route('compliance.sanctions.import-logs') }}">Import Logs</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
         <x-card>
             <x-table>

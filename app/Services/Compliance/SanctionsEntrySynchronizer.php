@@ -33,9 +33,12 @@ class SanctionsEntrySynchronizer
         $counts = ['created' => 0, 'updated' => 0, 'deactivated' => 0, 'errors' => 0];
 
         DB::transaction(function () use ($entries, $list, &$counts) {
+            // Partial-column hydration only: loading full models (details
+            // JSON included) for the entire list defeats the lazy stream's
+            // memory discipline on OFAC-scale feeds.
             $existingByRef = SanctionEntry::where('list_id', $list->id)
                 ->whereNotNull('reference_number')
-                ->get()
+                ->get(['id', 'reference_number', 'status'])
                 ->keyBy('reference_number');
 
             $importedRefs = [];
@@ -95,9 +98,10 @@ class SanctionsEntrySynchronizer
         $counts = ['created' => 0, 'updated' => 0, 'deactivated' => 0, 'errors' => 0];
 
         DB::transaction(function () use ($ops, $list, &$counts) {
+            // Partial-column hydration only — see syncEntries().
             $existingByRef = SanctionEntry::where('list_id', $list->id)
                 ->whereNotNull('reference_number')
-                ->get()
+                ->get(['id', 'reference_number', 'status'])
                 ->keyBy('reference_number');
 
             foreach ($ops as $op) {

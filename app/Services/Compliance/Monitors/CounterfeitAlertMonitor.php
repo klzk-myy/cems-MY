@@ -53,20 +53,12 @@ class CounterfeitAlertMonitor extends BaseMonitor
                 }
             }
         } catch (\Throwable $e) {
+            // Propagate to MonitoringEngine — it records the failure, trips
+            // the circuit breaker and alerts compliance officers. A monitor
+            // that cannot run must never report a clean sweep.
             Log::error('CounterfeitAlertMonitor run failed', ['exception' => $e->getMessage()]);
 
-            try {
-                $this->alertService->critical(
-                    'Counterfeit alert monitor failed to run: '.$e->getMessage(),
-                    ['source' => 'counterfeit_alert_monitor']
-                );
-            } catch (\Throwable $alertError) {
-                Log::error('Failed to dispatch counterfeit monitor failure alert', [
-                    'exception' => $alertError->getMessage(),
-                ]);
-            }
-
-            return [];
+            throw $e;
         }
 
         return $findings;

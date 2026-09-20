@@ -7,7 +7,7 @@ The transaction has been approved successfully.
 
 **Transaction ID:** {{ $transaction->id }}
 **Customer:** {{ $customer->full_name ?? 'N/A' }}
-**Amount:** {{ $transaction->amount_myr }} {{ $transaction->currency_code }}
+**Amount:** {{ number_format((float) $transaction->amount_myr, 2) }} {{ $transaction->currency_code }}
 **Type:** {{ $transaction->type?->label() ?? 'N/A' }}
 **Status:** {{ $transaction->status?->label() ?? 'N/A' }}
 **Approved By:** {{ $transaction->approver?->full_name ?? 'N/A' }}

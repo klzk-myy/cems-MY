@@ -187,16 +187,4 @@ class BankReconciliation extends BaseModel
             'matched_at' => now(),
         ]);
     }
-
-    /**
-     * Unmatch this record (revert to unmatched).
-     */
-    public function markUnmatched(): void
-    {
-        $this->update([
-            'status' => BankReconciliationStatus::Unmatched->value,
-            'matched_to_journal_entry_id' => null,
-            'matched_at' => null,
-        ]);
-    }
 }

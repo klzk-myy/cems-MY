@@ -47,7 +47,9 @@ class BranchClosingController extends Controller
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
         $checklist = $workflow ? $this->branchClosingService->getChecklist($workflow) : null;
         $canFinalize = $workflow ? $this->branchClosingService->canFinalize($workflow) : false;
-        $recon = $this->branchClosingService->getDayReconciliation($branch);
+        // Show the day the active workflow froze, not necessarily today —
+        // the preview must match what finalize() will archive.
+        $recon = $this->branchClosingService->getDayReconciliation($branch, $workflow?->business_date);
         $finalizedWorkflow = $this->branchClosingService->getLatestFinalizedWorkflow($branch);
         $canReopen = (bool) auth()->user()?->role->canManageAllBranches();
 

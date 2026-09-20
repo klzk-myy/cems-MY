@@ -635,8 +635,19 @@ class StockTransferService
 
     public function cancel(StockTransfer $transfer, string $reason): void
     {
-        if (! $this->requester()->role->canPerform(Permission::ManageStockTransfers)) {
+        $requester = $this->requester();
+
+        if (! $requester->role->canPerform(Permission::ManageStockTransfers)) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can cancel transfers');
+        }
+
+        // Either party may cancel (source withdraws the request, destination
+        // recalls an in-transit shipment); an unrelated branch must not move
+        // custody it does not own.
+        if (! $requester->isAdmin()
+            && ! $this->requesterMatchesTransferBranch($transfer, 'source')
+            && ! $this->requesterMatchesTransferBranch($transfer, 'destination')) {
+            throw new TransactionApprovalException((int) $transfer->id, 'Only a branch party to this transfer can cancel it');
         }
 
         DB::transaction(function () use ($transfer, $reason) {

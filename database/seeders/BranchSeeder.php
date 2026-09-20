@@ -89,5 +89,17 @@ class BranchSeeder extends Seeder
                 ]
             );
         }
+
+        // Branch operating roles (teller, manager) are rejected outright by
+        // EnsureBranchScope without a home branch — seat seeded users at the
+        // first trading branch. Office roles stay unassigned by design.
+        $home = DB::table('branches')->where('type', '!=', 'head_office')->orderBy('id')->value('id');
+
+        if ($home) {
+            DB::table('users')
+                ->whereIn('role', ['teller', 'manager'])
+                ->whereNull('branch_id')
+                ->update(['branch_id' => $home, 'updated_at' => now()]);
+        }
     }
 }

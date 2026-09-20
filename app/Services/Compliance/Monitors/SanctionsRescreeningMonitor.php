@@ -45,9 +45,11 @@ class SanctionsRescreeningMonitor extends BaseMonitor
         try {
             $customersToRescreen = $this->getCustomersNeedingRescreening($latestSanctionUpdate);
         } catch (\Throwable $e) {
+            // Propagate to MonitoringEngine — a rescreening that cannot run
+            // is a monitor failure, not a clean sweep.
             report($e);
 
-            return [];
+            throw $e;
         }
 
         foreach ($customersToRescreen as $customer) {

@@ -22,6 +22,12 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    /**
+     * Well-formed bcrypt hash checked for unknown usernames so the response
+     * timing matches a real credential check.
+     */
+    private const DUMMY_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+
     public function __construct(
         protected AuditService $auditService,
         protected RateLimitService $rateLimitService
@@ -38,11 +44,15 @@ class LoginController extends Controller
 
         $user = User::where('username', $validated['username'])->first();
 
-        // A hash stored in a foreign format (e.g. bcrypt under the Argon2id
-        // driver) makes Hash::check throw — PasswordHash fails closed as
-        // invalid credentials rather than a 500 on the login page.
-        $passwordValid = $user !== null
-            && PasswordHash::check($validated['password'], $user->password_hash);
+        // Always run the hash check — short-circuiting on unknown usernames
+        // leaks account existence through response timing. A hash stored in
+        // a foreign format (e.g. bcrypt under the Argon2id driver) makes
+        // Hash::check throw — PasswordHash fails closed as invalid
+        // credentials rather than a 500 on the login page.
+        $passwordValid = PasswordHash::check(
+            $validated['password'],
+            $user?->password_hash ?? self::DUMMY_PASSWORD_HASH
+        );
 
         if ($user && $user->is_active && $passwordValid) {
             try {
@@ -74,7 +84,15 @@ class LoginController extends Controller
             } catch (ValidationException|DomainException $e) {
                 throw $e;
             } catch (\Throwable $e) {
+                // Infrastructure failure (DB, session store) — not a
+                // credential failure: no failed-attempt strike, and the
+                // message must not mislead the user into retrying their
+                // password.
                 Log::error('Login transaction failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+
+                return back()->withErrors([
+                    'username' => 'Login is temporarily unavailable. Please try again.',
+                ]);
             }
         }
 

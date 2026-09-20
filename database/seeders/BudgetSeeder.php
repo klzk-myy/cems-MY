@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\Budget;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class BudgetSeeder extends Seeder
@@ -10,6 +12,11 @@ class BudgetSeeder extends Seeder
     public function run(): void
     {
         $currentPeriod = now()->format('Y-m');
+
+        // UserSeeder does not guarantee id 1 — the admin row may sit at any
+        // id depending on insert order, so resolve it rather than hardcoding.
+        $createdBy = User::where('role', UserRole::Admin->value)->value('id')
+            ?? User::min('id');
 
         // Budget for Expense accounts (sample monthly budgets)
         $budgets = [
@@ -27,7 +34,7 @@ class BudgetSeeder extends Seeder
                 [
                     'budget_myr' => $amount,
                     'notes' => 'Monthly expense budget',
-                    'created_by' => 1,
+                    'created_by' => $createdBy,
                 ]
             );
         }
@@ -47,7 +54,7 @@ class BudgetSeeder extends Seeder
                 [
                     'budget_myr' => $amount,
                     'notes' => 'Monthly revenue target',
-                    'created_by' => 1,
+                    'created_by' => $createdBy,
                 ]
             );
         }

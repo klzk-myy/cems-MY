@@ -71,13 +71,17 @@ class Msb2ReportGenerator
         $currencies = Currency::where('is_active', true)->get();
         $currencyCodes = $currencies->pluck('code')->toArray();
 
+        // Positions are per-branch rows — keyBy('currency_code') would keep
+        // only the last branch's balance per currency. The regulator-facing
+        // figure is the company-wide aggregate.
         $positions = CurrencyPosition::whereIn('currency_code', $currencyCodes)
-            ->get()
-            ->keyBy('currency_code');
+            ->selectRaw('currency_code, SUM(quantity) as total_quantity')
+            ->groupBy('currency_code')
+            ->pluck('total_quantity', 'currency_code');
 
         $transactions = $query->completed()
             ->forDateRange($date, $date)
-            ->select(['currency_code', 'type', 'rate'])
+            ->select(['currency_code', 'type', 'rate', 'quantity'])
             ->get()
             ->groupBy('currency_code');
 
@@ -86,10 +90,22 @@ class Msb2ReportGenerator
         foreach ($currencies as $currency) {
             $row = $summary->get($currency->code);
             $currencyTxns = $transactions->get($currency->code, collect());
-            $position = $positions->get($currency->code);
 
             $buyTxns = $currencyTxns->where('type', TransactionType::Buy->value);
             $sellTxns = $currencyTxns->where('type', TransactionType::Sell->value);
+
+            // Closing is the current company-wide stock; opening is derived
+            // by unwinding the day's net flow (closing = opening + buys −
+            // sells). Emitting the live quantity for both columns filed the
+            // same snapshot twice — wrong whenever the report is generated
+            // after the business date or intraday.
+            $closingPosition = bcadd((string) ($positions[$currency->code] ?? '0'), '0', 4);
+            $netFlow = bcsub(
+                $this->sumColumn($buyTxns, 'quantity'),
+                $this->sumColumn($sellTxns, 'quantity'),
+                4
+            );
+            $openingPosition = bcsub($closingPosition, $netFlow, 4);
 
             $rows[] = [
                 'Date' => $date,
@@ -100,8 +116,8 @@ class Msb2ReportGenerator
                 'Sell_Count' => $row ? (int) $row->sell_count : 0,
                 'Avg_Buy_Rate' => $this->averageRate($buyTxns),
                 'Avg_Sell_Rate' => $this->averageRate($sellTxns),
-                'Opening_Position' => $position ? $position->quantity : '0',
-                'Closing_Position' => $position ? $position->quantity : '0',
+                'Opening_Position' => $openingPosition,
+                'Closing_Position' => $closingPosition,
             ];
         }
 
@@ -137,5 +153,24 @@ class Msb2ReportGenerator
         }
 
         return bcdiv($total, (string) $count, 8);
+    }
+
+    /**
+     * Sum a DECIMAL column on a transaction collection with bcmath.
+     *
+     * @param  Collection<int, Transaction>  $txns
+     * @return numeric-string
+     */
+    private function sumColumn(Collection $txns, string $column): string
+    {
+        $total = '0';
+        foreach ($txns as $txn) {
+            $value = (string) ($txn->{$column} ?? '0');
+            if (is_numeric($value) && $value !== '') {
+                $total = bcadd($total, $value, 4);
+            }
+        }
+
+        return $total;
     }
 }

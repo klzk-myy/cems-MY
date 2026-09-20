@@ -381,7 +381,7 @@ class TransactionWizardController extends Controller
     private function upgradeCDDLevel(CddLevel $current): CddLevel
     {
         return match ($current) {
-            CddLevel::Simplified => CddLevel::Standard,
+            CddLevel::Simplified, CddLevel::Specific => CddLevel::Standard,
             CddLevel::Standard => CddLevel::Enhanced,
             CddLevel::Enhanced => CddLevel::Enhanced,
         };
@@ -394,7 +394,7 @@ class TransactionWizardController extends Controller
             ['type' => 'mykad_back', 'required' => true, 'label' => 'MyKad (Back)'],
         ];
 
-        if ($cddLevel === CddLevel::Standard || $cddLevel === CddLevel::Enhanced) {
+        if (in_array($cddLevel, [CddLevel::Specific, CddLevel::Standard, CddLevel::Enhanced], true)) {
             $documents[] = ['type' => 'proof_of_address', 'required' => true, 'label' => 'Proof of Address'];
         }
 
@@ -410,6 +410,7 @@ class TransactionWizardController extends Controller
     {
         return match ($cddLevel) {
             CddLevel::Simplified => 'Simplified Due Diligence - Basic customer information required',
+            CddLevel::Specific => 'Specific Due Diligence - Identity verification and transaction details required',
             CddLevel::Standard => 'Standard Due Diligence - Additional documentation required',
             CddLevel::Enhanced => 'Enhanced Due Diligence - Comprehensive verification required',
         };

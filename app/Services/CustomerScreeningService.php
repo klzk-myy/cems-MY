@@ -455,20 +455,16 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         // longer or decorated versions of the customer's name. A preloaded
         // pool (batchScreen) skips the prefilter entirely; the in-memory
         // token ranking below applies the same filter.
-        $pool ??= SanctionEntry::query()
-            ->where(function ($query) use ($inputTokens) {
-                // Explicit ESCAPE clause so escaped wildcards are treated
-                // literally on every driver (SQLite has no default LIKE
-                // escape character).
-                foreach ($inputTokens as $token) {
-                    $escapedToken = LikeEscaper::escape($token);
-
-                    $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
-                        ->orWhereRaw('aliases LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
-                }
-            })
-            ->with('sanctionList')
-            // Deterministic order so pool truncation is stable before the
+        // Rank the prefilter pool by token overlap before truncating: a
+        // common token (e.g. 'a', 'lim') can match thousands of entries, and
+        // a bare orderBy('id') cap would silently discard real matches that
+        // happen to sort late. Highest-overlap entries survive the limit.
+        $pool ??= $this->tokenMatchRanked(
+            SanctionEntry::query()->with('sanctionList'),
+            $inputTokens,
+            ['normalized_name', 'aliases']
+        )
+            // Deterministic tiebreak so pool truncation is stable before the
             // in-memory ranking below selects the best candidates.
             ->orderBy('id')
             ->limit(self::CANDIDATE_POOL_LIMIT)
@@ -515,16 +511,13 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             return new Collection;
         }
 
-        $pool ??= AdverseMediaEntry::query()
-            ->where('is_active', true)
-            ->where(function ($query) use ($inputTokens) {
-                foreach ($inputTokens as $token) {
-                    $escapedToken = LikeEscaper::escape($token);
-
-                    $query->orWhereRaw('normalized_name LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\'])
-                        ->orWhereRaw('alias LIKE ? ESCAPE ?', ["%{$escapedToken}%", '\\']);
-                }
-            })
+        // Same overlap-ranked prefilter as findCandidates — the pool cap
+        // must shed low-relevance rows, not arbitrary late ids.
+        $pool ??= $this->tokenMatchRanked(
+            AdverseMediaEntry::query()->where('is_active', true),
+            $inputTokens,
+            ['normalized_name', 'alias']
+        )
             ->orderBy('id')
             ->limit(self::CANDIDATE_POOL_LIMIT)
             ->get();
@@ -550,6 +543,50 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
         usort($ranked, fn (array $a, array $b) => $b['score'] <=> $a['score']);
 
         return new Collection(array_slice(array_column($ranked, 'entry'), 0, $this->maxCandidates));
+    }
+
+    /**
+     * Token-level SQL prefilter ranked by overlap count: an entry qualifies
+     * when ANY input token occurs in one of the given columns, and the pool
+     * is ordered by how many tokens it matches so a capped pool keeps the
+     * highest-recall candidates. ESCAPE clauses are explicit on every driver
+     * (SQLite has no default LIKE escape character).
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  array<int, string>  $tokens
+     * @param  array<int, string>  $columns
+     * @return Builder<TModel>
+     */
+    private function tokenMatchRanked(Builder $query, array $tokens, array $columns): Builder
+    {
+        $scoreParts = [];
+        $scoreBindings = [];
+
+        foreach ($tokens as $token) {
+            $escaped = LikeEscaper::escape($token);
+
+            foreach ($columns as $column) {
+                $scoreParts[] = "(CASE WHEN {$column} LIKE ? ESCAPE ? THEN 1 ELSE 0 END)";
+                $scoreBindings[] = "%{$escaped}%";
+                $scoreBindings[] = '\\';
+            }
+        }
+
+        return $query
+            ->where(function ($q) use ($tokens, $columns) {
+                foreach ($tokens as $token) {
+                    $escapedToken = LikeEscaper::escape($token);
+
+                    foreach ($columns as $column) {
+                        $q->orWhereRaw("{$column} LIKE ? ESCAPE ?", ["%{$escapedToken}%", '\\']);
+                    }
+                }
+            })
+            ->select('*')
+            ->selectRaw('('.implode(' + ', $scoreParts).') as token_match_score', $scoreBindings)
+            ->orderByDesc('token_match_score');
     }
 
     /**

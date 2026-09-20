@@ -22,7 +22,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
-                        <p class="text-sm text-ink">{{ $transaction->rate ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink">{{ $transaction->rate !== null ? number_format((float) $transaction->rate, 8) : 'N/A' }}</p>
                     </div>
                 </div>
             </x-card>
@@ -64,7 +64,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Base Rate</label>
-                        <p class="text-sm text-ink">{{ $transaction->base_rate ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink">{{ $transaction->base_rate !== null ? number_format((float) $transaction->base_rate, 8) : 'N/A' }}</p>
                     </div>
                 </div>
             </x-card>

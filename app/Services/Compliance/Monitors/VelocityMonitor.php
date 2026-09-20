@@ -60,9 +60,12 @@ class VelocityMonitor extends BaseMonitor
                 }
             }
         } catch (\Throwable $e) {
+            // Never report a failed sweep as "no suspicious activity" —
+            // MonitoringEngine records the failure, trips the circuit
+            // breaker and alerts compliance officers.
             report($e);
 
-            return [];
+            throw $e;
         }
 
         return $findings;

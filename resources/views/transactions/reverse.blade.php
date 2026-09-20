@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Rate</label>
-                    <p class="text-sm text-ink">{{ $transaction->rate ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink">{{ $transaction->rate !== null ? number_format((float) $transaction->rate, 8) : 'N/A' }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">MYR Amount</label>

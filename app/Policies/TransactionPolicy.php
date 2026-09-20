@@ -20,20 +20,22 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can view any transactions.
-     * Users can view transactions if they are assigned to a branch (or are admin).
+     * Office roles (admin, compliance officer, accountant) operate
+     * company-wide; branch operating roles need a home branch.
      */
     public function viewAny(User $user): bool
     {
-        return $user->role === UserRole::Admin || $user->branch_id !== null;
+        return ! $user->role->requiresBranch() || $user->branch_id !== null;
     }
 
     /**
      * Determine whether the user can view the transaction.
-     * Enforces branch isolation: non-admins can only view transactions from their own branch.
+     * Branch isolation applies only to branch operating roles — office
+     * roles (admin, compliance officer, accountant) see every branch.
      */
     public function view(User $user, Transaction $transaction): bool
     {
-        if ($user->role === UserRole::Admin) {
+        if (! $user->role->requiresBranch()) {
             return true;
         }
 
@@ -93,19 +95,21 @@ class TransactionPolicy
         }
 
         // Tellers remain scoped to their own transactions; other granted
-        // roles act on their branch.
+        // branch roles act on their branch. Office roles are company-wide.
         if ($user->isTeller()) {
             return $transaction->user_id === $user->id;
         }
 
-        return $transaction->branch_id === $user->branch_id;
+        return ! $user->role->requiresBranch()
+            || $transaction->branch_id === $user->branch_id;
     }
 
     /**
      * Determine whether the user can approve cancellation of the transaction.
-     * Managers, compliance officers, and admins can approve cancellation for transactions in their branch.
-     * Approving the cancellation of a previously Completed transaction is a
-     * reversal, which is compliance-only (admin inherits).
+     * Managers approve within their branch; compliance officers and admins
+     * operate company-wide. Approving the cancellation of a previously
+     * Completed transaction is a reversal, which is compliance-only (admin
+     * inherits).
      */
     public function approveCancellation(User $user, Transaction $transaction): bool
     {
@@ -119,11 +123,8 @@ class TransactionPolicy
             return false;
         }
 
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
-
-        return $transaction->branch_id === $user->branch_id;
+        return ! $user->role->requiresBranch()
+            || $transaction->branch_id === $user->branch_id;
     }
 
     /**
@@ -162,11 +163,8 @@ class TransactionPolicy
             return false;
         }
 
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
-
-        return $transaction->branch_id === $user->branch_id;
+        return ! $user->role->requiresBranch()
+            || $transaction->branch_id === $user->branch_id;
     }
 
     /**
@@ -186,7 +184,7 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can reject cancellation of the transaction.
-     * Managers, compliance officers, and admins can reject cancellation for transactions in their branch.
+     * Managers reject within their branch; office roles are company-wide.
      */
     public function rejectCancellation(User $user, Transaction $transaction): bool
     {
@@ -194,17 +192,15 @@ class TransactionPolicy
             return false;
         }
 
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
-
-        return $transaction->branch_id === $user->branch_id;
+        return ! $user->role->requiresBranch()
+            || $transaction->branch_id === $user->branch_id;
     }
 
     /**
      * Determine whether the user can approve the transaction.
      * All transaction approvals require a compliance officer (or admin).
-     * Branch-scoped for non-admins.
+     * Office roles approve company-wide — a compliance officer is not
+     * bound to the transaction's branch; branch operating roles stay scoped.
      * Per BNM segregation of duties, the approver must be different from the creator.
      */
     public function approve(User $user, Transaction $transaction): bool
@@ -214,8 +210,8 @@ class TransactionPolicy
             return false;
         }
 
-        if ($user->role === UserRole::Admin) {
-            return true;
+        if (! $user->role->requiresBranch()) {
+            return $user->role->canApproveTransactions();
         }
 
         if ($transaction->branch_id !== $user->branch_id) {
@@ -227,16 +223,16 @@ class TransactionPolicy
 
     /**
      * Determine whether the user can clear a compliance hold on the transaction.
-     * Compliance officers and admins, branch-scoped for compliance.
+     * Compliance officers and admins, company-wide.
      */
     public function clearHold(User $user, Transaction $transaction): bool
     {
-        if ($user->role === UserRole::Admin) {
-            return true;
+        if (! $user->role->canAccessCompliance()) {
+            return false;
         }
 
-        return $user->role->canAccessCompliance()
-            && $transaction->branch_id === $user->branch_id;
+        return ! $user->role->requiresBranch()
+            || $transaction->branch_id === $user->branch_id;
     }
 
     /**

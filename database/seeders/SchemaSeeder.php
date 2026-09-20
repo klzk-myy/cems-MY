@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\AccountType;
-use App\Enums\AmlRuleType;
 use App\Enums\ApprovalStatus;
 use App\Enums\BankReconciliationStatus;
 use App\Enums\CheckStatus;
@@ -36,6 +35,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 /**
  * SchemaSeeder — recreates the full CEMS-MY database schema.
@@ -56,17 +56,48 @@ use Illuminate\Support\Facades\Schema;
 class SchemaSeeder extends Seeder
 {
     /**
+     * Deliberate rebuild paths opt in by setting this flag. Bare
+     * `db:seed --class=SchemaSeeder` on a populated database is refused —
+     * the destructive drop is too easy to trigger accidentally.
+     */
+    public static bool $allowPopulated = false;
+
+    /**
      * Run the seeder through the application container (used by tests and
      * reset flows that are not inside a normal db:seed command context).
+     * This entry point IS the deliberate opt-in for populated databases,
+     * and it layers the reference-data baseline (currencies, chart of
+     * accounts, account mappings) on top so callers get an install-ready
+     * database, not bare schema.
      */
     public static function seedNow(Application $app): void
     {
-        $seeder = $app->make(self::class);
-        $seeder->run();
+        self::$allowPopulated = true;
+
+        try {
+            $seeder = $app->make(self::class);
+            $seeder->run();
+            $app->make(ReferenceDataSeeder::class)->run();
+        } finally {
+            self::$allowPopulated = false;
+        }
     }
 
     public function run(): void
     {
+        // This seeder drops every table. Refuse on a populated database
+        // unless a deliberate rebuild path opted in (seedNow,
+        // db:reset-test --fresh, setup reset, business:setup --fresh).
+        // Mirrors the DatabaseSeeder guard so a stray seed command or an
+        // unattended agent cannot wipe live data.
+        if (! self::$allowPopulated && $this->databaseIsPopulated()) {
+            throw new RuntimeException(
+                'SchemaSeeder drops every table and the database is populated. '
+                .'For a deliberate rebuild use `db:reset-test --fresh` (local/testing) '
+                .'or SchemaSeeder::seedNow().'
+            );
+        }
+
         $tables = [
             'branches',
             'users',
@@ -173,100 +204,6 @@ class SchemaSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         $this->createSchema($tables);
-        $this->seedReferenceData();
-    }
-
-    /**
-     * Reference rows that the historical migrations inserted on a fresh
-     * install (base currencies, base chart of accounts, and the surviving
-     * AML rule after the legacy-rule cleanup). Keeping this here means the
-     * seeder produces the exact same data as the retired migrations.
-     */
-    protected function seedReferenceData(): void
-    {
-        foreach ($this->baseCurrencies() as $currency) {
-            DB::table('currencies')->updateOrInsert(['code' => $currency['code']], $currency);
-        }
-
-        foreach ($this->baseAccounts() as $account) {
-            DB::table('chart_of_accounts')->updateOrInsert(
-                ['account_code' => $account['account_code']],
-                $account
-            );
-        }
-
-        // Only the AML rule whose rule_type survives the legacy cleanup
-        // (threshold/aggregation rows were removed in 2026_09_09_100003).
-        DB::table('aml_rules')->updateOrInsert(
-            ['rule_code' => 'HIGH_RISK_COUNTRY'],
-            $this->highRiskCountryRule()
-        );
-
-        // Mirror 2026_09_09_100003_delete_legacy_aml_rules: remove any row
-        // whose rule_type is not a known AmlRuleType value.
-        DB::table('aml_rules')
-            ->whereNotIn('rule_type', AmlRuleType::values())
-            ->delete();
-
-        // Mirror DatabaseSeeder's post-schema step so seedNow() callers (the
-        // whole test suite) see the same enum-backed chart of accounts as a
-        // real `db:seed`. The baseAccounts() subset above stays first because
-        // the retired migrations inserted it; the enum seeder then upserts
-        // the full AccountCode set keyed by code.
-        (new EnhancedChartOfAccountsSeeder)->run();
-
-        // Same default posting-map rows a real install gets — posting
-        // services fall back to enum defaults without them, but the page and
-        // tests expect the rows to exist.
-        (new AccountMappingsSeeder)->run();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function baseCurrencies(): array
-    {
-        return [
-            ['code' => 'MYR', 'name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'decimal_places' => 2, 'is_active' => true],
-            ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$', 'decimal_places' => 2, 'is_active' => true],
-            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'decimal_places' => 2, 'is_active' => true],
-            ['code' => 'GBP', 'name' => 'British Pound', 'symbol' => '£', 'decimal_places' => 2, 'is_active' => true],
-            ['code' => 'SGD', 'name' => 'Singapore Dollar', 'symbol' => 'S$', 'decimal_places' => 2, 'is_active' => true],
-        ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function baseAccounts(): array
-    {
-        return [
-            ['account_code' => '1000', 'account_name' => 'Cash - MYR', 'account_type' => 'Asset', 'is_active' => true],
-            ['account_code' => '1100', 'account_name' => 'Cash - USD', 'account_type' => 'Asset', 'is_active' => true],
-            ['account_code' => '1200', 'account_name' => 'Cash - EUR', 'account_type' => 'Asset', 'is_active' => true],
-            ['account_code' => '2000', 'account_name' => 'Foreign Currency Inventory', 'account_type' => 'Asset', 'is_active' => true],
-            ['account_code' => '4000', 'account_name' => 'Revenue - Forex', 'account_type' => 'Revenue', 'is_active' => true],
-            ['account_code' => '5000', 'account_name' => 'Revenue - Forex Trading', 'account_type' => 'Revenue', 'is_active' => true],
-            ['account_code' => '5100', 'account_name' => 'Revenue - Revaluation Gain', 'account_type' => 'Revenue', 'is_active' => true],
-            ['account_code' => '6000', 'account_name' => 'Expense - Forex Loss', 'account_type' => 'Expense', 'is_active' => true],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function highRiskCountryRule(): array
-    {
-        return [
-            'rule_name' => 'High Risk Country',
-            'description' => 'Flag transactions involving high-risk countries',
-            'is_active' => true,
-            'conditions' => json_encode(['risk_levels' => ['High', 'Grey']]),
-            'rule_type' => AmlRuleType::Geographic->value,
-            'action' => 'flag',
-            'risk_score' => 40,
-            'created_by' => null,
-        ];
     }
 
     protected function createSchema(array $tables): void
@@ -2236,5 +2173,34 @@ class SchemaSeeder extends Seeder
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
 
+    }
+
+    /**
+     * A populated database is one carrying operational/business data.
+     * SchemaSeeder's own inline reference rows (currencies, chart of
+     * accounts, account mappings, AML rules) are not business data — they
+     * exist on a freshly built schema and must not block an idempotent
+     * re-run on an otherwise empty database.
+     */
+    protected function databaseIsPopulated(): bool
+    {
+        foreach ([
+            'branches',
+            'counters',
+            'customers',
+            'transactions',
+            'journal_entries',
+            'branch_pools',
+            'currency_positions',
+            'stock_transfers',
+            'teller_allocations',
+            'setup_state',
+        ] as $table) {
+            if (Schema::hasTable($table) && DB::table($table)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

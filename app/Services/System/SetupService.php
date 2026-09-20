@@ -254,17 +254,6 @@ class SetupService
     }
 
     /**
-     * @return array<int, string>
-     */
-    public function missingComponents(): array
-    {
-        return array_keys(array_filter(
-            $this->dataChecks(),
-            fn ($check) => ! $check
-        ));
-    }
-
-    /**
      * Execute the step-wizard setup from the accumulated session payload.
      * Callers wrap this in a DB transaction and persist the completion
      * marker via markSetupComplete().
@@ -400,7 +389,9 @@ class SetupService
             return;
         }
 
-        Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+        // seedNow builds the schema and layers the reference-data baseline
+        // (currencies, chart of accounts, account mappings) the wizard needs.
+        SchemaSeeder::seedNow(app());
     }
 
     protected function validateAdminPassword(string $password): void

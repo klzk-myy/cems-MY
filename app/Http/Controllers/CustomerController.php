@@ -14,16 +14,12 @@ use App\Http\Requests\StoreCustomerNoteRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
-use App\Models\ExchangeRate;
-use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
 use App\Services\System\CacheKeys;
 use App\Services\System\CacheOptimizationService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -43,48 +39,6 @@ class CustomerController extends Controller
         protected CustomerIndexAction $customerIndexAction,
         protected CacheOptimizationService $cacheOptimizationService,
     ) {}
-
-    /**
-     * Get exchange rates for the transaction form.
-     *
-     * Branch-scoped, active, deduplicated: an unscoped ExchangeRate::all()
-     * mixed every branch's overrides (and any legacy duplicate rows) into one
-     * map, and mapWithKeys kept whichever row happened to be last.
-     */
-    public function getExchangeRates(): JsonResponse
-    {
-        /** @var User|null $user */
-        $user = Auth::user();
-        $branchId = $user?->branch_id;
-
-        // Rate writes flush the 'rates' tag via CacheInvalidationService
-        // (forgetRateScopes/forgetExchangeRates), so stale maps cannot outlive TTL.
-        $rates = $this->cacheOptimizationService->remember(
-            CacheKeys::exchangeRatesResolved($branchId),
-            300,
-            ['rates'],
-            fn () => ExchangeRate::query()
-                ->active()
-                ->when(
-                    $branchId !== null,
-                    fn ($q) => $q->forBranchOrCompany($branchId),
-                    fn ($q) => $q->whereNull('branch_id')
-                )
-                ->orderByRaw('branch_id IS NULL')
-                ->orderByDesc('fetched_at')
-                ->orderByDesc('id')
-                ->get()
-                ->unique('currency_code')
-                ->mapWithKeys(fn ($r) => [$r->currency_code => [
-                    'buy' => (float) $r->rate_buy,
-                    'sell' => (float) $r->rate_sell,
-                    'rate_unit' => (int) $r->rate_unit,
-                    'rate_inverse' => (bool) $r->rate_inverse,
-                ]])->toArray()
-        );
-
-        return $this->successResponse(['rates' => $rates]);
-    }
 
     /**
      * Display a paginated listing of all customers.

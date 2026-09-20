@@ -47,8 +47,8 @@ class EventServiceProvider extends ServiceProvider
         TransactionApproved::class => [
             TransactionApprovedListener::class,
         ],
-        // ComplianceEventListener handles AlertCreated, CaseOpened,
-        // RiskScoreUpdated and RiskScoreCalculated via its subscribe() map.
+        // ComplianceEventListener handles AlertCreated, CaseOpened and
+        // RiskScoreUpdated via its subscribe() map.
         // It must be registered as an event subscriber ($subscribe), not as a
         // plain listener: it has no handle()/__invoke() method, so mapping it
         // in $listen makes every dispatch of those events fail with

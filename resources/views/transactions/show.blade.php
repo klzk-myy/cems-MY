@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
-                    <p class="text-sm text-ink">{{ $transaction->rate }}</p>
+                    <p class="text-sm text-ink">{{ number_format((float) $transaction->rate, 8) }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">MYR Amount</label>
@@ -53,7 +53,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Created At</label>
-                    <p class="text-sm text-ink">{{ $transaction->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink">{{ $transaction->created_at?->format('Y-m-d H:i:s') ?? 'N/A' }}</p>
                 </div>
             </div>
         </x-card>
@@ -102,7 +102,7 @@
                      role="alert">
                 {{ $transaction->hold_reason }}
                 @if($transaction->compliance_cleared_at)
-                    <div class="mt-1 text-xs">Cleared at {{ $transaction->compliance_cleared_at->format('Y-m-d H:i') }}</div>
+                    <div class="mt-1 text-xs">Cleared at {{ $transaction->compliance_cleared_at->format('Y-m-d H:i:s') }}</div>
                 @endif
             </x-alert>
         @endif

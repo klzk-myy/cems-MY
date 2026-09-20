@@ -10,7 +10,6 @@ use App\Enums\RiskRating;
 use App\Enums\UserRole;
 use App\Events\AlertCreated;
 use App\Events\CaseOpened;
-use App\Events\RiskScoreCalculated;
 use App\Events\RiskScoreUpdated;
 use App\Models\Alert;
 use App\Models\FlaggedTransaction;
@@ -92,13 +91,6 @@ class ComplianceEventListener
         }
     }
 
-    public function handleRiskScoreCalculated(RiskScoreCalculated $event): void
-    {
-        Log::info('Risk score calculated', [
-            'customer_id' => $event->customer->id,
-        ]);
-    }
-
     public function handleRiskScoreUpdated(RiskScoreUpdated $event): void
     {
         $snapshot = $event->snapshot;
@@ -170,7 +162,6 @@ class ComplianceEventListener
         return [
             AlertCreated::class => 'handleAlertCreated',
             CaseOpened::class => 'handleCaseOpened',
-            RiskScoreCalculated::class => 'handleRiskScoreCalculated',
             RiskScoreUpdated::class => 'handleRiskScoreUpdated',
         ];
     }

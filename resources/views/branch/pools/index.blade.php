@@ -45,9 +45,9 @@
                             <tr>
                                 <td>{{ $pool->branch?->name }}</td>
                                 <td>{{ $pool->currency_code }}</td>
-                                <td>{{ number_format((float) $pool->available_balance, 4) }}</td>
-                                <td>{{ number_format((float) $pool->allocated_balance, 4) }}</td>
-                                <td>{{ number_format((float) ($pool->available_balance + $pool->allocated_balance), 4) }}</td>
+                                <td>{{ number_format((float) $pool->available_balance, 2) }}</td>
+                                <td>{{ number_format((float) $pool->allocated_balance, 2) }}</td>
+                                <td>{{ number_format((float) ($pool->available_balance + $pool->allocated_balance), 2) }}</td>
                                 <td><x-button href="{{ route('branch-pools.show', $pool->id) }}" variant="secondary">Manage</x-button></td>
                             </tr>
                         @empty

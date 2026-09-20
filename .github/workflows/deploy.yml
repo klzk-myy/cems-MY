@@ -108,7 +108,10 @@ jobs:
             # admin account and business data.
             HAS_USERS_TABLE=$(php artisan tinker --execute="echo \\Illuminate\\Support\\Facades\\Schema::hasTable('users') ? 'yes' : 'no';" 2>/dev/null | tail -1)
             if [[ "$HAS_USERS_TABLE" == "no" ]]; then
-              php artisan db:seed --class=SchemaSeeder --force
+              # seedNow builds the schema and layers the reference-data
+              # baseline (currencies, CoA, mappings) the setup wizard needs;
+              # SchemaSeeder itself is pure DDL.
+              php artisan tinker --execute="\Database\Seeders\SchemaSeeder::seedNow(app());"
             fi
 
             # Idempotent schema upgrades for live databases — each command

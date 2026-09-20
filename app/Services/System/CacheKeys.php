@@ -74,14 +74,6 @@ enum CacheKeys: string
     }
 
     /**
-     * Resolved (branch+company merged) rate map used by the customer API.
-     */
-    public static function exchangeRatesResolved(?int $branchId): string
-    {
-        return 'exchange_rates_resolved_'.($branchId ?? 'company');
-    }
-
-    /**
      * Cached distinct-value list for a SystemLog column (audit filters).
      */
     public static function auditLogDistinct(string $column): string

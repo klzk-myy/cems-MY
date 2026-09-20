@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Accounting;
 
-use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ExportReconciliationRequest;
 use App\Http\Requests\Accounting\ImportBankStatementRequest;
@@ -103,21 +102,5 @@ class ReconciliationController extends Controller
         $this->bankReconciliationService->manualMatch($reconciliation->id, $request->validated('journal_entry_id'));
 
         return redirect()->route('accounting.reconciliation')->with('success', 'Item matched to journal entry.');
-    }
-
-    /**
-     * Unmatch a reconciliation record.
-     */
-    public function unmatch(BankReconciliation $reconciliation): RedirectResponse
-    {
-        $user = auth()->user();
-
-        if (! $user || ! $user->role->canPerform(Permission::ManageAccounting)) {
-            abort(403, 'Manage accounting permission required.');
-        }
-
-        $this->bankReconciliationService->unmatch($reconciliation->id);
-
-        return redirect()->route('accounting.reconciliation')->with('success', 'Item unmatched.');
     }
 }

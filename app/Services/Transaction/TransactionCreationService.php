@@ -52,6 +52,7 @@ use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Support\ActorContext;
 use App\ValueObjects\QuoteConvention;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -302,7 +303,21 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 }
             }
 
-            $transaction = $this->createTransactionRecord($data, $context);
+            try {
+                // Savepoint: a concurrent request bearing the same idempotency
+                // key loses the insert on the global unique index — rolling
+                // back to the savepoint keeps the outer transaction usable on
+                // drivers that poison it on constraint errors (PostgreSQL).
+                $transaction = DB::transaction(fn () => $this->createTransactionRecord($data, $context));
+            } catch (QueryException $e) {
+                $replayed = $this->resolveIdempotentReplay($e, $data, $userId);
+
+                if ($replayed !== null) {
+                    return $replayed;
+                }
+
+                throw $e;
+            }
 
             $this->reserveStockIfPending($transaction, $data);
 
@@ -561,9 +576,12 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
             $availableBalance = $this->mathService->subtract($quantity, (string) $reserved);
         } else {
+            // Always scope to the canonical transaction branch — a
+            // caller-supplied branch_id must never steer the stock check
+            // away from the branch the booking will post against.
             $availableBalance = $this->positionService->getAvailableBalance(
                 $data['currency_code'],
-                isset($data['branch_id']) ? (string) $data['branch_id'] : (string) $branchId
+                (string) $branchId
             );
         }
 
@@ -705,6 +723,27 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $transaction->save();
 
         return $transaction->refresh();
+    }
+
+    /**
+     * Translate a lost idempotency-key insert race into a replay of the
+     * winning transaction. Returns null (rethrow) when the failure is not a
+     * unique violation or no keyed row materialized.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveIdempotentReplay(QueryException $e, array $data, int $userId): ?Transaction
+    {
+        if (empty($data['idempotency_key'])) {
+            return null;
+        }
+
+        $sqlState = (string) $e->getCode();
+        if ($sqlState !== '23000' && $sqlState !== '23505') {
+            return null;
+        }
+
+        return $this->idempotencyService->findDuplicate($data['idempotency_key'], $userId, $data);
     }
 
     private function applyCompletedSideEffects(Transaction $transaction, TransactionCreationContext $context, ?string $ipAddress, int $txnBranchId): void

@@ -8,7 +8,6 @@ use App\Http\Requests\AssignAlertRequest;
 use App\Http\Requests\BulkAssignAlertsRequest;
 use App\Http\Requests\BulkResolveAlertsRequest;
 use App\Http\Requests\DismissAlertRequest;
-use App\Http\Requests\EscalateAlertRequest;
 use App\Http\Requests\ResolveAlertRequest;
 use App\Models\Alert;
 use App\Services\Compliance\AlertTriageService;
@@ -148,17 +147,5 @@ class AlertTriageController extends Controller
         }
 
         return redirect()->route('compliance.alerts.index')->with('success', 'Alert dismissed');
-    }
-
-    /**
-     * Escalate an alert to a higher severity level and compliance queue.
-     */
-    public function escalate(EscalateAlertRequest $request, Alert $alert): RedirectResponse
-    {
-        $this->authorize('updateStatus', $alert);
-
-        $this->alertTriageService->escalateAlert($alert, (int) auth()->id(), $request->validated('reason'));
-
-        return redirect()->route('compliance.alerts.index')->with('success', 'Alert escalated successfully');
     }
 }

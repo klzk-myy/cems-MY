@@ -353,8 +353,10 @@ class CustomerService implements CustomerServiceInterface
             'is_pep' => $customer->pep_status,
             'is_sanctioned' => $customer->sanction_hit,
             'sanction_warning' => (bool) $customer->sanction_hit,
+            // Match detail requires a full screen — the typeahead reports
+            // only the enforcement signal (sanction_hit → block).
             'sanction_matches' => [],
-            'sanction_action' => null,
+            'sanction_action' => $customer->sanction_hit ? 'block' : 'clear',
         ])->toArray();
     }
 

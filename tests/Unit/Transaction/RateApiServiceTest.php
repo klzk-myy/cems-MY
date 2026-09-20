@@ -22,17 +22,27 @@ class RateApiServiceTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function fetch_latest_rates_throws_exception_when_api_key_is_missing(): void
+    public function fetch_latest_rates_falls_back_to_open_endpoint_when_api_key_is_missing(): void
     {
-        // Override the config to simulate missing API key
+        // Keyless installs use the provider's open endpoint — the same
+        // contract previewRates() follows — instead of deadlocking the
+        // daily-rate workflow on an unset key.
         config(['services.exchange_rate_api.key' => null]);
 
-        $service = new RateApiService(new MathService, new CacheInvalidationService, new ThresholdService);
+        Currency::factory()->create(['code' => 'USD']);
+        config(['cems.system_user_id' => User::factory()->create()->id]);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('EXCHANGE_RATE_API_KEY is not configured. Set it in .env');
+        Http::fake([
+            '*' => Http::response([
+                'rates' => ['USD' => 0.21],
+                'time_last_updated' => 1700000000,
+            ]),
+        ]);
 
-        $service->fetchLatestRates();
+        $rates = (new RateApiService(new MathService, new CacheInvalidationService, new ThresholdService))->fetchLatestRates();
+
+        $this->assertArrayHasKey('USD', $rates);
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'open.er-api.com'));
     }
 
     #[Test]

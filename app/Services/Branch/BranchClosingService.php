@@ -133,13 +133,15 @@ class BranchClosingService
             $branch = $lockedWorkflow->branch;
 
             // Archive the day's proof on the workflow row: the checklist that
-            // passed plus a snapshot of the reconciliation the manager saw.
+            // passed plus a snapshot of the reconciliation the manager saw —
+            // pinned to business_date so a finalize that crosses midnight
+            // archives the day being closed, not the next calendar day.
             $lockedWorkflow->update([
                 'status' => BranchClosureStatus::Finalized->value,
                 'finalized_at' => now(),
                 'checklist' => [
                     'results' => $checklist,
-                    'recon' => $this->getDayReconciliation($branch),
+                    'recon' => $this->getDayReconciliation($branch, $lockedWorkflow->business_date),
                 ],
             ]);
 
@@ -227,10 +229,10 @@ class BranchClosingService
      *
      * @return array{date: string, summary: array<string, int>, totals: array<string, string>, counters: array<int, array<string, mixed>>, large_transactions: int, flagged_transactions: int}
      */
-    public function getDayReconciliation(Branch $branch): array
+    public function getDayReconciliation(Branch $branch, ?Carbon $date = null): array
     {
         $recon = $this->eodReconciliationService->generateDailyReconciliationSummary(
-            Carbon::today(),
+            $date ?? Carbon::today(),
             $branch->id
         );
 

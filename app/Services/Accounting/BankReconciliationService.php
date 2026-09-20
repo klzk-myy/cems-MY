@@ -527,15 +527,4 @@ class BankReconciliationService
 
         return $record;
     }
-
-    /**
-     * Unmatch a reconciliation record (revert to unmatched).
-     */
-    public function unmatch(int $reconciliationId): BankReconciliation
-    {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-        $record->markUnmatched();
-
-        return $record;
-    }
 }

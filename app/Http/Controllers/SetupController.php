@@ -13,7 +13,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -237,16 +236,6 @@ class SetupController extends Controller
         }
     }
 
-    public function checkStatus(): JsonResponse
-    {
-        return $this->successResponse([
-            'is_complete' => $this->setupService->isDataComplete(),
-            'current_step' => $this->setupService->currentStep(),
-            'progress' => $this->setupService->progress(),
-            'missing_components' => $this->setupService->missingComponents(),
-        ]);
-    }
-
     public function resetSetup(Application $app): JsonResponse
     {
         if ($app->environment('production')) {
@@ -254,7 +243,11 @@ class SetupController extends Controller
         }
 
         try {
-            Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+            // Deliberate, credential-gated reset: seedNow is the opt-in
+            // entry point — schema rebuild plus the reference-data baseline
+            // (currencies, chart of accounts, account mappings) the wizard's
+            // pickers need.
+            SchemaSeeder::seedNow($app);
             session()->forget('setup');
 
             // SchemaSeeder drops setup_state; clear defensively in

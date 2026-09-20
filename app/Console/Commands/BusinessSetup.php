@@ -37,7 +37,10 @@ class BusinessSetup extends Command
             }
 
             $this->info('Running fresh schema setup...');
-            Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+            // --fresh is interactively confirmed above — the deliberate
+            // rebuild path SchemaSeeder's populated-database guard expects.
+            // seedNow opts in and layers the reference-data baseline.
+            SchemaSeeder::seedNow(app());
             $this->info('Schema setup complete.');
         } elseif (! $this->option('seed-only')) {
             // Non-destructive path: build the schema only when it is missing.
@@ -47,7 +50,7 @@ class BusinessSetup extends Command
                 $this->info('Schema already present; skipping schema creation (use --fresh to rebuild).');
             } else {
                 $this->info('Schema not found; creating via SchemaSeeder...');
-                Artisan::call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+                SchemaSeeder::seedNow(app());
                 $this->info('Schema setup complete.');
             }
         }

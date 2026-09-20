@@ -27,6 +27,12 @@ class TransactionCreatedListener implements ShouldQueue
 
     public function handle(TransactionCreated $event)
     {
+        if ($event->transaction->exists) {
+            $event->transaction->customer?->update([
+                'last_transaction_at' => $event->transaction->created_at,
+            ]);
+        }
+
         $this->monitoringService->monitorTransaction($event->transaction);
         // recalculate() (not calculateScore(), which discards the result):
         // persists the CustomerRiskProfile, writes risk_score/risk_rating back

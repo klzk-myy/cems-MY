@@ -247,7 +247,13 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 $newAvgCost = (string) ($position->average_cost ?? '0');
             } elseif ($direction === 'add') {
                 $position = $this->lockService->lock($branchId, $currencyCode);
-                $rate = $costBasisRate ?? (string) ($position->average_cost ?? '0');
+                // Base currency always moves at par — falling back to a zero
+                // average_cost on a fresh row would leave it permanently
+                // unpriced (total_cost/current_value stuck at 0).
+                $rate = $costBasisRate
+                    ?? ($currencyCode === Currency::baseCurrency()
+                        ? '1'
+                        : (string) ($position->average_cost ?? '0'));
                 $oldBalance = (string) $position->quantity;
 
                 $newAvgCost = $this->mathService->compare($oldBalance, '0') > 0

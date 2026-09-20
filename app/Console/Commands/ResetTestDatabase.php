@@ -38,9 +38,25 @@ class ResetTestDatabase extends Command
             // only one call: seeding it directly avoids rebuilding the whole
             // schema twice.
             if ($this->option('seed')) {
-                $this->call('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true]);
+                // --fresh --seed is the deliberate full rebuild: opt both
+                // seeders' populated-database guards into running.
+                DatabaseSeeder::$allowPopulated = true;
+                SchemaSeeder::$allowPopulated = true;
+                try {
+                    $this->call('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true]);
+                } finally {
+                    DatabaseSeeder::$allowPopulated = false;
+                    SchemaSeeder::$allowPopulated = false;
+                }
             } else {
-                $this->call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+                // --fresh is the deliberate rebuild path: opt SchemaSeeder
+                // into running against a populated database.
+                SchemaSeeder::$allowPopulated = true;
+                try {
+                    $this->call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
+                } finally {
+                    SchemaSeeder::$allowPopulated = false;
+                }
             }
 
             $this->info('Database refreshed with seeding.');

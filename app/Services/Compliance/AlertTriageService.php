@@ -10,7 +10,6 @@ use App\Enums\UserRole;
 use App\Events\AlertCreated;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
-use App\Models\Compliance\ComplianceCase;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
@@ -28,7 +27,6 @@ class AlertTriageService
     public function __construct(
         protected ThresholdService $thresholdService,
         protected MathService $mathService,
-        protected CaseManagementService $caseManagementService,
         protected AuditService $auditService,
     ) {}
 
@@ -474,78 +472,42 @@ class AlertTriageService
      */
     public function bulkResolve(array $alertIds, int $resolvedBy, ?string $notes = null): array
     {
-        return DB::transaction(function () use ($alertIds, $resolvedBy, $notes) {
-            $results = ['success' => 0, 'failed' => 0, 'errors' => []];
-            $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
+        $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+        $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 
-            foreach ($alertIds as $alertId) {
-                try {
+        // One transaction per alert: an item that fails rolls back only its
+        // own mutations, so the reported success count always matches
+        // committed state. A single outer transaction made earlier
+        // successes hostages to a later failure at commit time.
+        foreach ($alertIds as $alertId) {
+            try {
+                DB::transaction(function () use ($alertId, $alerts, $resolvedBy, $notes, &$results) {
                     $alert = $alerts->get($alertId);
                     if (! $alert) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} not found";
 
-                        continue;
+                        return;
                     }
 
                     if ($alert->status === FlagStatus::Resolved) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} is already resolved";
 
-                        continue;
+                        return;
                     }
 
                     $this->resolveAlert($alert, $resolvedBy, $notes);
                     $results['success']++;
-                } catch (\Exception $e) {
-                    Log::error('Alert bulk-resolve failed', ['alert_id' => $alertId, 'error' => $e->getMessage()]);
-                    $results['failed']++;
-                    $results['errors'][] = "Alert {$alertId}: {$e->getMessage()}";
-                }
+                });
+            } catch (\Exception $e) {
+                Log::error('Alert bulk-resolve failed', ['alert_id' => $alertId, 'error' => $e->getMessage()]);
+                $results['failed']++;
+                $results['errors'][] = "Alert {$alertId}: {$e->getMessage()}";
             }
+        }
 
-            return $results;
-        });
-    }
-
-    /**
-     * Bulk link alerts to a case.
-     *
-     * @param  array<int, int>  $alertIds  Array of alert IDs
-     * @param  ComplianceCase  $case  The case to link alerts to
-     * @return array{success: int, failed: int, errors: array<int, string>}
-     */
-    public function bulkLinkToCase(array $alertIds, ComplianceCase $case): array
-    {
-        return DB::transaction(function () use ($alertIds, $case) {
-            $results = ['success' => 0, 'failed' => 0, 'errors' => []];
-            $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
-
-            foreach ($alertIds as $alertId) {
-                try {
-                    $alert = $alerts->get($alertId);
-                    if (! $alert) {
-                        $results['failed']++;
-                        $results['errors'][] = "Alert {$alertId} not found";
-
-                        continue;
-                    }
-
-                    // Delegate to the single-link workflow so the exact same
-                    // guards apply (reject alerts already linked to another
-                    // case or belonging to a different customer than the
-                    // case) and case priority/SLA are recalculated after.
-                    $this->caseManagementService->linkAlertToCase($alert, $case);
-                    $results['success']++;
-                } catch (\Exception $e) {
-                    Log::error('Alert bulk-link failed', ['alert_id' => $alertId, 'error' => $e->getMessage()]);
-                    $results['failed']++;
-                    $results['errors'][] = "Alert {$alertId}: {$e->getMessage()}";
-                }
-            }
-
-            return $results;
-        });
+        return $results;
     }
 
     /**
@@ -556,44 +518,5 @@ class AlertTriageService
         return Alert::with(['customer', 'flaggedTransaction', 'assignedTo'])
             ->whereIn('id', $alertIds)
             ->get();
-    }
-
-    /**
-     * Escalate an alert to a higher severity level.
-     */
-    public function escalateAlert(Alert $alert, int $escalatedBy, string $reason): Alert
-    {
-        return DB::transaction(function () use ($alert, $escalatedBy, $reason) {
-            $currentPriority = $alert->priority;
-
-            // Bump priority up one level
-            $newPriority = match ($currentPriority) {
-                AlertPriority::Low => AlertPriority::Medium,
-                AlertPriority::Medium => AlertPriority::High,
-                AlertPriority::High => AlertPriority::Critical,
-                default => AlertPriority::Critical,
-            };
-
-            $alert->update([
-                'priority' => $newPriority,
-                'escalated_at' => now(),
-                'escalation_reason' => $reason,
-            ]);
-
-            $this->auditService->logWithSeverity(
-                'alert_escalated',
-                [
-                    'description' => "Alert #{$alert->id} escalated from {$currentPriority->value} to {$newPriority->value}: {$reason}",
-                    'alert_id' => $alert->id,
-                    'from_priority' => $currentPriority->value,
-                    'to_priority' => $newPriority->value,
-                    'reason' => $reason,
-                    'escalated_by' => $escalatedBy,
-                ],
-                'WARNING'
-            );
-
-            return $alert;
-        });
     }
 }

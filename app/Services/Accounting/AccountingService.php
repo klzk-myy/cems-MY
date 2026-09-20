@@ -367,14 +367,33 @@ class AccountingService implements AccountingServiceInterface
         $touchedAccounts = [];
 
         foreach ($entry->lines as $line) {
-            // Serialize writers per account: lock the chart-of-accounts anchor
-            // row so a concurrent posting to the same account cannot read the
-            // same running_balance and corrupt the balance chain. The lock is
-            // held until the enclosing transaction commits (no-op on SQLite).
-            // The locked row doubles as the account lookup — isDebitNormal on
-            // it avoids a second ChartOfAccount query per line.
-            $account = ChartOfAccount::where('account_code', $line->account_code)
+            // Serialize writers per (account, branch): lock the chain tail —
+            // the latest ledger row for this account+branch — so a concurrent
+            // posting to the same chain cannot read the same running_balance
+            // and corrupt it. Locking the chart-of-accounts row instead would
+            // serialize every branch's postings to hot accounts (e.g.
+            // cash.myr) on a single row for the whole transaction.
+            // When the chain is empty there is no tail to lock, so the CoA
+            // row remains the anchor for the first posting.
+            $anchor = AccountLedger::where('account_code', $line->account_code)
+                ->when(
+                    $entry->branch_id === null,
+                    fn ($q) => $q->whereNull('branch_id'),
+                    fn ($q) => $q->where('branch_id', $entry->branch_id)
+                )
+                ->orderBy('entry_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
                 ->lockForUpdate()
+                ->first();
+
+            if ($anchor === null) {
+                ChartOfAccount::where('account_code', $line->account_code)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            }
+
+            $account = ChartOfAccount::where('account_code', $line->account_code)
                 ->firstOrFail();
 
             // Scope the running balance to the entry's branch so multi-branch

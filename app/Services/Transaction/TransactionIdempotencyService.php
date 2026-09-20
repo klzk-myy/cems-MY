@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Models\Transaction;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use Carbon\Carbon;
@@ -16,11 +17,21 @@ class TransactionIdempotencyService implements TransactionIdempotencyServiceInte
     public function findDuplicate(?string $idempotencyKey, int $userId, array $data): ?Transaction
     {
         if (! empty($idempotencyKey)) {
+            // idempotency_key is globally unique (schema constraint, request
+            // validators and TransactionImportService all agree) — the lookup
+            // must be global too or a cross-user key reuse silently passes
+            // the pre-check and dies on the unique index at insert.
             $existingByKey = Transaction::where('idempotency_key', $idempotencyKey)
-                ->where('user_id', $userId) // Keys are only unique per user
-                ->lockForUpdate() // Prevent concurrent duplicate creation
+                ->lockForUpdate()
                 ->first();
+
             if ($existingByKey) {
+                // A key replayed by a different user is a conflict, not an
+                // idempotent hit — never hand back someone else's record.
+                if ((int) $existingByKey->user_id !== $userId) {
+                    throw new DuplicateTransactionException;
+                }
+
                 return $existingByKey;
             }
         }

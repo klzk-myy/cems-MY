@@ -13,8 +13,6 @@ use App\Events\CaseOpened;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Models\Alert;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\Compliance\ComplianceCaseDocument;
-use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
@@ -90,64 +88,6 @@ class CaseManagementServiceTest extends TestCase
         $this->expectException(CaseManagementException::class);
 
         $this->service->linkAlertToCase($alert, $case);
-    }
-
-    #[Test]
-    public function merge_cases_rejects_self_merge(): void
-    {
-        $case = ComplianceCase::factory()->create();
-
-        $this->expectException(CaseManagementException::class);
-
-        $this->service->mergeCases($case, $case);
-    }
-
-    #[Test]
-    public function merge_cases_rejects_cases_for_different_customers(): void
-    {
-        $source = ComplianceCase::factory()->create();
-        $target = ComplianceCase::factory()->create();
-
-        $this->expectException(CaseManagementException::class);
-
-        $this->service->mergeCases($source, $target);
-    }
-
-    #[Test]
-    public function merge_cases_transfers_evidence_and_closes_source(): void
-    {
-        $customer = Customer::factory()->create();
-        $officer = User::factory()->create();
-
-        $source = ComplianceCase::factory()->create([
-            'customer_id' => $customer->id,
-            'assigned_to' => $officer->id,
-        ]);
-        $target = ComplianceCase::factory()->create([
-            'customer_id' => $customer->id,
-            'assigned_to' => $officer->id,
-        ]);
-
-        $alert = Alert::factory()->create(['customer_id' => $customer->id, 'case_id' => $source->id]);
-        $document = ComplianceCaseDocument::factory()->create([
-            'case_id' => $source->id,
-            'uploaded_by' => $officer->id,
-        ]);
-        $linkCustomer = Customer::factory()->create();
-        $link = ComplianceCaseLink::factory()->create([
-            'case_id' => $source->id,
-            'linked_type' => 'App\Models\Customer',
-            'linked_id' => $linkCustomer->id,
-        ]);
-
-        $merged = $this->service->mergeCases($source, $target);
-
-        $this->assertSame($target->id, $merged->id);
-        $this->assertSame($target->id, $alert->fresh()->case_id);
-        $this->assertSame($target->id, $document->fresh()->case_id);
-        $this->assertSame($target->id, $link->fresh()->case_id);
-        $this->assertSame(ComplianceCaseStatus::Closed, $source->fresh()->status);
-        $this->assertNotNull($source->fresh()->resolved_at);
     }
 
     #[Test]

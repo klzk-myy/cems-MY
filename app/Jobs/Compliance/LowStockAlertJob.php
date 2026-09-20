@@ -38,9 +38,9 @@ class LowStockAlertJob implements ShouldQueue
 
         // One grouped aggregate instead of a per-currency sum() query.
         $positions = CurrencyPosition::query()
-            ->selectRaw('currency_code, SUM(total_quantity) as total')
+            ->selectRaw('currency_code, SUM(quantity) as qty_sum')
             ->groupBy('currency_code')
-            ->pluck('total', 'currency_code');
+            ->pluck('qty_sum', 'currency_code');
 
         foreach ($currencies as $currency) {
             $totalPosition = $positions->get($currency->code, 0);

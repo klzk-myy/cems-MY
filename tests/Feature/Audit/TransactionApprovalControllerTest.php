@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Branch;
@@ -52,6 +53,10 @@ class TransactionApprovalControllerTest extends TestCase
             'branch_id' => $branch->id,
             'customer_id' => $customer->id,
             'currency_code' => $currency->code,
+            // Pin to Buy: the factory randomizes type, and approving a Sell
+            // requires a branch currency position this test does not seed —
+            // the flake source was 50/50 Sell draws failing that check.
+            'type' => TransactionType::Buy,
             'status' => TransactionStatus::PendingApproval,
             'amount_myr' => '1000.00',
             'quantity' => '250.00',

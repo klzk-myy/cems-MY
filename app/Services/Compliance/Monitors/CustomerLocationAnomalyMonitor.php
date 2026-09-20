@@ -60,9 +60,11 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
                 }
             }
         } catch (\Throwable $e) {
+            // Propagate to MonitoringEngine — a failed sweep must read as a
+            // monitor failure, not as a clean result.
             report($e);
 
-            return [];
+            throw $e;
         }
 
         return $findings;

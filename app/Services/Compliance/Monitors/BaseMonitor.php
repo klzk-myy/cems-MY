@@ -9,6 +9,7 @@ use App\Models\Compliance\ComplianceFinding;
 use App\Notifications\Compliance\ComplianceFindingNotification;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -82,6 +83,25 @@ abstract class BaseMonitor
      * their evidence (matches, scores, last-seen timestamp) on one finding.
      */
     protected function storeFinding(array $findingData): ?ComplianceFinding
+    {
+        // Serialize dedup check + insert per (type, subject): without a
+        // unique index on open findings, two concurrent monitor runs could
+        // both miss the duplicate probe and double-create the finding —
+        // including duplicate officer notifications.
+        $lockKey = 'monitor_finding:'
+            .$findingData['finding_type'].':'
+            .$findingData['subject_type'].':'
+            .(int) $findingData['subject_id'];
+
+        return Cache::lock($lockKey, 30)->block(10, function () use ($findingData) {
+            return $this->storeFindingLocked($findingData);
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $findingData
+     */
+    private function storeFindingLocked(array $findingData): ?ComplianceFinding
     {
         $existing = ComplianceFinding::openDuplicateOf(
             $findingData['finding_type'],

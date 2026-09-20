@@ -34,7 +34,8 @@
                     <th class="px-4 py-3">Reference</th>
                     <th class="px-4 py-3">Customer</th>
                     <th class="px-4 py-3">Type</th>
-                    <th class="px-4 py-3">Amount</th>
+                    <th class="px-4 py-3">FC Amount</th>
+                    <th class="px-4 py-3">MYR Amount</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3">Date</th>
                     <th class="px-4 py-3">Actions</th>
@@ -44,7 +45,7 @@
                 @forelse ($transactions as $transaction)
                     <tr>
                         <td class="px-4 py-3 font-mono text-sm">
-                            {{ $transaction->reference }}
+                            <a href="{{ route('transactions.show', $transaction) }}" class="text-primary hover:underline">{{ $transaction->reference }}</a>
                             @if($transaction->is_refund)
                                 <span class="ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-warning/10 text-warning">Refund</span>
                             @endif
@@ -55,20 +56,21 @@
                                 {{ $transaction->type->label() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right font-medium">{{ number_format($transaction->amount_myr, 2) }} {{ $transaction->currency_code }}</td>
+                        <td class="px-4 py-3 text-right font-medium">{{ number_format($transaction->quantity, 2) }} {{ $transaction->currency_code }}</td>
+                        <td class="px-4 py-3 text-right font-medium">RM {{ number_format($transaction->amount_myr, 2) }}</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status === \App\Enums\TransactionStatus::Completed ? 'bg-success/10 text-success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'bg-warning/10 text-warning' : 'bg-gray/10 text-muted') }}">
                                 {{ $transaction->status->label() }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at->format('M j, Y H:i') }}</td>
+                        <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at->format('M j, Y H:i:s') }}</td>
                         <td class="px-4 py-3">
                             <a href="{{ route('transactions.show', $transaction) }}" class="text-primary hover:underline">View</a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td class="px-4 py-3 text-sm text-ink-muted" colspan="7">
+                        <td class="px-4 py-3 text-sm text-ink-muted" colspan="8">
                             <x-empty-state title="No transactions found" description="Create your first transaction to get started." />
                         </td>
                     </tr>

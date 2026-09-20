@@ -311,22 +311,6 @@ class ComplianceCase extends ComplianceModel
     }
 
     /**
-     * Add a link to this case.
-     */
-    public function addLink(string $type, int $id): ComplianceCaseLink
-    {
-        $link = $this->links()->create([
-            'linked_type' => $type,
-            'linked_id' => $id,
-            'created_at' => now(),
-        ]);
-
-        assert($link instanceof ComplianceCaseLink);
-
-        return $link;
-    }
-
-    /**
      * Get the customer this case is raised against.
      *
      * @return BelongsTo<Customer, $this>

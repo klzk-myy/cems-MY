@@ -39,9 +39,24 @@
             // The booking till comes from the teller's open session, so it has
             // no form field — surface its errors as a form-level alert.
             $tillError = $errors->first('till_id') ?: $errors->first('counter_id');
+            // Some error keys have no rendered field (hidden branch_id, or
+            // customer fields concealed when an existing record is matched).
+            // A flat summary guarantees every rejection is visible.
+            $orphanErrors = collect($errors->keys())
+                ->reject(fn ($key) => in_array($key, ['till_id', 'counter_id'], true))
+                ->flatMap(fn ($key) => $errors->get($key));
         @endphp
         @if($tillError)
             <x-alert type="error" :dismissible="true" class="mt-4">{{ $tillError }}</x-alert>
+        @endif
+        @if($orphanErrors->isNotEmpty())
+            <x-alert type="error" :dismissible="true" class="mt-4">
+                <ul class="list-disc pl-4">
+                    @foreach($orphanErrors as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+            </x-alert>
         @endif
 
         <x-card title="Customer" description="Type the ID number or name — a matching record loads automatically; otherwise the details register a new customer on submit." class="mt-4">
@@ -66,7 +81,7 @@
                 <div class="relative">
                     <x-input name="full_name" label="Full Name" required
                              x-model="fields.full_name"
-                             @input.debounce.400ms="markEdited(); lookup('full_name')"
+                             @input.debounce.400ms="editedLookup('full_name')"
                              @keydown.escape="open = false"
                              autocomplete="off" />
                     <ul x-show="open && openFor === 'full_name'" x-cloak
@@ -96,7 +111,7 @@
                     <x-input name="id_number" label="ID Number" required
                              x-bind:required="!customerId"
                              x-model="fields.id_number"
-                             @input.debounce.500ms="markEdited(); lookup('id_number')"
+                             @input.debounce.500ms="editedLookup('id_number')"
                              @keydown.escape="open = false"
                              autocomplete="off" />
                     <ul x-show="open && openFor === 'id_number'" x-cloak

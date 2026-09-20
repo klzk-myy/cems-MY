@@ -166,6 +166,18 @@ class TransactionCancellationService
                 return false;
             }
 
+            // The window is enforced at request time via canCancel(), but a
+            // stale PendingCancellation must not slip past it at approval.
+            if ($previousStatus->isCompleted()
+                && ! $this->reversalService->isWithinCancellationWindow($lockedTransaction)) {
+                Log::warning('Cancellation of completed transaction rejected - outside cancellation window', [
+                    'transaction_id' => $lockedTransaction->id,
+                    'approver_id' => $approver->id,
+                ]);
+
+                return false;
+            }
+
             $hasReservation = StockReservation::where('transaction_id', $lockedTransaction->id)
                 ->where('status', StockReservationStatus::Pending)
                 ->exists();
@@ -199,6 +211,18 @@ class TransactionCancellationService
 
                     $this->reverseTellerAllocation($lockedTransaction);
                     $this->reversalService->createReversingJournalEntries($lockedTransaction, $approver->id);
+
+                    // Same compliance artefact as TransactionReversalService::
+                    // reverse(): the physical cash hand-back is acknowledged
+                    // through a PendingApproval refund record that completes
+                    // via complete-refund — skipping it would leave the books
+                    // reversed with no gated record of the cash movement.
+                    $refund = $this->reversalService->createRefundTransaction($lockedTransaction, $approver->id);
+
+                    Log::info('Refund transaction created for completed-transaction cancellation', [
+                        'transaction_id' => $lockedTransaction->id,
+                        'refund_transaction_id' => $refund->id,
+                    ]);
                 }
 
                 if ($hasReservation) {
@@ -403,11 +427,19 @@ class TransactionCancellationService
             TransactionStatus::PendingApproval,
             TransactionStatus::Approved,
             TransactionStatus::Processing,
-            TransactionStatus::Completed,
             TransactionStatus::Failed,
         ];
 
-        return in_array($transaction->status, $cancellableStatuses, true);
+        if (in_array($transaction->status, $cancellableStatuses, true)) {
+            return true;
+        }
+
+        // Completed transactions share the reversal contract: the
+        // cancellation window bounds how far back the books may be
+        // reopened. Without this the PendingCancellation path bypassed the
+        // 24h check that requestReversal() enforces.
+        return $transaction->status === TransactionStatus::Completed
+            && $this->reversalService->isWithinCancellationWindow($transaction);
     }
 
     public function isWithinCancellationWindow(Transaction $transaction): bool

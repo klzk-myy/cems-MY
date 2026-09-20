@@ -8,13 +8,13 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <x-card title="Available Balance">
-                <p class="text-2xl font-bold">{{ number_format((float) $branchPool->available_balance, 4) }}</p>
+                <p class="text-2xl font-bold">{{ number_format((float) $branchPool->available_balance, 2) }}</p>
             </x-card>
             <x-card title="Allocated Balance">
-                <p class="text-2xl font-bold">{{ number_format((float) $branchPool->allocated_balance, 4) }}</p>
+                <p class="text-2xl font-bold">{{ number_format((float) $branchPool->allocated_balance, 2) }}</p>
             </x-card>
             <x-card title="Total Balance">
-                <p class="text-2xl font-bold">{{ number_format((float) ($branchPool->available_balance + $branchPool->allocated_balance), 4) }}</p>
+                <p class="text-2xl font-bold">{{ number_format((float) ($branchPool->available_balance + $branchPool->allocated_balance), 2) }}</p>
             </x-card>
         </div>
 
@@ -80,7 +80,7 @@
                         <div class="flex items-center justify-between gap-4 rounded-md border border-border p-3">
                             <div class="text-sm">
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 4) }} {{ $remittance->currency_code }} from {{ $remittance->fromBranch?->name }} ({{ $remittance->initiator?->username }})</span>
+                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} from {{ $remittance->fromBranch?->name }} ({{ $remittance->initiator?->username }})</span>
                             </div>
                             <form action="{{ route('branch-pools.remittances.acknowledge', $remittance->id) }}" method="POST">
                                 @csrf
@@ -93,7 +93,7 @@
                         <div class="flex items-center justify-between gap-4 rounded-md border border-border p-3">
                             <div class="text-sm">
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 4) }} {{ $remittance->currency_code }} to {{ $remittance->toBranch?->name }} — awaiting acknowledgement</span>
+                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} to {{ $remittance->toBranch?->name }} — awaiting acknowledgement</span>
                             </div>
                             <form action="{{ route('branch-pools.remittances.cancel', $remittance->id) }}" method="POST">
                                 @csrf
@@ -112,7 +112,7 @@
                         <div class="flex items-center justify-between gap-4 text-sm">
                             <span>
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 4) }} {{ $remittance->currency_code }}: {{ $remittance->fromBranch?->name }} → {{ $remittance->toBranch?->name }}</span>
+                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }}: {{ $remittance->fromBranch?->name }} → {{ $remittance->toBranch?->name }}</span>
                             </span>
                             <span class="text-muted">{{ $remittance->status->label() }}</span>
                         </div>
