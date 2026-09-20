@@ -169,20 +169,16 @@ class NotificationBellTest extends TestCase
         $this->actingAs($admin)
             ->getJson(route('notifications.unread-count'))
             ->assertOk()
-            ->assertJson([
-                'count' => 1,
-                'dlq_count' => 1,
-            ]);
+            ->assertJsonPath('data.count', 1)
+            ->assertJsonPath('data.dlq_count', 1);
 
         $teller = User::factory()->teller()->create();
 
         $this->actingAs($teller)
             ->getJson(route('notifications.unread-count'))
             ->assertOk()
-            ->assertJson([
-                'count' => 0,
-                'dlq_count' => 0,
-            ]);
+            ->assertJsonPath('data.count', 0)
+            ->assertJsonPath('data.dlq_count', 0);
     }
 
     #[Test]

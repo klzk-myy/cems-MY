@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Enums\Permission;
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\AuditService;
@@ -11,8 +11,6 @@ use App\Services\System\CacheInvalidationService;
 use App\Services\Transaction\TransactionRecoveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -23,6 +21,8 @@ use Illuminate\View\View;
  */
 class DlqController extends Controller
 {
+    use HandlesControllerErrors;
+
     public function __construct(
         protected TransactionRecoveryService $recoveryService,
         protected AuditService $auditService,
@@ -77,18 +77,12 @@ class DlqController extends Controller
                 $retried ? 'Transaction moved out of the DLQ and queued for retry.' : 'Could not retry the transaction.'
             );
 
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('DLQ retry failed', [
-                'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-            ]);
-
+        } catch (\Throwable $e) {
             // Keep internal exception details out of the UI; admins can read
             // the logged error.
-            return back()->with('error', 'Retry failed. Check the application logs for details.');
+            return $this->handleExceptionWeb($e, 'DLQ retry failed', 'Retry failed. Check the application logs for details.', [
+                'transaction_id' => $transaction->id,
+            ]);
         }
     }
 
@@ -135,16 +129,10 @@ class DlqController extends Controller
 
             return back()->with('error', 'Could not purge the transaction.');
 
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('DLQ purge failed', [
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'DLQ purge failed', 'Purge failed. Check the application logs for details.', [
                 'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
             ]);
-
-            return back()->with('error', 'Purge failed. Check the application logs for details.');
         }
     }
 }

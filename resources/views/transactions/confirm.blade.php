@@ -24,10 +24,6 @@
                         <label class="block text-sm font-medium text-ink-muted mb-1">Exchange Rate</label>
                         <p class="text-sm text-ink">{{ $transaction->rate ?? 'N/A' }}</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-ink-muted mb-1">Counter</label>
-                        <p class="text-sm text-ink">{{ $transaction->counter_id ?? 'N/A' }}</p>
-                    </div>
                 </div>
             </x-card>
         </x-card>
@@ -37,7 +33,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Customer Name</label>
-                        <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink"><x-customer-link :customer="$transaction->customer" /></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">Customer ID</label>
@@ -49,7 +45,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-ink-muted mb-1">ID Number</label>
-                        <p class="text-sm text-ink">{{ $transaction->customer->id_number_masked ?? 'N/A' }}</p>
+                        <p class="text-sm text-ink">{{ $transaction->customer->id_number ?? 'N/A' }}</p>
                     </div>
                 </div>
             </x-card>

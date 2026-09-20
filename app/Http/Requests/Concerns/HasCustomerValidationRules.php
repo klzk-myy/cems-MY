@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Concerns;
 
+use App\Enums\IdType;
 use App\Rules\MyKadFormatRule;
+use Illuminate\Validation\Rule;
 
 /**
  * Shared validation rules for customer store/update forms.
@@ -18,7 +20,7 @@ trait HasCustomerValidationRules
     {
         return [
             'full_name' => 'required|string|max:255',
-            'id_type' => ['required', 'in:MyKad,Passport,Others'],
+            'id_type' => ['required', Rule::enum(IdType::class)],
             'id_number' => array_filter([
                 $isUpdate ? 'sometimes' : null,
                 $isUpdate ? null : 'required',

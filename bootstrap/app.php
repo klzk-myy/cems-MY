@@ -78,7 +78,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => Authenticate::class,
             'auth.basic' => AuthenticateWithBasicAuth::class,
-            'auth.session' => AuthenticateSession::class,
+            'auth.session' => AuthenticateSession::class, // DISABLED
             'branch.scope' => EnsureBranchScope::class,
             'cache.headers' => SetCacheHeaders::class,
             'can' => Authorize::class,
@@ -287,6 +287,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/audit-seal-pending.log'));
+
+        // Audit chain watchdog - pages once per incident when entries stay
+        // unsealed past the count/age thresholds despite sweeper retries.
+        $schedule->command('audit:watch-unsealed')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/audit-watch-unsealed.log'));
 
         // Sanctions Rescreening Monitor - Weekly on Sunday at 02:00
         $schedule->job(new RunComplianceMonitorJob(SanctionsRescreeningMonitor::class))

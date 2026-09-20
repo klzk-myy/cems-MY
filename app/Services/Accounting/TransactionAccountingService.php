@@ -157,7 +157,7 @@ class TransactionAccountingService
 
         $costBasis = $this->mathService->multiply((string) $transaction->quantity, $avgCost);
         $revenue = $this->mathService->subtract((string) $transaction->amount_myr, $costBasis);
-        $isGain = $this->mathService->compare($revenue, '0') >= 0;
+        $revenueCmp = $this->mathService->compare($revenue, '0');
 
         $entries = [
             [
@@ -174,7 +174,13 @@ class TransactionAccountingService
             ],
         ];
 
-        if ($isGain) {
+        // A sale exactly at cost has no gain or loss — posting a zero line
+        // would violate the one-sided journal-line contract.
+        if ($revenueCmp === 0) {
+            return $entries;
+        }
+
+        if ($revenueCmp > 0) {
             $entries[] = [
                 'account_code' => $this->accountMappingService->code(AccountMappingKey::RevenueForex),
                 'debit' => '0',

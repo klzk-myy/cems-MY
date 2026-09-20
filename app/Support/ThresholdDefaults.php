@@ -44,6 +44,12 @@ final class ThresholdDefaults
 
     public const FALLBACK_STRUCTURING_SUB = '3000';
 
+    /**
+     * Aggregate MYR that sub-threshold bookings must reach before a
+     * structuring finding is raised — 80% of the auto-approve line (RM10k).
+     */
+    public const FALLBACK_STRUCTURING_AGGREGATE = '8000';
+
     public const FALLBACK_STRUCTURING_MIN_TXNS = 3;
 
     public const FALLBACK_STRUCTURING_HOURLY_WINDOW = 1;

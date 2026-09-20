@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Domain\AccountingPeriodException;
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\JournalIndexRequest;
@@ -16,12 +16,11 @@ use App\Services\Accounting\AccountingService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JournalController extends Controller
 {
-    use ResolvesBranchScope;
+    use HandlesControllerErrors, ResolvesBranchScope;
 
     public function __construct(
         protected AccountingService $accountingService,
@@ -137,14 +136,8 @@ class JournalController extends Controller
             return redirect()->route('accounting.journal.show', $reversal)
                 ->with('success', 'Entry reversed successfully.');
 
-        } catch (DomainException $e) {
-            return back()->with('error', $e->getMessage());
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Journal reversal failed', ['exception' => $e, 'entry_id' => $entry->id]);
-
-            return back()->with('error', 'Reversal failed. Please try again.');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Journal reversal failed', 'Reversal failed. Please try again.', ['entry_id' => $entry->id]);
         }
     }
 }

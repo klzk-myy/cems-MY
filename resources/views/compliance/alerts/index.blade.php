@@ -69,7 +69,7 @@
                                     </x-badge>
                                 </td>
                                 <td class="px-4 py-3">{{ $alert->type->value }}</td>
-                                <td class="px-4 py-3">{{ $alert->customer?->full_name ?? '—' }}</td>
+                                <td class="px-4 py-3"><x-customer-link :customer="$alert->customer" /></td>
                                 <td class="px-4 py-3 max-w-xs truncate" title="{{ $alert->reason }}">{{ $alert->reason }}</td>
                                 <td class="px-4 py-3">{{ $alert->risk_score }}</td>
                                 <td class="px-4 py-3">

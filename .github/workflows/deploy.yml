@@ -124,8 +124,17 @@ jobs:
             php artisan db:install-audit-fks --force
             php artisan db:install-audit-index-cleanup --force
             php artisan db:install-audit-varchar-sizing --force
+            php artisan reservations:install-branch-id
             php artisan customers:fix-risk-rating-default
             php artisan db:normalize-column-defaults
+            php artisan audit:install-seal-status
+            php artisan closure:install-business-date
+            php artisan mfa:install-last-timestep
+            php artisan stock-transfers:install-branch-fks
+            php artisan transactions:install-reexecuted-columns
+            php artisan accounting:install-mappings
+            php artisan permissions:sync
+            php artisan audit:seal-pending --no-interaction
 
             php artisan optimize:clear
             php artisan config:cache

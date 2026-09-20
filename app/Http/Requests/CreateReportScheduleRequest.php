@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\ReportType;
 use Cron\CronExpression;
+use Illuminate\Validation\Rule;
 
 class CreateReportScheduleRequest extends AuthorizedFormRequest
 {
@@ -36,7 +37,7 @@ class CreateReportScheduleRequest extends AuthorizedFormRequest
     public function rules(): array
     {
         return [
-            'report_type' => ['required', 'in:'.implode(',', array_column(ReportType::cases(), 'value'))],
+            'report_type' => ['required', Rule::enum(ReportType::class)],
             'cron_expression' => [
                 'required',
                 'string',

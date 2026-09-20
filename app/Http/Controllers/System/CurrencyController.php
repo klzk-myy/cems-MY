@@ -50,7 +50,7 @@ class CurrencyController extends Controller
     {
         $this->requirePermission(Permission::ManageCurrencies);
 
-        $currencies = Currency::orderBy('code')->get();
+        $currencies = Currency::orderBy('code')->paginate(25);
 
         return view('system.currencies.index', compact('currencies'));
     }

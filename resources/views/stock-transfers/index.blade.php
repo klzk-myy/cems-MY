@@ -43,6 +43,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $transfers->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

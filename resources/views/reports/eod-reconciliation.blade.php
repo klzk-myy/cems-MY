@@ -189,7 +189,13 @@
                 @foreach($report['large_transactions']['transactions'] as $tx)
                     <tr>
                         <td>{{ $tx['id'] ?? 'N/A' }}</td>
-                        <td>{{ $tx['customer_name'] ?? $tx['customer_id'] ?? 'N/A' }}</td>
+                        <td>
+                            @if(!empty($tx['customer_id']))
+                                <a href="{{ route('customers.show', $tx['customer_id']) }}" class="text-primary hover:underline">{{ $tx['customer_name'] ?? 'Customer #'.$tx['customer_id'] }}</a>
+                            @else
+                                {{ $tx['customer_name'] ?? 'N/A' }}
+                            @endif
+                        </td>
                         <td>{{ $tx['type'] ?? 'N/A' }}</td>
                         <td class="text-right">{{ number_format($tx['amount_myr'] ?? 0, 2) }}</td>
                         <td>{{ $tx['currency_code'] ?? 'MYR' }}</td>

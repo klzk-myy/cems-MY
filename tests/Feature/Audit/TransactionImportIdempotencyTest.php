@@ -14,9 +14,9 @@ class TransactionImportIdempotencyTest extends TestCase
         $content = $this->readSource('app/Services/Transaction/TransactionImportService.php');
 
         $this->assertStringContainsString(
-            "\$data['idempotency_key'] = hash('sha256', \$encoded);",
+            "\$data['idempotency_key'] = hash('sha256', \$importId.'|'.\$rowNumber.'|'.\$encoded);",
             $content,
-            'Should generate idempotency key for every import row'
+            'Should generate a per-import, per-row idempotency key for every import row'
         );
         $this->assertStringContainsString(
             "throw new ImportValidationException('Row data could not be encoded for idempotency key')",

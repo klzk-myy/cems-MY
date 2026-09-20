@@ -49,6 +49,7 @@
                         @endforeach
                     </x-slot:tbody>
                 </x-table>
+                <div class="mt-4">{{ $recentReports->links() }}</div>
             </x-card>
         @endif
     </div>

@@ -33,6 +33,18 @@ class ExpireStockReservations extends Command
             ->chunkById(200, function ($reservations) use (&$released, &$failed) {
                 foreach ($reservations as $reservation) {
                     try {
+                        // A reservation expiring on an already-terminal
+                        // transaction means a reject/cancel path leaked it —
+                        // surface that instead of silently sweeping it.
+                        $finalStatus = $reservation->transaction?->status;
+                        if ($finalStatus !== null && $finalStatus->isFinal()) {
+                            Log::warning('Expired reservation belonged to a final-state transaction — check for a reservation leak on that exit path', [
+                                'reservation_id' => $reservation->id,
+                                'transaction_id' => $reservation->transaction_id,
+                                'transaction_status' => $finalStatus->value,
+                            ]);
+                        }
+
                         $this->positionService->releaseStockReservation($reservation->transaction_id);
                         $this->notifyTeller($reservation);
                         $released++;

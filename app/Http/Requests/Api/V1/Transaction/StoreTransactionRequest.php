@@ -15,6 +15,16 @@ class StoreTransactionRequest extends ApiFormRequest
         return $this->user()->can('create', Transaction::class);
     }
 
+    /**
+     * Counter selection is transparent: when the user holds an open counter
+     * session its counter is the booking till and overrides any submitted
+     * till_id. Callers without a session must still supply till_id.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->mergeSessionTill();
+    }
+
     public function rules(): array
     {
         return [

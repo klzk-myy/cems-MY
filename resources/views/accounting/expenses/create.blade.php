@@ -1,5 +1,5 @@
 <x-app-layout title="New Expense">
-    <div class="max-w-2xl space-y-6">
+    <div class="space-y-6">
         <x-page-header title="Post Petty Cash Expense" description="Debit an expense account against the branch petty cash float" />
 
         <x-card>

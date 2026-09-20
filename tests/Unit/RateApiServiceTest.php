@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\RateSide;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Services\System\CacheInvalidationService;
@@ -41,15 +42,15 @@ class RateApiServiceTest extends TestCase
         ]);
 
         // Act: Get the mid rate
-        $midRate = $this->service->getCurrentRate('USD', 'mid');
+        $midRate = $this->service->getCurrentRate('USD', RateSide::Mid);
 
         // Assert: Mid rate should be the average of buy and sell
         $expectedMid = '4.55000000';
         $this->assertEquals($expectedMid, $midRate);
 
         // Also verify buy and sell rates are returned correctly
-        $this->assertEquals('4.50000000', $this->service->getCurrentRate('USD', 'buy'));
-        $this->assertEquals('4.60000000', $this->service->getCurrentRate('USD', 'sell'));
+        $this->assertEquals('4.50000000', $this->service->getCurrentRate('USD', RateSide::Buy));
+        $this->assertEquals('4.60000000', $this->service->getCurrentRate('USD', RateSide::Sell));
     }
 
     #[Test]
@@ -65,7 +66,7 @@ class RateApiServiceTest extends TestCase
         ]);
 
         // Act: Get the mid rate
-        $midRate = $this->service->getCurrentRate('EUR', 'mid');
+        $midRate = $this->service->getCurrentRate('EUR', RateSide::Mid);
 
         // Assert: Mid rate should be (4.3000 + 4.5000) / 2 = 4.4000
         $this->assertEquals('4.40000000', $midRate);
@@ -97,7 +98,7 @@ class RateApiServiceTest extends TestCase
         // not a percentage, so 0.00044 sits well inside the band.
 
         // Act: Validate a rate well inside the band
-        $result = $this->service->validateRateDeviation('4.5520', 'USD', 'mid');
+        $result = $this->service->validateRateDeviation('4.5520', 'USD', RateSide::Mid);
 
         // Assert
         $this->assertTrue($result['valid']);
@@ -120,9 +121,9 @@ class RateApiServiceTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        $this->assertEquals('0.00023000', $this->service->getCurrentRate('IDR', 'buy'));
-        $this->assertEquals('0.00024000', $this->service->getCurrentRate('IDR', 'sell'));
-        $this->assertEquals('0.00023500', $this->service->getCurrentRate('IDR', 'mid'));
+        $this->assertEquals('0.00023000', $this->service->getCurrentRate('IDR', RateSide::Buy));
+        $this->assertEquals('0.00024000', $this->service->getCurrentRate('IDR', RateSide::Sell));
+        $this->assertEquals('0.00023500', $this->service->getCurrentRate('IDR', RateSide::Mid));
     }
 
     #[Test]
@@ -142,14 +143,14 @@ class RateApiServiceTest extends TestCase
 
         // Submitted RM 235 per 1,000,000 → per-unit 0.000235 vs market
         // 0.000230 → ~2.2% deviation < 5% threshold (valid).
-        $result = $this->service->validateRateDeviation('235', 'IDR', 'buy');
+        $result = $this->service->validateRateDeviation('235', 'IDR', RateSide::Buy);
 
         $this->assertTrue($result['valid']);
         $this->assertSame('0.00023500', $result['submitted_rate_per_unit']);
         $this->assertSame('1000000', $result['submitted_rate_unit']);
 
         // Submitted RM 400 per 1,000,000 → per-unit 0.000400 → ~74% > 5% (invalid).
-        $rejected = $this->service->validateRateDeviation('400', 'IDR', 'buy');
+        $rejected = $this->service->validateRateDeviation('400', 'IDR', RateSide::Buy);
 
         $this->assertFalse($rejected['valid']);
         $this->assertNotNull($rejected['reason']);
@@ -172,8 +173,8 @@ class RateApiServiceTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        $this->assertEquals('0.00022727', $this->service->getCurrentRate('IDR', 'buy'));
-        $this->assertEquals('0.00023809', $this->service->getCurrentRate('IDR', 'sell'));
+        $this->assertEquals('0.00022727', $this->service->getCurrentRate('IDR', RateSide::Buy));
+        $this->assertEquals('0.00023809', $this->service->getCurrentRate('IDR', RateSide::Sell));
     }
 
     #[Test]
@@ -193,13 +194,13 @@ class RateApiServiceTest extends TestCase
         ]);
 
         // Submitted 4,410 IDR per RM 1 → per-unit 0.000227 — ~0% deviation.
-        $result = $this->service->validateRateDeviation('4410', 'IDR', 'buy');
+        $result = $this->service->validateRateDeviation('4410', 'IDR', RateSide::Buy);
 
         $this->assertTrue($result['valid']);
         $this->assertTrue($result['submitted_rate_inverse']);
 
         // Submitted 10,000 IDR per RM 1 → per-unit 0.000100 — ~56% deviation.
-        $rejected = $this->service->validateRateDeviation('10000', 'IDR', 'buy');
+        $rejected = $this->service->validateRateDeviation('10000', 'IDR', RateSide::Buy);
 
         $this->assertFalse($rejected['valid']);
     }
@@ -319,7 +320,7 @@ class RateApiServiceTest extends TestCase
             'effective_date' => now()->addDay(),
         ]);
 
-        $this->assertSame('4.50000000', $this->service->getCurrentRate('USD', 'buy'));
+        $this->assertSame('4.50000000', $this->service->getCurrentRate('USD', RateSide::Buy));
     }
 
     #[Test]
@@ -340,6 +341,6 @@ class RateApiServiceTest extends TestCase
             'fetched_at' => now(),
         ]);
 
-        $this->assertSame('5.10000000', $this->service->getCurrentRate('EUR', 'buy'));
+        $this->assertSame('5.10000000', $this->service->getCurrentRate('EUR', RateSide::Buy));
     }
 }

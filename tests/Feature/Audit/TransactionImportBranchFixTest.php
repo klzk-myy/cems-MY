@@ -25,9 +25,9 @@ class TransactionImportBranchFixTest extends TestCase
         $this->assertFileExists($creationFile);
         $creationContent = file_get_contents($creationFile);
         $this->assertStringContainsString(
-            '$tillBalance->branch_id',
+            'tillBalance?->branch_id',
             $creationContent,
-            'Should use $tillBalance->branch_id for position lookup'
+            'Should use the till balance branch_id for position lookup'
         );
     }
 }

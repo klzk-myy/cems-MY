@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\ApprovalStatus;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -16,12 +17,10 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
 
     public function __construct(
         public Transaction $transaction,
-        public string $outcome,
+        public ApprovalStatus $outcome,
         public string $actorName,
         public ?string $reason = null
-    ) {
-        $this->outcome = strtolower($outcome);
-    }
+    ) {}
 
     /**
      * @return array<int, string>
@@ -33,7 +32,7 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
 
     public function toMail(User $notifiable): MailMessage
     {
-        $approved = $this->outcome === 'approved';
+        $approved = $this->outcome === ApprovalStatus::Approved;
 
         $mail = (new MailMessage)
             ->subject(
@@ -59,7 +58,7 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
     {
         return [
             'type' => 'transaction_outcome',
-            'outcome' => $this->outcome,
+            'outcome' => $this->outcome->value,
             'transaction_id' => $this->transaction->id,
             'transaction_reference' => $this->transaction->reference,
             'amount_myr' => $this->transaction->amount_myr,
@@ -92,7 +91,7 @@ class TransactionOutcomeNotification extends Notification implements ShouldQueue
 
     private function summaryLine(): string
     {
-        return $this->outcome === 'approved'
+        return $this->outcome === ApprovalStatus::Approved
             ? "Your transaction {$this->transaction->reference} was approved by {$this->actorName}."
             : "Your transaction {$this->transaction->reference} was rejected by {$this->actorName}.";
     }

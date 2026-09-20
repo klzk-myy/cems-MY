@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Customer</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink"><x-customer-link :customer="$transaction->customer" /></p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Original Date</label>

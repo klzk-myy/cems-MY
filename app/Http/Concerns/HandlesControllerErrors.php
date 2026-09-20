@@ -22,11 +22,11 @@ trait HandlesControllerErrors
 {
     /**
      * Log an error with the standard controller context fields
-     * (user_id, controller, action, route) and return a web fallback.
+     * (user_id, controller, exception_class, trace) and return a web fallback.
      *
      * @param  string  $context  Domain-specific log context key (e.g., 'Customer store failed')
      * @param  string  $message  User-facing error message
-     * @param  array  $extra  Additional log fields (e.g., customer_id)
+     * @param  array<string, mixed>  $extra  Additional log fields (e.g., customer_id)
      */
     protected function handleExceptionWeb(
         \Throwable $e,
@@ -47,7 +47,6 @@ trait HandlesControllerErrors
             'user_id' => auth()->id(),
             'exception_class' => $e::class,
             'controller' => static::class,
-            'action' => __FUNCTION__,
             'trace' => $e->getTraceAsString(),
         ], $extra));
 
@@ -61,7 +60,7 @@ trait HandlesControllerErrors
      * @param  string  $context  Domain-specific log context key
      * @param  string  $message  User-facing error message
      * @param  int  $status  HTTP status (default 500)
-     * @param  array  $extra  Additional log fields
+     * @param  array<string, mixed>  $extra  Additional log fields
      */
     protected function handleExceptionApi(
         \Throwable $e,
@@ -82,13 +81,13 @@ trait HandlesControllerErrors
             'user_id' => auth()->id(),
             'exception_class' => $e::class,
             'controller' => static::class,
-            'action' => __FUNCTION__,
             'trace' => $e->getTraceAsString(),
         ], $extra));
 
         return response()->json([
             'success' => false,
             'message' => $message,
+            'errors' => [],
         ], $status);
     }
 
@@ -108,6 +107,9 @@ trait HandlesControllerErrors
      *       );
      *   }
      */
+    /**
+     * @param  array<string, mixed>  $extra
+     */
     protected function withWebError(callable $fn, string $context, string $message, array $extra = []): mixed
     {
         try {
@@ -120,6 +122,9 @@ trait HandlesControllerErrors
     /**
      * Try a callable and return either its result or an API JSON error
      * response on exception.
+     */
+    /**
+     * @param  array<string, mixed>  $extra
      */
     protected function withApiError(callable $fn, string $context, string $message, int $status = 500, array $extra = []): mixed
     {

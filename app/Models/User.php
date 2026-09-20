@@ -33,6 +33,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property UserRole $role
  * @property bool $mfa_enabled
  * @property string|null $mfa_secret
+ * @property int|null $mfa_last_timestep
  * @property Carbon|null $mfa_verified_at
  * @property bool $is_active
  * @property Carbon|null $last_login_at
@@ -81,6 +82,7 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
         'mfa_verified_at' => 'datetime',
         'mfa_secret' => 'string',
+        'mfa_last_timestep' => 'integer',
         'password_hash' => 'string',
         'password_changed_at' => 'datetime',
         'notification_preferences' => 'array',

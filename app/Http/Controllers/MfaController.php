@@ -178,7 +178,7 @@ class MfaController extends Controller
                 ->withErrors(['code' => 'MFA secret not found. Please set up MFA again.']);
         }
 
-        $valid = $this->mfaService->verifyCode($secret, $validated['code']);
+        $valid = $this->mfaService->verifyUserCode($user, $validated['code']);
 
         if (! $valid) {
             $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);
@@ -251,7 +251,7 @@ class MfaController extends Controller
             return back()->withErrors(['code' => 'MFA secret not found.']);
         }
 
-        $valid = $this->mfaService->verifyCode($secret, $validated['code']);
+        $valid = $this->mfaService->verifyUserCode($user, $validated['code']);
 
         if (! $valid) {
             $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);
@@ -315,10 +315,10 @@ class MfaController extends Controller
     public function trustedDevices(): View
     {
         $user = auth()->user();
-        $devices = $this->mfaService->getTrustedDevices($user);
+        $trustedDevices = $this->mfaService->getTrustedDevices($user)->paginate(25);
 
         return view('mfa.trusted-devices', [
-            'devices' => $devices,
+            'trustedDevices' => $trustedDevices,
         ]);
     }
 

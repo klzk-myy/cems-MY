@@ -161,27 +161,11 @@ class QlvrReportGenerator
                 fn ($txn) => [
                     'Transaction_ID' => 'TXN-'.str_pad((string) $txn->id, 8, '0', STR_PAD_LEFT),
                     'Date' => $txn->created_at->format('Y-m-d'),
-                    'Customer_Name' => $this->maskName($txn->customer->full_name),
+                    'Customer_Name' => $txn->customer->full_name,
                     'Amount_Local' => $txn->amount_myr,
                     'Currency' => $txn->currency_code,
                     'Transaction_Type' => $txn->type,
                 ]
             );
-    }
-
-    protected function maskName(string $name): string
-    {
-        $parts = explode(' ', $name);
-        $masked = [];
-
-        foreach ($parts as $part) {
-            if (strlen($part) > 2) {
-                $masked[] = substr($part, 0, 2).str_repeat('*', strlen($part) - 2);
-            } else {
-                $masked[] = $part;
-            }
-        }
-
-        return implode(' ', $masked);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Accounting;
 
 use App\Enums\AccountMappingKey;
+use App\Enums\RateSide;
 use App\Enums\SystemAlertLevel;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
@@ -67,7 +68,7 @@ class RevaluationService
 
         // Provider-less fallback: the branch card (company card when the branch
         // publishes none), already normalized to a per-unit mid at scale 8.
-        return $this->rateApiService->getCurrentRate($currencyCode, 'mid', $branchId);
+        return $this->rateApiService->getCurrentRate($currencyCode, RateSide::Mid, $branchId);
     }
 
     /**

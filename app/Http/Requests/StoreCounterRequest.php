@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CounterStatus;
 use App\Models\Branch;
 use App\Models\Counter;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -43,7 +44,7 @@ class StoreCounterRequest extends AuthorizedFormRequest
                         ->where('is_active', true)
                 ),
             ],
-            'status' => 'nullable|in:active,inactive,maintenance',
+            'status' => ['nullable', Rule::enum(CounterStatus::class)],
         ];
     }
 }

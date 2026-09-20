@@ -28,6 +28,7 @@ const CREATE_TX = ['admin', 'teller'];                   // create_transactions
 const REQ_STOCK = ['admin', 'teller'];                   // request_stock
 const REPORTS = ['admin', 'manager', 'compliance', 'accountant']; // view_reports
 const RISK_DASH = ['admin', 'manager', 'compliance'];    // view_risk_dashboard
+const SCREEN_VIEW = ['admin', 'teller', 'compliance'];   // access_compliance|view_screening_results (read-only)
 const COA_VIEW = ['admin', 'manager', 'compliance', 'accountant']; // access_compliance|access_accounting
 const MAPPINGS = ['admin', 'accountant'];                // manage_account_mappings
 
@@ -80,7 +81,7 @@ const MATRIX: [string, string[], string?][] = [
   ['/compliance/cases', COMP],
   ['/compliance/sanctions', COMP],
   ['/compliance/sanctions/entries', COMP],
-  ['/compliance/screening-matches', COMP],
+  ['/compliance/screening-matches', SCREEN_VIEW],
   ['/compliance/findings', COMP],
   ['/compliance/edd-review', COMP],
   ['/compliance/pep-approvals', COMP],

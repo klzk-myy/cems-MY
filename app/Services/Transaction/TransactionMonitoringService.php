@@ -70,6 +70,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
     {
         $flagModels = (new EloquentCollection($flags))
             ->filter(fn ($flag) => $flag instanceof FlaggedTransaction)
+            ->reject(fn ($flag) => $flag->status?->isTerminal() ?? false)
             ->values();
 
         // One eager load for the whole batch and one probe for existing
@@ -96,26 +97,38 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
     }
 
     /**
-     * Check for existing flags of the same type for a transaction.
+     * Existing flags of the same type for a transaction, live ones first.
+     *
+     * Terminal flags (resolved/rejected) are included — ordered after live
+     * ones — so a reviewed-and-cleared suspicion is not resurrected as a
+     * fresh flag every time monitoring re-runs (e.g. at approval while the
+     * underlying pattern, such as structuring, is still inside its detection
+     * window).
      *
      * @param  Transaction  $transaction  The transaction to check
      * @param  ComplianceFlagType  $flagType  The flag type to check for
-     * @return FlaggedTransaction|null Existing flag or null if none found
+     * @return EloquentCollection<int, FlaggedTransaction>
      */
-    protected function checkExistingFlags(Transaction $transaction, ComplianceFlagType $flagType): ?FlaggedTransaction
+    protected function existingFlags(Transaction $transaction, ComplianceFlagType $flagType): EloquentCollection
     {
         return FlaggedTransaction::where('transaction_id', $transaction->id)
             ->where('flag_type', $flagType)
-            ->where('status', '!=', FlagStatus::Resolved)
-            ->first();
+            ->orderByRaw(
+                'CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END ASC',
+                array_map(fn ($s) => $s->value, FlagStatus::terminalStatuses())
+            )
+            ->orderBy('id')
+            ->get();
     }
 
     protected function createFlag(Transaction $transaction, ComplianceFlagType $type, string $reason): FlaggedTransaction
     {
-        // Check for existing flag of same type
-        $existingFlag = $this->checkExistingFlags($transaction, $type);
+        // Check for existing flags of same type — a materially identical
+        // suspicion dedupes to its flag (live or dispositioned) instead of
+        // creating a duplicate.
+        $existingFlags = $this->existingFlags($transaction, $type);
 
-        if ($existingFlag) {
+        foreach ($existingFlags as $existingFlag) {
             // Check if reason differs significantly using similarity comparison
             $existingReason = $existingFlag->flag_reason;
             $similarity = 0;
@@ -142,37 +155,37 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
                 return $existingFlag;
             }
+        }
 
-            // Different reason (<80% similarity), update existing flag
-            $existingFlag->update([
-                'flag_reason' => $reason,
-                'status' => FlagStatus::Open,
-            ]);
+        if ($existingFlags->isNotEmpty()) {
+            // Different reason (<80% similarity): a materially different
+            // suspicion is a separate finding — append a new flag rather
+            // than rewriting the existing one's reason/status, which would
+            // destroy the audit trail of the original suspicion.
+            $existingFlag = $existingFlags->first();
+            $existingReason = $existingFlag->flag_reason;
 
-            Log::info('Updated existing AML flag with new reason', [
+            Log::info('Distinct AML flag reason — creating additional flag', [
                 'transaction_id' => $transaction->id,
                 'flag_type' => $type->value,
-                'flag_id' => $existingFlag->id,
-                'old_reason' => $existingReason,
+                'existing_flag_id' => $existingFlag->id,
+                'existing_reason' => $existingReason,
                 'new_reason' => $reason,
-                'similarity' => $similarity,
             ]);
 
-            $this->auditService->logAmlMonitorEvent('aml_flag_updated', $transaction->id, [
+            $this->auditService->logAmlMonitorEvent('aml_flag_distinct_reason', $transaction->id, [
                 'entity_type' => 'Transaction',
                 'old' => [
                     'flag_reason' => $existingReason,
+                    'existing_flag_id' => $existingFlag->id,
                 ],
                 'new' => [
                     'flag_reason' => $reason,
-                    'similarity' => $similarity,
                 ],
             ]);
-
-            return $existingFlag;
         }
 
-        // No existing flag, create new one
+        // No matching suspicion on file — record it as a new flag
         $flag = FlaggedTransaction::create([
             'transaction_id' => $transaction->id,
             'customer_id' => $transaction->customer_id,

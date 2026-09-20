@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\CddLevel;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class TransactionWizardStep2Request extends AuthorizedFormRequest
@@ -20,7 +21,7 @@ class TransactionWizardStep2Request extends AuthorizedFormRequest
         $cddLevel = $this->input('cdd_level');
         $rules = [
             'wizard_session_id' => ['required', 'string'],
-            'cdd_level' => ['required', 'string', 'in:'.implode(',', array_column(CddLevel::cases(), 'value'))],
+            'cdd_level' => ['required', 'string', Rule::enum(CddLevel::class)],
         ];
 
         // Base required fields

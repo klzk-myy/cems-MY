@@ -20,7 +20,7 @@
                 <x-button href="{{ route('login') }}" variant="primary" class="mt-6">Go to Login</x-button>
             </x-card>
         @else
-            <x-card class="max-w-2xl">
+            <x-card>
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-ink">Step {{ $currentStep }} of 6</span>
@@ -209,12 +209,13 @@
                                                     status.classList.remove('hidden');
                                                     return;
                                                 }
-                                                var missing = data.missing || [];
-                                                Object.keys(data.rates || {}).forEach(function (code) {
+                                                var missing = (data.data && data.data.missing) || [];
+                                                var rates = (data.data && data.data.rates) || {};
+                                                Object.keys(rates).forEach(function (code) {
                                                     var buy = document.querySelector('input[name="custom_rates[' + code + '][buy]"]');
                                                     var sell = document.querySelector('input[name="custom_rates[' + code + '][sell]"]');
-                                                    if (buy) buy.value = data.rates[code].buy;
-                                                    if (sell) sell.value = data.rates[code].sell;
+                                                    if (buy) buy.value = rates[code].buy;
+                                                    if (sell) sell.value = rates[code].sell;
                                                 });
                                                 status.textContent = missing.length
                                                     ? 'Rates filled. No market rate found for: ' + missing.join(', ') + ' — enter manually.'
@@ -330,8 +331,8 @@
                                     'Accept': 'application/json',
                                 },
                             }).then(function (res) { return res.json(); }).then(function (data) {
-                                if (data.success && data.redirect) {
-                                    window.location.href = data.redirect;
+                                if (data.success && data.data && data.data.redirect) {
+                                    window.location.href = data.data.redirect;
                                 } else {
                                     err.textContent = data.message || 'Setup could not be completed.';
                                     err.classList.remove('hidden');

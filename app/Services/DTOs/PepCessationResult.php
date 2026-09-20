@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO;
+namespace App\Services\DTOs;
 
 use Carbon\Carbon;
 

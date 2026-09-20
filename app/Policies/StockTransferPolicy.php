@@ -30,8 +30,8 @@ class StockTransferPolicy
             return true;
         }
 
-        return $this->branchMatches($user, $stockTransfer->source_branch_name)
-            || $this->branchMatches($user, $stockTransfer->destination_branch_name);
+        return $this->branchMatchesTransfer($user, $stockTransfer, 'source')
+            || $this->branchMatchesTransfer($user, $stockTransfer, 'destination');
     }
 
     /**
@@ -43,7 +43,7 @@ class StockTransferPolicy
      */
     public function approveBranchManager(User $user, StockTransfer $stockTransfer): bool
     {
-        $isWithinBranch = $stockTransfer->source_branch_name === $stockTransfer->destination_branch_name;
+        $isWithinBranch = $this->isWithinBranch($stockTransfer);
 
         if (! $isWithinBranch && $stockTransfer->requested_by === $user->id) {
             return false;
@@ -54,10 +54,10 @@ class StockTransferPolicy
         }
 
         if ($isWithinBranch) {
-            return $this->branchMatches($user, $stockTransfer->source_branch_name);
+            return $this->branchMatchesTransfer($user, $stockTransfer, 'source');
         }
 
-        return $this->branchMatches($user, $stockTransfer->destination_branch_name);
+        return $this->branchMatchesTransfer($user, $stockTransfer, 'destination');
     }
 
     /**
@@ -71,7 +71,7 @@ class StockTransferPolicy
         }
 
         return $user->role->canPerform(Permission::ManageStockTransfers)
-            && $this->branchMatches($user, $stockTransfer->source_branch_name);
+            && $this->branchMatchesTransfer($user, $stockTransfer, 'source');
     }
 
     /**
@@ -95,7 +95,7 @@ class StockTransferPolicy
         }
 
         return $user->role->canPerform(Permission::ManageStockTransfers)
-            && $this->branchMatches($user, $stockTransfer->destination_branch_name);
+            && $this->branchMatchesTransfer($user, $stockTransfer, 'destination');
     }
 
     /**
@@ -108,7 +108,7 @@ class StockTransferPolicy
             return true;
         }
 
-        return $this->branchMatches($user, $stockTransfer->destination_branch_name);
+        return $this->branchMatchesTransfer($user, $stockTransfer, 'destination');
     }
 
     /**
@@ -142,6 +142,53 @@ class StockTransferPolicy
     }
 
     /**
+     * Resolve the transfer's branch identity for one side. New rows carry real
+     * FKs; legacy rows only have the name/code snapshot, which is resolved
+     * against the branches table as a fallback.
+     */
+    private function transferBranchId(StockTransfer $transfer, string $side): ?int
+    {
+        $fk = $side === 'source' ? $transfer->source_branch_id : $transfer->destination_branch_id;
+
+        if ($fk !== null) {
+            return (int) $fk;
+        }
+
+        $name = $side === 'source' ? $transfer->source_branch_name : $transfer->destination_branch_name;
+
+        return $this->branchIdFromName($name);
+    }
+
+    /**
+     * Whether the user's branch owns the given side of the transfer.
+     * Returns false when the branch cannot be resolved (fail-closed).
+     */
+    private function branchMatchesTransfer(User $user, StockTransfer $transfer, string $side): bool
+    {
+        $branchId = $this->transferBranchId($transfer, $side);
+
+        return $branchId !== null && $branchId === (int) $user->branch_id;
+    }
+
+    /**
+     * Whether source and destination resolve to the same branch.
+     */
+    private function isWithinBranch(StockTransfer $transfer): bool
+    {
+        $source = $this->transferBranchId($transfer, 'source');
+        $destination = $this->transferBranchId($transfer, 'destination');
+
+        if ($source !== null && $destination !== null) {
+            return $source === $destination;
+        }
+
+        // One side unresolvable: fall back to the stored name equality for
+        // fully legacy rows.
+        return $source === null && $destination === null
+            && $transfer->source_branch_name === $transfer->destination_branch_name;
+    }
+
+    /**
      * Resolve a free-form branch identifier (name or code, as stored on the
      * transfer) to a branches.id. Returns null when unresolvable.
      */
@@ -155,20 +202,5 @@ class StockTransferPolicy
             ->where('name', $identifier)
             ->orWhere('code', $identifier)
             ->value('id');
-    }
-
-    /**
-     * Whether the user's branch matches the given transfer branch identifier.
-     * Returns false when the identifier cannot be resolved (fail-closed).
-     */
-    private function branchMatches(User $user, ?string $identifier): bool
-    {
-        $branchId = $this->branchIdFromName($identifier);
-
-        if ($branchId === null) {
-            return false;
-        }
-
-        return (int) $branchId === (int) $user->branch_id;
     }
 }

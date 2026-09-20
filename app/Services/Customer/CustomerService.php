@@ -7,6 +7,7 @@
 namespace App\Services\Customer;
 
 use App\Enums\CddLevel;
+use App\Enums\IdType;
 use App\Enums\RiskRating;
 use App\Enums\StrReportStatus;
 use App\Events\CustomerRecordUpdated;
@@ -24,6 +25,7 @@ use App\Services\CustomerScreeningService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
 use App\Services\System\EncryptionService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -334,9 +336,18 @@ class CustomerService implements CustomerServiceInterface
         return $customers->map(fn ($customer) => [
             'id' => $customer->id,
             'full_name' => $customer->full_name,
-            'ic_number' => $customer->ic_number,
-            'ic_number_masked' => $customer->ic_number ? substr($customer->ic_number, 0, 4).'****'.substr($customer->ic_number, -4) : null,
+            'id_number' => $customer->id_number,
+            'id_type' => $customer->id_type instanceof IdType ? $customer->id_type->value : $customer->id_type,
+            'date_of_birth' => $customer->date_of_birth?->format('Y-m-d'),
+            'email' => $customer->email,
             'nationality' => $customer->nationality,
+            // Encrypted profile fields are never shipped to the browser —
+            // presence flags let the transaction form decide which keyed-in
+            // gaps still need collecting.
+            'has_phone' => ! empty($customer->getRawOriginal('phone')),
+            'has_address' => ! empty($customer->getRawOriginal('address')),
+            'has_occupation' => ! empty($customer->occupation),
+            'has_employer_name' => ! empty($customer->employer_name),
             'risk_rating' => $customer->risk_rating,
             'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
             'is_pep' => $customer->pep_status,
@@ -345,6 +356,81 @@ class CustomerService implements CustomerServiceInterface
             'sanction_matches' => [],
             'sanction_action' => null,
         ])->toArray();
+    }
+
+    /**
+     * Look up an active customer by exact ID number (blind index).
+     * Company-wide: identity is unique across branches.
+     */
+    public function findActiveByIdNumber(string $idNumber): ?Customer
+    {
+        return $this->customerRepository->findActiveByIdNumberHash(
+            self::computeBlindIndex($idNumber)
+        );
+    }
+
+    /**
+     * Resolve the customer for a transaction booking: use the matched record,
+     * or register the keyed-in details as a new customer when no match exists.
+     * Either way the customer's empty profile fields are filled from the
+     * submitted data so CDD tier requirements can be met without a separate
+     * edit screen. Shared by the web and API store paths so both honour the
+     * same resolve-or-register contract — without it a payload carrying
+     * inline customer fields but no customer_id reaches booking and fails on
+     * a null customer lookup.
+     *
+     * @param  array<string, mixed>  $data  Validated booking payload
+     *
+     * @throws AuthorizationException When the actor may not register customers
+     * @throws ValidationException When a new customer fails validation and no
+     *                             existing record matches the submitted ID number
+     */
+    public function resolveForBooking(array $data, int $userId): Customer
+    {
+        $customer = null;
+
+        if (filled($data['customer_id'] ?? null)) {
+            $customer = Customer::find((int) $data['customer_id']);
+        }
+
+        if ($customer === null) {
+            $user = User::findOrFail($userId);
+
+            if (! $user->can('create', Customer::class)) {
+                throw new AuthorizationException('You are not authorized to register customers.');
+            }
+
+            $customerData = collect($data)->only([
+                'full_name', 'id_type', 'id_number', 'date_of_birth',
+                'nationality', 'phone', 'email', 'address',
+                'occupation', 'employer_name',
+            ])->all();
+
+            try {
+                $customer = $this->createCustomer($customerData, $userId);
+            } catch (ValidationException $e) {
+                // Duplicate ID number = returning customer whose record the
+                // teller could not see; load it rather than erroring — same
+                // contract as the quick-create endpoint.
+                $customer = $this->findActiveByIdNumber($data['id_number'] ?? '');
+                if (! $customer) {
+                    throw $e;
+                }
+            }
+        }
+
+        // Fill gaps only — never overwrite existing identity data, and never
+        // trust a submitted id_number for an existing record.
+        $updates = collect($data)
+            ->only(['phone', 'email', 'address', 'occupation', 'employer_name'])
+            ->filter(fn ($value, $field) => filled($value) && empty($customer->getRawOriginal($field)))
+            ->all();
+
+        if ($updates !== []) {
+            $this->updateCustomer($customer, $updates, $userId);
+        }
+
+        return $customer;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Rules\PasswordComplexityRule;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -145,7 +146,9 @@ class SecurityTest extends TestCase
     }
 
     /**
-     * Test unauthorized access to another branch's data
+     * Test unauthorized access to another branch's data.
+     * Customers are company-wide entities by design (commit bf3c093f);
+     * branch isolation applies to transactions.
      */
     #[Test]
     public function user_cannot_access_other_branch_data(): void
@@ -158,17 +161,18 @@ class SecurityTest extends TestCase
             'branch_id' => $branchA->id,
         ]);
 
-        $customerB = Customer::factory()->create([
-            'full_name' => 'BranchB-'.uniqid(),
+        $transactionB = Transaction::factory()->create([
+            'branch_id' => $branchB->id,
+            'purpose' => 'BranchB-'.uniqid(),
         ]);
 
-        $response = $this->actingAs($userA)->getJson('/api/v1/customers');
+        $response = $this->actingAs($userA)->getJson('/api/v1/transactions');
 
         $response->assertOk();
         $this->assertStringNotContainsString(
-            $customerB->full_name,
+            $transactionB->purpose,
             $response->getContent(),
-            'Branch A user should not see Branch B customers'
+            'Branch A user should not see Branch B transactions'
         );
     }
 

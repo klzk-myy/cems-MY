@@ -12,9 +12,11 @@ use Illuminate\Support\Carbon;
  * @property int $branch_id
  * @property int $initiated_by
  * @property BranchClosureStatus $status
+ * @property Carbon $business_date
  * @property array|null $checklist
  * @property Carbon|null $settlement_at
  * @property Carbon|null $finalized_at
+ * @property Carbon|null $reopened_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -27,15 +29,19 @@ class BranchClosureWorkflow extends BaseModel
         'branch_id',
         'initiated_by',
         'status',
+        'business_date',
         'checklist',
         'settlement_at',
         'finalized_at',
+        'reopened_at',
     ];
 
     protected $casts = [
         'checklist' => 'array',
+        'business_date' => 'date',
         'settlement_at' => 'datetime',
         'finalized_at' => 'datetime',
+        'reopened_at' => 'datetime',
         'status' => BranchClosureStatus::class,
     ];
 
@@ -87,18 +93,29 @@ class BranchClosureWorkflow extends BaseModel
     }
 
     /**
-     * Whether the branch's books are frozen for a business date: once a
-     * workflow finalizes, the date it finalized and every earlier date are
-     * closed to new postings for that branch only. The anchor is
-     * finalized_at — the same business date whose reconciliation snapshot
-     * is archived on the workflow — so the freeze boundary and the
-     * archived recon always agree.
+     * Whether the branch's books are frozen for a business date. The freeze
+     * anchors on `business_date` (the day being closed), stamped at
+     * initiation — so a workflow that settles/finalizes after midnight still
+     * freezes the correct day, and nothing new can be booked onto a date
+     * whose close is already in progress.
+     *
+     * Frozen while: Initiated, Settled, or Finalized for business_date >=
+     * $date. A workflow reopened for corrections (Settled with reopened_at
+     * set) deliberately un-freezes the date until it is finalized again.
      */
     public static function freezesDate(int $branchId, string $date): bool
     {
         return static::where('branch_id', $branchId)
-            ->where('status', BranchClosureStatus::Finalized->value)
-            ->whereDate('finalized_at', '>=', $date)
+            ->whereDate('business_date', '>=', $date)
+            ->where(function ($query) {
+                $query->whereIn('status', [
+                    BranchClosureStatus::Initiated->value,
+                    BranchClosureStatus::Finalized->value,
+                ])->orWhere(function ($settled) {
+                    $settled->where('status', BranchClosureStatus::Settled->value)
+                        ->whereNull('reopened_at');
+                });
+            })
             ->exists();
     }
 

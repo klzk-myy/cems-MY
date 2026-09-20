@@ -11,8 +11,15 @@
         <x-filter-bar method="GET">
             <x-input name="search" value="{{ request('search') }}" placeholder="Search by name or ID..." inline />
             <x-select name="risk_rating" :options="['' => 'All Risk Ratings', \App\Enums\RiskRating::Low->value => 'Low', \App\Enums\RiskRating::Medium->value => 'Medium', \App\Enums\RiskRating::High->value => 'High', \App\Enums\RiskRating::Critical->value => 'Critical']" :selected="request('risk_rating')" inline />
-            <x-select name="nationality" :options="['' => 'All Nationalities', 'MY' => 'Malaysian', 'SG' => 'Singaporean', 'OTHER' => 'Other']" :selected="request('nationality')" inline />
+            <x-select name="nationality" :options="['' => 'All Nationalities'] + array_combine($nationalities ?? [], $nationalities ?? [])" :selected="request('nationality')" inline />
+            <x-select name="id_type" :options="['' => 'All ID Types', \App\Enums\IdType::MyKad->value => 'MyKad', \App\Enums\IdType::Passport->value => 'Passport', \App\Enums\IdType::Others->value => 'Other ID']" :selected="request('id_type')" inline />
+            <x-select name="cdd_level" :options="['' => 'All CDD Levels', \App\Enums\CddLevel::Simplified->value => 'Simplified', \App\Enums\CddLevel::Specific->value => 'Specific', \App\Enums\CddLevel::Standard->value => 'Standard', \App\Enums\CddLevel::Enhanced->value => 'Enhanced']" :selected="request('cdd_level')" inline />
+            <x-select name="is_active" :options="['' => 'All Statuses', '1' => 'Active', '0' => 'Inactive']" :selected="request('is_active')" inline />
+            <x-select name="pep_status" :options="['' => 'PEP: All', '1' => 'PEP', '0' => 'Non-PEP']" :selected="request('pep_status')" inline />
+            <x-select name="sanction_hit" :options="['' => 'Sanctions: All', '1' => 'Sanction Hit', '0' => 'No Hit']" :selected="request('sanction_hit')" inline />
+            <x-select name="is_frozen" :options="['' => 'Frozen: All', '1' => 'Frozen', '0' => 'Not Frozen']" :selected="request('is_frozen')" inline />
             <x-button type="submit" variant="primary">Filter</x-button>
+            <x-button href="{{ route('customers.index') }}" variant="secondary">Reset</x-button>
         </x-filter-bar>
 
         <x-card>
@@ -31,9 +38,9 @@
                 <x-slot:tbody>
                     @forelse($customers ?? [] as $customer)
                         <tr class="border-t border-border hover:bg-canvas-subtle">
-                            <td class="px-4 py-3 text-sm">{{ $customer->full_name }}</td>
+                            <td class="px-4 py-3 text-sm"><x-customer-link :customer="$customer" /></td>
                             <td class="px-4 py-3 text-sm">{{ $customer->id_type }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $customer->id_number_masked }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $customer->id_number ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm">{{ $customer->nationality }}</td>
                             <td class="px-4 py-3">
                                 <x-badge :variant="(

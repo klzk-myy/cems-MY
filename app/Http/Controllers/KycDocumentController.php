@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CustomerDocumentStatus;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Requests\RejectKycDocumentRequest;
 use App\Models\CustomerDocument;
 use App\Services\AuditService;
@@ -12,6 +13,8 @@ use Illuminate\Http\Request;
 
 class KycDocumentController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected AuditService $auditService,
         protected DocumentStorageService $documentStorageService,
@@ -41,7 +44,7 @@ class KycDocumentController extends Controller
             'INFO'
         );
 
-        return response()->json(['success' => true, 'message' => 'Document verified']);
+        return $this->successResponse(null, 'Document verified');
     }
 
     /**
@@ -71,7 +74,7 @@ class KycDocumentController extends Controller
             'WARNING'
         );
 
-        return response()->json(['success' => true, 'message' => 'Document rejected']);
+        return $this->successResponse(null, 'Document rejected');
     }
 
     /**

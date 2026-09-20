@@ -4,35 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Enums\TellerAllocationStatus;
 use App\Enums\UserRole;
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\ApproveAllocationRequest;
 use App\Http\Requests\ModifyAllocationRequest;
 use App\Http\Requests\RejectAllocationRequest;
 use App\Http\Requests\StoreAllocationRequest;
 use App\Http\Requests\SubmitAllocationRequest;
-use App\Http\Requests\TransferTillRequest;
 use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Models\Counter;
-use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\TellerAllocation;
-use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\Branch\TillService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AllocationController extends Controller
 {
+    use HandlesControllerErrors;
+
     public function __construct(
         protected TellerAllocationService $allocationService,
-        protected TillService $tillService,
     ) {}
 
     /**
@@ -92,10 +88,8 @@ class AllocationController extends Controller
                 (string) $validated['approved_quantity'],
                 isset($validated['daily_limit_myr']) ? (string) $validated['daily_limit_myr'] : null
             );
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', 'Allocation approved.');
@@ -120,10 +114,8 @@ class AllocationController extends Controller
                 $request->user(),
                 $validated['rejection_reason'] ?? null
             );
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', 'Allocation rejected.');
@@ -204,10 +196,8 @@ class AllocationController extends Controller
                     $created->push($allocation);
                 }
             });
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         if ($created->count() === 1) {
@@ -243,10 +233,8 @@ class AllocationController extends Controller
                 (string) $validated['quantity'],
                 $validated['direction'] === 'increase'
             );
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', "Allocation {$validated['direction']}d by {$validated['quantity']}.");
@@ -265,10 +253,8 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->returnToPool($allocation);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', 'Allocation returned to the branch pool.');
@@ -284,28 +270,9 @@ class AllocationController extends Controller
             ->latest()
             ->paginate(25);
 
-        // Expected drawer contents for the teller's open session — same
-        // formula the close workflow uses (MYR: opening + transaction_total_myr;
-        // FCY: opening + buys − sells via expectedClosingForBalance).
-        $session = CounterSession::open()
-            ->where('user_id', $request->user()->id)
-            ->with('counter')
-            ->latest('opened_at')
-            ->first();
-
-        $till = $session
-            ? TillBalance::where('till_id', $session->tillCode())
-                ->whereDate('date', $session->session_date)
-                ->whereNull('closed_at')
-                ->orderBy('currency_code')
-                ->get()
-                ->keyBy('currency_code')
-                ->map(fn (TillBalance $b) => $this->tillService->expectedClosingForBalance($b))
-            : collect();
-
         $poolSummary = $this->poolSummary(collect([$request->user()->branch_id])->filter());
 
-        return view('allocations.my-index', compact('allocations', 'session', 'till', 'poolSummary'));
+        return view('allocations.my-index', compact('allocations', 'poolSummary'));
     }
 
     /**
@@ -363,10 +330,8 @@ class AllocationController extends Controller
                     $count++;
                 }
             });
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return redirect()
@@ -389,55 +354,11 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->activateAllocation($allocation);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', 'Allocation activated.');
-    }
-
-    /**
-     * Teller moves stock between an active allocation and their open
-     * session's till — direction=load puts custody into the drawer,
-     * direction=unload returns unspent drawer cash to custody.
-     */
-    public function transferTill(TransferTillRequest $request, TellerAllocation $allocation): RedirectResponse
-    {
-        abort_unless($allocation->user_id === $request->user()->id, 403);
-
-        if (! $allocation->isActive()) {
-            return back()->with('error', 'Allocation is not active.');
-        }
-
-        $validated = $request->validated();
-
-        $session = CounterSession::open()
-            ->where('user_id', $request->user()->id)
-            ->latest('opened_at')
-            ->first();
-
-        if (! $session) {
-            return back()->with('error', 'No open counter session — open a counter first.');
-        }
-
-        try {
-            $this->allocationService->moveBetweenTillAndAllocation(
-                $allocation,
-                $session,
-                (string) $validated['quantity'],
-                $validated['direction'] === 'load'
-            );
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', $validated['direction'] === 'load'
-            ? 'Stock loaded to till.'
-            : 'Stock returned to allocation.');
     }
 
     /**
@@ -453,10 +374,8 @@ class AllocationController extends Controller
 
         try {
             $this->allocationService->returnToPool($allocation);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Allocation action failed', 'Allocation action failed. Please try again.');
         }
 
         return back()->with('success', 'Allocation returned to the branch pool.');

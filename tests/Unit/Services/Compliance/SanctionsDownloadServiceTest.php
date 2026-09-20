@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\Compliance;
 
+use App\Enums\SanctionSourceFormat;
 use App\Services\Compliance\SanctionsDownloadService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -27,7 +28,7 @@ class SanctionsDownloadServiceTest extends TestCase
             '*' => Http::response('', 500),
         ]);
 
-        $result = $this->service->download('https://un.org/list.xml', 'list.xml', 'XML', 1);
+        $result = $this->service->download('https://un.org/list.xml', 'list.xml', SanctionSourceFormat::Xml, 1);
 
         $this->assertFalse($result['success']);
         $this->assertNotNull($result['error']);
@@ -40,7 +41,7 @@ class SanctionsDownloadServiceTest extends TestCase
             '*' => Http::response('<?xml version="1.0"?><root/>', 200),
         ]);
 
-        $result = $this->service->download('https://un.org/list.xml', 'list.xml', 'XML', 1);
+        $result = $this->service->download('https://un.org/list.xml', 'list.xml', SanctionSourceFormat::Xml, 1);
 
         $this->assertTrue($result['success']);
         $this->assertStringContainsString('list.xml', $result['filepath']);

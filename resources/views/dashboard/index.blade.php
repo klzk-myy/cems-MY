@@ -26,7 +26,7 @@
                             <td class="px-4 py-3 font-mono text-sm">
                                 <a href="{{ route('transactions.show', $transaction) }}" class="text-primary hover:underline">{{ $transaction->reference }}</a>
                             </td>
-                            <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3"><x-customer-link :customer="$transaction->customer" /></td>
                             <td class="px-4 py-3">
                                 <x-badge :variant="$transaction->type?->value === 'Buy' ? 'success' : 'purple'">
                                     {{ $transaction->type?->label() ?? 'N/A' }}

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ImportTrigger;
 use App\Enums\SystemAlertLevel;
 use App\Enums\UserRole;
 use App\Models\Compliance\ComplianceCase;
@@ -111,7 +112,7 @@ class ComplianceQuickWinsTest extends TestCase
         app(SanctionsImportService::class)->importWithData($list, ['results' => []], true);
 
         $log = SanctionImportLog::latest('id')->first();
-        $this->assertEquals('manual', $log->triggered_by);
+        $this->assertEquals(ImportTrigger::Manual, $log->triggered_by);
         $this->assertEquals($user->id, $log->user_id);
     }
 
@@ -123,7 +124,7 @@ class ComplianceQuickWinsTest extends TestCase
         app(SanctionsImportService::class)->importWithData($list, ['results' => []], false);
 
         $log = SanctionImportLog::latest('id')->first();
-        $this->assertEquals('scheduled', $log->triggered_by);
+        $this->assertEquals(ImportTrigger::Scheduled, $log->triggered_by);
         $this->assertNull($log->user_id);
     }
 

@@ -44,6 +44,10 @@ class TillBalanceManagerApplyTransactionTest extends TestCase
 
         [$foreignBalance, $myrBalance] = $this->openBalances($till, $foreignCurrency);
 
+        // Fund the MYR drawer — a Buy pays MYR out, and the floor check
+        // rejects bookings that would drive it negative.
+        $this->manager->adjustBalance($myrBalance, 'opening_balance', '200.00', 'add');
+
         $this->manager->applyTransaction(
             $foreignBalance,
             TransactionType::Buy,
@@ -65,8 +69,9 @@ class TillBalanceManagerApplyTransactionTest extends TestCase
 
         [$foreignBalance, $myrBalance] = $this->openBalances($till, $foreignCurrency);
 
-        // Pre-seed foreign stock so the sell can subtract from it
-        $this->manager->adjustBalance($foreignBalance, 'total_quantity', '200.00', 'add');
+        // Pre-seed foreign stock so the sell can subtract from it. Physical
+        // stock lives in opening_balance + buy/sell flow, not total_quantity.
+        $this->manager->adjustBalance($foreignBalance, 'opening_balance', '200.00', 'add');
 
         $this->manager->applyTransaction(
             $foreignBalance,
@@ -75,7 +80,7 @@ class TillBalanceManagerApplyTransactionTest extends TestCase
             '100.00'
         );
 
-        $this->assertEquals('100.0000', (string) $foreignBalance->fresh()->total_quantity);
+        $this->assertEquals('-100.0000', (string) $foreignBalance->fresh()->total_quantity);
         $this->assertEquals('100.0000', (string) $foreignBalance->fresh()->sell_quantity);
         $this->assertEquals('300.0000', (string) $myrBalance->fresh()->transaction_total_myr);
     }
@@ -88,6 +93,8 @@ class TillBalanceManagerApplyTransactionTest extends TestCase
         Currency::factory()->create(['code' => 'MYR']);
 
         [$foreignBalance, $myrBalance] = $this->openBalances($till, $foreignCurrency);
+
+        $this->manager->adjustBalance($myrBalance, 'opening_balance', '200.00', 'add');
 
         $this->manager->applyTransaction($foreignBalance, TransactionType::Buy, '150.00', '100.00');
         $this->manager->reverseTransaction($foreignBalance, TransactionType::Buy, '150.00', '100.00');
@@ -106,11 +113,11 @@ class TillBalanceManagerApplyTransactionTest extends TestCase
 
         [$foreignBalance, $myrBalance] = $this->openBalances($till, $foreignCurrency);
 
-        $this->manager->adjustBalance($foreignBalance, 'total_quantity', '200.00', 'add');
+        $this->manager->adjustBalance($foreignBalance, 'opening_balance', '200.00', 'add');
         $this->manager->applyTransaction($foreignBalance, TransactionType::Sell, '300.00', '100.00');
         $this->manager->reverseTransaction($foreignBalance, TransactionType::Sell, '300.00', '100.00');
 
-        $this->assertEquals('200.0000', (string) $foreignBalance->fresh()->total_quantity);
+        $this->assertEquals('0.0000', (string) $foreignBalance->fresh()->total_quantity);
         $this->assertEquals('0.0000', (string) $foreignBalance->fresh()->sell_quantity);
         $this->assertEquals('0.0000', (string) $myrBalance->fresh()->transaction_total_myr);
     }

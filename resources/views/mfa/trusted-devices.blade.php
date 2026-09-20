@@ -5,7 +5,7 @@
             description="Manage devices that remember your MFA verification"
         />
 
-        <div class="max-w-2xl">
+        <div>
             <x-card class="mb-6">
                 <div class="flex items-center gap-3">
                     <x-icon-circle color="info">
@@ -94,6 +94,7 @@
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
+                <div class="mt-4">{{ $trustedDevices->links() }}</div>
             </x-card>
 
             @if(isset($currentSession))

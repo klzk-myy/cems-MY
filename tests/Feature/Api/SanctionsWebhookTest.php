@@ -28,8 +28,8 @@ class SanctionsWebhookTest extends TestCase
         );
 
         $response->assertOk()
-            ->assertJsonPath('status', 'ok')
-            ->assertJsonPath('service', 'sanctions-webhook');
+            ->assertJsonPath('data.status', 'ok')
+            ->assertJsonPath('data.service', 'sanctions-webhook');
     }
 
     #[Test]

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Counter;
 
+use App\Enums\CounterStatus;
 use App\Http\Requests\ApiFormRequest;
 use App\Models\Branch;
 use App\Models\Counter;
@@ -44,7 +45,7 @@ class StoreCounterRequest extends ApiFormRequest
                         ->where('is_active', true)
                 ),
             ],
-            'status' => 'nullable|in:active,inactive,maintenance',
+            'status' => ['nullable', Rule::enum(CounterStatus::class)],
         ];
     }
 }

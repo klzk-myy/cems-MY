@@ -107,6 +107,7 @@ return [
     */
     'structuring' => [
         'sub_threshold' => env('THRESHOLD_STRUCTURING_SUB', ThresholdDefaults::FALLBACK_STRUCTURING_SUB),
+        'aggregate_trigger' => env('THRESHOLD_STRUCTURING_AGGREGATE', ThresholdDefaults::FALLBACK_STRUCTURING_AGGREGATE),
         'min_transactions' => env('THRESHOLD_STRUCTURING_MIN_TXNS', ThresholdDefaults::FALLBACK_STRUCTURING_MIN_TXNS),
         'hourly_window' => env('THRESHOLD_STRUCTURING_HOURS', ThresholdDefaults::FALLBACK_STRUCTURING_HOURLY_WINDOW),
         'lookup_days' => env('THRESHOLD_STRUCTURING_LOOKUP_DAYS', ThresholdDefaults::FALLBACK_STRUCTURING_LOOKUP_DAYS),

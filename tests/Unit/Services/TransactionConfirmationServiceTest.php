@@ -49,7 +49,7 @@ class TransactionConfirmationServiceTest extends TestCase
     public function test_requires_confirmation_returns_true_when_amount_exceeds_threshold(): void
     {
         $transaction = Transaction::factory()->create(['amount_myr' => '75000']);
-        $this->thresholdService->shouldReceive('getStrThreshold')->once()->andReturn('50000');
+        $this->thresholdService->shouldReceive('getLargeTransactionThreshold')->once()->andReturn('50000');
         $this->mathService->shouldReceive('compare')->with('75000', '50000')->andReturn(1);
 
         $result = $this->service->requiresConfirmation($transaction);
@@ -61,7 +61,7 @@ class TransactionConfirmationServiceTest extends TestCase
     public function test_requires_confirmation_returns_false_when_amount_below_threshold(): void
     {
         $transaction = Transaction::factory()->create(['amount_myr' => '25000']);
-        $this->thresholdService->shouldReceive('getStrThreshold')->once()->andReturn('50000');
+        $this->thresholdService->shouldReceive('getLargeTransactionThreshold')->once()->andReturn('50000');
         $this->mathService->shouldReceive('compare')->with('25000', '50000')->andReturn(-1);
 
         $result = $this->service->requiresConfirmation($transaction);

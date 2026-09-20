@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\ComplianceCaseType;
-use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\FiltersComplianceFindings;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateCaseFromFindingRequest;
 use App\Http\Requests\DismissFindingRequest;
@@ -13,12 +13,11 @@ use App\Models\Compliance\ComplianceFinding;
 use App\Services\Compliance\CaseManagementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FindingController extends Controller
 {
-    use FiltersComplianceFindings;
+    use FiltersComplianceFindings, HandlesControllerErrors;
 
     public function __construct(
         protected CaseManagementService $caseService,
@@ -92,15 +91,8 @@ class FindingController extends Controller
 
             return redirect()->route('compliance.cases.show', $case)
                 ->with('success', 'Case created from finding');
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('FindingController: Exception creating case from finding', [
-                'message' => $e->getMessage(),
-                'finding_id' => $id,
-            ]);
-
-            return redirect()->back()->with('error', 'Failed to create case');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'FindingController: Exception creating case from finding', 'Failed to create case', ['finding_id' => $id]);
         }
     }
 
@@ -140,15 +132,8 @@ class FindingController extends Controller
             ]);
 
             return redirect()->back()->with('error', 'Failed to dismiss finding. Please try again.');
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('FindingController: Exception dismissing finding', [
-                'message' => $e->getMessage(),
-                'finding_id' => $id,
-            ]);
-
-            return redirect()->back()->with('error', 'Failed to dismiss finding');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'FindingController: Exception dismissing finding', 'Failed to dismiss finding', ['finding_id' => $id]);
         }
     }
 }

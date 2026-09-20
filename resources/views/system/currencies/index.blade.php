@@ -63,6 +63,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $currencies->links() }}</div>
         </x-card>
 
         <p class="text-sm text-ink-muted">

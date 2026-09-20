@@ -40,7 +40,7 @@
                         <dd class="mt-1 text-sm text-ink">
                             @if ($report->customer)
                                 <a href="{{ route('customers.show', $report->customer) }}" class="text-info hover:underline">
-                                    {{ $report->customer->full_name }}
+                                    <x-customer-link :customer="$report->customer" />
                                 </a>
                                 (ID #{{ $report->customer_id }})
                             @else

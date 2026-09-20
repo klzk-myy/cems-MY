@@ -26,6 +26,8 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -164,13 +166,34 @@ class BranchClosingWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function cannot_initiate_two_workflows(): void
+    {
+        $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        // One active workflow per branch — a second initiation is rejected
+        // outright instead of wedging finalize() on documents_finalized.
+        $this->expectException(InvalidStateException::class);
+        $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+    }
+
+    #[Test]
     public function finalize_throws_when_another_workflow_is_pending(): void
     {
         $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
         $this->branchClosingService->settle($workflow, $this->manager);
 
-        // A second open workflow for the branch fails documents_finalized.
-        $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        // documents_finalized remains the safety net for rows that predate
+        // the one-active invariant: any non-finalized sibling (e.g. a legacy
+        // cancelled/abandoned row) still blocks finalize. Inserted raw —
+        // 'cancelled' predates the enum.
+        DB::table('branch_closure_workflows')->insert([
+            'branch_id' => $this->branch->id,
+            'initiated_by' => $this->manager->id,
+            'status' => 'cancelled',
+            'business_date' => now()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $this->expectException(BranchClosingChecklistIncompleteException::class);
         $this->branchClosingService->finalize($workflow, $this->manager);
@@ -438,6 +461,75 @@ class BranchClosingWorkflowTest extends TestCase
         $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->subDay()->toDateString()));
         $this->assertFalse(BranchClosureWorkflow::freezesDate($this->branch->id, now()->addDay()->toDateString()));
         $this->assertFalse(BranchClosureWorkflow::freezesDate($otherBranch->id, now()->toDateString()));
+    }
+
+    #[Test]
+    public function booking_blocked_once_closure_initiated(): void
+    {
+        // The freeze starts at initiation — no session can open on the
+        // business date while a close is in progress (previously the date
+        // only froze after finalize).
+        $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+
+        $this->expectException(BusinessDateFrozenException::class);
+        app(CounterService::class)->openSession($this->counter, $this->tellerA, []);
+    }
+
+    #[Test]
+    public function settled_workflow_still_freezes_the_business_date(): void
+    {
+        // The settle → finalize gap must not let new business onto the
+        // closing date.
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
+
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+    }
+
+    #[Test]
+    public function finalize_after_midnight_freezes_the_business_date(): void
+    {
+        // Initiate yesterday, settle/finalize after midnight — the freeze
+        // must anchor on business_date (the day being closed), not the
+        // finalize timestamp.
+        $yesterday = now()->subDay();
+        Carbon::setTestNow($yesterday->copy()->endOfDay());
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->assertEquals($yesterday->toDateString(), $workflow->business_date->toDateString());
+
+        Carbon::setTestNow();
+        $this->branchClosingService->settle($workflow, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $this->assertTrue(
+            BranchClosureWorkflow::freezesDate($this->branch->id, $yesterday->toDateString()),
+            'The initiated business date stays frozen after a midnight-crossing finalize'
+        );
+    }
+
+    #[Test]
+    public function reopen_unfreezes_the_business_date(): void
+    {
+        $workflow = $this->branchClosingService->initiateClosure($this->branch, $this->manager);
+        $this->branchClosingService->settle($workflow, $this->manager);
+        $this->branchClosingService->finalize($workflow, $this->manager);
+
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
+
+        $this->branchClosingService->reopen($workflow, $this->manager);
+
+        $workflow->refresh();
+        $this->assertEquals(BranchClosureStatus::Settled, $workflow->status);
+        $this->assertFalse(
+            BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()),
+            'A reopened day must accept correction postings until re-finalized'
+        );
+
+        // Re-finalizing re-freezes the date.
+        $this->branchClosingService->finalize($workflow, $this->manager);
+        $this->assertTrue(BranchClosureWorkflow::freezesDate($this->branch->id, now()->toDateString()));
     }
 
     #[Test]

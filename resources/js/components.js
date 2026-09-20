@@ -157,17 +157,43 @@ export function registerComponents(Alpine) {
         sidebarCollapsed: false,
     }));
 
-    // Single-page transaction create form: rate unit/inverse hints.
+    // Single-page transaction create form: customer register-or-match panel
+    // (top) plus rate unit/inverse hints and the CDD amount tier (bottom).
     // Server data arrives via data-* attributes (CSP build cannot parse
     // inline object literals or `??` expressions).
     Alpine.data('transactionForm', () => ({
         currencyUnits: {},
         currencyInverses: {},
         currency_code: '',
+        quantity: '',
+        rate: '',
+        cddSpecific: 3000,
+        cddStandard: 10000,
+        searchUrl: '',
+        customerId: '',
+        existing: null,
+        has: {},
+        fields: {
+            full_name: '', id_type: 'MyKad', id_number: '', date_of_birth: '',
+            nationality: '', phone: '', email: '', address: '',
+            occupation: '', employer_name: '',
+        },
+        results: [],
+        open: false,
+        openFor: null,
+        loading: false,
         init() {
             try { this.currencyUnits = JSON.parse(this.$el.dataset.currencyUnits || '{}'); } catch (e) { this.currencyUnits = {}; }
             try { this.currencyInverses = JSON.parse(this.$el.dataset.currencyInverses || '{}'); } catch (e) { this.currencyInverses = {}; }
             this.currency_code = this.$el.dataset.initialCurrency || '';
+            this.quantity = this.$el.dataset.initialQuantity || '';
+            this.rate = this.$el.dataset.initialRate || '';
+            this.cddSpecific = parseFloat(this.$el.dataset.cddSpecific) || 3000;
+            this.cddStandard = parseFloat(this.$el.dataset.cddStandard) || 10000;
+            this.searchUrl = this.$el.dataset.searchUrl || '';
+            this.customerId = this.$el.dataset.initialCustomerId || '';
+            this.existing = this.customerId ? {} : null;
+            try { Object.assign(this.fields, JSON.parse(this.$el.dataset.customerFields || '{}')); } catch (e) {}
         },
         get unit() {
             return this.currencyUnits[this.currency_code] || 1;
@@ -178,26 +204,123 @@ export function registerComponents(Alpine) {
         get showUnitHint() {
             return !this.currencyInverses[this.currency_code] && this.unit > 1;
         },
+        get amountMyr() {
+            const f = parseFloat(this.quantity) || 0;
+            const r = parseFloat(this.rate) || 0;
+            if (r === 0) {
+                return 0;
+            }
+            // Direct: MYR = foreign / unit * rate. Inverse: rate is foreign
+            // per unit MYR, so MYR = foreign / rate * unit.
+            return this.isInverse ? f / r * this.unit : f / this.unit * r;
+        },
+        get cddTier() {
+            // Enhanced is risk-based (PEP / sanction hit / High risk), not
+            // amount-based — mirrors CddLevel::determine.
+            if (this.existing && (this.existing.is_pep || this.existing.is_sanctioned || this.existing.risk_rating === 'High')) {
+                return 'enhanced';
+            }
+            if (this.amountMyr >= this.cddStandard) {
+                return 'standard';
+            }
+            if (this.amountMyr >= this.cddSpecific) {
+                return 'specific';
+            }
+            return 'simplified';
+        },
+        // Whether a profile field must be keyed in: the tier requires it and
+        // the loaded customer record (if any) does not already hold it.
+        need(field) {
+            const tiers = {
+                simplified: ['address'],
+                specific: ['address'],
+                standard: ['address', 'phone', 'occupation', 'employer_name'],
+                enhanced: ['address', 'phone', 'occupation', 'employer_name'],
+            };
+            const required = tiers[this.cddTier] || [];
+            if (! required.includes(field)) {
+                return false;
+            }
+            return ! (this.existing && this.has[field]);
+        },
+        markEdited() {
+            // Any manual edit detaches the loaded record — the payload then
+            // registers a fresh customer on submit.
+            this.customerId = '';
+            this.existing = null;
+            this.has = {};
+        },
+        lookup(field) {
+            const q = (this.fields[field] || '').trim();
+            if (q.length < 2 || ! this.searchUrl) {
+                this.open = false;
+                return;
+            }
+            this.loading = true;
+            fetch(this.searchUrl + '?query=' + encodeURIComponent(q), {
+                headers: { Accept: 'application/json' },
+            })
+                .then((r) => r.json())
+                .then((d) => {
+                    this.results = (d.data && d.data.results) || [];
+                    this.open = this.results.length > 0;
+                    this.openFor = field;
+                    // Exact ID-number match auto-loads without a click.
+                    if (field === 'id_number' && this.results.length === 1) {
+                        this.pick(this.results[0]);
+                    }
+                })
+                .catch(() => { this.results = []; })
+                .finally(() => { this.loading = false; });
+        },
+        pick(c) {
+            this.customerId = String(c.id);
+            this.existing = c;
+            this.fields.full_name = c.full_name;
+            if (c.id_type) { this.fields.id_type = c.id_type; }
+            if (c.date_of_birth) { this.fields.date_of_birth = c.date_of_birth; }
+            if (c.nationality) { this.fields.nationality = c.nationality; }
+            if (c.email) { this.fields.email = c.email; }
+            this.has = {
+                phone: !! c.has_phone,
+                address: !! c.has_address,
+                occupation: !! c.has_occupation,
+                employer_name: !! c.has_employer_name,
+            };
+            this.open = false;
+        },
     }));
 
     Alpine.data('customerTypeahead', () => ({
         query: '',
         selectedId: '',
+        selected: null,
         results: [],
         screening: null,
         open: false,
         loading: false,
         active: -1,
         controller: null,
+        registering: false,
+        regLoading: false,
+        regErrors: {},
+        regExisting: false,
+        reg: { full_name: '', id_type: 'MyKad', id_number: '', date_of_birth: '', nationality: 'MY', phone: '' },
         init() {
             this.query = this.$el.dataset.initialName || '';
             this.selectedId = this.$el.dataset.initialId || '';
             this.searchUrl = this.$el.dataset.searchUrl || '';
+            this.registerUrl = this.$el.dataset.registerUrl || '';
+            // old() redisplay after a validation redirect — card shows the
+            // name; other fields weren't re-fetched and read as '—'.
+            if (this.selectedId && this.query) {
+                this.selected = { id: this.selectedId, full_name: this.query };
+            }
         },
         search() {
             if (this.controller) this.controller.abort();
             const q = this.query.trim();
-            if (this.selectedId) this.selectedId = '';
+            if (this.selectedId) { this.selectedId = ''; this.selected = null; this.regExisting = false; }
             if (q.length < 2) {
                 this.results = [];
                 this.screening = null;
@@ -212,8 +335,8 @@ export function registerComponents(Alpine) {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             }).then(r => r.json()).then(data => {
-                this.results = data.results || [];
-                this.screening = data.query_screening || null;
+                this.results = data.data?.results || [];
+                this.screening = data.data?.query_screening || null;
                 this.active = this.results.length ? 0 : -1;
                 this.open = true;
                 this.loading = false;
@@ -239,13 +362,58 @@ export function registerComponents(Alpine) {
         },
         select(c) {
             this.selectedId = String(c.id);
+            this.selected = c;
             this.query = c.full_name;
             this.open = false;
             this.screening = null;
+            this.registering = false;
+        },
+        openRegister() {
+            const q = this.query.trim();
+            // An ID-looking query (mostly digits/dashes) prefills the ID
+            // field; anything else is treated as a name.
+            if (/\d{4,}/.test(q) && /^[0-9A-Za-z\- ]+$/.test(q)) {
+                this.reg.id_number = q;
+            } else if (q) {
+                this.reg.full_name = q;
+            }
+            this.regErrors = {};
+            this.registering = true;
+            this.open = false;
+        },
+        register() {
+            this.regLoading = true;
+            this.regErrors = {};
+            fetch(this.registerUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(this.reg),
+            }).then(r => r.json().then(data => ({ status: r.status, data })))
+                .then(({ status, data }) => {
+                    if (status === 422) {
+                        this.regErrors = data.errors || {};
+                        return;
+                    }
+                    const c = data.data?.customer;
+                    if (!data.success || !c) {
+                        this.regErrors = { _general: [data.message || 'Registration failed — check the details and retry.'] };
+                        return;
+                    }
+                    this.regExisting = !!data.data.existing;
+                    this.select(c);
+                })
+                .catch(() => { this.regErrors = { _general: ['Network error — please retry.'] }; })
+                .finally(() => { this.regLoading = false; });
         },
         get banner() {
             if (this.selectedId) {
-                const c = this.results.find(r => String(r.id) === this.selectedId);
+                const c = this.selected || this.results.find(r => String(r.id) === this.selectedId);
                 if (c && c.is_sanctioned) {
                     return { text: 'Sanctions flag: this customer has a screening hit — the transaction will be blocked.', danger: true };
                 }
@@ -270,7 +438,7 @@ export function registerComponents(Alpine) {
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             })
                 .then(r => r.json())
-                .then(d => { this.count = d.count; this.dlq = d.dlq_count; })
+                .then(d => { this.count = d.data?.count ?? 0; this.dlq = d.data?.dlq_count ?? 0; })
                 .catch(() => {});
         },
         init() {
@@ -289,14 +457,12 @@ export function registerComponents(Alpine) {
         totalSteps: 3,
         loading: false,
         errorMessage: '',
-        counters: {},
         formData: {
             customer_id: '',
             type: '',
             currency_code: '',
             quantity: '',
             rate: '',
-            till_id: '',
             purpose: '',
             source_of_funds: '',
             idempotency_key: '',
@@ -338,13 +504,6 @@ export function registerComponents(Alpine) {
             } catch (e) {
                 this.currencyInverses = {};
             }
-            const branchId = this.$el.dataset.branchId;
-            if (branchId) {
-                this.fetch(this.apiBase + '/branches/' + branchId + '/counters')
-                    .then(r => r.json())
-                    .then(d => { this.counters = Object.fromEntries((d.data ?? []).map(c => [c.code, c.name])); })
-                    .catch(() => {});
-            }
         },
         currencyUnit() {
             const u = parseInt(this.currencyUnits[this.formData.currency_code]);
@@ -381,14 +540,13 @@ export function registerComponents(Alpine) {
                 currency_code: this.formData.currency_code,
                 quantity: parseFloat(this.formData.quantity),
                 rate: parseFloat(this.formData.rate),
-                till_id: this.formData.till_id,
                 purpose: this.formData.purpose,
                 source_of_funds: this.formData.source_of_funds,
             };
         },
         validStep1() {
             const p = this.payload();
-            return p.customer_id && p.type && p.currency_code && p.quantity > 0 && p.rate > 0 && p.till_id && p.purpose && p.source_of_funds;
+            return p.customer_id && p.type && p.currency_code && p.quantity > 0 && p.rate > 0 && p.purpose && p.source_of_funds;
         },
         validStep2() {
             if (!this.formData.occupation) return false;
@@ -400,6 +558,12 @@ export function registerComponents(Alpine) {
             return true;
         },
         validStep3() { return true; },
+        // Field errors ride in data.errors (Laravel 422 shape) — show the
+        // first one so e.g. the no-open-session message reaches the teller.
+        firstError(data) {
+            const first = data.errors ? Object.values(data.errors)[0] : null;
+            return (Array.isArray(first) ? first[0] : first) || data.message || 'Request failed';
+        },
         submitStep() {
             if (this.step === 1 && this.validStep1()) return this.callStep1();
             if (this.step === 2 && this.validStep2()) return this.callStep2();
@@ -423,13 +587,13 @@ export function registerComponents(Alpine) {
                     this.wizard.blockedMessage = data.message;
                     return;
                 }
-                if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                this.wizard.session_id = data.wizard_session_id;
-                this.wizard.cdd_level = data.cdd_level;
-                this.wizard.cdd_description = data.cdd_description;
-                this.wizard.hold_required = data.hold_required;
-                this.wizard.risk_flags = data.risk_flags ?? [];
-                this.wizard.required_documents = data.required_documents ?? [];
+                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
+                this.wizard.session_id = data.data.wizard_session_id;
+                this.wizard.cdd_level = data.data.cdd_level;
+                this.wizard.cdd_description = data.data.cdd_description;
+                this.wizard.hold_required = data.data.hold_required;
+                this.wizard.risk_flags = data.data.risk_flags ?? [];
+                this.wizard.required_documents = data.data.required_documents ?? [];
                 this.step = 2;
             } catch (e) {
                 this.errorMessage = 'Network error — please retry.';
@@ -455,8 +619,8 @@ export function registerComponents(Alpine) {
                 if (this.files.passport) fd.append('customer[passport]', this.files.passport);
                 const res = await this.fetch(this.apiBase + '/wizard/transactions/step2', { method: 'POST', body: fd });
                 const data = await res.json();
-                if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                this.summary = data.transaction_summary;
+                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
+                this.summary = data.data.transaction_summary;
                 this.step = 3;
             } catch (e) {
                 this.errorMessage = 'Network error — please retry.';
@@ -476,8 +640,8 @@ export function registerComponents(Alpine) {
                     }),
                 });
                 const data = await res.json();
-                if (!res.ok) { this.errorMessage = data.message || 'Request failed'; return; }
-                this.result = { id: data.transaction_id, number: data.transaction_number, status: data.transaction_status };
+                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
+                this.result = { id: data.data.transaction_id, number: data.data.transaction_number, status: data.data.transaction_status };
                 this.step = 4;
             } catch (e) {
                 this.errorMessage = 'Network error — please retry.';
@@ -489,7 +653,7 @@ export function registerComponents(Alpine) {
             this.wizard = { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' };
             this.summary = {};
             this.result = { id: '', number: '', status: '' };
-            this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', quantity: '', rate: '', till_id: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_myr: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: this.idempotencyKey };
+            this.formData = { ...this.formData, customer_id: '', type: '', currency_code: '', quantity: '', rate: '', purpose: '', source_of_funds: '', occupation: '', employer_name: '', employer_address: '', annual_volume_myr: '', beneficial_owner: '', source_of_wealth: '', expected_frequency: '', idempotency_key: this.idempotencyKey };
             this.files = { proof_of_address: null, passport: null };
         },
     }));

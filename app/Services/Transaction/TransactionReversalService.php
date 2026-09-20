@@ -235,6 +235,11 @@ class TransactionReversalService
 
     public function reverseTillBalance(Transaction $transaction): void
     {
+        // Drawer-less transactions never touched a till — nothing to reverse.
+        if ($transaction->till_id === null) {
+            return;
+        }
+
         $counter = Counter::findByCodeOrId($transaction->till_id);
 
         if (! $counter) {

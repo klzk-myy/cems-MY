@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer</label>
-                    <p class="text-sm text-ink">{{ $case->customer?->full_name ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink"><x-customer-link :customer="$case->customer" /></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Status</label>

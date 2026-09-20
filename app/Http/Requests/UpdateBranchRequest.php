@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Branch;
 use Illuminate\Validation\Rule;
 
 class UpdateBranchRequest extends AuthorizedFormRequest
@@ -16,7 +17,7 @@ class UpdateBranchRequest extends AuthorizedFormRequest
         return [
             'code' => ['required', 'string', 'max:20', Rule::unique('branches')->ignore($this->route('branch'))],
             'name' => 'required|string|max:255',
-            'type' => 'required|in:head_office,branch,sub_branch',
+            'type' => ['required', Rule::in([Branch::TYPE_HEAD_OFFICE, Branch::TYPE_BRANCH, Branch::TYPE_SUB_BRANCH])],
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',

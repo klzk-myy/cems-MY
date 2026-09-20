@@ -98,6 +98,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $fiscalYears->links() }}</div>
         </x-card>
 
         <x-card title="Current Periods{{ $activeYear ? ' - FY '.$activeYear->year_code : '' }}">

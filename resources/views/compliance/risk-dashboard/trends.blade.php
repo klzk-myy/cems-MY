@@ -43,10 +43,7 @@
                             @endphp
                             <tr class="border-t border-border hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm">
-                                    <a href="{{ route('compliance.risk-dashboard.customer', $customer) }}"
-                                       class="text-primary hover:underline">
-                                        {{ $customer->full_name }}
-                                    </a>
+                                    <x-customer-link :customer="$customer" />
                                     <div class="text-xs text-ink-muted">#{{ $customer->id }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-sm"><x-risk-badge :customer="$customer" /></td>
@@ -62,6 +59,9 @@
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
+            </div>
+            <div class="mt-4">
+                {{ $needsRescreening->links() }}
             </div>
         </x-card>
     </div>

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\SystemLogSeverity;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\AuditService;
@@ -51,7 +52,7 @@ class LoggingConsolidationTest extends TestCase
 
         $this->assertInstanceOf(SystemLog::class, $log);
         $this->assertEquals('login_success', $log->action);
-        $this->assertEquals('INFO', $log->severity);
+        $this->assertEquals(SystemLogSeverity::Info, $log->severity);
     }
 
     #[Test]
@@ -64,7 +65,7 @@ class LoggingConsolidationTest extends TestCase
         ]);
 
         $this->assertInstanceOf(SystemLog::class, $log);
-        $this->assertEquals('WARNING', $log->severity);
+        $this->assertEquals(SystemLogSeverity::Warning, $log->severity);
         $this->assertEquals('Transaction', $log->entity_type);
     }
 

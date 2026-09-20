@@ -32,6 +32,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\LazyLoadingViolationException;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -137,6 +139,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerCacheInvalidationSafetyNet();
 
         $this->registerMorphMap();
+        $this->registerCollectionMacros();
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
@@ -175,6 +178,27 @@ class AppServiceProvider extends ServiceProvider
             'Customer' => Customer::class,
             'Transaction' => Transaction::class,
         ]);
+    }
+
+    /**
+     * Give plain Collections the same ->paginate() entry point as Eloquent
+     * builders, so service-fed list views can render ->links() uniformly.
+     */
+    protected function registerCollectionMacros(): void
+    {
+        if (! Collection::hasMacro('paginate')) {
+            Collection::macro('paginate', function (int $perPage = 25, string $pageName = 'page'): LengthAwarePaginator {
+                $page = LengthAwarePaginator::resolveCurrentPage($pageName);
+
+                return (new LengthAwarePaginator(
+                    $this->forPage($page, $perPage)->values(),
+                    $this->count(),
+                    $perPage,
+                    $page,
+                    ['path' => request()->url(), 'pageName' => $pageName]
+                ))->withQueryString();
+            });
+        }
     }
 
     /**

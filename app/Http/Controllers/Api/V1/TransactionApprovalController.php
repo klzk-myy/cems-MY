@@ -65,6 +65,8 @@ class TransactionApprovalController extends Controller
             return $this->successResponse(new TransactionResource($transaction), 'Transaction has been rejected.');
         } catch (SelfApprovalException $e) {
             return $this->domainErrorResponse($e, 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
+        } catch (DomainException $e) {
+            return $this->domainErrorResponse($e);
         } catch (\InvalidArgumentException $e) {
             return $this->errorResponse('The transaction is not eligible for rejection in its current state.', [], 422);
         } catch (\Exception $e) {

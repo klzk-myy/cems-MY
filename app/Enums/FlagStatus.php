@@ -56,6 +56,37 @@ enum FlagStatus: string
     }
 
     /**
+     * Statuses that mean compliance has dispositioned the flag — the finding
+     * was reviewed and is no longer actionable on its own.
+     *
+     * @return array<int, self>
+     */
+    public static function terminalStatuses(): array
+    {
+        return [self::Resolved, self::Rejected];
+    }
+
+    /**
+     * Check if the flag has been dispositioned (resolved or rejected).
+     * Distinct from isActive(): Rejected is terminal but not "resolved",
+     * and historically counted as active.
+     */
+    public function isTerminal(): bool
+    {
+        return in_array($this, self::terminalStatuses(), true);
+    }
+
+    /**
+     * Backing values of the terminal statuses, for query bindings.
+     *
+     * @return array<int, string>
+     */
+    public static function terminalValues(): array
+    {
+        return array_map(fn (self $s) => $s->value, self::terminalStatuses());
+    }
+
+    /**
      * Check if the flag can be assigned.
      */
     public function canBeAssigned(): bool

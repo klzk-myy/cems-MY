@@ -16,11 +16,12 @@ use App\Models\StockTransferItem;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\AccountMappingService;
-use App\Services\Accounting\CurrencyPositionLockService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\System\MathService;
 use App\Support\ActorContext;
+use App\ValueObjects\QuoteConvention;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -31,10 +32,11 @@ class StockTransferService
     public function __construct(
         protected MathService $mathService,
         protected AuditService $auditService,
-        protected CurrencyPositionLockService $positionLockService,
         protected BranchPoolService $branchPoolService,
         protected AccountingService $accountingService,
         protected AccountMappingService $accountMappingService,
+        protected CurrencyPositionService $positionService,
+        protected RateManagementService $rateManagementService,
         ?User $requester = null,
     ) {
         $this->requester = $requester ?? $this->resolveRequester();
@@ -86,7 +88,20 @@ class StockTransferService
             throw new TransactionValidationException(message: 'Source and destination branches are required');
         }
 
-        $isWithinBranch = $data['source_branch_name'] === $data['destination_branch_name'];
+        // Resolve real branch identity up front — the name/code inputs are
+        // display hints; every downstream check runs on the FK ids.
+        $sourceBranch = $this->branchFromIdentifier($data['source_branch_name']);
+        $destinationBranch = $this->branchFromIdentifier($data['destination_branch_name']);
+
+        if (! $sourceBranch) {
+            throw new TransactionValidationException(message: 'Source branch could not be resolved');
+        }
+
+        if (! $destinationBranch) {
+            throw new TransactionValidationException(message: 'Destination branch could not be resolved');
+        }
+
+        $isWithinBranch = $sourceBranch->id === $destinationBranch->id;
 
         // Within-branch transfers (teller-to-teller stock/cash reallocation)
         // are allowed for managers and admins. Inter-branch transfers
@@ -97,23 +112,15 @@ class StockTransferService
 
         // Head-office branches hold no foreign stock — they cannot be a
         // transfer source or destination.
-        $hqInvolved = Branch::query()
-            ->where('type', Branch::TYPE_HEAD_OFFICE)
-            ->where(fn ($q) => $q
-                ->where('name', $data['source_branch_name'])
-                ->orWhere('code', $data['source_branch_name'])
-                ->orWhere('name', $data['destination_branch_name'])
-                ->orWhere('code', $data['destination_branch_name']))
-            ->exists();
-
-        if ($hqInvolved) {
+        if ($sourceBranch->type === Branch::TYPE_HEAD_OFFICE
+            || $destinationBranch->type === Branch::TYPE_HEAD_OFFICE) {
             throw new TransactionValidationException(message: 'Head office does not hold foreign stock and cannot participate in transfers');
         }
 
         // Maker check: a non-admin may only create transfers sourcing stock
         // from their own branch.
         $requester = $this->requester();
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($data['source_branch_name'])) {
+        if (! $requester->isAdmin() && (int) $requester->branch_id !== (int) $sourceBranch->id) {
             throw new TransactionValidationException(message: 'You can only create transfers sourcing stock from your own branch');
         }
 
@@ -121,7 +128,9 @@ class StockTransferService
             throw new TransactionValidationException(message: 'At least one item is required');
         }
 
-        // Validate each item
+        // Validate each item. A client-supplied 'rate' is accepted as a
+        // display hint only — the stored rate is always computed server-side
+        // (resolveItemRate) so GL legs cannot be steered by request input.
         foreach ($data['items'] as $item) {
             if (empty($item['currency_code'])) {
                 throw new TransactionValidationException(message: 'Currency code is required for each item');
@@ -131,51 +140,101 @@ class StockTransferService
                 throw new TransactionValidationException(message: 'Quantity must be a positive number');
             }
 
-            if (! isset($item['rate']) || $item['rate'] <= 0) {
-                throw new TransactionValidationException(message: 'Rate must be a positive number');
-            }
-
             // Verify currency exists
             if (! Currency::where('code', $item['currency_code'])->exists()) {
                 throw new TransactionValidationException(message: "Currency {$item['currency_code']} does not exist");
             }
         }
 
+        // Value each item at the source position's average_cost (cost basis
+        // follows the stock), falling back to the day's mid rate card.
+        $sourceBranchKey = (string) $sourceBranch->id;
+        $items = collect($data['items'])->map(function (array $item) use ($sourceBranchKey, $sourceBranch) {
+            $rate = $this->resolveItemRate(
+                (string) $item['currency_code'],
+                $sourceBranchKey,
+                $sourceBranch
+            );
+
+            return [
+                'currency_code' => $item['currency_code'],
+                'quantity' => (string) $item['quantity'],
+                'rate' => $rate,
+                'value_myr' => $this->mathService->multiply((string) $item['quantity'], $rate),
+            ];
+        })->all();
+
         // Calculate and validate total value
         $calculatedTotal = '0';
-        foreach ($data['items'] as $item) {
-            $itemValue = $this->mathService->multiply($item['quantity'], $item['rate']);
-            $calculatedTotal = $this->mathService->add($calculatedTotal, $itemValue);
+        foreach ($items as $item) {
+            $calculatedTotal = $this->mathService->add($calculatedTotal, $item['value_myr']);
         }
 
         if (isset($data['total_value_myr']) && $this->mathService->compare($data['total_value_myr'], $calculatedTotal) !== 0) {
             throw new TransactionValidationException(message: 'Total value does not match sum of item values');
         }
 
-        return DB::transaction(function () use ($data, $calculatedTotal) {
+        return DB::transaction(function () use ($data, $items, $calculatedTotal, $sourceBranch, $destinationBranch) {
             $transfer = StockTransfer::create([
                 'transfer_number' => StockTransfer::generateTransferNumber(),
                 'type' => $data['type'] ?? StockTransfer::TYPE_STANDARD,
                 'status' => StockTransferStatus::Requested->value,
-                'source_branch_name' => $data['source_branch_name'],
-                'destination_branch_name' => $data['destination_branch_name'],
+                // Real identity on the FK columns; names persist as display
+                // snapshots in canonical form.
+                'source_branch_id' => $sourceBranch->id,
+                'destination_branch_id' => $destinationBranch->id,
+                'source_branch_name' => $sourceBranch->name,
+                'destination_branch_name' => $destinationBranch->name,
                 'requested_by' => $this->requester()->id,
                 'requested_at' => now(),
                 'notes' => $data['notes'] ?? null,
                 'total_value_myr' => $calculatedTotal,
             ]);
 
-            foreach ($data['items'] as $item) {
-                $transfer->items()->create([
-                    'currency_code' => $item['currency_code'],
-                    'quantity' => $item['quantity'],
-                    'rate' => $item['rate'],
-                    'value_myr' => $this->mathService->multiply($item['quantity'], $item['rate']),
-                ]);
+            foreach ($items as $item) {
+                $transfer->items()->create($item);
             }
 
             return $transfer->load('items');
         });
+    }
+
+    /**
+     * Per-unit MYR valuation for a transfer item. The stock's own cost basis
+     * (source branch position average_cost) leads so GL legs carry the same
+     * value the inventory was booked at; when the branch has never held the
+     * currency the day's mid rate card stands in. Base-currency (MYR) items
+     * value at par.
+     */
+    private function resolveItemRate(string $currencyCode, string $sourceBranchKey, ?Branch $sourceBranch): string
+    {
+        if ($currencyCode === Currency::baseCurrency()) {
+            return '1';
+        }
+
+        $position = $this->positionService->getPosition($currencyCode, $sourceBranchKey);
+
+        if ($position !== null && $this->mathService->compare((string) $position->average_cost, '0') > 0) {
+            return (string) $position->average_cost;
+        }
+
+        $rateCard = $this->rateManagementService->getRateCard(
+            $currencyCode,
+            $sourceBranch !== null ? (int) $sourceBranch->id : null
+        );
+
+        if ($rateCard === null) {
+            throw new TransactionValidationException(
+                message: "Cannot value {$currencyCode}: the source branch has no cost basis and no rate card is set"
+            );
+        }
+
+        $midQuoted = $this->mathService->divide(
+            $this->mathService->add((string) $rateCard->rate_buy, (string) $rateCard->rate_sell),
+            '2'
+        );
+
+        return QuoteConvention::for($rateCard)->toPerUnit($midQuoted);
     }
 
     public function approveByBranchManager(StockTransfer $transfer): void
@@ -186,11 +245,7 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can approve transfers');
         }
 
-        if (! $transfer->isPending()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer is not in requested status');
-        }
-
-        $isWithinBranch = $transfer->source_branch_name === $transfer->destination_branch_name;
+        $isWithinBranch = $this->isWithinBranchTransfer($transfer);
 
         if (! $isWithinBranch && $transfer->requested_by === $requester->id) {
             throw new TransactionApprovalException((int) $transfer->id, 'The requesting branch cannot approve its own transfer');
@@ -200,16 +255,27 @@ class StockTransferService
         // request created by the source branch (maker). HQ is not involved.
         // Within-branch transfers skip this check — the same branch manager
         // who created the transfer may also approve it.
-        if (! $isWithinBranch && ! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+        if (! $isWithinBranch && ! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'destination')) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch manager can approve this transfer');
         }
 
         // For within-branch transfers, verify the requester belongs to that branch
-        if ($isWithinBranch && ! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->source_branch_name)) {
+        if ($isWithinBranch && ! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'source')) {
             throw new TransactionApprovalException((int) $transfer->id, 'You can only approve transfers within your own branch');
         }
 
-        $transfer->approveByBranchManager($requester);
+        // Re-check the state transition on the locked row: a concurrent
+        // approve/reject could have committed since the controller loaded
+        // this instance.
+        DB::transaction(function () use ($transfer, $requester) {
+            $locked = $this->lockedTransfer($transfer);
+
+            if (! $locked->isPending()) {
+                throw new TransactionApprovalException((int) $locked->id, 'Transfer is not in requested status');
+            }
+
+            $locked->approveByBranchManager($requester);
+        });
     }
 
     public function dispatch(StockTransfer $transfer): void
@@ -220,15 +286,8 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can dispatch transfers');
         }
 
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->source_branch_name)) {
+        if (! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'source')) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the source branch can dispatch this transfer');
-        }
-
-        // Taker approval (BranchManagerApproved) is sufficient to dispatch.
-        // HqApproved remains accepted for transfers created before the
-        // maker/taker model removed the HQ step.
-        if (! in_array($transfer->status, [StockTransferStatus::BranchManagerApproved, StockTransferStatus::HqApproved], true)) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be approved by the destination branch before dispatch');
         }
 
         // Outbound stock movement: the SOURCE branch gives up the full
@@ -236,9 +295,20 @@ class StockTransferService
         // Row locks are held until this transaction commits, so concurrent
         // dispatches cannot both pass the balance check.
         DB::transaction(function () use ($transfer) {
+            // Lock the transfer row and re-check status inside the
+            // transaction — a concurrent dispatch/complete could have
+            // committed since this instance was loaded. Taker approval
+            // (BranchManagerApproved) is sufficient to dispatch; HqApproved
+            // remains accepted for pre-maker/taker transfers.
+            $transfer = $this->lockedTransfer($transfer);
+
+            if (! in_array($transfer->status, [StockTransferStatus::BranchManagerApproved, StockTransferStatus::HqApproved], true)) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be approved by the destination branch before dispatch');
+            }
+
             $transfer->loadMissing('items');
-            $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
-            $sourceBranch = $this->branchFromIdentifier($transfer->source_branch_name);
+            $sourceBranchKey = $this->transferBranchKey($transfer, 'source');
+            $sourceBranch = $this->transferBranch($transfer, 'source');
 
             foreach ($transfer->items as $item) {
                 $this->decrementSourcePosition(
@@ -267,7 +337,7 @@ class StockTransferService
             // inventory.{CCY}); the receive/complete legs settle it out.
             // Within-branch transfers net to zero on one position row, so
             // no entry is posted for them.
-            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+            if (! $this->isWithinBranchTransfer($transfer)) {
                 $glAmounts = [];
                 foreach ($transfer->items as $item) {
                     $currencyCode = (string) $item->currency_code;
@@ -277,6 +347,12 @@ class StockTransferService
                     );
                 }
                 $this->postTransferGl($transfer, $sourceBranch, $glAmounts, 'dispatch');
+            }
+
+            // The full item quantity is now in transit; receipts whittle it
+            // down and the terminal transitions zero it.
+            foreach ($transfer->items as $item) {
+                $item->update(['quantity_in_transit' => (string) $item->quantity]);
             }
 
             $transfer->dispatch();
@@ -291,15 +367,20 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can receive items');
         }
 
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+        if (! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'destination')) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch can receive this transfer');
         }
 
-        if ($transfer->status !== StockTransferStatus::InTransit) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit to receive items');
-        }
-
         DB::transaction(function () use ($transfer, $items, $requester) {
+            // Lock the transfer row first, then items — every mutating path
+            // takes the same order, and the status re-check under the lock
+            // stops a stale InTransit view from receiving after completion.
+            $transfer = $this->lockedTransfer($transfer);
+
+            if ($transfer->status !== StockTransferStatus::InTransit) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit to receive items');
+            }
+
             $itemIds = collect($items)->pluck('id');
             /** @var Collection<(int|string), StockTransferItem> $existingItems */
             $existingItems = $transfer->items()
@@ -310,8 +391,8 @@ class StockTransferService
 
             // Inbound stock movement key: received quantities land on the
             // DESTINATION branch position (Buy-side sign).
-            $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
-            $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
+            $destinationBranchKey = $this->transferBranchKey($transfer, 'destination');
+            $destinationBranch = $this->transferBranch($transfer, 'destination');
 
             $glAmounts = [];
             foreach ($items as $itemData) {
@@ -328,7 +409,7 @@ class StockTransferService
 
             // GL leg: what actually arrived lands on the destination branch's
             // ledger chain (Dr inventory.{CCY} / Cr 2300 clearing).
-            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+            if (! $this->isWithinBranchTransfer($transfer)) {
                 $this->postTransferGl($transfer, $destinationBranch, $glAmounts, 'receipt');
             }
 
@@ -406,11 +487,13 @@ class StockTransferService
             'quantity_in_transit' => $this->mathService->subtract((string) $item->quantity, $newReceived),
         ]);
 
-        // Destination branch position grows by what actually arrived.
+        // Destination branch position grows by what actually arrived, at
+        // the item's cost basis (source average_cost fixed at request time).
         $this->incrementDestinationPosition(
             $destinationBranchKey,
             (string) $item->currency_code,
-            $receivedDelta
+            $receivedDelta,
+            (string) $item->rate
         );
 
         // The arrived stock joins the branch's teller-allocatable pool.
@@ -477,15 +560,8 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can complete transfers');
         }
 
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+        if (! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'destination')) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch can complete this transfer');
-        }
-
-        // Received is included: fully-received transfers would otherwise be
-        // stranded — outstanding is zero for every item, so completion only
-        // finalises the status.
-        if (! in_array($transfer->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived, StockTransferStatus::Received])) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit, partially received, or received to complete');
         }
 
         // Finalise the inbound movement: whatever was dispatched but not yet
@@ -493,9 +569,25 @@ class StockTransferService
         // branch at completion, so receiveItems() + complete() together deliver
         // exactly what dispatch() removed from the source.
         DB::transaction(function () use ($transfer, $requester) {
-            $transfer->loadMissing('items');
-            $destinationBranchKey = $this->positionBranchKey($transfer->destination_branch_name);
-            $destinationBranch = $this->branchFromIdentifier($transfer->destination_branch_name);
+            // Lock the transfer row and re-check status: a concurrent
+            // complete/cancel could have committed since this instance was
+            // loaded. Received is included — fully-received transfers would
+            // otherwise be stranded (outstanding is zero for every item, so
+            // completion only finalises the status).
+            $transfer = $this->lockedTransfer($transfer);
+
+            if (! in_array($transfer->status, [StockTransferStatus::InTransit, StockTransferStatus::PartiallyReceived, StockTransferStatus::Received])) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Transfer must be in transit, partially received, or received to complete');
+            }
+
+            // Lock the items before reading quantity_received — a concurrent
+            // receiveItems must not interleave with the outstanding read.
+            $transfer->setRelation(
+                'items',
+                $transfer->items()->lockForUpdate()->get()
+            );
+            $destinationBranchKey = $this->transferBranchKey($transfer, 'destination');
+            $destinationBranch = $this->transferBranch($transfer, 'destination');
 
             $glAmounts = [];
             foreach ($transfer->items as $item) {
@@ -505,7 +597,8 @@ class StockTransferService
                 $this->incrementDestinationPosition(
                     $destinationBranchKey,
                     (string) $item->currency_code,
-                    $outstanding
+                    $outstanding,
+                    (string) $item->rate
                 );
 
                 if ($destinationBranch && $this->mathService->compare($outstanding, '0') > 0) {
@@ -528,9 +621,13 @@ class StockTransferService
 
             // GL leg: the dispatched-but-unreceived remainder lands on the
             // destination branch (Dr inventory.{CCY} / Cr 2300 clearing).
-            if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+            if (! $this->isWithinBranchTransfer($transfer)) {
                 $this->postTransferGl($transfer, $destinationBranch, $glAmounts, 'receipt');
             }
+
+            // Terminal state: nothing is in transit once the transfer
+            // completes — the outstanding remainder was just delivered.
+            $transfer->items()->update(['quantity_in_transit' => '0']);
 
             $transfer->complete();
         });
@@ -542,16 +639,26 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can cancel transfers');
         }
 
-        if ($transfer->isCompleted()) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Cannot cancel a completed transfer');
-        }
-
-        if ($transfer->status === StockTransferStatus::Cancelled) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer is already cancelled');
-        }
-
         DB::transaction(function () use ($transfer, $reason) {
+            // Status is re-checked on the locked row — a concurrent
+            // complete could have committed since this instance was loaded,
+            // and cancelling after completion must not resurrect the stock.
+            $transfer = $this->lockedTransfer($transfer);
+
+            if ($transfer->isCompleted()) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Cannot cancel a completed transfer');
+            }
+
+            if ($transfer->status === StockTransferStatus::Cancelled) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Transfer is already cancelled');
+            }
+
             $this->returnInFlightStockToSource($transfer);
+
+            // Terminal state: in-flight stock was returned to source — it is
+            // no longer "in transit".
+            $transfer->items()->update(['quantity_in_transit' => '0']);
+
             $transfer->cancel($reason);
         });
     }
@@ -566,21 +673,26 @@ class StockTransferService
             throw new TransactionApprovalException((int) $transfer->id, 'Only users permitted to manage stock transfers can reject transfers');
         }
 
-        if (! $requester->isAdmin() && ! $this->requesterBranchMatches($transfer->destination_branch_name)) {
+        if (! $requester->isAdmin() && ! $this->requesterMatchesTransferBranch($transfer, 'destination')) {
             throw new TransactionApprovalException((int) $transfer->id, 'Only the destination branch manager can reject this transfer');
         }
 
-        if (! in_array($transfer->status, [
-            StockTransferStatus::Requested,
-            StockTransferStatus::BranchManagerApproved,
-            StockTransferStatus::HqApproved,
-            StockTransferStatus::InTransit,
-        ])) {
-            throw new TransactionApprovalException((int) $transfer->id, 'Transfer cannot be rejected in current state');
-        }
-
         DB::transaction(function () use ($transfer, $reason) {
+            // Status is re-checked on the locked row — a concurrent dispatch
+            // or receive could have committed since this instance was loaded.
+            $transfer = $this->lockedTransfer($transfer);
+
+            if (! in_array($transfer->status, [
+                StockTransferStatus::Requested,
+                StockTransferStatus::BranchManagerApproved,
+                StockTransferStatus::HqApproved,
+                StockTransferStatus::InTransit,
+            ])) {
+                throw new TransactionApprovalException((int) $transfer->id, 'Transfer cannot be rejected in current state');
+            }
+
             $this->returnInFlightStockToSource($transfer);
+            $transfer->items()->update(['quantity_in_transit' => '0']);
             $transfer->update(['status' => StockTransferStatus::Rejected]);
             $this->auditService->logStockTransferEvent(
                 'stock_transfer_rejected',
@@ -602,8 +714,17 @@ class StockTransferService
 
     public function getTransfersByBranch(string $branchName, int $limit = 500): Collection
     {
-        return StockTransfer::where('source_branch_name', $branchName)
-            ->orWhere('destination_branch_name', $branchName)
+        $branchId = $this->branchFromIdentifier($branchName)?->id;
+
+        return StockTransfer::where(function ($q) use ($branchName, $branchId) {
+            if ($branchId !== null) {
+                $q->where('source_branch_id', $branchId)
+                    ->orWhere('destination_branch_id', $branchId);
+            }
+            // Legacy rows predating the FK columns only carry the name.
+            $q->orWhere('source_branch_name', $branchName)
+                ->orWhere('destination_branch_name', $branchName);
+        })
             ->with('items')
             ->orderBy('created_at', 'desc')
             ->limit($limit)
@@ -623,8 +744,14 @@ class StockTransferService
         }
 
         $transfer->loadMissing('items');
-        $sourceBranchKey = $this->positionBranchKey($transfer->source_branch_name);
-        $sourceBranch = $this->branchFromIdentifier($transfer->source_branch_name);
+        $sourceBranchKey = $this->transferBranchKey($transfer, 'source');
+        $sourceBranch = $this->transferBranch($transfer, 'source');
+
+        // Items are locked for the unreceived read — the enclosing caller
+        // already holds the transfer row lock, so this ordering (transfer,
+        // then items) matches receiveItems()/complete() and stays
+        // deadlock-free.
+        $transfer->setRelation('items', $transfer->items()->lockForUpdate()->get());
 
         $glAmounts = [];
         foreach ($transfer->items as $item) {
@@ -642,10 +769,15 @@ class StockTransferService
                 $this->mathService->multiply($unreceived, (string) $item->rate)
             );
 
-            $position = $this->positionLocks()->lock($sourceBranchKey, (string) $item->currency_code);
-            $position->update([
-                'quantity' => $this->mathService->add((string) $position->quantity, $unreceived),
-            ]);
+            // Returned stock re-enters the source position at the item's
+            // original cost basis, keeping derived columns consistent.
+            $this->positionService->adjustForTransfer(
+                $sourceBranchKey,
+                (string) $item->currency_code,
+                $unreceived,
+                'add',
+                (string) $item->rate
+            );
 
             // Returned stock re-enters the source branch's allocatable pool,
             // capped at what dispatch actually took from it — pool debits are
@@ -669,7 +801,7 @@ class StockTransferService
 
         // GL leg: returned in-transit stock comes back onto the source
         // branch's ledger chain (Dr inventory.{CCY} / Cr 2300 clearing).
-        if ($transfer->source_branch_name !== $transfer->destination_branch_name) {
+        if (! $this->isWithinBranchTransfer($transfer)) {
             $this->postTransferGl($transfer, $sourceBranch, $glAmounts, 'receipt');
         }
     }
@@ -696,53 +828,100 @@ class StockTransferService
     }
 
     /**
-     * Outbound leg: subtract from the SOURCE branch currency position.
-     *
-     * Sign convention mirrors CurrencyPositionService::updatePosition where a
-     * Sell (outbound) SUBTRACTS. Uses the getPositionWithLock lock pattern
-     * (pessimistic row lock) so two concurrent dispatches cannot both pass the
-     * balance check and drive the position negative.
+     * Position key for one side of a persisted transfer: the real branch FK
+     * when present, the legacy name/code resolution otherwise.
+     */
+    private function transferBranchKey(StockTransfer $transfer, string $side): string
+    {
+        $branchId = $transfer->{"{$side}_branch_id"};
+
+        return $branchId !== null
+            ? (string) $branchId
+            : $this->positionBranchKey((string) $transfer->{"{$side}_branch_name"});
+    }
+
+    /**
+     * Branch model for one side of a persisted transfer: FK lookup first,
+     * legacy name/code resolution as fallback.
+     */
+    private function transferBranch(StockTransfer $transfer, string $side): ?Branch
+    {
+        $branchId = $transfer->{"{$side}_branch_id"};
+
+        return $branchId !== null
+            ? Branch::query()->whereKey($branchId)->first()
+            : $this->branchFromIdentifier((string) $transfer->{"{$side}_branch_name"});
+    }
+
+    /**
+     * Whether the acting user's branch is the given side of the transfer.
+     * FK comparison when the id is stored; legacy name/code resolution
+     * otherwise. Fails closed when unresolvable.
+     */
+    private function requesterMatchesTransferBranch(StockTransfer $transfer, string $side): bool
+    {
+        $branchId = $transfer->{"{$side}_branch_id"};
+
+        if ($branchId === null) {
+            return $this->requesterBranchMatches($transfer->{"{$side}_branch_name"});
+        }
+
+        return (int) $branchId === (int) $this->requester()->branch_id;
+    }
+
+    /**
+     * Within-branch transfer test. FK comparison when both ids are stored —
+     * the names are only snapshots and may differ in form while resolving
+     * to the same branch; legacy rows fall back to the name comparison.
+     */
+    private function isWithinBranchTransfer(StockTransfer $transfer): bool
+    {
+        if ($transfer->source_branch_id !== null && $transfer->destination_branch_id !== null) {
+            return (int) $transfer->source_branch_id === (int) $transfer->destination_branch_id;
+        }
+
+        return $transfer->source_branch_name === $transfer->destination_branch_name;
+    }
+
+    /**
+     * Re-fetch the transfer under a pessimistic lock inside the caller's
+     * transaction. Route-model-bound instances are stale the moment they
+     * reach the service; every state transition re-reads the row so a
+     * concurrent commit cannot be overwritten.
+     */
+    private function lockedTransfer(StockTransfer $transfer): StockTransfer
+    {
+        /** @var StockTransfer $locked */
+        $locked = StockTransfer::whereKey($transfer->id)->lockForUpdate()->firstOrFail();
+
+        return $locked;
+    }
+
+    /**
+     * Outbound leg: subtract from the SOURCE branch currency position via
+     * CurrencyPositionService — quantity, cost basis, and the derived money
+     * columns stay consistent, and stock promised to pending Sell
+     * reservations is not dispatchable.
      *
      * @throws InsufficientStockException If the subtraction would go below zero
      */
     private function decrementSourcePosition(string $branchKey, string $currencyCode, string $quantity): void
     {
-        $position = $this->positionLocks()->findForUpdate($branchKey, $currencyCode);
-
-        $available = $position !== null ? (string) $position->quantity : '0';
-
-        if ($this->mathService->compare($available, $quantity) < 0) {
-            throw new InsufficientStockException($currencyCode, $quantity, $available);
-        }
-
-        $position->update([
-            'quantity' => $this->mathService->subtract($available, $quantity),
-        ]);
+        $this->positionService->adjustForTransfer($branchKey, $currencyCode, $quantity, 'subtract');
     }
 
     /**
-     * Inbound leg: add to the DESTINATION branch currency position.
-     *
-     * Sign convention mirrors updatePosition where a Buy (inbound) ADDS. The
-     * lock service's zero-baseline lock-or-create mirrors its Buy path so a
-     * branch that never held this currency can still receive it.
+     * Inbound leg: add to the DESTINATION branch currency position via
+     * CurrencyPositionService at the item's cost basis — a branch that never
+     * held the currency still receives it (lock-or-create).
      */
-    private function incrementDestinationPosition(string $branchKey, string $currencyCode, string $quantity): void
+    private function incrementDestinationPosition(string $branchKey, string $currencyCode, string $quantity, ?string $costBasisRate = null): void
     {
         if ($this->mathService->compare($quantity, '0') <= 0) {
             return;
         }
 
-        $position = $this->positionLocks()->lock($branchKey, $currencyCode);
-
-        $position->update([
-            'quantity' => $this->mathService->add((string) $position->quantity, $quantity),
-        ]);
-    }
-
-    private function positionLocks(): CurrencyPositionLockService
-    {
-        return $this->positionLockService;
+        $this->positionService->adjustForTransfer($branchKey, $currencyCode, $quantity, 'add', $costBasisRate);
     }
 
     private function poolService(): BranchPoolService

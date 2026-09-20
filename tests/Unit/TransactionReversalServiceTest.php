@@ -247,13 +247,14 @@ class TransactionReversalServiceTest extends TestCase
     }
 
     #[Test]
-    public function manager_cannot_reverse_transactions(): void
+    public function manager_can_reverse_transactions(): void
     {
-        // Reversal of completed transactions is compliance-only.
+        // Reversal of completed transactions is granted to manager and
+        // compliance by default (see Permission::defaultMatrix).
         $manager = User::factory()->create(['role' => UserRole::Manager]);
         $transaction = Transaction::factory()->create();
 
-        $this->assertFalse($this->service->canUserReverse($manager, $transaction));
+        $this->assertTrue($this->service->canUserReverse($manager, $transaction));
     }
 
     #[Test]

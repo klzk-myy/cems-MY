@@ -7,11 +7,13 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\SegregationOfDutiesException;
 use App\Models\CurrencyPosition;
+use App\Models\RolePermission;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
+use App\Services\System\PermissionService;
 use App\Services\Transaction\TransactionCancellationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -295,8 +297,17 @@ class TransactionCancellationServiceTest extends TestCase
     }
 
     #[Test]
-    public function manager_cannot_approve_cancellation_of_completed_transaction(): void
+    public function manager_without_reverse_permission_cannot_approve_cancellation_of_completed_transaction(): void
     {
+        // Approving the cancellation of a completed transaction is a reversal,
+        // gated on reverse_transactions. Managers hold it by default; revoke
+        // it to keep covering the gate.
+        RolePermission::updateOrCreate(
+            ['role' => UserRole::Manager->value, 'permission' => 'reverse_transactions'],
+            ['granted' => false]
+        );
+        app(PermissionService::class)->clearCache();
+
         $requester = User::factory()->create(['role' => UserRole::Manager]);
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 

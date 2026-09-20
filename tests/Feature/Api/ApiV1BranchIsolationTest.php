@@ -147,7 +147,9 @@ class ApiV1BranchIsolationTest extends TestCase
         $tellerA = User::factory()->create(['role' => UserRole::Teller]);
         $tellerB = User::factory()->create(['role' => UserRole::Teller]);
         Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
-        $counter = Counter::factory()->create(['code' => 'WT1', 'id' => '999']);
+        // ValidTill is branch-scoped — the till must sit in the teller's
+        // branch for step 1 to reach the session-ownership check.
+        $counter = Counter::factory()->create(['code' => 'WT1', 'id' => '999', 'branch_id' => $tellerA->branch_id]);
         $customer = Customer::factory()->create(['risk_rating' => 'Low']);
 
         $session = $this->actingAs($tellerA)
@@ -163,7 +165,7 @@ class ApiV1BranchIsolationTest extends TestCase
             ])
             ->assertStatus(200);
 
-        $sessionId = $session->json('wizard_session_id');
+        $sessionId = $session->json('data.wizard_session_id');
         $this->assertNotNull($sessionId);
 
         // A different teller must not be able to inspect the session.
@@ -180,7 +182,7 @@ class ApiV1BranchIsolationTest extends TestCase
         $this->actingAs($tellerA)
             ->getJson("/api/v1/wizard/transactions/{$sessionId}/status")
             ->assertOk()
-            ->assertJsonPath('status', 'active');
+            ->assertJsonPath('data.status', 'active');
     }
 
     #[Test]
@@ -188,7 +190,7 @@ class ApiV1BranchIsolationTest extends TestCase
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
         Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
-        $counter = Counter::factory()->create(['code' => 'WT2']);
+        $counter = Counter::factory()->create(['code' => 'WT2', 'branch_id' => $teller->branch_id]);
 
         // The request rule requires an existing customer, so an unknown id is
         // rejected at validation (422) rather than reaching the controller.

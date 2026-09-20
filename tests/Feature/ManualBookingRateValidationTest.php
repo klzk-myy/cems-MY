@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RateSide;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
@@ -70,7 +71,7 @@ class ManualBookingRateValidationTest extends TestCase
     protected function bookingData(string $rate): array
     {
         return [
-            'type' => 'buy',
+            'type' => 'Buy',
             'currency_code' => 'USD',
             'quantity' => '100.00',
             'rate' => $rate,
@@ -117,11 +118,11 @@ class ManualBookingRateValidationTest extends TestCase
         $service = app(RateManagementService::class);
 
         // Exact market buy rate must always pass.
-        $check = $service->validateTransactionRate('4.5000', 'USD', 'buy');
+        $check = $service->validateTransactionRate('4.5000', 'USD', RateSide::Buy);
         $this->assertTrue($check['valid']);
 
         // A huge deviation must be blocked.
-        $check = $service->validateTransactionRate('9.0000', 'USD', 'buy');
+        $check = $service->validateTransactionRate('9.0000', 'USD', RateSide::Buy);
         $this->assertFalse($check['valid']);
     }
 
@@ -139,18 +140,18 @@ class ManualBookingRateValidationTest extends TestCase
 
         // 4.5300 is ~0.67% above the 4.5000 market rate: inside the global
         // 5% band but outside the teller's 0.5% BNM limit.
-        $teller = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Teller);
+        $teller = $service->validateTransactionRate('4.5300', 'USD', RateSide::Buy, null, UserRole::Teller);
 
         $this->assertFalse($teller['valid']);
         $this->assertSame('0.50', $teller['role_limit_percent']);
         $this->assertStringContainsStringIgnoringCase('your role', (string) $teller['reason']);
 
         // The same rate is inside the manager's 2% limit, so it passes.
-        $manager = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Manager);
+        $manager = $service->validateTransactionRate('4.5300', 'USD', RateSide::Buy, null, UserRole::Manager);
         $this->assertTrue($manager['valid']);
 
         // Roles without a limit are still bound by the global 5% band.
-        $admin = $service->validateTransactionRate('4.5300', 'USD', 'buy', null, UserRole::Admin);
+        $admin = $service->validateTransactionRate('4.5300', 'USD', RateSide::Buy, null, UserRole::Admin);
         $this->assertTrue($admin['valid']);
     }
 
@@ -165,7 +166,7 @@ class ManualBookingRateValidationTest extends TestCase
         ]);
 
         $result = app(RateManagementService::class)
-            ->validateTransactionRate('4.5020', 'USD', 'buy', null, UserRole::Teller);
+            ->validateTransactionRate('4.5020', 'USD', RateSide::Buy, null, UserRole::Teller);
 
         $this->assertTrue($result['valid']);
         $this->assertNull($result['role_limit_percent']);
@@ -209,7 +210,7 @@ class ManualBookingRateValidationTest extends TestCase
 
         // 4.9000 is ~8.9% above market: outside the global 5% band, so even a
         // role with no role-specific limit is rejected.
-        $result = $service->validateTransactionRate('4.9000', 'USD', 'buy', null, UserRole::Admin);
+        $result = $service->validateTransactionRate('4.9000', 'USD', RateSide::Buy, null, UserRole::Admin);
 
         $this->assertFalse($result['valid']);
         $this->assertNull($result['role_limit_percent']);

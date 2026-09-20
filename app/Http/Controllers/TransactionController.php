@@ -2,32 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CounterStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Http\Concerns\BranchScopedQuery;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\MapsTransactionExceptionsToFields;
 use App\Http\Requests\ExportTransactionRequest;
 use App\Http\Requests\IndexTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Branch;
-use App\Models\Counter;
 use App\Models\Currency;
-use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Customer\CustomerService;
 use App\Services\Reporting\TransactionExportService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\ReceiptGenerationService;
 use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -35,7 +35,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TransactionController extends Controller
 {
-    use BranchScopedQuery, MapsTransactionExceptionsToFields;
+    use BranchScopedQuery, HandlesControllerErrors, MapsTransactionExceptionsToFields;
 
     public function __construct(
         protected TransactionCreationServiceInterface $creationService,
@@ -43,6 +43,8 @@ class TransactionController extends Controller
         protected ReceiptGenerationService $receiptService,
         protected TransactionExportService $transactionExportService,
         protected TransactionConfirmationService $confirmationService,
+        protected CustomerService $customerService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -71,6 +73,21 @@ class TransactionController extends Controller
             ->when($validated['status'] ?? null, function ($q, string $status) {
                 return $q->where('status', $status);
             })
+            ->when($validated['type'] ?? null, function ($q, string $type) {
+                return $q->where('type', $type);
+            })
+            ->when($validated['currency_code'] ?? null, function ($q, string $currencyCode) {
+                return $q->where('currency_code', $currencyCode);
+            })
+            ->when($validated['date_from'] ?? null, function ($q, string $dateFrom) {
+                return $q->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($validated['date_to'] ?? null, function ($q, string $dateTo) {
+                return $q->whereDate('created_at', '<=', $dateTo);
+            })
+            ->when(isset($validated['is_refund']) && $validated['is_refund'] !== '', function ($q) use ($validated) {
+                return $q->where('is_refund', (bool) $validated['is_refund']);
+            })
             ->when($validated['customer_id'] ?? null, function ($q, int $customerId) {
                 return $q->where('customer_id', $customerId);
             });
@@ -86,7 +103,18 @@ class TransactionController extends Controller
             ->mapWithKeys(fn ($status) => [$status->value => $status->label()])
             ->toArray();
 
-        return view('transactions.index', compact('transactions', 'statusOptions'));
+        $currencyOptions = Transaction::query()
+            ->select('currency_code')
+            ->distinct()
+            ->orderBy('currency_code')
+            ->pluck('currency_code', 'currency_code')
+            ->toArray();
+
+        $typeOptions = collect(TransactionType::cases())
+            ->mapWithKeys(fn ($type) => [$type->value => $type->label()])
+            ->toArray();
+
+        return view('transactions.index', compact('transactions', 'statusOptions', 'currencyOptions', 'typeOptions'));
     }
 
     /**
@@ -102,25 +130,32 @@ class TransactionController extends Controller
         $currencies = $activeCurrencies->pluck('name', 'code');
         $currencyUnits = $activeCurrencies->pluck('rate_unit', 'code');
         $currencyInverses = $activeCurrencies->pluck('rate_inverse', 'code');
-        $customers = Customer::orderBy('full_name')->pluck('full_name', 'id');
         $branches = Branch::select('id', 'name')->orderBy('name')->get();
-        $counters = Counter::where('status', CounterStatus::Active->value)->orderBy('name')->pluck('name', 'id');
         $idempotencyKey = Str::uuid()->toString();
 
         $suggested_rate = null;
+
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        // CDD amount tiers drive which customer fields are required on the
+        // form; the service re-checks them server-side once amount_myr is
+        // computed exactly.
+        $cddThresholds = [
+            'specific' => (float) $this->thresholdService->getSpecificCddThreshold(),
+            'standard' => (float) $this->thresholdService->getStandardCddThreshold(),
+        ];
 
         $tillQuery = TillBalance::whereDate('date', today())
             ->whereNull('closed_at')
             ->with('currency');
 
-        /** @var User|null $user */
-        $user = auth()->user();
         if ($user && $user->branch_id !== null) {
             $tillQuery->where('branch_id', $user->branch_id);
         }
         $tillBalances = $tillQuery->get();
 
-        return view('transactions.create', compact('currencies', 'currencyUnits', 'currencyInverses', 'customers', 'tillBalances', 'branches', 'counters', 'suggested_rate', 'idempotencyKey'));
+        return view('transactions.create', compact('currencies', 'currencyUnits', 'currencyInverses', 'cddThresholds', 'tillBalances', 'branches', 'suggested_rate', 'idempotencyKey'));
     }
 
     /**
@@ -140,6 +175,10 @@ class TransactionController extends Controller
         // prepareForValidation; no additional mapping is needed here.
 
         try {
+            $validated['customer_id'] = $this->customerService
+                ->resolveForBooking($validated, (int) auth()->id())
+                ->id;
+
             $transaction = $this->creationService->prepareAndCreate($validated, (int) auth()->id(), $ipAddress);
 
             if ($transaction->status === TransactionStatus::PendingApproval) {
@@ -163,14 +202,8 @@ class TransactionController extends Controller
                 : back()->with('error', $e->getMessage())->withInput();
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Exception $e) {
-            Log::error('Transaction creation failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_id' => auth()->id(),
-            ]);
-
-            return back()->with('error', 'Transaction failed. Please contact support if the problem persists.')->withInput();
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Transaction creation failed', 'Transaction failed. Please contact support if the problem persists.');
         }
     }
 
@@ -181,7 +214,7 @@ class TransactionController extends Controller
     {
         $this->authorize('view', $transaction);
 
-        $transaction->load(['customer', 'user', 'approver', 'flags']);
+        $transaction->load(['customer', 'user', 'approver', 'flags', 'refundTransaction', 'originalTransaction']);
 
         // Surface the confirmation gate to approvers: a PendingApproval deal
         // that requires manager confirmation but has no Confirmed record yet
@@ -192,7 +225,9 @@ class TransactionController extends Controller
                 ->where('status', TransactionConfirmationStatus::Confirmed->value)
                 ->exists();
 
-        return view('transactions.show', compact('transaction', 'requiresManagerConfirmation'));
+        $canReverse = $this->cancellationService->canReverse($transaction);
+
+        return view('transactions.show', compact('transaction', 'requiresManagerConfirmation', 'canReverse'));
     }
 
     /**
@@ -284,8 +319,14 @@ class TransactionController extends Controller
      */
     public function exportForm(): View
     {
+        $this->authorize('viewAny', Transaction::class);
+
+        $user = auth()->user();
+
         return view('transactions.export', [
-            'branches' => Branch::all(),
+            'branches' => $user->role->canManageAllBranches()
+                ? Branch::all()
+                : Branch::whereKey($user->branch_id)->get(),
             'types' => TransactionType::cases(),
         ]);
     }
@@ -295,8 +336,13 @@ class TransactionController extends Controller
      */
     public function export(ExportTransactionRequest $request): BinaryFileResponse
     {
-        $filePath = $this->transactionExportService->exportTransactions($request->validated(), (int) auth()->id());
+        $this->authorize('viewAny', Transaction::class);
 
-        return response()->download($filePath);
+        $filePath = $this->transactionExportService->exportTransactions(
+            $request->validated(),
+            $request->user()
+        );
+
+        return response()->download(Storage::path($filePath));
     }
 }

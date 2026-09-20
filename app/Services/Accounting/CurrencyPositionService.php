@@ -188,6 +188,121 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     }
 
     /**
+     * Move stock between branches for a stock transfer.
+     *
+     * 'subtract' (source dispatch leg) mirrors the Sell side of updatePosition:
+     * quantity leaves at the position's existing cost basis — average_cost and
+     * current_rate are untouched. Pending sell reservations are subtracted from
+     * what is dispatchable, so stock earmarked for a pending Sell cannot be
+     * transferred away and strand the reservation.
+     *
+     * 'add' (destination receive/complete/cancel-return leg) mirrors the Buy
+     * side: incoming quantity blends into average_cost at the transfer item's
+     * cost basis (the source position's average_cost captured at request
+     * time). A fresh or unpriced position also adopts that cost basis as its
+     * current_rate so unrealized P&L starts at zero rather than showing a
+     * phantom loss against a zero market rate.
+     *
+     * All derived money columns (total_cost, current_value,
+     * unrealized_gain_loss, last_revalued_at) are recomputed exactly like
+     * updatePosition() — raw quantity writes left them describing the
+     * pre-transfer quantity.
+     *
+     * @param  string|null  $branchId  Position branch key; null is the company-wide row
+     * @param  string  $quantity  Quantity moved, as string
+     * @param  string  $direction  'add' or 'subtract'
+     * @param  string|null  $costBasisRate  Per-unit MYR cost basis for 'add' legs
+     * @return CurrencyPosition The updated position
+     *
+     * @throws InsufficientStockException If the decrement would consume reserved stock
+     */
+    public function adjustForTransfer(
+        ?string $branchId,
+        string $currencyCode,
+        string $quantity,
+        string $direction,
+        ?string $costBasisRate = null,
+    ): CurrencyPosition {
+        $position = DB::transaction(function () use ($branchId, $currencyCode, $quantity, $direction, $costBasisRate) {
+            if ($direction === 'subtract') {
+                $position = $this->lockService->findForUpdate($branchId, $currencyCode);
+                $onHand = $position !== null ? (string) $position->quantity : '0';
+
+                // Dispatchable = on-hand minus stock already promised to
+                // pending Sell transactions on this branch.
+                $reserved = StockReservation::where('currency_code', $currencyCode)
+                    ->where('branch_id', $branchId)
+                    ->where('status', StockReservationStatus::Pending)
+                    ->where('expires_at', '>', now())
+                    ->lockForUpdate()
+                    ->sum('quantity');
+
+                $dispatchable = $this->mathService->subtract($onHand, (string) $reserved);
+
+                if ($this->mathService->compare($dispatchable, $quantity) < 0) {
+                    throw new InsufficientStockException($currencyCode, $quantity, $dispatchable);
+                }
+
+                $position = $this->lockService->adjust($position, $quantity, 'subtract');
+                $newAvgCost = (string) ($position->average_cost ?? '0');
+            } elseif ($direction === 'add') {
+                $position = $this->lockService->lock($branchId, $currencyCode);
+                $rate = $costBasisRate ?? (string) ($position->average_cost ?? '0');
+                $oldBalance = (string) $position->quantity;
+
+                $newAvgCost = $this->mathService->compare($oldBalance, '0') > 0
+                    ? $this->mathService->calculateAverageCost(
+                        $oldBalance,
+                        (string) ($position->average_cost ?? '0'),
+                        $quantity,
+                        $rate
+                    )
+                    : $rate;
+
+                $position = $this->lockService->adjust($position, $quantity, 'add');
+            } else {
+                throw new \InvalidArgumentException("Unknown transfer direction: {$direction}");
+            }
+
+            $newBalance = (string) $position->quantity;
+            $roundedAvgCost = $this->mathService->round($newAvgCost, $this->ratePrecision());
+
+            // A transfer is a relocation, not a market observation: keep the
+            // position's current_rate. Exception — a fresh/unpriced position
+            // adopts the incoming cost basis so it isn't marked at zero.
+            $currentRate = (string) ($position->current_rate ?? '0');
+            if ($direction === 'add' && $this->mathService->compare($currentRate, '0') <= 0) {
+                $currentRate = $roundedAvgCost;
+            }
+            $roundedRate = $this->mathService->round($currentRate, $this->ratePrecision());
+
+            $position->update([
+                'average_cost' => $roundedAvgCost,
+                'current_rate' => $roundedRate,
+                'total_cost' => $this->mathService->round(
+                    $this->mathService->multiply($newBalance, $roundedAvgCost),
+                    $this->positionPrecision()
+                ),
+                'current_value' => $this->mathService->round(
+                    $this->mathService->multiply($newBalance, $roundedRate),
+                    $this->positionPrecision()
+                ),
+                'unrealized_gain_loss' => $this->mathService->round(
+                    $this->mathService->calculateRevaluationPnl($newBalance, $roundedAvgCost, $roundedRate),
+                    $this->positionPrecision()
+                ),
+                'last_revalued_at' => now(),
+            ]);
+
+            return $position->fresh();
+        });
+
+        $this->cacheInvalidationService->forgetPosition($branchId, $currencyCode);
+
+        return $position;
+    }
+
+    /**
      * Reverse the position impact of a transaction (release/cancellation).
      *
      * Sign convention mirrors updatePosition: a Buy added quantity to
@@ -568,26 +683,23 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     /**
      * Get available balance excluding pending reservations.
      *
-     * Positions are keyed by branch; stock reservations are keyed by till.
-     * Callers whose till code differs from the branch id MUST pass both,
-     * otherwise the position lookup silently misses and Sell approvals throw
-     * false InsufficientStockException errors.
+     * Positions are keyed by branch and reservations protect that same
+     * branch-level pool, so pending reservations are summed by branch_id —
+     * not by till. A till-scoped sum let a pending Sell on one till hide
+     * reserved stock from another till's availability check.
      *
      * @param  string  $currencyCode  Currency code
-     * @param  string  $branchId  Branch identifier (position lookup)
-     * @param  string|null  $tillId  Till identifier (reservation lookup); defaults to $branchId
+     * @param  string  $branchId  Branch identifier (position + reservation lookup)
      * @return string Available balance as string
      */
-    public function getAvailableBalance(string $currencyCode, string $branchId, ?string $tillId = null): string
+    public function getAvailableBalance(string $currencyCode, string $branchId): string
     {
-        $tillId = $tillId ?? $branchId;
-
-        return DB::transaction(function () use ($currencyCode, $branchId, $tillId) {
+        return DB::transaction(function () use ($currencyCode, $branchId) {
             $position = $this->lockService->findForUpdate($branchId, $currencyCode);
             $quantity = $position ? $position->quantity : '0';
 
             $reserved = StockReservation::where('currency_code', $currencyCode)
-                ->where('till_id', $tillId)
+                ->where('branch_id', $branchId)
                 ->where('status', StockReservationStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()

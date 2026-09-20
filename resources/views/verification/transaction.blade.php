@@ -20,7 +20,7 @@
                     <dl class="space-y-3 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-ink-muted">Reference</dt>
-                            <dd class="font-mono font-semibold">{{ $masked_reference }}</dd>
+                            <dd class="font-mono font-semibold">{{ $reference }}</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-ink-muted">Status</dt>

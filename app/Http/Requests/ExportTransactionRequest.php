@@ -2,13 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
+use App\Models\Transaction;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ExportTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('viewAny', Transaction::class);
     }
 
     public function rules(): array
@@ -17,8 +21,8 @@ class ExportTransactionRequest extends FormRequest
             'date_from' => ['nullable', 'date', 'before_or_equal:date_to'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
-            'type' => ['nullable', 'string'],
-            'status' => ['nullable', 'string'],
+            'type' => ['nullable', Rule::enum(TransactionType::class)],
+            'status' => ['nullable', Rule::enum(TransactionStatus::class)],
         ];
     }
 

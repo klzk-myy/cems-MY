@@ -29,12 +29,13 @@ class TransactionConfirmationService
     /**
      * Determine if a transaction requires manager confirmation.
      *
-     * Confirmation is required when the local amount is greater than or equal
-     * to the configured structured-transaction threshold.
+     * Single source for the confirmation gate and the large-transaction
+     * escalation: the cdd.large_transaction threshold. (The STR reporting
+     * threshold is a different control — reporting, not gating.)
      */
     public function requiresConfirmation(Transaction $transaction): bool
     {
-        $threshold = $this->thresholdService->getStrThreshold();
+        $threshold = $this->thresholdService->getLargeTransactionThreshold();
 
         return $this->mathService->compare($transaction->amount_myr, $threshold) >= 0;
     }

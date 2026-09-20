@@ -35,14 +35,30 @@ class ScreeningMatchDispositionTest extends TestCase
     }
 
     #[Test]
-    public function non_compliance_role_is_blocked_from_matches(): void
+    public function role_without_view_screening_results_is_blocked_from_matches(): void
     {
+        $accountant = User::factory()->create(['role' => 'accountant']);
+
+        $this->actingAs($accountant)
+            ->get(route('compliance.screening.matches.index'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function teller_can_view_matches_but_cannot_dispose_them(): void
+    {
+        // Tellers hold view_screening_results by default: read-only access
+        // to screening results, while disposition writes stay compliance-only.
         $teller = User::factory()->create(['role' => 'teller']);
         $result = ScreeningResult::factory()->flagged()->create();
 
         $this->actingAs($teller)
             ->get(route('compliance.screening.matches.index'))
-            ->assertForbidden();
+            ->assertOk();
+
+        $this->actingAs($teller)
+            ->get(route('compliance.screening.matches.show', $result))
+            ->assertOk();
 
         $this->actingAs($teller)
             ->post(route('compliance.screening.matches.confirm', $result), ['reason' => 'test'])

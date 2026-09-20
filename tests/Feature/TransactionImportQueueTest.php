@@ -48,14 +48,14 @@ class TransactionImportQueueTest extends TestCase
     #[Test]
     public function queued_job_processes_all_valid_rows(): void
     {
-        ['customer' => $customer] = $this->createFixtures(createImport: false);
+        ['customer' => $customer, 'user' => $user] = $this->createFixtures(createImport: false);
         $csv = $this->createMultiRowCsv([
             "{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN",
             "{$customer->id},Sell,USD,50,4.0,Business,Salary,MAIN",
         ]);
 
         $import = TransactionImport::create([
-            'imported_by' => User::factory()->create()->id,
+            'imported_by' => $user->id,
             'filename' => $csv,
             'original_filename' => 'transactions.csv',
             'total_rows' => 2,
@@ -80,7 +80,7 @@ class TransactionImportQueueTest extends TestCase
     #[Test]
     public function queued_job_failed_row_does_not_halt_remaining_rows(): void
     {
-        ['customer' => $customer] = $this->createFixtures(createImport: false);
+        ['customer' => $customer, 'user' => $user] = $this->createFixtures(createImport: false);
 
         $csv = $this->createMultiRowCsv([
             "{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN",
@@ -89,7 +89,7 @@ class TransactionImportQueueTest extends TestCase
         ]);
 
         $import = TransactionImport::create([
-            'imported_by' => User::factory()->create()->id,
+            'imported_by' => $user->id,
             'filename' => $csv,
             'original_filename' => 'transactions.csv',
             'total_rows' => 3,

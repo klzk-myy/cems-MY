@@ -141,7 +141,7 @@ trait AuthorizesBranchResource
         return response()->json([
             'success' => false,
             'message' => $message,
-            'data' => [],
+            'errors' => [],
         ], $status);
     }
 }

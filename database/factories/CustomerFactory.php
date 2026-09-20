@@ -27,6 +27,8 @@ class CustomerFactory extends Factory
             'address' => fake()->address(),
             'phone' => fake()->phoneNumber(),
             'email' => fake()->optional()->safeEmail(),
+            'occupation' => fake()->jobTitle(),
+            'employer_name' => fake()->company(),
             'pep_status' => false,
             'is_active' => true,
         ];

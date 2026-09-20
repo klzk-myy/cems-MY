@@ -90,6 +90,28 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            @if(($pagination['last_page'] ?? 1) > 1)
+                <div class="mt-4 flex items-center justify-between">
+                    <p class="text-sm text-ink-muted">
+                        Page {{ $pagination['current_page'] }} of {{ $pagination['last_page'] }}
+                        — {{ number_format($pagination['total']) }} entries
+                    </p>
+                    <div class="flex gap-2">
+                        @if($pagination['current_page'] > 1)
+                            <x-button variant="secondary" size="sm"
+                                      href="{{ request()->fullUrlWithQuery(['page' => $pagination['current_page'] - 1]) }}">
+                                Previous
+                            </x-button>
+                        @endif
+                        @if($pagination['current_page'] < $pagination['last_page'])
+                            <x-button variant="secondary" size="sm"
+                                      href="{{ request()->fullUrlWithQuery(['page' => $pagination['current_page'] + 1]) }}">
+                                Next
+                            </x-button>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </x-card>
     </div>
 </x-app-layout>

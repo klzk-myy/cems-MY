@@ -14,11 +14,7 @@
         </x-page-header>
 
         @php
-            $severityVariant = match ($log->severity) {
-                'CRITICAL', 'ERROR' => 'danger',
-                'WARNING' => 'warning',
-                default => 'info',
-            };
+            $severityVariant = $log->severity?->badgeVariant() ?? 'info';
         @endphp
 
         <x-card title="Entry Details">

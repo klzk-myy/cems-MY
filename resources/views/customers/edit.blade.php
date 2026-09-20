@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Edit Customer" description="Update customer information" />
 
-        <x-card class="max-w-2xl">
+        <x-card>
             <form method="POST" action="{{ route('customers.update', $customer ?? 1) }}" >
                 @csrf
                 @method('PUT')
@@ -20,9 +20,9 @@
                         required
                     />
                     <div>
-                        <label class="block text-sm font-medium text-ink">ID Number (masked)</label>
+                        <label class="block text-sm font-medium text-ink">ID Number</label>
                         <div class="mt-1 px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg">
-                            {{ $decryptedIdNumber ? substr($decryptedIdNumber, 0, 4).'****'.substr($decryptedIdNumber, -4) : '****-****-****' }}
+                            {{ $decryptedIdNumber ?? '—' }}
                         </div>
                     </div>
 

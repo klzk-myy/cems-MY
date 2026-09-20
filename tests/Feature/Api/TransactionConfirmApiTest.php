@@ -35,8 +35,10 @@ class TransactionConfirmApiTest extends TestCase
     {
         parent::setUp();
 
-        // Force every fixture amount over the confirmation threshold.
-        config(['thresholds.reporting.str' => '100']);
+        // Force every fixture amount over the confirmation threshold —
+        // requiresConfirmation and the escalation path both read
+        // cdd.large_transaction (T11: one shared getter).
+        config(['thresholds.cdd.large_transaction' => '100']);
 
         $this->branch = Branch::factory()->create();
         $this->counter = Counter::factory()->create(['branch_id' => $this->branch->id]);

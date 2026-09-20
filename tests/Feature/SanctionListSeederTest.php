@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\SanctionListType;
+use App\Enums\SanctionSourceFormat;
 use App\Models\SanctionEntry;
 use App\Models\SanctionList;
 use App\Models\User;
@@ -33,7 +34,7 @@ class SanctionListSeederTest extends TestCase
         $this->assertCount(count(config('sanctions.sources')), $lists);
 
         foreach ($lists as $list) {
-            $this->assertContains($list->source_format, ['XML', 'CSV', 'JSON']);
+            $this->assertContains($list->source_format, SanctionSourceFormat::cases());
         }
 
         $un = SanctionList::where('slug', 'un_consolidated')->first();

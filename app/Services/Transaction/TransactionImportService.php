@@ -5,7 +5,6 @@ namespace App\Services\Transaction;
 use App\Enums\TransactionImportStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\Enums\UserRole;
 use App\Exceptions\Domain\CurrencyNotFoundException;
 use App\Exceptions\Domain\CustomerNotFoundException;
 use App\Exceptions\Domain\FileOperationException;
@@ -17,34 +16,23 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\TransactionImport;
 use App\Models\User;
-use App\Services\Accounting\CurrencyPositionLockService;
-use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\TillBalanceManager;
-use App\Services\Compliance\ComplianceService;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\Services\Traits\ExchangeCalculatorTrait;
-use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\ImportContext;
-use App\Services\Transaction\DTOs\InitialStatusResult;
 use App\Support\BcmathHelper;
 use App\ValueObjects\QuoteConvention;
 use Illuminate\Support\Facades\DB;
 
 class TransactionImportService
 {
-    use ExchangeCalculatorTrait, TillBalanceTrait;
+    use ExchangeCalculatorTrait;
 
     public function __construct(
         protected MathService $mathService,
-        protected ComplianceService $complianceService,
-        protected CurrencyPositionService $positionService,
         protected TransactionMonitoringService $monitoringService,
-        protected ThresholdService $thresholdService,
         protected TillBalanceManager $tillBalanceManager,
         protected TransactionCreationService $transactionCreationService,
-        protected RateManagementService $rateManagementService,
-        protected CurrencyPositionLockService $positionLockService,
         protected InitialStatusResolver $statusResolver,
         protected ExchangeCalculator $exchangeCalculator,
     ) {}
@@ -146,60 +134,72 @@ class TransactionImportService
     protected function processRow(ImportContext $context, array $row, int $rowNumber): void
     {
         try {
-            DB::transaction(function () use ($context, $row) {
-                $data = $this->mapRow($row);
+            // No outer transaction: create() is self-transactional (phase-1
+            // record + phase-2 side effects), matching the web/API path which
+            // never wraps prepareAndCreate() in a transaction either. The
+            // authoritative stock/floor checks live under create()'s row
+            // locks; the gate checks here are advisory pre-checks. Wrapping
+            // the whole row also breaks audit sealing: afterCommit seal jobs
+            // dispatched by pre-validation/monitoring writes inside an outer
+            // transaction can interleave unsealed predecessors at commit and
+            // throw through DB::commit(), failing the row after it persisted.
+            $data = $this->mapRow($row, (int) $context->import->id, $rowNumber);
 
-                // Skip duplicate - already processed
-                if ($this->isDuplicate($data['idempotency_key'])) {
-                    $context->recordSuccess();
-
-                    return;
-                }
-
-                [$data, $customer, $convention] = $this->validateRowShape($context, $data);
-
-                $counter = $this->resolveCounter($context, $data);
-                $tillBalance = $this->tillBalanceManager->currentBalance($counter, $data['currency_code']);
-
-                if (! $tillBalance) {
-                    throw new ImportValidationException("Till {$data['till_id']} is not open for {$data['currency_code']}");
-                }
-
-                $this->assertMarketRate($data, $counter, $context->importUser->role);
-
-                [$data, $amountMyr] = $this->convertRowAmount($data, $convention);
-
-                $this->assertTillLiquidity($counter, $tillBalance, $data, $amountMyr);
-                $this->assertSanctionsClear($customer);
-
-                // Compliance checks
-                $cddLevel = $this->complianceService->determineCDDLevel(
-                    $amountMyr,
-                    $customer
-                );
-
-                $initialStatus = $this->resolveInitialStatus($amountMyr, $customer);
-
-                // Create transaction using TransactionCreationService to avoid duplicate logic.
-                // The importing user is resolved once in process() and passed in.
-                $transaction = $this->transactionCreationService->createForImport(
-                    data: $data,
-                    customer: $customer,
-                    tillBalance: $tillBalance,
-                    cddLevel: $cddLevel,
-                    status: $initialStatus->status,
-                    amountMyr: $amountMyr,
-                    user: $context->importUser,
-                    holdReason: $initialStatus->holdReason,
-                );
-
-                // Run compliance monitoring BEFORE commit (moved before commit)
-                if ($initialStatus->status === TransactionStatus::Completed) {
-                    $this->monitoringService->monitorTransaction($transaction);
-                }
-
+            // Skip duplicate - already processed
+            if ($this->isDuplicate($data['idempotency_key'])) {
                 $context->recordSuccess();
-            });
+
+                return;
+            }
+
+            [$data, $customer, $convention] = $this->validateRowShape($context, $data);
+
+            // One booking gate for every entry path: the row passes the
+            // same eligibility checks the web wizard and API enforce —
+            // branch trading status, till↔branch scoping, frozen/blocked/
+            // inactive customers, KYC expiry and the rate tolerance guard.
+            // The importing user is passed explicitly: this runs in a
+            // queue worker where ActorContext has no authenticated user.
+            [$tillBalance, $customer] = $this->transactionCreationService
+                ->assertBookingEligibility($context->importUser, $data);
+
+            [$data, $amountMyr, $normalizedRate] = $this->convertRowAmount($data, $convention);
+
+            // PEP requirements, sanctions screening, CDD level,
+            // historical risk and hold determination — identical to
+            // prepareAndCreate().
+            $validationResult = $this->transactionCreationService
+                ->runComplianceGates($customer, $data, $amountMyr);
+
+            $this->assertTillLiquidity($context, $data, $tillBalance, $amountMyr);
+
+            $initialStatus = $this->statusResolver->resolve(
+                $amountMyr,
+                $validationResult->isHoldRequired(),
+                $customer->risk_rating
+            );
+
+            // Create transaction using TransactionCreationService to avoid duplicate logic.
+            // The importing user is resolved once in process() and passed in.
+            $transaction = $this->transactionCreationService->createForImport(
+                data: $data,
+                customer: $customer,
+                tillBalance: $tillBalance,
+                cddLevel: $validationResult->getCDDLevel(),
+                status: $initialStatus->status,
+                amountMyr: $amountMyr,
+                user: $context->importUser,
+                holdReason: $validationResult->isHoldRequired() ? $initialStatus->holdReason : null,
+                normalizedRate: $normalizedRate,
+            );
+
+            // Run compliance monitoring after the row commits — Completed
+            // rows get flagged inline for the triage queue.
+            if ($initialStatus->status === TransactionStatus::Completed) {
+                $this->monitoringService->monitorTransaction($transaction);
+            }
+
+            $context->recordSuccess();
         } catch (\Exception $e) {
             $context->recordError($rowNumber, $row, $e->getMessage());
         }
@@ -214,7 +214,7 @@ class TransactionImportService
      * @param  array<int, string|null>  $row
      * @return array{customer_id: string, type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, till_id: string, idempotency_key: string}
      */
-    private function mapRow(array $row): array
+    private function mapRow(array $row, int $importId, int $rowNumber): array
     {
         // Pad short rows so malformed CSVs produce clean per-row errors instead
         // of PHP undefined-array-key warnings on every column access.
@@ -237,7 +237,12 @@ class TransactionImportService
             throw new ImportValidationException('Row data could not be encoded for idempotency key');
         }
 
-        $data['idempotency_key'] = hash('sha256', $encoded);
+        // Idempotency scope is (import, row): re-running THIS import dedupes
+        // per row, identical rows in one file are legitimate separate
+        // bookings and each import, and identical rows in a different file
+        // (different import id) import independently — content-only hashing
+        // silently dropped them.
+        $data['idempotency_key'] = hash('sha256', $importId.'|'.$rowNumber.'|'.$encoded);
 
         return $data;
     }
@@ -327,34 +332,12 @@ class TransactionImportService
     }
 
     /**
-     * Validate the rate against the current market rate so bulk imports
-     * cannot book trades at aberrant rates (same guard the interactive
-     * wizard applies). Skips rows where no market rate is configured.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function assertMarketRate(array $data, Counter $counter, UserRole $role): void
-    {
-        $rateCheck = $this->rateManagementService->validateTransactionRate(
-            (string) $data['rate'],
-            $data['currency_code'],
-            strtolower($data['type']),
-            $counter->branch_id,
-            $role
-        );
-
-        if (! $rateCheck['valid']) {
-            throw new ImportValidationException($rateCheck['reason'] ?? 'Rate deviation exceeds maximum allowed');
-        }
-    }
-
-    /**
      * Calculate local amount (single source of truth for the conversion).
      * CSV rates are unit-quoted per currencies.rate_unit; the stored
      * transaction keeps the normalized per-unit rate.
      *
      * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
-     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: string} normalized data (rate rewritten per-unit) and amount_myr
+     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: string, 2: string} row data (rate left as submitted), amount_myr, normalized per-unit rate
      */
     private function convertRowAmount(array $data, QuoteConvention $convention): array
     {
@@ -367,62 +350,40 @@ class TransactionImportService
             $convention
         );
 
-        $data['rate'] = $exchangeResult['rate'];
-
-        return [$data, $exchangeResult['amount_myr']];
+        // The submitted unit-quoted rate stays in $data untouched — the
+        // normalized per-unit rate travels separately to the context.
+        return [$data, $exchangeResult['amount_myr'], $exchangeResult['rate']];
     }
 
     /**
-     * Validate till has sufficient balance for the transaction type.
+     * Validate the till has sufficient live balance for the transaction type.
+     * Compares against getExpectedBalance() (opening + today's movements)
+     * under a row lock — not the morning's opening_balance — so rows later in
+     * the file see the deductions earlier rows committed.
      *
      * @param  array<string, mixed>  $data
      */
-    private function assertTillLiquidity(Counter $counter, TillBalance $tillBalance, array $data, string $amountMyr): void
+    private function assertTillLiquidity(ImportContext $context, array $data, ?TillBalance $tillBalance, string $amountMyr): void
     {
-        $quantity = (string) $data['quantity'];
+        // Drawer-less rows have no drawer liquidity to check — position and
+        // allocation checks still run inside the booking path.
+        if ($tillBalance === null) {
+            return;
+        }
 
         if ($data['type'] === TransactionType::Buy->value) {
-            // Buy: customer buys foreign currency with MYR - check till has enough MYR
-            $tillMyrBalance = $this->tillBalanceManager->currentBalance($counter, Currency::baseCurrency());
-            if (! $tillMyrBalance || $this->mathService->compare((string) $tillMyrBalance->opening_balance, $amountMyr) < 0) {
+            // Buy: the drawer pays MYR out — check the live MYR balance.
+            $counter = $this->resolveCounter($context, $data);
+            $tillMyrBalance = $this->tillBalanceManager->currentBalance($counter, Currency::baseCurrency(), true);
+            if (! $tillMyrBalance || $this->mathService->compare($tillMyrBalance->getExpectedBalance(), $amountMyr) < 0) {
                 throw new ImportValidationException('Insufficient MYR balance in till for buy transaction');
             }
         } else {
-            // Sell: customer sells foreign currency for MYR - check till has enough foreign currency
-            if ($this->mathService->compare((string) $tillBalance->opening_balance, $quantity) < 0) {
+            // Sell: the drawer pays foreign currency out — the till row was
+            // already locked by the booking gate's validateTillBalance call.
+            if ($this->mathService->compare($tillBalance->getExpectedBalance(), (string) $data['quantity']) < 0) {
                 throw new ImportValidationException("Insufficient {$data['currency_code']} balance in till for sell transaction");
             }
         }
-    }
-
-    /**
-     * Re-screen customer against sanctions lists per BNM requirements.
-     */
-    private function assertSanctionsClear(Customer $customer): void
-    {
-        if ($this->complianceService->checkSanctionMatch($customer)) {
-            throw new ImportValidationException('Customer failed sanctions screening - cannot process import');
-        }
-    }
-
-    /**
-     * Initial status comes from the shared resolver so imports apply the
-     * same auto-approve policy as the wizard and API paths: hold required,
-     * High/unknown risk rating, or amount at the auto-approve threshold all
-     * land in PendingApproval.
-     */
-    private function resolveInitialStatus(string $amountMyr, Customer $customer): InitialStatusResult
-    {
-        $holdCheck = $this->complianceService->requiresHold(
-            $amountMyr,
-            $customer
-        );
-
-        return $this->statusResolver->resolve(
-            $amountMyr,
-            $holdCheck->requiresHold,
-            $customer->risk_rating,
-            $holdCheck->reasons
-        );
     }
 }

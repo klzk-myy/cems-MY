@@ -16,6 +16,8 @@ class StructuringMonitor extends BaseMonitor
 {
     protected string $subThreshold;
 
+    protected string $aggregateTrigger;
+
     protected StructuringRiskService $structuringRiskService;
 
     protected int $minTransactions;
@@ -26,6 +28,7 @@ class StructuringMonitor extends BaseMonitor
     {
         parent::__construct($math, $alertTriage);
         $this->subThreshold = $thresholdService->getStructuringSubThreshold();
+        $this->aggregateTrigger = $thresholdService->getStructuringAggregateTrigger();
         $this->minTransactions = $thresholdService->getStructuringMinTransactions();
         $this->structuringRiskService = $structuringRiskService;
     }
@@ -44,10 +47,23 @@ class StructuringMonitor extends BaseMonitor
 
             $customerData = Transaction::where('created_at', '>=', $cutoffTime)
                 ->where('amount_myr', '<', $this->subThreshold)
-                ->where('status', '!=', TransactionStatus::Cancelled->value)
+                // Only booked business counts as structuring: failed,
+                // rejected, and pending-cancellation rows never moved cash.
+                ->whereNotIn('status', [
+                    TransactionStatus::Cancelled->value,
+                    TransactionStatus::Failed->value,
+                    TransactionStatus::Rejected->value,
+                    TransactionStatus::PendingCancellation->value,
+                ])
                 ->selectRaw('customer_id, COUNT(*) as transaction_count, CAST(SUM(amount_myr) AS CHAR) as total_amount_myr')
                 ->groupBy('customer_id')
+                // Structuring = many sub-threshold bookings that add up to a
+                // reportable amount. Count alone produced false positives on
+                // trivially small repeat business.
                 ->havingRaw('COUNT(*) >= ?', [$this->minTransactions])
+                // CAST keeps the numeric comparison portable: a bound
+                // string would compare as TEXT in SQLite (always false).
+                ->havingRaw('SUM(amount_myr) >= CAST(? AS DECIMAL(20,4))', [$this->aggregateTrigger])
                 ->get();
 
             $customerIds = $customerData->pluck('customer_id')->unique();

@@ -173,7 +173,7 @@
                                 </x-badge>
                             </td>
                             <td class="px-4 py-3 text-sm text-ink">
-                                {{ $transaction->customer->full_name ?? 'N/A' }}
+                                <x-customer-link :customer="$transaction->customer" />
                             </td>
                             <td class="px-4 py-3 text-sm text-ink text-right">
                                 {{ number_format((float) $transaction->quantity, 2) }}
@@ -201,6 +201,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $transactions->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

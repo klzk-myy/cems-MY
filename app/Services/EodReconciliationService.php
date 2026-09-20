@@ -90,7 +90,7 @@ class EodReconciliationService
                 $query->whereIn('till_id', $counterCodes)
                     ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
             })
-            ->where('status', '!=', FlagStatus::Resolved->value)
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->get()
             ->groupBy(fn (FlaggedTransaction $flag) => (string) $flag->transaction?->till_id);
 
@@ -156,7 +156,7 @@ class EodReconciliationService
                     $query->where('branch_id', $branchId);
                 }
             })
-            ->where('status', '!=', FlagStatus::Resolved->value)
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->get();
 
         return [
@@ -248,7 +248,7 @@ class EodReconciliationService
                 $query->where('till_id', $counter->code)
                     ->whereBetween('created_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()]);
             })
-            ->where('status', '!=', FlagStatus::Resolved->value)
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->get();
 
         $handovers = CounterHandover::with(['counterSession', 'fromUser', 'toUser', 'supervisor'])

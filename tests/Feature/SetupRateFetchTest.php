@@ -30,7 +30,7 @@ class SetupRateFetchTest extends TestCase
 
         $response->assertOk()->assertJson(['success' => true]);
 
-        $rates = $response->json('rates');
+        $rates = $response->json('data.rates');
 
         // 1 / 3850 = 0.00025974 MYR per IDR
         $this->assertEqualsWithDelta(0.00025974, (float) $rates['IDR']['mid'], 0.000001);
@@ -41,7 +41,7 @@ class SetupRateFetchTest extends TestCase
         $this->assertEqualsWithDelta(3.44827586, (float) $rates['BND']['mid'], 0.000001);
 
         // Unknown codes surface as missing rather than zero-filled.
-        $this->assertSame(['ZZZ'], $response->json('missing'));
+        $this->assertSame(['ZZZ'], $response->json('data.missing'));
     }
 
     #[Test]

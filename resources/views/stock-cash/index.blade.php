@@ -30,6 +30,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $positions->links() }}</div>
         </x-card>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

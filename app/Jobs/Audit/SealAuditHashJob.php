@@ -62,12 +62,17 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
                 }
 
                 // Guard: Check that no unsealed entries exist between predecessor and current entry.
+                // Quarantined rows are terminal — they never seal — so they do
+                // not block the chain; the entry seals across them with an
+                // explicit GAP:<id> previous_hash marker instead.
                 // If unsealed entries are found, the immediate predecessor has not been sealed yet,
                 // and chaining to a farther predecessor would corrupt the hash chain (fork).
                 // Release the transaction and retry with backoff to let the missing seal finish.
                 $unsealedBetween = SystemLog::where('id', '>', $predecessorId)
                     ->where('id', '<', $this->logId)
                     ->whereNull('entry_hash')
+                    ->where(fn ($q) => $q->whereNull('seal_status')
+                        ->orWhere('seal_status', '!=', AuditService::SEAL_STATUS_QUARANTINED))
                     ->exists();
 
                 if ($unsealedBetween) {
@@ -89,8 +94,17 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
                 return;
             }
 
-            // Get the predecessor's hash (already locked, so stable)
-            $previousHash = $predecessor !== null ? $predecessor->entry_hash : null;
+            // Get the predecessor's hash (already locked, so stable). A
+            // quarantined row between predecessor and target turns the link
+            // into an explicit GAP:<id> marker.
+            $quarantineBoundary = SystemLog::where('id', '>', $predecessorId ?? 0)
+                ->where('id', '<', $this->logId)
+                ->where('seal_status', AuditService::SEAL_STATUS_QUARANTINED)
+                ->min('id');
+
+            $previousHash = $quarantineBoundary !== null
+                ? AuditService::GAP_PREFIX.$quarantineBoundary
+                : ($predecessor !== null ? $predecessor->entry_hash : null);
 
             // Compute this entry's hash. v2 payload: covers old_values,
             // new_values, severity and ip_address so post-seal payload edits
@@ -122,5 +136,52 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
             'log_id' => $this->logId,
             'exception' => $exception->getMessage(),
         ]);
+
+        // If the failure was an unsealed-predecessor gap that outlived all
+        // retries, the blocking row's own seal is presumed dead. Quarantine
+        // it so this entry — and everything behind it — can seal across an
+        // explicit gap boundary instead of stalling the chain forever.
+        $blockingId = $this->findBlockingEntryId();
+
+        if ($blockingId === null) {
+            return;
+        }
+
+        SystemLog::where('id', $blockingId)
+            ->whereNull('entry_hash')
+            ->update(['seal_status' => AuditService::SEAL_STATUS_QUARANTINED]);
+
+        Log::critical('Audit chain gap quarantined after seal retries exhausted', [
+            'quarantined_log_id' => $blockingId,
+            'blocked_log_id' => $this->logId,
+        ]);
+
+        // Re-dispatch so the target seals with a GAP:<id> previous_hash.
+        static::dispatch($this->logId);
+    }
+
+    /**
+     * Earliest unsealed, non-quarantined row sitting between the last sealed
+     * predecessor and this job's target — the row that blocked the chain.
+     * Null when the failure had no gap to quarantine (missing target row,
+     * vanished predecessor, or an unrelated error).
+     */
+    private function findBlockingEntryId(): ?int
+    {
+        if (! SystemLog::where('id', $this->logId)->whereNull('entry_hash')->exists()) {
+            return null;
+        }
+
+        $predecessorId = SystemLog::where('id', '<', $this->logId)
+            ->whereNotNull('entry_hash')
+            ->orderBy('id', 'desc')
+            ->value('id');
+
+        return SystemLog::where('id', '>', $predecessorId ?? 0)
+            ->where('id', '<', $this->logId)
+            ->whereNull('entry_hash')
+            ->where(fn ($q) => $q->whereNull('seal_status')
+                ->orWhere('seal_status', '!=', AuditService::SEAL_STATUS_QUARANTINED))
+            ->min('id');
     }
 }

@@ -4,7 +4,7 @@ namespace App\Actions\Customer;
 
 use App\Models\Customer;
 use App\Models\User;
-use App\Repositories\CustomerRepository;
+use App\Support\LikeEscaper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -17,7 +17,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class CustomerIndexAction
 {
     /**
-     * @param  array  $filters  {search, risk_rating, is_active, pep_status, nationality, sort_by, sort_dir, per_page, branch_scope}
+     * @param  array  $filters  {search, risk_rating, is_active, pep_status, sanction_hit, is_frozen, nationality, id_type, cdd_level, customer_type, sort_by, sort_dir, per_page, branch_scope}
      * @param  User|null  $user  Authenticated user (admin sees everything)
      */
     public function execute(array $filters, ?User $user): LengthAwarePaginator
@@ -39,7 +39,7 @@ final class CustomerIndexAction
         }
 
         if (! empty($filters['search'] ?? null)) {
-            $search = '%'.CustomerRepository::escapeLike($filters['search']).'%';
+            $search = '%'.LikeEscaper::escape($filters['search']).'%';
             $query->whereRaw('full_name LIKE ? ESCAPE ?', [$search, '\\']);
         }
 
@@ -55,8 +55,28 @@ final class CustomerIndexAction
             $query->where('pep_status', $filters['pep_status'] === '1');
         }
 
+        if (array_key_exists('sanction_hit', $filters)) {
+            $query->where('sanction_hit', $filters['sanction_hit'] === '1');
+        }
+
+        if (array_key_exists('is_frozen', $filters)) {
+            $query->where('is_frozen', $filters['is_frozen'] === '1');
+        }
+
         if (! empty($filters['nationality'] ?? null)) {
             $query->where('nationality', $filters['nationality']);
+        }
+
+        if (! empty($filters['id_type'] ?? null)) {
+            $query->where('id_type', $filters['id_type']);
+        }
+
+        if (! empty($filters['cdd_level'] ?? null)) {
+            $query->where('cdd_level', $filters['cdd_level']);
+        }
+
+        if (! empty($filters['customer_type'] ?? null)) {
+            $query->where('customer_type', $filters['customer_type']);
         }
 
         $allowedSortColumns = ['created_at', 'updated_at', 'full_name', 'risk_rating', 'is_active', 'pep_status', 'nationality'];

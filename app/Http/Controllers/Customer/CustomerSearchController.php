@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Enums\CddLevel;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\QuickCreateCustomerRequest;
 use App\Http\Requests\SearchCustomerRequest;
@@ -12,9 +13,12 @@ use App\Services\Customer\CustomerService;
 use App\Services\System\CacheKeys;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 
 class CustomerSearchController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected CustomerService $customerService,
     ) {}
@@ -32,8 +36,7 @@ class CustomerSearchController extends Controller
         $branchId = null;
         if (! $user || ! $user->isAdmin()) {
             if (! $user?->branch_id) {
-                return response()->json([
-                    'success' => true,
+                return $this->successResponse([
                     'query' => $request->validated()['query'],
                     'results' => [],
                     'count' => 0,
@@ -46,8 +49,7 @@ class CustomerSearchController extends Controller
 
         $results = $this->customerService->searchCustomers($validated['query'], $branchId);
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'query' => $validated['query'],
             'results' => $results,
             'count' => count($results),
@@ -58,6 +60,10 @@ class CustomerSearchController extends Controller
     /**
      * Quick create customer from transaction form.
      * Used when customer not found in database.
+     *
+     * If the ID number is already registered, the existing customer is
+     * returned with `existing: true` instead of a validation error — the
+     * teller is registering a returning customer, not creating a duplicate.
      */
     public function quickCreate(QuickCreateCustomerRequest $request): JsonResponse
     {
@@ -65,7 +71,20 @@ class CustomerSearchController extends Controller
 
         $validated = $request->validated();
 
-        $customer = $this->customerService->createCustomer($validated, (int) auth()->id());
+        $existing = false;
+        try {
+            $customer = $this->customerService->createCustomer($validated, (int) auth()->id());
+        } catch (ValidationException $e) {
+            // Whatever the validation failure was, if the submitted ID number
+            // already belongs to an active customer this is a returning
+            // customer — load that record instead of erroring. Anything else
+            // (duplicate phone, soft-deleted ID) rethrows the original error.
+            $customer = $this->customerService->findActiveByIdNumber($validated['id_number'] ?? '');
+            if (! $customer) {
+                throw $e;
+            }
+            $existing = true;
+        }
 
         $exchangeRates = Cache::remember(CacheKeys::ExchangeRates->value, 300, fn () => ExchangeRate::all()
             ->mapWithKeys(fn ($r) => [$r->currency_code => [
@@ -77,20 +96,19 @@ class CustomerSearchController extends Controller
             ->toArray()
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer created successfully',
+        return $this->successResponse([
             'customer' => [
                 'id' => $customer->id,
                 'full_name' => $customer->full_name,
-                'ic_number_masked' => $customer->ic_number,
+                'id_number' => $customer->id_number,
                 'nationality' => $customer->nationality,
                 'risk_rating' => $customer->risk_rating,
                 'cdd_level' => $customer->cdd_level instanceof CddLevel ? $customer->cdd_level->value : $customer->cdd_level,
                 'is_pep' => $customer->pep_status,
                 'is_sanctioned' => $customer->sanction_hit,
             ],
+            'existing' => $existing,
             'exchange_rates' => $exchangeRates,
-        ]);
+        ], $existing ? 'Customer already registered — loaded existing record' : 'Customer created successfully');
     }
 }

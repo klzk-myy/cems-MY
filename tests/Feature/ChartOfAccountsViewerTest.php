@@ -42,8 +42,12 @@ class ChartOfAccountsViewerTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
+        // Codes 9900x sort last; the index paginates by account_code at 50
+        // per page, so the fixtures live on the final page.
+        $lastPage = (int) ceil(ChartOfAccount::count() / 50);
+
         $this->actingAs($admin)
-            ->get(route('accounting.chart-of-accounts.index'))
+            ->get(route('accounting.chart-of-accounts.index', ['page' => $lastPage]))
             ->assertOk()
             ->assertSee('99001')
             ->assertSee('Cash on Hand')
@@ -75,23 +79,32 @@ class ChartOfAccountsViewerTest extends TestCase
     }
 
     #[Test]
-    public function page_lists_all_seeded_accounts_without_pagination(): void
+    public function page_lists_all_seeded_accounts_across_pages(): void
     {
         $admin = User::factory()->admin()->create();
 
         $expectedCount = ChartOfAccount::count();
 
-        $response = $this->actingAs($admin)
-            ->get(route('accounting.chart-of-accounts.index'));
-
         // The shared in-memory test database may hold rows from other suites;
-        // the viewer must list everything on one page regardless of count.
+        // the viewer paginates, so collect codes across every page.
         $this->assertGreaterThanOrEqual(3, $expectedCount);
-        $response->assertOk();
 
-        // Every account code appears on the single page (bounded listing).
-        foreach (ChartOfAccount::pluck('account_code') as $code) {
-            $response->assertSee($code);
+        $seen = collect();
+        for ($page = 1; $page <= (int) ceil($expectedCount / 50); $page++) {
+            $response = $this->actingAs($admin)
+                ->get(route('accounting.chart-of-accounts.index', ['page' => $page]))
+                ->assertOk();
+
+            foreach (ChartOfAccount::pluck('account_code') as $code) {
+                if (str_contains($response->getContent(), (string) $code)) {
+                    $seen->push($code);
+                }
+            }
         }
+
+        $this->assertEqualsCanonicalizing(
+            ChartOfAccount::pluck('account_code')->all(),
+            $seen->unique()->all()
+        );
     }
 }

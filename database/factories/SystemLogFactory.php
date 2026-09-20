@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SystemLogSeverity;
 use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class SystemLogFactory extends Factory
             'user_id' => User::factory(),
             'action' => $this->faker->word,
             'description' => $this->faker->sentence(),
-            'severity' => $this->faker->randomElement(['INFO', 'WARNING', 'ERROR', 'CRITICAL']),
+            'severity' => $this->faker->randomElement(SystemLogSeverity::cases()),
             'entity_type' => $this->faker->randomElement(['App\Models\User', 'App\Models\Transaction', 'App\Models\Customer']),
             'entity_id' => $this->faker->numberBetween(1, 1000),
             'old_values' => $this->faker->optional() ? ['status' => 'archived'] : null,

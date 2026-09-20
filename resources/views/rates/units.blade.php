@@ -90,6 +90,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $currencies->links() }}</div>
             <p class="mt-3 text-sm text-ink-muted">
                 Direct: Buy/Sell are quoted in MYR per quote unit (1,000,000 IDR = RM 235). Inverse: quoted in
                 foreign units per RM unit (RM 1 = 4,255 IDR) — buy is the larger number. Changing a unit or

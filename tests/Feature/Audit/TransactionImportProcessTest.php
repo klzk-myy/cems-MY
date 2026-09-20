@@ -4,7 +4,6 @@ namespace Tests\Feature\Audit;
 
 use App\Enums\TransactionImportStatus;
 use App\Enums\TransactionStatus;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -49,8 +48,9 @@ class TransactionImportProcessTest extends TestCase
 
     public function test_batch_upload_updates_the_created_import_record(): void
     {
-        $user = User::factory()->manager()->create();
-        ['customer' => $customer] = $this->createFixtures(createImport: false);
+        // The importer must sit on the till's branch — the booking gate now
+        // enforces till↔branch scoping for queued imports too.
+        ['customer' => $customer, 'user' => $user] = $this->createFixtures(createImport: false);
 
         $this->actingAs($user);
 

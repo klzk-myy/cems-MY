@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FiscalYearStatus;
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\RunRevaluationRequest;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -12,11 +12,12 @@ use App\Models\RevaluationEntry;
 use App\Services\Accounting\RevaluationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RevaluationController extends Controller
 {
+    use HandlesControllerErrors;
+
     public function __construct(
         protected RevaluationService $revaluationService
     ) {}
@@ -25,7 +26,7 @@ class RevaluationController extends Controller
     {
         $this->requireAccountingAccess();
 
-        $positions = CurrencyPosition::with('currency')->get();
+        $positions = CurrencyPosition::with('currency')->paginate(25);
         $status = $this->revaluationService->getRevaluationStatus(now()->format('Y-m'));
 
         return view('accounting.revaluation.index', compact('positions', 'status'));
@@ -41,10 +42,8 @@ class RevaluationController extends Controller
             return redirect()->route('accounting.revaluation')
                 ->with('success', "Revaluation complete. {$results['positions_updated']} positions updated.");
 
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            return back()->with('error', 'Revaluation failed. Please try again.');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Revaluation failed', 'Revaluation failed. Please try again.');
         }
     }
 

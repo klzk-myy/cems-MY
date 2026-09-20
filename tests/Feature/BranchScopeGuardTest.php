@@ -46,7 +46,7 @@ class BranchScopeGuardTest extends TestCase
         $teller = $this->orphan(UserRole::Teller);
         $manager = $this->orphan(UserRole::Manager);
 
-        foreach (['/rates', '/counters', '/transactions', '/branch-pools', '/stock-cash', '/allocations', '/stock-transfers'] as $url) {
+        foreach (['/rates', '/transactions', '/branch-pools', '/stock-cash', '/allocations', '/stock-transfers'] as $url) {
             $this->actingAs($manager)->get($url)->assertForbidden();
             $this->flushSession();
             $this->actingAs($teller)->get($url)->assertForbidden();

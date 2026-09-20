@@ -28,22 +28,46 @@ class BranchClosingService
 
     public function initiateClosure(Branch $branch, User $initiator): BranchClosureWorkflow
     {
-        // Service-level guard so every entry point (web and API) is covered:
-        // a new closure for an already-finalized business date is
-        // meaningless — the day must be reopened first.
-        $today = now()->toDateString();
+        return DB::transaction(function () use ($branch, $initiator) {
+            $today = now()->toDateString();
 
-        if (BranchClosureWorkflow::freezesDate($branch->id, $today)) {
-            throw new BusinessDateFrozenException($branch->code ?? (string) $branch->id, $today);
-        }
+            // Serialize initiations on the branch row: when no workflow rows
+            // exist yet, locking the workflow table locks nothing and two
+            // callers could both pass the checks below.
+            Branch::whereKey($branch->id)->lockForUpdate()->firstOrFail();
 
-        $workflow = BranchClosureWorkflow::create([
-            'branch_id' => $branch->id,
-            'initiated_by' => $initiator->id,
-            'status' => BranchClosureStatus::Initiated->value,
-        ]);
+            // One active workflow per branch — a second initiation while
+            // Initiated/Settled must be rejected, not left to wedge
+            // finalize() on documents_finalized.
+            $activeExists = BranchClosureWorkflow::where('branch_id', $branch->id)
+                ->whereIn('status', [
+                    BranchClosureStatus::Initiated->value,
+                    BranchClosureStatus::Settled->value,
+                ])
+                ->exists();
 
-        return $workflow;
+            if ($activeExists) {
+                throw new InvalidStateException(
+                    "Branch {$branch->code} already has an active closure workflow — settle and finalize it, or reopen the finalized day."
+                );
+            }
+
+            // A new closure for an already-finalized business date is
+            // meaningless — the day must be reopened first.
+            if (BranchClosureWorkflow::freezesDate($branch->id, $today)) {
+                throw new BusinessDateFrozenException($branch->code ?? (string) $branch->id, $today);
+            }
+
+            // business_date freezes the day being closed at initiation —
+            // not at finalize — so no new business can land mid-close and a
+            // midnight-crossing finalize still anchors the right date.
+            return BranchClosureWorkflow::create([
+                'branch_id' => $branch->id,
+                'initiated_by' => $initiator->id,
+                'status' => BranchClosureStatus::Initiated->value,
+                'business_date' => $today,
+            ]);
+        });
     }
 
     public function getChecklist(BranchClosureWorkflow $workflow): array
@@ -128,7 +152,7 @@ class BranchClosingService
                 [
                     'branch_id' => $branch->id,
                     'branch_code' => $branch->code,
-                    'business_date' => now()->toDateString(),
+                    'business_date' => $lockedWorkflow->business_date?->toDateString(),
                 ]
             );
         });
@@ -156,13 +180,17 @@ class BranchClosingService
                 );
             }
 
-            // The frozen business date is the day the workflow finalized —
-            // capture it before the stamp is cleared.
-            $frozenDate = $lockedWorkflow->finalized_at?->toDateString();
+            // The frozen business date is the day being closed — captured at
+            // initiation, immune to a midnight-crossing finalize.
+            $frozenDate = $lockedWorkflow->business_date?->toDateString();
 
+            // reopened_at marks this Settled state as "reopened for
+            // corrections": freezesDate() skips it, so postings on the
+            // business date are allowed until the workflow finalizes again.
             $lockedWorkflow->update([
                 'status' => BranchClosureStatus::Settled->value,
                 'finalized_at' => null,
+                'reopened_at' => now(),
             ]);
 
             $this->auditService->log(

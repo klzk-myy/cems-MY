@@ -16,6 +16,7 @@ use App\Services\Compliance\Monitors\VelocityMonitor;
 use App\Services\System\MathService;
 use App\Services\System\SystemAlertService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class MonitoringEngine
@@ -40,21 +41,17 @@ class MonitoringEngine
     protected array $failureLog = [];
 
     /**
-     * In-memory dedup so a monitor that fails repeatedly only raises one
-     * Critical alert per engine instance (one run-cycle in scheduled usage),
-     * mirroring the BaseMonitor finding-dedup philosophy.
-     *
-     * @var array<string, true>
+     * Breaker/alert state lives in Cache, keyed per monitor class, so it
+     * survives across scheduled invocations — each runMonitor job gets a
+     * fresh engine instance, and in-memory state would reset every run.
      */
-    protected array $alertedMonitors = [];
+    protected const CACHE_PREFIX = 'monitoring_engine:';
 
-    protected int $consecutiveFailures = 0;
+    protected const ALERT_DEDUP_TTL_SECONDS = 86400; // 24h
 
     protected const CIRCUIT_BREAKER_THRESHOLD = 3;
 
     protected const CIRCUIT_BREAKER_RESET_AFTER = 60; // seconds
-
-    protected ?int $circuitBrokenAt = null;
 
     public function __construct(MathService $mathService, ComplianceService $complianceService, SystemAlertService $alertService)
     {
@@ -101,21 +98,19 @@ class MonitoringEngine
 
     protected function isCircuitBroken(): bool
     {
-        if ($this->consecutiveFailures < self::CIRCUIT_BREAKER_THRESHOLD) {
+        $failures = (int) Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0);
+
+        if ($failures < self::CIRCUIT_BREAKER_THRESHOLD) {
             return false;
         }
 
-        // Check if we should reset the circuit breaker
-        if ($this->circuitBrokenAt !== null) {
-            $elapsed = time() - $this->circuitBrokenAt;
-            if ($elapsed >= self::CIRCUIT_BREAKER_RESET_AFTER) {
-                // Reset after cooldown period
-                $this->consecutiveFailures = 0;
-                $this->circuitBrokenAt = null;
-                Log::info('MonitoringEngine circuit breaker reset after cooldown');
+        // The broken-at key carries a TTL equal to the cooldown — once it
+        // lapses the circuit resets itself.
+        if (Cache::get(self::CACHE_PREFIX.'circuit_broken_at') === null) {
+            Cache::forget(self::CACHE_PREFIX.'consecutive_failures');
+            Log::info('MonitoringEngine circuit breaker reset after cooldown');
 
-                return false;
-            }
+            return false;
         }
 
         return true;
@@ -123,17 +118,23 @@ class MonitoringEngine
 
     protected function recordFailure(): void
     {
-        $this->consecutiveFailures++;
-        if ($this->consecutiveFailures >= self::CIRCUIT_BREAKER_THRESHOLD) {
-            $this->circuitBrokenAt = time();
+        $failures = (int) Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0) + 1;
+        Cache::put(self::CACHE_PREFIX.'consecutive_failures', $failures, now()->addHour());
+
+        if ($failures >= self::CIRCUIT_BREAKER_THRESHOLD) {
+            Cache::put(
+                self::CACHE_PREFIX.'circuit_broken_at',
+                time(),
+                self::CIRCUIT_BREAKER_RESET_AFTER
+            );
             Log::critical('MonitoringEngine circuit breaker triggered - too many consecutive monitor failures');
         }
     }
 
     protected function recordSuccess(): void
     {
-        $this->consecutiveFailures = 0;
-        $this->circuitBrokenAt = null;
+        Cache::forget(self::CACHE_PREFIX.'consecutive_failures');
+        Cache::forget(self::CACHE_PREFIX.'circuit_broken_at');
     }
 
     public function runAll(): Collection
@@ -144,8 +145,8 @@ class MonitoringEngine
         // Check circuit breaker before running monitors
         if ($this->isCircuitBroken()) {
             Log::warning('MonitoringEngine circuit breaker is open, skipping all monitors', [
-                'consecutive_failures' => $this->consecutiveFailures,
-                'broken_at' => $this->circuitBrokenAt,
+                'consecutive_failures' => Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0),
+                'broken_at' => Cache::get(self::CACHE_PREFIX.'circuit_broken_at'),
             ]);
 
             return $results;
@@ -253,12 +254,20 @@ class MonitoringEngine
         $newlyAlerted = [];
         $raisedAlert = null;
 
+        /** @var array<string, int> $alertedMonitors */
+        $alertedMonitors = Cache::get(self::CACHE_PREFIX.'alerted_monitors', []);
+
         foreach ($monitorNames as $monitorName) {
-            if (isset($this->alertedMonitors[$monitorName])) {
+            if (isset($alertedMonitors[$monitorName])) {
                 continue;
             }
 
-            $this->alertedMonitors[$monitorName] = true;
+            $alertedMonitors[$monitorName] = time();
+            Cache::put(
+                self::CACHE_PREFIX.'alerted_monitors',
+                $alertedMonitors,
+                self::ALERT_DEDUP_TTL_SECONDS
+            );
             $newlyAlerted[] = $monitorName;
 
             try {
@@ -323,6 +332,6 @@ class MonitoringEngine
     public function clearFailureLog(): void
     {
         $this->failureLog = [];
-        $this->alertedMonitors = [];
+        Cache::forget(self::CACHE_PREFIX.'alerted_monitors');
     }
 }

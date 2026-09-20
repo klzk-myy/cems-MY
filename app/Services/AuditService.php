@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SystemLogSeverity;
 use App\Exceptions\Domain\AuditIntegrityException;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\AuditTrail;
@@ -10,6 +11,7 @@ use App\Services\Contracts\AuditServiceInterface;
 use App\Services\System\CacheKeys;
 use App\Services\System\CacheOptimizationService;
 use App\Support\ActorContext;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -33,89 +35,103 @@ class AuditService implements AuditServiceInterface
     private const HASH_V2_PREFIX = 'v2:';
 
     /**
+     * previous_hash marker used when an entry seals across a quarantined
+     * gap: 'GAP:<quarantinedLogId>'. The marker makes the discontinuity
+     * explicit in the chain itself — verifyChainIntegrity reports it as a
+     * quarantine boundary instead of a hash mismatch.
+     */
+    public const GAP_PREFIX = 'GAP:';
+
+    /**
+     * seal_status value for a permanently unsealable row. Quarantined rows
+     * never receive entry_hash and are excluded from gap detection so later
+     * entries can seal past them.
+     */
+    public const SEAL_STATUS_QUARANTINED = 'quarantined';
+
+    /**
      * Severity maps per action, keyed by action prefix used by logAction().
      *
      * Each entry maps a specific action name to its severity. The special
      * '*' key is the default for any action in that domain not explicitly listed.
-     */
-    /**
-     * @var array<string, array<string, string>>
+     *
+     * @var array<string, array<string, SystemLogSeverity>>
      */
     private const SEVERITY_MAPS = [
         'compliance_flag_' => [
-            'compliance_flag_assigned' => 'WARNING',
-            'compliance_flag_resolved' => 'INFO',
-            '*' => 'INFO',
+            'compliance_flag_assigned' => SystemLogSeverity::Warning,
+            'compliance_flag_resolved' => SystemLogSeverity::Info,
+            '*' => SystemLogSeverity::Info,
         ],
         'compliance_alert_' => [
-            'compliance_alert_created' => 'WARNING',
-            'compliance_alert_escalated' => 'WARNING',
-            'compliance_alert_bulk_dismissed' => 'WARNING',
-            '*' => 'INFO',
+            'compliance_alert_created' => SystemLogSeverity::Warning,
+            'compliance_alert_escalated' => SystemLogSeverity::Warning,
+            'compliance_alert_bulk_dismissed' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'compliance_case_' => [
-            'compliance_case_priority_changed' => 'WARNING',
-            '*' => 'INFO',
+            'compliance_case_priority_changed' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'stock_transfer_' => [
-            'stock_transfer_partially_received' => 'WARNING',
-            'stock_transfer_cancelled' => 'WARNING',
-            'stock_transfer_variance_exceeded' => 'WARNING',
-            '*' => 'INFO',
+            'stock_transfer_partially_received' => SystemLogSeverity::Warning,
+            'stock_transfer_cancelled' => SystemLogSeverity::Warning,
+            'stock_transfer_variance_exceeded' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'journal_entry_' => [
-            'journal_entry_rejected' => 'WARNING',
-            '*' => 'INFO',
+            'journal_entry_rejected' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'position_' => [
-            'position_limit_breach' => 'WARNING',
-            'position_manual_adjustment' => 'WARNING',
-            '*' => 'INFO',
+            'position_limit_breach' => SystemLogSeverity::Warning,
+            'position_manual_adjustment' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'customer_risk_' => [
-            'customer_risk_level_upgraded' => 'WARNING',
-            'customer_risk_locked' => 'WARNING',
-            '*' => 'INFO',
+            'customer_risk_level_upgraded' => SystemLogSeverity::Warning,
+            'customer_risk_locked' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'sanction_' => [
-            'sanction_screening_hit' => 'ERROR',
-            'sanction_manual_override' => 'WARNING',
-            'sanction_block_overridden' => 'CRITICAL',
-            '*' => 'INFO',
+            'sanction_screening_hit' => SystemLogSeverity::Error,
+            'sanction_manual_override' => SystemLogSeverity::Warning,
+            'sanction_block_overridden' => SystemLogSeverity::Critical,
+            '*' => SystemLogSeverity::Info,
         ],
         'mfa_' => [
-            'mfa_verification_failed' => 'WARNING',
-            'mfa_disable_requested' => 'WARNING',
-            'mfa_recovery_code_used' => 'WARNING',
-            'mfa_trusted_device_removed' => 'WARNING',
-            '*' => 'INFO',
+            'mfa_verification_failed' => SystemLogSeverity::Warning,
+            'mfa_disable_requested' => SystemLogSeverity::Warning,
+            'mfa_recovery_code_used' => SystemLogSeverity::Warning,
+            'mfa_trusted_device_removed' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'session_' => [
-            'session_concurrent_blocked' => 'WARNING',
-            '*' => 'INFO',
+            'session_concurrent_blocked' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'regulatory_report_' => [
-            'regulatory_report_submitted' => 'WARNING',
-            '*' => 'INFO',
+            'regulatory_report_submitted' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'report_' => [
-            'report_audit_log_viewed' => 'WARNING',
-            'report_data_export' => 'WARNING',
-            '*' => 'INFO',
+            'report_audit_log_viewed' => SystemLogSeverity::Warning,
+            'report_data_export' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'edd_template_' => [
-            'edd_template_deleted' => 'WARNING',
-            '*' => 'INFO',
+            'edd_template_deleted' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'api_' => [
-            'api_login_failed' => 'WARNING',
-            '*' => 'INFO',
+            'api_login_failed' => SystemLogSeverity::Warning,
+            '*' => SystemLogSeverity::Info,
         ],
         'aml_' => [
-            'aml_velocity_alert_triggered' => 'ERROR',
-            'aml_structuring_detected' => 'ERROR',
-            'aml_rule_triggered' => 'ERROR',
-            '*' => 'INFO',
+            'aml_velocity_alert_triggered' => SystemLogSeverity::Error,
+            'aml_structuring_detected' => SystemLogSeverity::Error,
+            'aml_rule_triggered' => SystemLogSeverity::Error,
+            '*' => SystemLogSeverity::Info,
         ],
     ];
 
@@ -124,7 +140,7 @@ class AuditService implements AuditServiceInterface
      * Supports prefix matching (e.g. 'compliance_alert_' => 'compliance_alert_created')
      * to keep the maps compact while handling arbitrarily many action names.
      */
-    private function resolveSeverity(string $action, string $domainDefault = 'INFO'): string
+    private function resolveSeverity(string $action, SystemLogSeverity $domainDefault = SystemLogSeverity::Info): SystemLogSeverity
     {
         foreach (self::SEVERITY_MAPS as $prefix => $map) {
             if (str_starts_with($action, $prefix)) {
@@ -150,14 +166,14 @@ class AuditService implements AuditServiceInterface
      * @param  string  $entityType  Entity type (e.g. 'Alert', 'Customer', 'StockTransfer')
      * @param  int|null  $entityId  Entity ID, or null
      * @param  array  $data  Old/new values and any extra keys to propagate
-     * @param  string  $severity  Severity level to override automatic resolution
+     * @param  SystemLogSeverity|string  $severity  Severity level to override automatic resolution
      */
     public function logAction(
         string $action,
         string $entityType,
         ?int $entityId,
         array $data = [],
-        string $severity = ''
+        SystemLogSeverity|string $severity = ''
     ): SystemLog {
         $resolvedSeverity = $severity !== ''
             ? $severity
@@ -195,9 +211,12 @@ class AuditService implements AuditServiceInterface
         ?string $previousHash,
         ?array $oldValues = null,
         ?array $newValues = null,
-        ?string $severity = null,
+        SystemLogSeverity|string|null $severity = null,
         ?string $ipAddress = null
     ): string {
+        // Enum-backed reads (SystemLog.severity cast) must reduce to the
+        // stored string so v2 hash bytes match pre-cast sealed rows.
+        $severity = $severity instanceof SystemLogSeverity ? $severity->value : $severity;
         // Legacy v1 payload: metadata fields only.
         $data = implode('|', [
             $timestamp,
@@ -274,6 +293,8 @@ class AuditService implements AuditServiceInterface
                 $unsealedBetween = SystemLog::where('id', '>', $predecessorId)
                     ->where('id', '<', $logId)
                     ->whereNull('entry_hash')
+                    ->where(fn ($q) => $q->whereNull('seal_status')
+                        ->orWhere('seal_status', '!=', self::SEAL_STATUS_QUARANTINED))
                     ->exists();
 
                 if ($unsealedBetween) {
@@ -290,7 +311,17 @@ class AuditService implements AuditServiceInterface
                 return true;
             }
 
-            $previousHash = $predecessor->entry_hash ?? null;
+            // Quarantined rows sitting between the last sealed predecessor
+            // and this entry break the link: the previous_hash records the
+            // gap boundary explicitly instead of silently skipping them.
+            $quarantineBoundary = SystemLog::where('id', '>', $predecessorId ?? 0)
+                ->where('id', '<', $logId)
+                ->where('seal_status', self::SEAL_STATUS_QUARANTINED)
+                ->min('id');
+
+            $previousHash = $quarantineBoundary !== null
+                ? self::GAP_PREFIX.$quarantineBoundary
+                : ($predecessor->entry_hash ?? null);
 
             // Seal with the v2 formula: the hash covers old_values,
             // new_values, severity and ip_address so post-seal payload edits
@@ -328,14 +359,15 @@ class AuditService implements AuditServiceInterface
      *
      * @param  array<string, mixed>  $data
      */
-    private function createLogEntry(string $action, array $data, string $severity): SystemLog
+    private function createLogEntry(string $action, array $data, SystemLogSeverity|string $severity): SystemLog
     {
         $userId = array_key_exists('user_id', $data) ? $data['user_id'] : ActorContext::capture()->userId;
         $ipAddress = array_key_exists('ip_address', $data) ? $data['ip_address'] : Request::ip();
 
         // system_logs.severity is an uppercase enum (INFO/WARNING/ERROR/CRITICAL);
-        // normalize so legacy lowercase call sites cannot trip the CHECK constraint.
-        $severity = strtoupper($severity);
+        // normalize so legacy lowercase call sites cannot trip the CHECK constraint,
+        // and resolve through the enum so unknown severities fail fast here.
+        $severity = ($severity instanceof SystemLogSeverity ? $severity : SystemLogSeverity::normalize($severity))->value;
 
         $log = SystemLog::create([
             'user_id' => $userId,
@@ -383,7 +415,7 @@ class AuditService implements AuditServiceInterface
     public function logWithSeverity(
         string $action,
         array $data = [],
-        string $severity = 'INFO'
+        SystemLogSeverity|string $severity = SystemLogSeverity::Info
     ): SystemLog {
         $log = $this->createLogEntry($action, $data, $severity);
 
@@ -411,11 +443,11 @@ class AuditService implements AuditServiceInterface
     public function logWithSeveritySealed(
         string $action,
         array $data = [],
-        string $severity = 'INFO'
+        SystemLogSeverity|string $severity = SystemLogSeverity::Info
     ): SystemLog {
         $log = $this->createLogEntry($action, $data, $severity);
 
-        if (in_array($log->severity, ['CRITICAL'], true)) {
+        if ($log->severity === SystemLogSeverity::Critical) {
             $sealed = false;
             $maxAttempts = 3;
 
@@ -486,7 +518,7 @@ class AuditService implements AuditServiceInterface
                 'old_values' => $oldValues,
                 'new_values' => $newValues,
             ],
-            'INFO'
+            SystemLogSeverity::Info
         );
     }
 
@@ -537,25 +569,25 @@ class AuditService implements AuditServiceInterface
 
     public function logTransaction(string $action, int $transactionId, array $data = []): SystemLog
     {
-        return $this->logWithSeverity($action, $this->transactionPayload($transactionId, $data), $data['severity'] ?? 'INFO');
+        return $this->logWithSeverity($action, $this->transactionPayload($transactionId, $data), $data['severity'] ?? SystemLogSeverity::Info);
     }
 
     public function logTransactionSealed(string $action, int $transactionId, array $data = []): SystemLog
     {
-        return $this->logWithSeveritySealed($action, $this->transactionPayload($transactionId, $data), $data['severity'] ?? 'INFO');
+        return $this->logWithSeveritySealed($action, $this->transactionPayload($transactionId, $data), $data['severity'] ?? SystemLogSeverity::Info);
     }
 
     public function logCustomer(string $action, int $customerId, array $data = []): SystemLog
     {
-        return $this->logWithSeverity($action, $this->customerPayload($customerId, $data), $data['severity'] ?? 'INFO');
+        return $this->logWithSeverity($action, $this->customerPayload($customerId, $data), $data['severity'] ?? SystemLogSeverity::Info);
     }
 
     public function logCustomerSealed(string $action, int $customerId, array $data = []): SystemLog
     {
-        return $this->logWithSeveritySealed($action, $this->customerPayload($customerId, $data), $data['severity'] ?? 'INFO');
+        return $this->logWithSeveritySealed($action, $this->customerPayload($customerId, $data), $data['severity'] ?? SystemLogSeverity::Info);
     }
 
-    public function logComplianceDecision(string $action, int $entityId, array $data = [], string $severity = 'INFO'): SystemLog
+    public function logComplianceDecision(string $action, int $entityId, array $data = [], SystemLogSeverity|string $severity = SystemLogSeverity::Info): SystemLog
     {
         return $this->logAction($action, $data['entity_type'] ?? 'Compliance', $entityId, [
             'old_values' => $data['old'] ?? [],
@@ -606,7 +638,7 @@ class AuditService implements AuditServiceInterface
             'entity_type' => 'Transaction',
             'entity_id' => $transactionId,
             'new_values' => $context,
-        ], $status === 'ERROR' ? 'ERROR' : 'INFO');
+        ], $status === 'ERROR' ? SystemLogSeverity::Error : SystemLogSeverity::Info);
     }
 
     public function logCustomerRiskEvent(string $action, int $customerId, array $data = []): SystemLog
@@ -614,22 +646,22 @@ class AuditService implements AuditServiceInterface
         return $this->logAction($action, 'Customer', $customerId, $data);
     }
 
-    public function logCustomerEvent(string $action, int $customerId, array $data = [], string $severity = ''): SystemLog
+    public function logCustomerEvent(string $action, int $customerId, array $data = [], SystemLogSeverity|string $severity = ''): SystemLog
     {
         return $this->logAction($action, 'Customer', $customerId, $data, $severity);
     }
 
-    public function logEmergencyClosureEvent(string $action, int $closureId, array $data = [], string $severity = ''): SystemLog
+    public function logEmergencyClosureEvent(string $action, int $closureId, array $data = [], SystemLogSeverity|string $severity = ''): SystemLog
     {
         return $this->logAction($action, 'EmergencyClosure', $closureId, $data, $severity);
     }
 
-    public function logFlaggedTransactionEvent(string $action, int $entityId, array $data = [], string $severity = ''): SystemLog
+    public function logFlaggedTransactionEvent(string $action, int $entityId, array $data = [], SystemLogSeverity|string $severity = ''): SystemLog
     {
         return $this->logAction($action, 'FlaggedTransaction', $entityId, $data, $severity);
     }
 
-    public function logPreTransactionEvent(string $action, int $entityId, array $data = [], string $severity = ''): SystemLog
+    public function logPreTransactionEvent(string $action, int $entityId, array $data = [], SystemLogSeverity|string $severity = ''): SystemLog
     {
         return $this->logAction($action, 'PreTransaction', $entityId, $data, $severity);
     }
@@ -665,7 +697,7 @@ class AuditService implements AuditServiceInterface
                 'resource' => $resource,
                 'attempted_at' => now()->toIso8601String(),
             ],
-        ], 'WARNING');
+        ], SystemLogSeverity::Warning);
     }
 
     public function logRegulatoryReportEvent(string $action, int $reportId, array $data = []): SystemLog
@@ -704,7 +736,7 @@ class AuditService implements AuditServiceInterface
                 'accessed_branch_name' => $data['branch_name'] ?? null,
                 'user_branch_id' => ActorContext::capture()->user?->branch_id,
             ],
-        ], 'WARNING');
+        ], SystemLogSeverity::Warning);
     }
 
     /**
@@ -726,7 +758,7 @@ class AuditService implements AuditServiceInterface
                 'items_succeeded' => $data['items_succeeded'] ?? 0,
                 'items_failed' => $data['items_failed'] ?? 0,
             ],
-        ], 'INFO');
+        ], SystemLogSeverity::Info);
     }
 
     public function logProcedureTrigger(string $procedureName, array $parameters = []): SystemLog
@@ -738,7 +770,7 @@ class AuditService implements AuditServiceInterface
                 'procedure_name' => $procedureName,
                 'parameters' => $parameters,
             ],
-        ], 'INFO');
+        ], SystemLogSeverity::Info);
     }
 
     public function logControllerAction(
@@ -755,7 +787,7 @@ class AuditService implements AuditServiceInterface
                 'request_data' => $requestData,
                 'result' => $result,
             ],
-        ], 'INFO');
+        ], SystemLogSeverity::Info);
     }
 
     public function logModelEvent(
@@ -770,7 +802,7 @@ class AuditService implements AuditServiceInterface
             'entity_id' => $modelId,
             'old_values' => $original,
             'new_values' => $changes,
-        ], 'INFO');
+        ], SystemLogSeverity::Info);
     }
 
     /**
@@ -786,6 +818,7 @@ class AuditService implements AuditServiceInterface
         $checked = 0;
         $broken = null;
         $isFirstEntryInWindow = true;
+        $quarantineBoundaries = [];
 
         $query = SystemLog::whereNotNull('entry_hash')->orderBy('id', 'asc');
 
@@ -798,13 +831,27 @@ class AuditService implements AuditServiceInterface
             $query->whereIn('id', $lastIds);
         }
 
-        $query->chunkById(1000, function ($entries) use (&$previousHash, &$checked, &$broken, &$isFirstEntryInWindow) {
+        $query->chunkById(1000, function ($entries) use (&$previousHash, &$checked, &$broken, &$isFirstEntryInWindow, &$quarantineBoundaries) {
             foreach ($entries as $entry) {
+                // A GAP:<id> previous_hash marks an explicit quarantine
+                // boundary: the entry sealed across a permanently unsealable
+                // row. Record it and skip the link check — the entry's own
+                // hash still verifies (the marker is part of its payload).
+                $isGapBoundary = str_starts_with((string) $entry->previous_hash, self::GAP_PREFIX);
+
+                if ($isGapBoundary) {
+                    $quarantineBoundaries[] = [
+                        'entry_id' => $entry->id,
+                        'quarantined_id' => (int) substr((string) $entry->previous_hash, strlen(self::GAP_PREFIX)),
+                    ];
+                }
+
                 // The oldest entry in a limited window links to a predecessor
                 // outside the window, so seed the expectation from its stored
                 // previous_hash: skip the link check for the first entry and
                 // compare strictly from the second one onward.
                 if (! $isFirstEntryInWindow
+                    && ! $isGapBoundary
                     && ! hash_equals((string) $previousHash, (string) $entry->previous_hash)) {
                     $broken = ['valid' => false, 'broken_at' => $entry->id, 'message' => 'Previous hash mismatch.'];
 
@@ -852,19 +899,52 @@ class AuditService implements AuditServiceInterface
         });
 
         if ($broken) {
-            return $broken;
+            return $broken + ['quarantine_boundaries' => $quarantineBoundaries];
         }
 
         return [
             'valid' => true,
             'broken_at' => null,
-            'message' => "Chain integrity verified: {$checked} entries checked.",
+            'quarantine_boundaries' => $quarantineBoundaries,
+            'message' => "Chain integrity verified: {$checked} entries checked.".
+                ($quarantineBoundaries === [] ? '' : ' '.count($quarantineBoundaries).' quarantine boundary(ies) crossed.'),
         ];
     }
 
     public function getUnsealedCount(): int
     {
-        return SystemLog::whereNull('entry_hash')->count();
+        // Quarantined rows are terminal — they will never seal, so they are
+        // not counted among entries still awaiting a seal.
+        return SystemLog::whereNull('entry_hash')
+            ->where(fn ($q) => $q->whereNull('seal_status')
+                ->orWhere('seal_status', '!=', self::SEAL_STATUS_QUARANTINED))
+            ->count();
+    }
+
+    /**
+     * Oldest unsealed (non-quarantined) entry timestamp, or null when the
+     * chain is fully sealed. Used by audit:watch-unsealed for age alerting.
+     */
+    public function getOldestUnsealedAt(): ?Carbon
+    {
+        $ts = SystemLog::whereNull('entry_hash')
+            ->where(fn ($q) => $q->whereNull('seal_status')
+                ->orWhere('seal_status', '!=', self::SEAL_STATUS_QUARANTINED))
+            ->min('created_at');
+
+        return $ts ? Carbon::parse($ts) : null;
+    }
+
+    /**
+     * Mark a row permanently unsealable. Quarantined rows keep their payload
+     * (still auditable evidence) but are excluded from gap detection so the
+     * chain resumes past them via a GAP:<id> previous_hash marker.
+     */
+    public function quarantineEntry(int $logId): void
+    {
+        SystemLog::where('id', $logId)
+            ->whereNull('entry_hash')
+            ->update(['seal_status' => self::SEAL_STATUS_QUARANTINED]);
     }
 
     /**
@@ -910,7 +990,7 @@ class AuditService implements AuditServiceInterface
             return [
                 'user_id' => $log['user_id'] ?? ActorContext::capture()->userId,
                 'action' => $log['action'],
-                'severity' => $log['severity'] ?? 'INFO',
+                'severity' => ($log['severity'] instanceof SystemLogSeverity ? $log['severity'] : SystemLogSeverity::normalize($log['severity'] ?? 'INFO'))->value,
                 'entity_type' => $log['entity_type'] ?? null,
                 'entity_id' => $log['entity_id'] ?? null,
                 'old_values' => ! empty($log['old_values'] ?? []) ? $log['old_values'] : null,

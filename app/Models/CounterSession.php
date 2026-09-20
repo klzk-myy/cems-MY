@@ -119,6 +119,22 @@ class CounterSession extends BaseModel
         return $this->counter->code ?? (string) $this->counter_id;
     }
 
+    /**
+     * The counter a user is currently seated at via their open session.
+     * Booking tills resolve from this so counter selection stays invisible
+     * to the teller; openSession() enforces one open session per user, and
+     * the latest ordering defends the pick if data ever violates it.
+     */
+    public static function openCounterForUser(int $userId): ?Counter
+    {
+        return static::where('user_id', $userId)
+            ->open()
+            ->latest('opened_at')
+            ->with('counter')
+            ->first()
+            ?->counter;
+    }
+
     public function scopeOpen($query)
     {
         return $query->where('status', CounterSessionStatus::Open->value);

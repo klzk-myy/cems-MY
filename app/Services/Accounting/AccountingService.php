@@ -127,6 +127,17 @@ class AccountingService implements AccountingServiceInterface
                     || $this->mathService->compare($credit, '0') < 0) {
                     throw new AccountingPeriodException('Journal line amounts must not be negative');
                 }
+
+                // A journal line is one-sided: exactly one of debit/credit
+                // carries a positive amount. Both-set and both-zero lines
+                // would post ambiguous or no-op ledger movements.
+                $hasDebit = $this->mathService->compare($debit, '0') > 0;
+                $hasCredit = $this->mathService->compare($credit, '0') > 0;
+                if ($hasDebit === $hasCredit) {
+                    throw new AccountingPeriodException(
+                        'Each journal line must set exactly one of debit or credit to a positive amount'
+                    );
+                }
             }
 
             if (! $this->validateBalanced($lines)) {

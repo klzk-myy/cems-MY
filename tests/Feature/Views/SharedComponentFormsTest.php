@@ -93,46 +93,6 @@ class SharedComponentFormsTest extends TestCase
     }
 
     #[Test]
-    public function counter_handover_form_uses_textarea_component(): void
-    {
-        $path = $this->getViewPath('counters.handover');
-        $content = file_get_contents($path);
-
-        $this->assertStringNotContainsString('<textarea', $content);
-        $this->assertStringContainsString('<x-textarea', $content);
-    }
-
-    #[Test]
-    public function counter_close_form_uses_textarea_component(): void
-    {
-        $path = $this->getViewPath('counters.close');
-        $content = file_get_contents($path);
-
-        $this->assertStringNotContainsString('<textarea', $content);
-        $this->assertStringContainsString('<x-textarea', $content);
-    }
-
-    #[Test]
-    public function counter_emergency_closure_form_uses_textarea_component(): void
-    {
-        $path = $this->getViewPath('counters.emergency-closure');
-        $content = file_get_contents($path);
-
-        $this->assertStringNotContainsString('<textarea', $content);
-        $this->assertStringContainsString('<x-textarea', $content);
-    }
-
-    #[Test]
-    public function counter_emergency_form_uses_textarea_component(): void
-    {
-        $path = $this->getViewPath('counters.emergency');
-        $content = file_get_contents($path);
-
-        $this->assertStringNotContainsString('<textarea', $content);
-        $this->assertStringContainsString('<x-textarea', $content);
-    }
-
-    #[Test]
     public function rates_index_form_uses_textarea_component(): void
     {
         $path = $this->getViewPath('rates.index');

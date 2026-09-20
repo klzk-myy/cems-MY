@@ -541,7 +541,7 @@ class CaseManagementService
     protected function assertAllAlertsResolved(ComplianceCase $case): void
     {
         $unresolvedAlertIds = $case->alerts()
-            ->whereNotIn('status', [FlagStatus::Resolved->value, FlagStatus::Rejected->value])
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->pluck('id')
             ->all();
 

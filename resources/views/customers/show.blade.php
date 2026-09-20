@@ -50,7 +50,7 @@
                     <div class="space-y-3 text-sm">
                         <div>
                             <span class="text-ink-muted">ID</span>
-                            <p class="font-medium">{{ $customer->id_type ?? 'IC' }}: {{ $customer->id_number_masked ?? '****' }}</p>
+                            <p class="font-medium">{{ $customer->id_type ?? 'IC' }}: {{ $customer->id_number ?? '—' }}</p>
                         </div>
                         <div>
                             <span class="text-ink-muted">Nationality</span>
@@ -116,7 +116,7 @@
                         <x-slot:tbody>
                             @forelse($customer->transactions as $transaction)
                                 <tr class="hover:bg-canvas-subtle">
-                                    <td class="px-4 py-3 text-sm">{{ $transaction->created_at->format('d M Y') }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $transaction->created_at->format('d M Y H:i') }}</td>
                                     <td class="px-4 py-3 text-sm">{{ $transaction->type?->value ?? $transaction->type }}</td>
                                     <td class="px-4 py-3 text-sm">{{ $transaction->currency_code ?? 'MYR' }}</td>
                                     <td class="px-4 py-3 text-sm">RM {{ number_format($transaction->amount_myr ?? 0, 2) }}</td>
@@ -140,6 +140,85 @@
                     </x-stat-grid>
                 </x-card>
 
+                <x-card title="Screening Results">
+                    <div class="space-y-3">
+                        @forelse($screeningResults ?? [] as $result)
+                            <div class="p-3 bg-canvas-subtle rounded-lg space-y-2">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <x-badge :variant="match ($result->result) {
+                                            'clear' => 'success',
+                                            'flag' => 'warning',
+                                            'block', 'potential_match', 'confirmed_match' => 'danger',
+                                            default => 'gray',
+                                        }">
+                                            {{ ucfirst(str_replace('_', ' ', (string) $result->result)) }}
+                                        </x-badge>
+                                        <x-badge :variant="$result->source === 'adverse_media' ? 'warning' : 'info'">
+                                            {{ $result->source === 'adverse_media' ? 'Adverse Media' : 'Sanctions' }}
+                                        </x-badge>
+                                        <span class="text-sm font-medium">{{ round((float) $result->match_score * 100, 1) }}% match</span>
+                                    </div>
+                                    <span class="text-xs text-ink-muted">{{ $result->created_at?->format('d M Y H:i') }}</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                                    <div class="flex justify-between gap-3">
+                                        <span class="text-ink-muted">Screened Name</span>
+                                        <span class="text-ink text-right">{{ $result->screened_name ?? '—' }}</span>
+                                    </div>
+                                    <div class="flex justify-between gap-3">
+                                        <span class="text-ink-muted">Match Type</span>
+                                        <span class="text-ink text-right">{{ ucfirst($result->match_type?->value ?? (string) $result->match_type) }}</span>
+                                    </div>
+                                    <div class="flex justify-between gap-3">
+                                        <span class="text-ink-muted">Matched Entry</span>
+                                        <span class="text-ink text-right">
+                                            {{ $result->sanctionEntry?->entity_name
+                                                ?? $result->adverseMediaEntry?->article_title
+                                                ?? $result->adverseMediaEntry?->name
+                                                ?? '—' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between gap-3">
+                                        <span class="text-ink-muted">Matched Fields</span>
+                                        <span class="text-ink text-right">{{ implode(', ', $result->matched_fields ?? []) ?: '—' }}</span>
+                                    </div>
+                                    <div class="flex justify-between gap-3">
+                                        <span class="text-ink-muted">Action Taken</span>
+                                        <span class="text-ink text-right">{{ $result->action_taken ?? '—' }}</span>
+                                    </div>
+                                    @if($result->transaction)
+                                        <div class="flex justify-between gap-3">
+                                            <span class="text-ink-muted">Transaction</span>
+                                            <a href="{{ route('transactions.show', $result->transaction) }}" class="text-primary hover:underline text-right">{{ $result->transaction->reference }}</a>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if($result->disposition)
+                                    <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60 text-xs">
+                                        <x-badge :variant="$result->disposition === 'confirmed' ? 'danger' : 'success'">
+                                            {{ ucfirst(str_replace('_', ' ', $result->disposition)) }}
+                                        </x-badge>
+                                        @if($result->disposition_reason)
+                                            <span class="text-ink-muted">{{ $result->disposition_reason }}</span>
+                                        @endif
+                                        @if($result->dispositioned_at)
+                                            <span class="text-ink-muted">· {{ $result->dispositioned_at->format('d M Y H:i') }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-sm text-ink-muted">No screening results recorded.</p>
+                        @endforelse
+                    </div>
+                    @if(($screeningResults ?? null)?->hasPages())
+                        <div class="mt-4">{{ $screeningResults->links() }}</div>
+                    @endif
+                </x-card>
+
                 <x-card title="KYC Documents">
                     <div class="space-y-3">
                         @forelse($customer->documents as $document)
@@ -159,7 +238,7 @@
                                             <x-badge :variant="$statusVariant">{{ ucfirst($document->status?->value ?? 'pending') }}</x-badge>
                                         </div>
                                         <div class="text-xs text-ink-muted">
-                                            ID: {{ $customer->id_number_masked ?? '****' }}
+                                            ID: {{ $customer->id_number ?? '—' }}
                                             · Uploaded {{ $document->created_at->format('d M Y') }}
                                             · Expiry {{ $document->expiry_date?->format('d M Y') ?? '-' }}
                                         </div>

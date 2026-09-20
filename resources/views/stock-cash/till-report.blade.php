@@ -99,6 +99,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $balances->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

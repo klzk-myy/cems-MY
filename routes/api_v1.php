@@ -95,6 +95,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/transactions/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'rejectCancellation'])
             ->middleware(['role:approve_cancellations', 'mfa.verified', 'throttle:10,1'])
             ->name('api.v1.transactions.reject-cancellation');
+        Route::post('/transactions/{transaction}/reverse', [TransactionCancellationController::class, 'requestReversal'])
+            ->middleware(['role:reverse_transactions', 'mfa.verified', 'throttle:10,1'])
+            ->name('api.v1.transactions.reverse');
+        Route::post('/transactions/{transaction}/complete-refund', [TransactionCancellationController::class, 'completeRefund'])
+            ->middleware(['role:approve_transactions', 'mfa.verified', 'throttle:20,1'])
+            ->name('api.v1.transactions.complete-refund');
 
         // Transaction Wizard API
         // step1/step2 stay pre-transaction (customer data + document
@@ -318,16 +324,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.sanctions.entries.destroy');
         });
 
-        // Screening endpoints (ComplianceOfficer+)
+        // Screening endpoints — mutations are compliance-only, read-only
+        // views are shared via the view_screening_results matrix grant.
         Route::middleware(['role:access_compliance'])->group(function () {
             Route::post('/screening/customer/{customer}', [ScreeningController::class, 'screen'])
                 ->name('api.v1.screening.customer');
+            Route::post('/screening/batch', [ScreeningController::class, 'batchScreen'])
+                ->name('api.v1.screening.batch');
+        });
+        Route::middleware(['role:access_compliance,view_screening_results'])->group(function () {
             Route::get('/screening/customer/{customer}/history', [ScreeningController::class, 'history'])
                 ->name('api.v1.screening.customer.history');
             Route::get('/screening/customer/{customer}/status', [ScreeningController::class, 'status'])
                 ->name('api.v1.screening.customer.status');
-            Route::post('/screening/batch', [ScreeningController::class, 'batchScreen'])
-                ->name('api.v1.screening.batch');
         });
 
         // Exchange Rates API - Manager/Admin only for modifications

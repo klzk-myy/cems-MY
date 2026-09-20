@@ -3,10 +3,13 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\TransactionType;
+use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Rules\ValidCurrencyCode;
 use App\Rules\ValidQuantity;
 use App\Rules\ValidRate;
 use App\Rules\ValidTill;
+use Illuminate\Validation\Rule;
 
 /**
  * Shared validation rules for transaction creation across the web, API, and
@@ -42,7 +45,7 @@ trait HasTransactionValidationRules
      */
     protected function transactionTypeRule(): array
     {
-        return ['required', 'in:'.TransactionType::Buy->value.','.TransactionType::Sell->value];
+        return ['required', Rule::enum(TransactionType::class)];
     }
 
     /**
@@ -141,11 +144,40 @@ trait HasTransactionValidationRules
 
     /**
      * Strict till rule used by the API; validates branch scoping and open status.
+     * Nullable: drawer-less bookings carry no till — custody ends at the
+     * teller allocation.
      *
      * @return array<array-key, string|ValidTill>
      */
     protected function tillIdRule(): array
     {
-        return ['required', 'string', new ValidTill];
+        return ['nullable', 'string', new ValidTill];
+    }
+
+    /**
+     * The counter the acting user is seated at (their open counter session).
+     * When a session exists it is the booking till — a submitted counter/till
+     * pointing elsewhere would move money in a drawer the user is not at, so
+     * the session counter wins. Callers without a session keep honoring an
+     * explicitly submitted till_id (API integrations, back-office posts).
+     */
+    protected function sessionCounter(): ?Counter
+    {
+        $user = $this->user();
+
+        return $user === null ? null : CounterSession::openCounterForUser((int) $user->id);
+    }
+
+    /**
+     * Merge the session counter's code as the booking till. Without a
+     * session the submitted till_id is left untouched for the till rule.
+     */
+    protected function mergeSessionTill(): void
+    {
+        $sessionCounter = $this->sessionCounter();
+
+        if ($sessionCounter !== null) {
+            $this->merge(['till_id' => $sessionCounter->code]);
+        }
     }
 }

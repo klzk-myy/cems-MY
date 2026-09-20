@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Requests\SetupRequest;
 use App\Models\Currency;
 use App\Services\System\SetupService;
@@ -14,12 +15,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SetupController extends Controller
 {
+    use ApiResponse, HandlesControllerErrors;
+
     public function __construct(
         protected SetupService $setupService,
         protected RateApiService $rateApiService,
@@ -104,27 +105,17 @@ class SetupController extends Controller
 
             $this->flashSanctionsBootstrapNotice();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Setup completed successfully!',
+            return $this->successResponse([
                 'redirect' => '/login',
                 'credentials' => [
                     'email' => $validated['admin_email'],
                     'password' => 'Use the password you provided',
                 ],
-            ]);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
+            ], 'Setup completed successfully!');
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Setup wizard quickSetup failed', [
-                'error' => $e->getMessage(),
-            ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Setup failed. Please check the server logs or try again.',
-            ], 500);
+            return $this->handleExceptionApi($e, 'Setup wizard quickSetup failed', 'Setup failed. Please check the server logs or try again.');
         }
     }
 
@@ -219,10 +210,7 @@ class SetupController extends Controller
         // the seeders still produce a usable install.
         foreach (['business', 'admin'] as $requiredKey) {
             if (empty($setupData[$requiredKey])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Setup session is incomplete. Please restart the wizard.',
-                ], 422);
+                return $this->errorResponse('Setup session is incomplete. Please restart the wizard.');
             }
         }
 
@@ -241,29 +229,17 @@ class SetupController extends Controller
 
             $this->flashSanctionsBootstrapNotice();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Business setup completed successfully!',
-                'redirect' => route('login'),
-            ]);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
+            return $this->successResponse(['redirect' => route('login')], 'Business setup completed successfully!');
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Setup wizard completeSetup failed', [
-                'error' => $e->getMessage(),
-            ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Setup could not be completed. Please check the server logs or try again.',
-            ], 500);
+            return $this->handleExceptionApi($e, 'Setup wizard completeSetup failed', 'Setup could not be completed. Please check the server logs or try again.');
         }
     }
 
     public function checkStatus(): JsonResponse
     {
-        return response()->json([
+        return $this->successResponse([
             'is_complete' => $this->setupService->isDataComplete(),
             'current_step' => $this->setupService->currentStep(),
             'progress' => $this->setupService->progress(),
@@ -274,10 +250,7 @@ class SetupController extends Controller
     public function resetSetup(Application $app): JsonResponse
     {
         if ($app->environment('production')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reset not allowed in production',
-            ], 403);
+            return $this->errorResponse('Reset not allowed in production', [], 403);
         }
 
         try {
@@ -288,21 +261,9 @@ class SetupController extends Controller
             // case the drop failed so the wizard can never stay locked out.
             $this->setupService->clearCompleted();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Setup reset. You can start fresh.',
-            ]);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Setup wizard resetSetup failed', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Setup could not be reset. Please check the server logs or try again.',
-            ], 500);
+            return $this->successResponse(null, 'Setup reset. You can start fresh.');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionApi($e, 'Setup wizard resetSetup failed', 'Setup could not be reset. Please check the server logs or try again.');
         }
     }
 
@@ -319,23 +280,16 @@ class SetupController extends Controller
         ))));
 
         if ($codes === []) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No currency codes supplied.',
-            ], 422);
+            return $this->errorResponse('No currency codes supplied.');
         }
 
         try {
             $rates = $this->rateApiService->previewRates($codes);
         } catch (\Throwable) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rates could not be fetched. Enter them manually.',
-            ], 502);
+            return $this->errorResponse('Rates could not be fetched. Enter them manually.', [], 502);
         }
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'rates' => $rates,
             'missing' => array_values(array_diff($codes, array_keys($rates))),
         ]);

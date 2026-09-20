@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int|null $branch_id
  * @property int|null $counter_id
- * @property string $till_id
+ * @property string|null $till_id
  * @property TransactionType $type
  * @property string $currency_code
  * @property string|null $counterparty_country

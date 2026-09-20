@@ -29,21 +29,9 @@ class CustomerRepository
         return Customer::where('id_number_hash', CustomerService::computeBlindIndex($idNumber))->first();
     }
 
-    /**
-     * Escape a user-supplied search term for use inside a LIKE pattern.
-     *
-     * Escapes the backslash first so it cannot alter the escape character,
-     * then escapes the % and _ wildcards. Without this, a search for "\%" or
-     * "100%" acts as a wildcard and matches records the user never searched for.
-     */
-    public static function escapeLike(string $value): string
-    {
-        return LikeEscaper::escape($value);
-    }
-
     public function search(string $query): Collection
     {
-        $pattern = '%'.self::escapeLike($query).'%';
+        $pattern = '%'.LikeEscaper::escape($query).'%';
 
         return Customer::whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
             ->orWhereRaw('id_number_hash LIKE ? ESCAPE ?', [$pattern, '\\'])
@@ -53,7 +41,7 @@ class CustomerRepository
 
     public function searchActive(string $query, int $limit = 10, ?int $branchId = null): Collection
     {
-        $escapedQuery = self::escapeLike($query);
+        $escapedQuery = LikeEscaper::escape($query);
         $pattern = '%'.$escapedQuery.'%';
 
         // Explicit ESCAPE clause: SQLite has no default escape character, MySQL uses

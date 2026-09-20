@@ -18,6 +18,9 @@ class StockReservationFactory extends Factory
             'transaction_id' => Transaction::factory(),
             'currency_code' => 'USD',
             'till_id' => 'MAIN',
+            // Reservations protect the branch-level position — inherit the
+            // owning transaction's branch by default.
+            'branch_id' => fn (array $attributes) => Transaction::query()->whereKey($attributes['transaction_id'])->value('branch_id'),
             'quantity' => '100.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),

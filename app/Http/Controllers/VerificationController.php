@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Str;
 
 class VerificationController extends Controller
 {
@@ -12,7 +11,7 @@ class VerificationController extends Controller
      * Public transaction verification page targeted by receipt QR codes.
      *
      * SECURITY: Only non-sensitive data is returned - status label, transaction
-     * date, and a masked reference. No customer PII, no amounts, no IDs that
+     * date, and the reference. No customer PII, no amounts, no IDs that
      * could enumerate other records. Unknown or malformed references render the
      * same generic "not verifiable" response with HTTP 200 so attackers cannot
      * use status codes to probe valid references.
@@ -29,12 +28,7 @@ class VerificationController extends Controller
             'verified' => $transaction !== null,
             'status' => $transaction?->status?->label(),
             'date' => $transaction?->created_at?->format('Y-m-d'),
-            'masked_reference' => $transaction ? $this->maskReference($transaction->reference) : null,
+            'reference' => $transaction?->reference,
         ]);
-    }
-
-    private function maskReference(string $reference): string
-    {
-        return Str::upper(Str::substr($reference, 0, 5).'****'.Str::substr($reference, -2));
     }
 }

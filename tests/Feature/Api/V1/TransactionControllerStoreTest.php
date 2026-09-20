@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Enums\CounterSessionStatus;
 use App\Enums\PepType;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
@@ -9,6 +10,7 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
+use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TellerAllocation;
@@ -243,5 +245,43 @@ class TransactionControllerStoreTest extends TestCase
         $this->assertEquals($apiTransaction['status'], $webTransaction->status->value);
         $this->assertEquals($apiTransaction['amount_myr'], $webTransaction->amount_myr);
         $this->assertEquals($apiTransaction['type'], $webTransaction->type->value);
+    }
+
+    /**
+     * Session counter wins on the API too: a teller seated at one counter
+     * cannot book against another till by submitting its code.
+     */
+    #[Test]
+    public function api_store_session_counter_overrides_submitted_till(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
+        $sessionCounter = $this->setupStoreTest($teller, 'USD');
+
+        CounterSession::factory()->create([
+            'counter_id' => $sessionCounter->id,
+            'user_id' => $teller->id,
+            'opened_by' => $teller->id,
+            'session_date' => today(),
+            'opened_at' => now(),
+            'status' => CounterSessionStatus::Open,
+        ]);
+
+        $otherCounter = Counter::factory()->create(['branch_id' => $branch->id]);
+
+        $payload = $this->basePayload($customer, $otherCounter, $currency);
+        $response = $this->actingAs($teller)->postJson('/api/v1/transactions', $payload);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('transactions', [
+            'id' => $response->json('data.id'),
+            'till_id' => $sessionCounter->code,
+            'counter_id' => $sessionCounter->id,
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
+use App\Support\LikeEscaper;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -15,8 +16,8 @@ class CustomerRepositorySearchTest extends TestCase
     #[Test]
     public function escape_like_keeps_plain_text_unchanged(): void
     {
-        $this->assertSame('John Doe', CustomerRepository::escapeLike('John Doe'));
-        $this->assertSame('', CustomerRepository::escapeLike(''));
+        $this->assertSame('John Doe', LikeEscaper::escape('John Doe'));
+        $this->assertSame('', LikeEscaper::escape(''));
     }
 
     #[Test]

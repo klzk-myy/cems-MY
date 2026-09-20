@@ -2,6 +2,7 @@
 
 namespace App\Services\Contracts;
 
+use App\Enums\SystemLogSeverity;
 use App\Models\SystemLog;
 
 interface AuditServiceInterface
@@ -15,28 +16,36 @@ interface AuditServiceInterface
         string $entityType,
         ?int $entityId,
         array $data = [],
-        string $severity = ''
+        SystemLogSeverity|string $severity = ''
     ): SystemLog;
 
+    /**
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
+     */
     public function computeEntryHash(
         string $timestamp,
         ?int $userId,
         string $action,
         ?string $entityType,
         ?int $entityId,
-        ?string $previousHash
+        ?string $previousHash,
+        ?array $oldValues = null,
+        ?array $newValues = null,
+        SystemLogSeverity|string|null $severity = null,
+        ?string $ipAddress = null
     ): string;
 
     public function logWithSeverity(
         string $action,
         array $data = [],
-        string $severity = 'INFO'
+        SystemLogSeverity|string $severity = SystemLogSeverity::Info
     ): SystemLog;
 
     public function logWithSeveritySealed(
         string $action,
         array $data = [],
-        string $severity = 'INFO'
+        SystemLogSeverity|string $severity = SystemLogSeverity::Info
     ): SystemLog;
 
     public function log(
@@ -72,7 +81,7 @@ interface AuditServiceInterface
         array $data = []
     ): SystemLog;
 
-    public function logComplianceDecision(string $action, int $entityId, array $data = [], string $severity = 'INFO'): SystemLog;
+    public function logComplianceDecision(string $action, int $entityId, array $data = [], SystemLogSeverity|string $severity = SystemLogSeverity::Info): SystemLog;
 
     public function logCustomerRiskEvent(string $action, int $customerId, array $data = []): SystemLog;
 

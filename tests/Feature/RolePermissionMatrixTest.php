@@ -24,8 +24,9 @@ use Tests\TestCase;
  * The role_permissions table is the authoritative grant set for dynamic
  * permissions: seeded from the built-in UserRole defaults, an admin may
  * widen it to grant any permission to any role or narrow it to revoke
- * built-in capabilities. Admin is exempt so the operator of the matrix
- * cannot lock itself out.
+ * built-in capabilities. Admin is governed by the matrix too — only
+ * ManageRolePermissions is pinned for Admin so the operator of the
+ * matrix cannot lock itself out.
  */
 class RolePermissionMatrixTest extends TestCase
 {
@@ -143,18 +144,27 @@ class RolePermissionMatrixTest extends TestCase
     }
 
     #[Test]
-    public function admin_is_exempt_from_matrix_revocation(): void
+    public function admin_permissions_are_editable_except_matrix_management(): void
     {
         $admin = $this->makeUser(UserRole::Admin);
 
         $this->permissionService->updateRolePermissions(
             UserRole::Admin,
-            [Permission::ApproveTransactions->value => false, Permission::ViewReports->value => false],
+            [
+                Permission::ApproveTransactions->value => false,
+                Permission::ViewReports->value => false,
+                Permission::ManageRolePermissions->value => false,
+            ],
             $admin->id
         );
 
-        $this->assertTrue(UserRole::Admin->canApproveTransactions());
-        $this->assertTrue(UserRole::Admin->canViewReports());
+        // Ordinary admin grants now honor the matrix like every other role.
+        $this->assertFalse(UserRole::Admin->canApproveTransactions());
+        $this->assertFalse(UserRole::Admin->canViewReports());
+
+        // …but matrix management itself can never be revoked from Admin —
+        // revoking it would lock every administrator out of this UI.
+        $this->assertTrue(UserRole::Admin->canPerform(Permission::ManageRolePermissions));
     }
 
     #[Test]
@@ -324,9 +334,11 @@ class RolePermissionMatrixTest extends TestCase
         $adminNav->assertSee(route('accounting.index'), false);
         $adminNav->assertSee(route('users.index'), false);
 
-        // The teller has no module grants — those links stay hidden.
+        // The teller has no module grants — those links stay hidden. The
+        // quoted href keeps /compliance/screening-matches (visible via the
+        // view_screening_results grant) from tripping a substring match.
         $tellerNav = $this->actingAs($teller)->get(route('dashboard'));
-        $tellerNav->assertDontSee(route('compliance'), false);
+        $tellerNav->assertDontSee('href="'.route('compliance').'"', false);
         $tellerNav->assertDontSee(route('accounting.index'), false);
         $tellerNav->assertDontSee(route('users.index'), false);
 
@@ -595,25 +607,6 @@ class RolePermissionMatrixTest extends TestCase
     }
 
     #[Test]
-    public function granting_manage_counters_unlocks_counter_administration(): void
-    {
-        $admin = $this->makeUser(UserRole::Admin);
-        $teller = $this->makeUser(UserRole::Teller);
-
-        $this->actingAs($teller)->get(route('counters.create'))->assertForbidden();
-
-        $this->permissionService->updatePermission(
-            UserRole::Teller,
-            Permission::ManageCounters,
-            true,
-            $admin->id
-        );
-
-        $response = $this->actingAs($teller->fresh())->get(route('counters.create'));
-        $this->assertNotSame(403, $response->getStatusCode());
-    }
-
-    #[Test]
     public function revoking_create_transactions_closes_the_teller_wizard(): void
     {
         $admin = $this->makeUser(UserRole::Admin);
@@ -639,7 +632,7 @@ class RolePermissionMatrixTest extends TestCase
     {
         $admin = $this->makeUser(UserRole::Admin);
 
-        foreach (['reports.index', 'rates.index', 'accounting.index', 'users.index', 'counters.create', 'system.currencies.index', 'admin.role-permissions.index'] as $routeName) {
+        foreach (['reports.index', 'rates.index', 'accounting.index', 'users.index', 'system.currencies.index', 'admin.role-permissions.index'] as $routeName) {
             $response = $this->actingAs($admin)->get(route($routeName));
             $this->assertNotSame(403, $response->getStatusCode(), "Admin was forbidden from {$routeName}");
         }

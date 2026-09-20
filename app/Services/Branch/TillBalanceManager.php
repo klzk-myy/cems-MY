@@ -3,6 +3,7 @@
 namespace App\Services\Branch;
 
 use App\Enums\TransactionType;
+use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\NegativeTillCloseException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\TillBalanceMissingException;
@@ -81,58 +82,65 @@ class TillBalanceManager
         ?int $closedBy = null,
         ?string $notes = null
     ): TillBalance {
-        if ($tillBalance->closed_at) {
-            throw new TillClosedException($tillBalance->till_id);
-        }
+        return DB::transaction(function () use ($tillBalance, $closingBalance, $closedBy, $notes) {
+            // Re-read under a row lock: a concurrent close could have
+            // committed since this instance was loaded, and the expected
+            // balance must reflect the locked row's flow columns.
+            $tillBalance = TillBalance::whereKey($tillBalance->id)->lockForUpdate()->firstOrFail();
 
-        $counter = $this->resolveCounter($tillBalance->till_id);
+            if ($tillBalance->closed_at) {
+                throw new TillClosedException($tillBalance->till_id);
+            }
 
-        if (! $counter) {
-            Log::warning('Counter not found for till balance', [
-                'till_id' => $tillBalance->till_id,
-                'currency_code' => $tillBalance->currency_code,
+            $counter = $this->resolveCounter($tillBalance->till_id);
+
+            if (! $counter) {
+                Log::warning('Counter not found for till balance', [
+                    'till_id' => $tillBalance->till_id,
+                    'currency_code' => $tillBalance->currency_code,
+                ]);
+
+                throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
+            }
+
+            $closedBy = $closedBy ?? ActorContext::capture()->userId;
+
+            if ($closedBy === null) {
+                throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
+            }
+
+            // Expected closing comes straight from the balance row's flow
+            // columns — the same formula closeSession and reconciliation use
+            // (MYR: opening + transaction_total_myr; FCY: opening + buys −
+            // sells). The old calculateNetFlow path summed MYR amounts onto
+            // FCY rows and double-counted the whole day for MYR rows.
+            $expectedClosing = $tillBalance->getExpectedBalance();
+            $variance = $this->mathService->subtract($closingBalance, $expectedClosing);
+
+            // A till cannot physically hold a negative amount of cash: reject
+            // negative closings outright unless an explicit tolerance is configured
+            // (config cems.till_negative_tolerance, e.g. for sealed-book handover).
+            if ($this->mathService->compare($closingBalance, '0') < 0) {
+                $tolerance = (string) config('cems.till_negative_tolerance', '0');
+
+                if ($this->mathService->compare(
+                    $this->mathService->abs($closingBalance),
+                    $tolerance
+                ) > 0) {
+                    throw new NegativeTillCloseException($tillBalance->currency_code, $tillBalance->till_id);
+                }
+            }
+
+            $tillBalance->update([
+                'closing_balance' => $closingBalance,
+                'variance' => $variance,
+                'closed_by' => $closedBy,
+                'closed_at' => now(),
+                'notes' => $notes,
             ]);
 
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $closedBy = $closedBy ?? ActorContext::capture()->userId;
-
-        if ($closedBy === null) {
-            throw new TillBalanceMissingException($tillBalance->currency_code, $tillBalance->till_id);
-        }
-
-        $netFlow = $this->tillService->calculateNetFlow($tillBalance->till_id, $tillBalance->currency_code);
-
-        $expectedClosing = $this->mathService->add(
-            (string) $tillBalance->opening_balance,
-            (string) $netFlow
-        );
-        $variance = $this->mathService->subtract($closingBalance, $expectedClosing);
-
-        // A till cannot physically hold a negative amount of cash: reject
-        // negative closings outright unless an explicit tolerance is configured
-        // (config cems.till_negative_tolerance, e.g. for sealed-book handover).
-        if ($this->mathService->compare($closingBalance, '0') < 0) {
-            $tolerance = (string) config('cems.till_negative_tolerance', '0');
-
-            if ($this->mathService->compare(
-                $this->mathService->abs($closingBalance),
-                $tolerance
-            ) > 0) {
-                throw new NegativeTillCloseException($tillBalance->currency_code, $tillBalance->till_id);
-            }
-        }
-
-        $tillBalance->update([
-            'closing_balance' => $closingBalance,
-            'variance' => $variance,
-            'closed_by' => $closedBy,
-            'closed_at' => now(),
-            'notes' => $notes,
-        ]);
-
-        return $tillBalance->refresh();
+            return $tillBalance->refresh();
+        });
     }
 
     public function openBalance(Counter $till, string $currencyCode, ?int $openedBy = null): TillBalance
@@ -253,9 +261,24 @@ class TillBalanceManager
             }
 
             if ($type === TransactionType::Buy) {
+                // Buy pays MYR out of the till — refuse to drive the ringgit
+                // float negative. Rows are already locked above, so the check
+                // serializes against concurrent bookings.
+                $myrAvailable = $myrBalance->getExpectedBalance();
+                if ($this->mathService->compare($myrAvailable, $amountMyr) < 0) {
+                    throw new InsufficientStockException(Currency::baseCurrency(), $amountMyr, $myrAvailable);
+                }
+
                 $this->adjustBalance($foreignBalance, 'buy_quantity', $quantity, 'add', false);
                 $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'add', false);
             } else {
+                // Sell pays foreign currency out of the drawer — the till must
+                // physically hold it (opening incl. loaded allocations + buys).
+                $fcyAvailable = $foreignBalance->getExpectedBalance();
+                if ($this->mathService->compare($fcyAvailable, $quantity) < 0) {
+                    throw new InsufficientStockException($foreignBalance->currency_code, $quantity, $fcyAvailable);
+                }
+
                 $this->adjustBalance($foreignBalance, 'sell_quantity', $quantity, 'add', false);
                 $this->adjustBalance($foreignBalance, 'total_quantity', $quantity, 'subtract', false);
             }

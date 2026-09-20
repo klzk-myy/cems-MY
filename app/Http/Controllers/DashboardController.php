@@ -167,8 +167,7 @@ class DashboardController extends Controller
 
         $recentReports = ReportGenerated::with('generatedBy')
             ->orderBy('generated_at', 'desc')
-            ->limit(10)
-            ->get();
+            ->paginate(15);
 
         return view('reports.index', compact('recentReports'));
     }

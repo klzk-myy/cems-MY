@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportSanctionsJob;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class SanctionsWebhookController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Webhook endpoint for receiving sanctions list update notifications.
      * Can be called by external services to trigger immediate updates.
@@ -26,7 +29,7 @@ class SanctionsWebhookController extends Controller
                 'ip' => $request->ip(),
             ]);
 
-            return response()->json(['error' => 'Webhook not configured'], 401);
+            return $this->errorResponse('Webhook not configured', [], 401);
         }
 
         if (! hash_equals($configuredToken, $providedToken)) {
@@ -34,7 +37,7 @@ class SanctionsWebhookController extends Controller
                 'ip' => $request->ip(),
             ]);
 
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->errorResponse('Unauthorized', [], 401);
         }
 
         // Log webhook receipt
@@ -54,11 +57,10 @@ class SanctionsWebhookController extends Controller
             $dispatched = $this->dispatchAllUpdates();
         }
 
-        return response()->json([
-            'message' => 'Sanctions update jobs dispatched',
+        return $this->successResponse([
             'dispatched' => $dispatched,
             'timestamp' => now()->toIso8601String(),
-        ]);
+        ], 'Sanctions update jobs dispatched');
     }
 
     /**
@@ -117,10 +119,10 @@ class SanctionsWebhookController extends Controller
         $providedToken = $request->header('X-Webhook-Token', '');
 
         if (empty($configuredToken) || ! hash_equals($configuredToken, $providedToken)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return $this->errorResponse('Unauthorized', [], 401);
         }
 
-        return response()->json([
+        return $this->successResponse([
             'status' => 'ok',
             'service' => 'sanctions-webhook',
             'timestamp' => now()->toIso8601String(),

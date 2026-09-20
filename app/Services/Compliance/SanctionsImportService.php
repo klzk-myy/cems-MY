@@ -3,6 +3,9 @@
 namespace App\Services\Compliance;
 
 use App\Enums\EntityType;
+use App\Enums\ImportStatus;
+use App\Enums\ImportTrigger;
+use App\Enums\SanctionSourceFormat;
 use App\Enums\SanctionStatus;
 use App\Enums\UpdateStatus;
 use App\Events\SanctionsListUpdated;
@@ -74,7 +77,7 @@ class SanctionsImportService
      * (job-driven) imports run without a session, so user_id stays null and
      * triggered_by records the scheduler.
      *
-     * @return array{triggered_by: string, user_id: int|null}
+     * @return array{triggered_by: ImportTrigger, user_id: int|null}
      */
     protected function attributionFor(bool $manual): array
     {
@@ -86,7 +89,7 @@ class SanctionsImportService
         }
 
         return [
-            'triggered_by' => $manual ? 'manual' : 'scheduled',
+            'triggered_by' => $manual ? ImportTrigger::Manual : ImportTrigger::Scheduled,
             'user_id' => $userId,
         ];
     }
@@ -120,7 +123,7 @@ class SanctionsImportService
                 'records_deactivated' => $result['deactivated'],
                 'is_manual' => $manual,
                 ...$this->attributionFor($manual),
-                'status' => UpdateStatus::Success->value,
+                'status' => ImportStatus::Success,
             ]);
 
             $this->dispatchListUpdated($list, $previousVersion, $result);
@@ -142,7 +145,7 @@ class SanctionsImportService
                 'records_deactivated' => 0,
                 'is_manual' => $manual,
                 ...$this->attributionFor($manual),
-                'status' => UpdateStatus::Failed->value,
+                'status' => ImportStatus::Failed,
                 'error_message' => $e->getMessage(),
             ]);
 
@@ -205,10 +208,12 @@ class SanctionsImportService
      */
     public function fetchSource(SanctionList $list): iterable
     {
+        $format = $list->source_format ?? SanctionSourceFormat::Json;
+
         $result = $this->downloadService->download(
             $list->source_url,
-            $list->slug.'_'.time().'.'.strtolower($list->source_format ?? 'json'),
-            $list->source_format ?? 'JSON',
+            $list->slug.'_'.time().'.'.$format->extension(),
+            $format,
             (int) config('sanctions.download.retry_attempts', 3),
         );
 
@@ -261,7 +266,7 @@ class SanctionsImportService
             $result = $this->downloadService->download(
                 $url,
                 'meta_'.uniqid().'.json',
-                'JSON',
+                SanctionSourceFormat::Json,
                 1
             );
         } catch (\Throwable) {
@@ -354,7 +359,7 @@ class SanctionsImportService
             'records_deactivated' => $totals['deactivated'],
             'is_manual' => $manual,
             ...$this->attributionFor($manual),
-            'status' => UpdateStatus::Success->value,
+            'status' => ImportStatus::fromCounts($totals['errors'], $totals['created'], $totals['updated']),
         ]);
 
         $this->dispatchListUpdated($list, $current, $totals);
@@ -414,7 +419,7 @@ class SanctionsImportService
             'records_deactivated' => 0,
             'is_manual' => $manual,
             ...$this->attributionFor($manual),
-            'status' => UpdateStatus::Success->value,
+            'status' => ImportStatus::Success,
         ]);
 
         return $this->enrichResult([
@@ -435,7 +440,7 @@ class SanctionsImportService
         $result = $this->downloadService->download(
             $url,
             'delta_'.uniqid().'.json',
-            'JSON',
+            SanctionSourceFormat::Json,
             1
         );
 

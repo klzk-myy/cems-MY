@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Compliance;
 
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\CustomerScreeningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ScreeningController extends Controller
 {
+    use HandlesControllerErrors;
+
     public function __construct(
         protected CustomerScreeningService $screeningService,
     ) {}
@@ -46,15 +46,8 @@ class ScreeningController extends Controller
             }
 
             return redirect()->back()->with('warning', 'Customer screening resulted in: '.$response->action);
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('ScreeningController: Exception screening customer', [
-                'message' => $e->getMessage(),
-                'customer_id' => $customerId,
-            ]);
-
-            return redirect()->back()->with('error', 'Failed to screen customer');
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'ScreeningController: Exception screening customer', 'Failed to screen customer', ['customer_id' => $customerId]);
         }
     }
 
@@ -63,7 +56,8 @@ class ScreeningController extends Controller
         $customer = Customer::findOrFail($customerId);
 
         $history = $this->screeningService->getHistory($customer)
-            ->map(fn ($r) => $r->toArray());
+            ->map(fn ($r) => $r->toArray())
+            ->paginate(25);
 
         return view('compliance.screening.history', compact('customer', 'history'));
     }

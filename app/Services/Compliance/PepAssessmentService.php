@@ -2,8 +2,8 @@
 
 namespace App\Services\Compliance;
 
-use App\DTO\PepCessationResult;
 use App\Models\Customer;
+use App\Services\DTOs\PepCessationResult;
 use Carbon\Carbon;
 
 class PepAssessmentService

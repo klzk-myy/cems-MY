@@ -2,7 +2,10 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\ApprovalStatus;
 use App\Enums\CddLevel;
+use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
@@ -17,6 +20,7 @@ use App\Exceptions\Domain\TransactionCreationException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Counter;
 use App\Models\Customer;
+use App\Models\FlaggedTransaction;
 use App\Models\StockReservation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
@@ -106,34 +110,43 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
      */
     public function clearHold(Transaction $transaction, int $clearerId): void
     {
-        if ($transaction->hold_reason === null) {
-            throw new TransactionValidationException(
-                message: 'Transaction is not under compliance hold.'
-            );
-        }
+        // Re-read under a row lock: the caller's model is a stale snapshot.
+        // Two concurrent clears must not both pass the cleared_at check and
+        // write duplicate clearance audit records.
+        DB::transaction(function () use ($transaction, $clearerId) {
+            $locked = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($transaction->compliance_cleared_at !== null) {
-            throw new TransactionValidationException(
-                message: 'Compliance hold has already been cleared.'
-            );
-        }
+            if ($locked->hold_reason === null) {
+                throw new TransactionValidationException(
+                    message: 'Transaction is not under compliance hold.'
+                );
+            }
 
-        if (! $transaction->status->isPending()) {
-            throw new TransactionValidationException(
-                message: 'Transaction is not pending approval. Current status: '.$transaction->status->label()
-            );
-        }
+            if ($locked->compliance_cleared_at !== null) {
+                throw new TransactionValidationException(
+                    message: 'Compliance hold has already been cleared.'
+                );
+            }
 
-        $transaction->compliance_cleared_by = $clearerId;
-        $transaction->compliance_cleared_at = now();
-        $transaction->save();
+            if (! $locked->status->isPending()) {
+                throw new TransactionValidationException(
+                    message: 'Transaction is not pending approval. Current status: '.$locked->status->label()
+                );
+            }
 
-        $this->auditService->logComplianceDecision('compliance_hold_cleared', $transaction->id, [
-            'cleared_by' => $clearerId,
-            'hold_reason' => $transaction->hold_reason,
-            'amount_myr' => (string) $transaction->amount_myr,
-            'customer_id' => $transaction->customer_id,
-        ]);
+            $locked->compliance_cleared_by = $clearerId;
+            $locked->compliance_cleared_at = now();
+            $locked->save();
+
+            $this->auditService->logComplianceDecision('compliance_hold_cleared', $locked->id, [
+                'cleared_by' => $clearerId,
+                'hold_reason' => $locked->hold_reason,
+                'amount_myr' => (string) $locked->amount_myr,
+                'customer_id' => $locked->customer_id,
+            ]);
+        });
     }
 
     /**
@@ -146,26 +159,47 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
      */
     public function reject(Transaction $transaction, int $rejectorId, string $reason): bool
     {
-        $this->validateApprovalEligibility($transaction, $rejectorId);
+        // Re-read under a row lock: the caller's model is a stale snapshot.
+        // Without the re-read a reject racing an approval overwrites the
+        // committed Completed status with Rejected while the booked stock,
+        // till and journal side effects stay in place.
+        $locked = DB::transaction(function () use ($transaction, $rejectorId, $reason) {
+            $locked = Transaction::where('id', $transaction->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if (! (new TransactionStateMachine($transaction, $this->auditService))->reject($reason)) {
+            $this->validateApprovalEligibility($locked, $rejectorId);
+
+            if (! (new TransactionStateMachine($locked, $this->auditService))->reject($reason)) {
+                return null;
+            }
+
+            // Release the reservation a pending Sell was holding. Without
+            // this the stock stays unavailable until the 24h expiry sweep.
+            // Safe on transactions with no reservation (no-op).
+            $this->positionService->releaseStockReservation($locked->id);
+
+            return $locked;
+        });
+
+        if ($locked === null) {
             return false;
         }
 
         $rejector = User::find($rejectorId);
-        $teller = $transaction->user()->first();
+        $teller = $locked->user()->first();
 
         if ($teller && $teller->id !== $rejectorId) {
             try {
                 $teller->notify(new TransactionOutcomeNotification(
-                    $transaction->fresh() ?? $transaction,
-                    'rejected',
+                    $locked->fresh() ?? $locked,
+                    ApprovalStatus::Rejected,
                     ($rejector !== null && $rejector->username !== null) ? $rejector->username : 'Unknown',
                     $reason
                 ));
             } catch (\Throwable $e) {
                 Log::warning('Failed to send transaction rejection notification', [
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $locked->id,
                     'teller_id' => $teller->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -247,10 +281,22 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
     private function handleAmlBlocks(Transaction $transaction, array $amlResult, int $approverId, ?string $ipAddress): ?ApprovalResult
     {
-        $highPriorityFlags = array_filter(
-            $amlResult['flags'],
-            fn ($flag) => $flag->flag_type->isHighPriority()
-        );
+        // Flags already dispositioned by compliance (resolved/rejected) are
+        // honored — re-running monitoring must not resurrect a reviewed
+        // finding and deadlock approval while the pattern window is live.
+        $blocking = collect($amlResult['flags'])
+            ->filter(fn ($flag) => $flag->flag_type->isHighPriority()
+                && ! ($flag->status?->isTerminal() ?? false));
+
+        // Flags persisted outside this monitoring run — e.g. sanction hits
+        // written by screening jobs — block just the same. The check registry
+        // never re-emits them, so they would otherwise be invisible here.
+        $persisted = FlaggedTransaction::where('transaction_id', $transaction->id)
+            ->whereIn('flag_type', ComplianceFlagType::highPriorityValues())
+            ->whereNotIn('status', FlagStatus::terminalValues())
+            ->get();
+
+        $highPriorityFlags = $blocking->merge($persisted)->unique('id')->all();
 
         if (empty($highPriorityFlags)) {
             return null;
@@ -329,20 +375,24 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         return $lockedTransaction;
     }
 
-    private function verifyPreApprovalState(Transaction $transaction): TillBalance
+    private function verifyPreApprovalState(Transaction $transaction): ?TillBalance
     {
         $customer = Customer::find($transaction->customer_id);
         if (! $customer) {
             throw new TransactionApprovalException(transactionId: $transaction->id, message: 'Customer has been deleted. Cannot approve transaction for non-existent customer.');
         }
 
-        $counter = Counter::findByCodeOrId($transaction->till_id);
+        // Drawer-less transactions carry no till — there is nothing to check
+        // beyond customer existence and (for Sells) position availability.
+        $counter = filled($transaction->till_id)
+            ? Counter::findByCodeOrId($transaction->till_id)
+            : null;
 
         $tillBalance = $counter
             ? $this->tillBalanceManager->currentBalance($counter, $transaction->currency_code)
             : null;
 
-        if (! $tillBalance) {
+        if ($counter !== null && ! $tillBalance) {
             throw new TransactionApprovalException(transactionId: $transaction->id, message: 'Till has been closed. Cannot approve transaction for closed till.');
         }
 
@@ -394,7 +444,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
     private function executeSideEffects(
         Transaction $transaction,
-        TillBalance $tillBalance,
+        ?TillBalance $tillBalance,
         int $approverId,
         array $amlResult,
         ?string $ipAddress,
@@ -419,12 +469,14 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
                 $transaction
             );
 
-            $this->tillBalanceManager->applyTransaction(
-                $tillBalance,
-                $transaction->type,
-                (string) $transaction->amount_myr,
-                (string) $transaction->quantity
-            );
+            if ($tillBalance !== null) {
+                $this->tillBalanceManager->applyTransaction(
+                    $tillBalance,
+                    $transaction->type,
+                    (string) $transaction->amount_myr,
+                    (string) $transaction->quantity
+                );
+            }
 
             $this->updateTellerAllocation($transaction);
 
@@ -444,11 +496,16 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             return;
         }
 
-        $available = $this->positionService->getAvailableBalance(
+        // Compare against the locked position's raw quantity, not
+        // getAvailableBalance(): this transaction's own pending reservation
+        // already earmarks the stock, so subtracting reservations would
+        // double-count it and falsely fail a full-stock sell.
+        $position = $this->positionService->getPositionWithLock(
             $transaction->currency_code,
-            (string) $transaction->branch_id,
-            (string) $transaction->till_id
+            (string) $transaction->branch_id
         );
+
+        $available = $position === null ? '0' : (string) $position->quantity;
 
         if ($this->mathService->compare($available, (string) $transaction->quantity) < 0) {
             throw new InsufficientStockException(
@@ -502,8 +559,12 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             ],
             'new' => [
                 'status' => TransactionStatus::Completed->value,
-                'approved_by' => $approverId,
+                // Mirror the persisted field, not the actor: system
+                // re-execution leaves approved_by null, and the audit must
+                // not attribute an approval that never happened.
+                'approved_by' => $transaction->approved_by,
                 'approved_at' => $transaction->approved_at?->toIso8601String(),
+                'reexecuted_at' => $transaction->reexecuted_at?->toIso8601String(),
                 'aml_flags_checked' => $amlResult['flags_created'] ?? 0,
             ],
         ], $approver, 'CRITICAL', $ipAddress);
@@ -568,14 +629,17 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
                     throw new TransactionCreationException('Failed to transition transaction to Completed during reprocessing.');
                 }
 
-                // The re-execution is performed by the automated recovery flow;
-                // the original creator is recorded as the actor so downstream
-                // audit queries have a stable owner. The audit action below
-                // makes it unambiguous that this was a system re-execution,
-                // not a human approval.
-                $actorId = (int) $lockedTransaction->user_id;
-                $lockedTransaction->approved_by = $actorId;
-                $lockedTransaction->approved_at = now();
+                // The re-execution is performed by the automated recovery
+                // flow — it is not an approval. approved_by/approved_at stay
+                // null so "who approved" queries never attribute a system
+                // retry to the original teller; the re-execution is recorded
+                // on reexecuted_by (null = system) + reexecuted_at, and the
+                // transaction_reexecuted audit action makes it unambiguous.
+                $actorId = ActorContext::capture()->userId ?? (int) $lockedTransaction->user_id;
+                $lockedTransaction->approved_by = null;
+                $lockedTransaction->approved_at = null;
+                $lockedTransaction->reexecuted_by = ActorContext::capture()->userId;
+                $lockedTransaction->reexecuted_at = now();
                 $lockedTransaction->save();
 
                 $this->executeSideEffects(
@@ -633,6 +697,10 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             );
         }
 
+        // Completing a refund releases funds — the same compliance/admin
+        // tier that approved it must complete it.
+        $this->validateApproverTier($transaction, $approverId);
+
         return DB::transaction(function () use ($transaction, $approverId, $ipAddress) {
             $lockedTransaction = Transaction::where('id', $transaction->id)
                 ->where('status', TransactionStatus::Approved)
@@ -649,35 +717,22 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             $stateMachine->startProcessing();
             $stateMachine->complete();
 
-            // Execute financial side effects
-            $counter = Counter::findByCodeOrId($lockedTransaction->till_id);
-            if (! $counter) {
-                throw new \RuntimeException("Counter not found for till: {$lockedTransaction->till_id}");
-            }
-
-            $tillBalance = $this->tillBalanceManager->currentBalance($counter, $lockedTransaction->currency_code);
-            if (! $tillBalance) {
-                throw new TransactionApprovalException(transactionId: $transaction->id, message: 'Till has been closed. Cannot complete refund for closed till.');
-            }
-
-            $this->executeSideEffects($lockedTransaction, $tillBalance, $approverId, [], $ipAddress);
-            $this->postApprovalCleanup($lockedTransaction, $approverId);
-
-            // Audit the completion
-            $this->auditTrailHelper->recordTransactionSealed(
-                $lockedTransaction->id,
-                'refund_completed',
-                [
-                    'old' => ['status' => TransactionStatus::Approved->value],
-                    'new' => [
-                        'status' => TransactionStatus::Completed->value,
-                        'completed_by' => $approverId,
-                    ],
-                ],
+            // The reversal already restored position, till, journal and
+            // teller-allocation state on the ORIGINAL transaction inside
+            // TransactionReversalService::reverse(). The refund record is a
+            // compliance-gated acknowledgement of the physical cash return —
+            // routing it through executeSideEffects would book every
+            // financial leg a second time.
+            $this->recordApprovalAudit(
+                $lockedTransaction,
+                $approverId,
+                [],
                 User::find($approverId),
-                'INFO',
-                $ipAddress
+                $ipAddress,
+                'refund_completed',
+                TransactionStatus::Approved->value
             );
+            $this->postApprovalCleanup($lockedTransaction, $approverId);
 
             return new ApprovalResult(
                 success: true,

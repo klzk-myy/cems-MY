@@ -41,6 +41,7 @@ enum Permission: string
     case ManageEod = 'manage_eod';
     case ViewEodReconciliation = 'view_eod_reconciliation';
     case ViewRiskDashboard = 'view_risk_dashboard';
+    case ViewScreeningResults = 'view_screening_results';
     case ManageRiskScreening = 'manage_risk_screening';
     case ManageSanctions = 'manage_sanctions';
     case ManageAccounting = 'manage_accounting';
@@ -92,6 +93,7 @@ enum Permission: string
             self::ManageEod => 'Manage End of Day',
             self::ViewEodReconciliation => 'View EOD Reconciliation',
             self::ViewRiskDashboard => 'View Risk Dashboard',
+            self::ViewScreeningResults => 'View Screening Results',
             self::ManageRiskScreening => 'Manage Risk Screening',
             self::ManageSanctions => 'Manage Sanctions Lists',
             self::ManageAccounting => 'Manage Accounting Periods',
@@ -145,6 +147,7 @@ enum Permission: string
             self::ManageEod => 'View the branch EOD dashboard and close the day',
             self::ViewEodReconciliation => 'View daily and per-counter reconciliation reports (API)',
             self::ViewRiskDashboard => 'View the customer risk dashboard and trends',
+            self::ViewScreeningResults => 'View customer screening results, history, and match details (read-only)',
             self::ManageRiskScreening => 'Trigger portfolio-wide customer risk rescreening',
             self::ManageSanctions => 'Import and maintain sanctions list entries (API)',
             self::ManageAccounting => 'Run month-end close and manage accounting periods (API)',
@@ -192,6 +195,7 @@ enum Permission: string
             self::ViewEodReconciliation => 'Stock & Cash',
             self::AccessCompliance,
             self::ViewRiskDashboard,
+            self::ViewScreeningResults,
             self::ManageRiskScreening,
             self::ManageSanctions => 'Compliance',
             self::AccessAccounting,
@@ -253,10 +257,12 @@ enum Permission: string
                 self::OperateCounters->value,
                 self::RequestStock->value,
                 self::ValidateRates->value,
+                self::ViewScreeningResults->value,
             ],
             UserRole::Manager->value => [
                 self::AccessAccounting->value,
                 self::ApproveCancellations->value,
+                self::ReverseTransactions->value,
                 self::ManageUsers->value,
                 self::ManageSettings->value,
                 self::ViewReports->value,
@@ -291,6 +297,7 @@ enum Permission: string
                 self::RequestCancellation->value,
                 self::ViewEodReconciliation->value,
                 self::ViewRiskDashboard->value,
+                self::ViewScreeningResults->value,
                 self::ManageRiskScreening->value,
                 self::ManageSanctions->value,
                 self::ManageCustomers->value,

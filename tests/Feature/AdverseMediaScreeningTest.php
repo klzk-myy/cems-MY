@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ImportStatus;
 use App\Enums\SystemAlertLevel;
 use App\Models\AdverseMediaEntry;
 use App\Models\AdverseMediaImportLog;
@@ -212,7 +213,7 @@ class AdverseMediaScreeningTest extends TestCase
         $this->assertSame('chunked.csv', $log->imported_file);
         $this->assertSame(6, $log->records_added);
         $this->assertSame(1, $log->records_skipped);
-        $this->assertSame('partial', $log->status);
+        $this->assertSame(ImportStatus::Partial, $log->status);
         $this->assertSame(6, AdverseMediaEntry::count());
 
         // Idempotent re-import: every chunk upserts instead of duplicating.

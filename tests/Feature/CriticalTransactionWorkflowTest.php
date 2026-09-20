@@ -430,11 +430,13 @@ class CriticalTransactionWorkflowTest extends TestCase
             'branch_id' => $this->counter->branch_id, // Ensure branch matches counter
         ]);
 
+        // The drawer must physically hold the FCY being sold — the till floor
+        // rejects a Sell that would drive the expected FCY balance negative.
         TillBalance::factory()->create([
             'till_id' => (string) $this->counter->code,
             'currency_code' => 'USD',
             'date' => today(),
-            'opening_balance' => '0',
+            'opening_balance' => '100000.00',
             'opened_by' => $user->id,
             'branch_id' => $this->counter->branch_id, // Ensure branch matches counter
         ]);
@@ -487,7 +489,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         $balance = $position ? $position->quantity : '0';
 
         $reserved = StockReservation::where('currency_code', 'USD')
-            ->where('till_id', (string) $this->counter->code)
+            ->where('branch_id', $this->counter->branch_id)
             ->where('status', StockReservationStatus::Pending)
             ->where('expires_at', '>', now())
             ->sum('quantity');

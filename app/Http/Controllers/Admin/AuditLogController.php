@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SystemLogSeverity;
 use App\Http\Controllers\Controller;
 use App\Models\SystemLog;
 use App\Services\AuditService;
@@ -25,7 +26,11 @@ class AuditLogController extends Controller
             // instead of a '%…%' scan over the largest table.
             ->when($request->filled('action'), fn ($q) => $q->whereIn('action', $this->auditService->matchingLogValues('action', [$request->string('action')->toString()])))
             ->when($request->filled('entity_type'), fn ($q) => $q->where('entity_type', $request->string('entity_type')))
-            ->when($request->filled('severity'), fn ($q) => $q->where('severity', $request->string('severity')))
+            ->when($request->filled('severity'), function ($q) use ($request) {
+                $severity = SystemLogSeverity::tryFrom(strtoupper($request->string('severity')->toString()));
+
+                return $severity ? $q->severity($severity) : $q->where('severity', $request->string('severity'));
+            })
             ->orderByDesc('id')
             ->paginate(50)
             ->withQueryString();

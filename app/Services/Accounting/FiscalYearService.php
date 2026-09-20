@@ -102,7 +102,7 @@ class FiscalYearService
      * 2. Close all Expense accounts → Income Summary (4201)
      * 3. Close Income Summary → Retained Earnings (4100)
      *
-     * @param  int|null  $userId  Optional user ID for testing (defaults to auth()->id())
+     * @param  int|null  $userId  Optional user ID (defaults to ActorContext::capture()->userId)
      * @return array Year-end report data
      *
      * @throws \InvalidArgumentException

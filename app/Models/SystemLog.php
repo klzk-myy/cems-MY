@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SystemLogSeverity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -11,7 +12,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $user_id
  * @property string $action
  * @property string|null $description
- * @property string $severity 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+ * @property SystemLogSeverity $severity
  * @property string|null $entity_type
  * @property int|null $entity_id
  * @property array|null $old_values
@@ -21,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $session_id
  * @property string|null $previous_hash Tamper-evidence chain hash of the previous entry
  * @property string|null $entry_hash Tamper-evidence hash of this entry
+ * @property string|null $seal_status 'quarantined' when the row is permanently unsealable
+ * @property int $seal_attempts Failed seal sweep attempts before quarantine
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -42,12 +45,15 @@ class SystemLog extends BaseModel
         'session_id',
         'previous_hash',
         'entry_hash',
+        'seal_status',
+        'seal_attempts',
     ];
 
     protected $casts = [
         'old_values' => 'array',
         'new_values' => 'array',
-        'severity' => 'string',
+        'severity' => SystemLogSeverity::class,
+        'seal_attempts' => 'integer',
     ];
 
     protected $hidden = [
@@ -61,7 +67,7 @@ class SystemLog extends BaseModel
     /**
      * Scope by severity
      */
-    public function scopeSeverity($query, string $severity)
+    public function scopeSeverity($query, SystemLogSeverity $severity)
     {
         return $query->where('severity', $severity);
     }
@@ -69,16 +75,16 @@ class SystemLog extends BaseModel
     /**
      * Scope by severity level (includes all equal or higher)
      */
-    public function scopeSeverityLevel($query, string $minSeverity)
+    public function scopeSeverityLevel($query, SystemLogSeverity $minSeverity)
     {
-        $levels = ['INFO' => 1, 'WARNING' => 2, 'ERROR' => 3, 'CRITICAL' => 4];
-        $minLevel = $levels[$minSeverity] ?? 1;
+        $minLevel = $minSeverity->level();
 
-        $severityList = array_filter($levels, function ($level) use ($minLevel) {
-            return $level >= $minLevel;
-        });
+        $severities = array_filter(
+            SystemLogSeverity::cases(),
+            fn (SystemLogSeverity $severity): bool => $severity->level() >= $minLevel
+        );
 
-        return $query->whereIn('severity', array_keys($severityList));
+        return $query->whereIn('severity', $severities);
     }
 
     /**
@@ -106,19 +112,6 @@ class SystemLog extends BaseModel
     public function scopeEntityType($query, string $entityType)
     {
         return $query->where('entity_type', $entityType);
-    }
-
-    /**
-     * Get severity color class
-     */
-    public function getSeverityColor(): string
-    {
-        return match ($this->severity) {
-            'CRITICAL' => 'red',
-            'ERROR' => 'orange',
-            'WARNING' => 'yellow',
-            default => 'blue',
-        };
     }
 
     /**

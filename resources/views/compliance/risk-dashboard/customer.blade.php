@@ -31,7 +31,7 @@
                     <div class="flex justify-between gap-4 md:block">
                         <dt class="text-sm text-ink-muted">Customer</dt>
                         <dd class="text-sm text-ink font-medium">
-                            {{ $customer->full_name }}
+                            <x-customer-link :customer="$customer" />
                             <span class="text-xs text-ink-muted">#{{ $customer->id }}</span>
                         </dd>
                     </div>

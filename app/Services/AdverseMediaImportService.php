@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\ImportStatus;
+use App\Enums\ImportTrigger;
 use App\Models\AdverseMediaEntry;
 use App\Models\AdverseMediaImportLog;
 use App\Support\ActorContext;
@@ -94,11 +96,7 @@ class AdverseMediaImportService
             [$added, $updated, $skipped] = $this->importCsvStream($stream);
         }
 
-        $status = match (true) {
-            $skipped === 0 => 'success',
-            ($added + $updated) > 0 => 'partial',
-            default => 'failed',
-        };
+        $status = ImportStatus::fromCounts($skipped, $added, $updated);
 
         AdverseMediaImportLog::create([
             'imported_file' => $importedFile,
@@ -108,7 +106,7 @@ class AdverseMediaImportService
             'records_deactivated' => 0,
             'records_skipped' => $skipped,
             'status' => $status,
-            'triggered_by' => 'manual',
+            'triggered_by' => ImportTrigger::Manual,
             'user_id' => ActorContext::capture()->userId,
         ]);
 
@@ -116,7 +114,7 @@ class AdverseMediaImportService
             'added' => $added,
             'updated' => $updated,
             'skipped' => $skipped,
-            'status' => $status,
+            'status' => $status->value,
         ];
     }
 

@@ -6,7 +6,7 @@ use App\Actions\Transaction\ApproveTransactionAction;
 use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\SelfApprovalException;
-use App\Exceptions\Domain\TransactionValidationException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
@@ -23,13 +23,11 @@ use App\Services\Transaction\TransactionMonitoringService;
 use App\Services\Transaction\TransactionStateMachineFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TransactionApprovalController extends Controller
 {
-    use AuthorizesBranchResource;
+    use AuthorizesBranchResource, HandlesControllerErrors;
 
     public function __construct(
         protected ApproveTransactionAction $approveAction,
@@ -86,18 +84,14 @@ class TransactionApprovalController extends Controller
                 ->with('warning', 'Transaction has been rejected.');
         } catch (SelfApprovalException $e) {
             return back()->with('error', 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', 'The transaction is not eligible for rejection in its current state.');
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Transaction rejection failed', [
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Transaction rejection failed', 'Rejection failed due to a system error. Please contact support.', [
                 'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
             ]);
-
-            return back()->with('error', 'Rejection failed due to a system error. Please contact support.');
         }
     }
 
@@ -116,18 +110,12 @@ class TransactionApprovalController extends Controller
 
             return redirect()->route('transactions.show', $transaction)
                 ->with('success', 'Compliance hold cleared. Transaction may now proceed through approval.');
-        } catch (\InvalidArgumentException|TransactionValidationException $e) {
+        } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Compliance hold clearance failed', [
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Compliance hold clearance failed', 'Hold clearance failed. Please try again.', [
                 'transaction_id' => $transaction->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
             ]);
-
-            return back()->with('error', 'Hold clearance failed. Please try again.');
         }
     }
 
@@ -185,18 +173,11 @@ class TransactionApprovalController extends Controller
             return redirect()->route('transactions.show', $transaction)
                 ->with($result['success'] ? 'success' : 'error', $result['message']);
 
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Transaction confirmation failed', [
+        } catch (\Throwable $e) {
+            return $this->handleExceptionWeb($e, 'Transaction confirmation failed', 'Confirmation failed. Please try again.', [
                 'confirmation_id' => $confirmation->id,
                 'transaction_id' => $confirmation->transaction_id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-
-            return back()->with('error', 'Confirmation failed. Please try again.');
         }
     }
 
@@ -208,9 +189,7 @@ class TransactionApprovalController extends Controller
      */
     protected function requiresConfirmation(Transaction $transaction): bool
     {
-        $threshold = $this->thresholdService->getStrThreshold();
-
-        return $this->mathService->compare($transaction->amount_myr, $threshold) >= 0;
+        return $this->confirmationService->requiresConfirmation($transaction);
     }
 
     /**

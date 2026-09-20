@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Rate;
 
+use App\Enums\RateSide;
 use App\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\Rule;
 
 class ValidateRateRequest extends ApiFormRequest
 {
@@ -22,7 +24,7 @@ class ValidateRateRequest extends ApiFormRequest
         return [
             'rate' => 'required|numeric|min:0.0001',
             'currency_code' => 'required|string|size:3',
-            'type' => 'required|in:buy,sell',
+            'type' => ['required', Rule::enum(RateSide::class)->only([RateSide::Buy, RateSide::Sell])],
         ];
     }
 }

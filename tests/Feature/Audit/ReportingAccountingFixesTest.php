@@ -20,7 +20,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\AccountMappingService;
-use App\Services\Accounting\CurrencyPositionLockService;
+use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\LedgerService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
@@ -38,6 +38,7 @@ use App\Services\Reporting\FinancialRatioService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\StockTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -299,7 +300,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), app(CurrencyPositionService::class), app(RateManagementService::class), $admin);
 
         $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('exceeds the transferred quantity');
@@ -324,7 +325,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), app(CurrencyPositionService::class), app(RateManagementService::class), $admin);
 
         $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('cannot be negative');
@@ -357,7 +358,7 @@ class ReportingAccountingFixesTest extends TestCase
             'quantity_in_transit' => '100.0000',
         ]);
 
-        $service = new StockTransferService(new MathService, new AuditService, new CurrencyPositionLockService(new MathService), new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), $admin);
+        $service = new StockTransferService(new MathService, new AuditService, new BranchPoolService(new AuditService, new MathService), new AccountingService(new MathService, new AuditService, new CacheInvalidationService), new AccountMappingService(new CacheInvalidationService, new AuditService), app(CurrencyPositionService::class), app(RateManagementService::class), $admin);
 
         $service->receiveItems($transfer, [
             ['id' => $item->id, 'quantity_received' => '60.00'],

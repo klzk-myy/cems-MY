@@ -42,7 +42,7 @@
                             <td class="px-4 py-3 text-sm">
                                 @if ($result->customer)
                                     <a href="{{ route('customers.show', $result->customer) }}" class="text-primary hover:underline">
-                                        {{ $result->customer->full_name }}
+                                        <x-customer-link :customer="$result->customer" />
                                     </a>
                                     <div class="text-xs text-ink-muted">#{{ $result->customer->id }}</div>
                                 @else

@@ -19,6 +19,14 @@ interface CurrencyPositionServiceInterface
         ?Transaction $snapshotFor = null
     ): CurrencyPosition;
 
+    public function adjustForTransfer(
+        ?string $branchId,
+        string $currencyCode,
+        string $quantity,
+        string $direction,
+        ?string $costBasisRate = null
+    ): CurrencyPosition;
+
     public function getPositionWithLock(string $currencyCode, string $branchId): ?CurrencyPosition;
 
     public function getPosition(string $currencyCode, ?string $branchId = null): ?CurrencyPosition;
@@ -33,7 +41,7 @@ interface CurrencyPositionServiceInterface
 
     public function aggregateForUser(User $user): array;
 
-    public function getAvailableBalance(string $currencyCode, string $branchId, ?string $tillId = null): string;
+    public function getAvailableBalance(string $currencyCode, string $branchId): string;
 
     public function reserveStock(Transaction $transaction): StockReservation;
 

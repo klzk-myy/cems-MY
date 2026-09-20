@@ -476,7 +476,7 @@ class ComplianceCase extends ComplianceModel
         // All linked alerts must be resolved or rejected (UnifiedAlertController
         // writes exactly these values when alerts are closed out).
         $unresolvedAlerts = $this->alerts()
-            ->whereNotIn('status', [FlagStatus::Resolved->value, FlagStatus::Rejected->value])
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->count();
 
         return $unresolvedAlerts === 0;

@@ -182,10 +182,14 @@
                         @endif
                     </p>
 
-                    <div class="flex flex-wrap gap-3">
-                        <x-button variant="danger" type="button" @click="openModal = 'confirm'">Confirm Match</x-button>
-                        <x-button variant="secondary" type="button" @click="openModal = 'dismiss'">Dismiss</x-button>
-                    </div>
+                    @if (auth()->user()?->role->canPerform(\App\Enums\Permission::AccessCompliance))
+                        <div class="flex flex-wrap gap-3">
+                            <x-button variant="danger" type="button" @click="openModal = 'confirm'">Confirm Match</x-button>
+                            <x-button variant="secondary" type="button" @click="openModal = 'dismiss'">Dismiss</x-button>
+                        </div>
+                    @else
+                        <x-badge variant="info">Pending compliance review</x-badge>
+                    @endif
 
                     <div x-show="openModal === 'confirm'" x-cloak @keydown.escape.window="openModal = null" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <div class="bg-surface rounded-lg shadow-xl max-w-md w-full p-6 space-y-4" @click.outside="openModal = null">

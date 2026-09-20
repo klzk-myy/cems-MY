@@ -11,6 +11,7 @@ use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BranchScopeController;
 use App\Http\Controllers\Admin\RolePermissionController;
+use App\Http\Controllers\Admin\SanctionSourceController;
 use App\Http\Controllers\Admin\ThresholdController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Auth\LoginController;
@@ -29,7 +30,6 @@ use App\Http\Controllers\Compliance\ScreeningController;
 use App\Http\Controllers\Compliance\ScreeningMatchController;
 use App\Http\Controllers\Compliance\StrReportController;
 use App\Http\Controllers\Compliance\UnifiedAlertController;
-use App\Http\Controllers\CounterController;
 use App\Http\Controllers\Customer\CustomerSearchController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -38,6 +38,7 @@ use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KycDocumentController;
 use App\Http\Controllers\MfaController;
+use App\Http\Controllers\MyStockController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PerformanceMonitoringController;
@@ -55,6 +56,7 @@ use App\Http\Controllers\TestResultsController;
 use App\Http\Controllers\Transaction\DlqController;
 use App\Http\Controllers\Transaction\TransactionApprovalController;
 use App\Http\Controllers\Transaction\TransactionCancellationController;
+use App\Http\Controllers\Transaction\TransactionReversalController;
 use App\Http\Controllers\TransactionBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionWizardController;
@@ -213,6 +215,17 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::post('/{transaction}/reject-cancellation', [TransactionCancellationController::class, 'rejectCancel'])
                 ->name('reject-cancellation.store');
         });
+
+        Route::middleware(['role:reverse_transactions', 'mfa.verified'])->group(function () {
+            Route::get('/{transaction}/reverse', [TransactionReversalController::class, 'showReverse'])
+                ->name('reverse');
+            Route::post('/{transaction}/reverse', [TransactionReversalController::class, 'reverse'])
+                ->name('reverse.store');
+        });
+
+        Route::post('/{transaction}/complete-refund', [TransactionReversalController::class, 'completeRefund'])
+            ->middleware(['role:approve_transactions', 'mfa.verified'])
+            ->name('complete-refund');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {
@@ -233,37 +246,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         });
         Route::middleware('role:manage_customers')->group(function () {
             Route::post('/{customer}/close', [CustomerController::class, 'close'])->name('close');
-        });
-    });
-
-    Route::middleware('branch.scope')->prefix('counters')->name('counters.')->group(function () {
-        Route::get('/', [CounterController::class, 'index'])->name('index')
-            ->middleware('role:operate_counters,manage_counters');
-
-        Route::middleware('role:manage_counters')->group(function () {
-            Route::get('/create', [CounterController::class, 'create'])->name('create');
-            Route::post('/', [CounterController::class, 'store'])->name('store');
-        });
-
-        Route::middleware('role:operate_counters')->group(function () {
-            Route::get('/{counter}/open', [CounterController::class, 'showOpen'])->name('open');
-            Route::post('/{counter}/open', [CounterController::class, 'open'])->name('open.store');
-            Route::get('/{counter}/status', [CounterController::class, 'status'])->name('status');
-            Route::get('/{counter}/history', [CounterController::class, 'history'])->name('history');
-            Route::get('/{counter}/handover', [CounterController::class, 'showHandover'])->name('handover.show');
-            Route::post('/{counter}/handover', [CounterController::class, 'handover'])->name('handover');
-            Route::get('/{counter}/handover/acknowledge', [CounterController::class, 'showAcknowledgeHandover'])->name('handover.acknowledge.show');
-            Route::post('/{counter}/handover/acknowledge', [CounterController::class, 'acknowledgeHandover'])->name('handover.acknowledge');
-        });
-
-        Route::middleware('role:manage_counters')->group(function () {
-            Route::get('/{counter}/close', [CounterController::class, 'showClose'])->name('close.show');
-            Route::post('/{counter}/close', [CounterController::class, 'close'])->name('close');
-            Route::get('/{counter}/emergency', [CounterController::class, 'showEmergency'])->name('emergency');
-            Route::post('/{counter}/emergency', [CounterController::class, 'emergency'])->name('emergency.store');
-            Route::post('/{counter}/emergency-close', [CounterController::class, 'emergency'])->name('emergency-close');
-            Route::get('/{counter}/emergency-closure/{closure}', [CounterController::class, 'showEmergencyClosure'])
-                ->name('emergency-closure');
         });
     });
 
@@ -293,6 +275,11 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/{allocation}/return-to-pool', [AllocationController::class, 'returnToPool'])->name('return-to-pool');
     });
 
+    // Teller self-service daily stock & cash position
+    Route::get('/my-stock', [MyStockController::class, 'index'])
+        ->middleware(['role:create_transactions', 'branch.scope'])
+        ->name('my-stock.index');
+
     // Teller self-service stock requests
     Route::middleware(['role:request_stock', 'mfa.verified', 'branch.scope'])->prefix('my-allocations')->name('my-allocations.')->group(function () {
         Route::get('/', [AllocationController::class, 'myIndex'])->name('index');
@@ -300,7 +287,6 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::post('/request', [AllocationController::class, 'submitRequest'])->name('request.store');
         Route::post('/{allocation}/accept', [AllocationController::class, 'accept'])->name('accept');
         Route::post('/{allocation}/return', [AllocationController::class, 'requestReturn'])->name('return');
-        Route::post('/{allocation}/till', [AllocationController::class, 'transferTill'])->name('till-transfer');
     });
 
     // Branch Pools (manager/admin). Reads stay on the group middleware;
@@ -407,15 +393,10 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         });
 
         Route::prefix('compliance/screening')->name('compliance.screening.')->group(function () {
-            Route::get('/{customerId}', [ScreeningController::class, 'show'])->name('show');
             Route::post('/{customerId}', [ScreeningController::class, 'screen'])->name('screen');
-            Route::get('/{customerId}/history', [ScreeningController::class, 'history'])->name('history');
-            Route::get('/{customerId}/status', [ScreeningController::class, 'status'])->name('status');
         });
 
         Route::prefix('compliance/screening-matches')->name('compliance.screening.matches.')->group(function () {
-            Route::get('/', [ScreeningMatchController::class, 'index'])->name('index');
-            Route::get('/{resultId}', [ScreeningMatchController::class, 'show'])->name('show');
             Route::post('/{resultId}/confirm', [ScreeningMatchController::class, 'confirm'])->name('confirm');
             Route::post('/{resultId}/dismiss', [ScreeningMatchController::class, 'dismiss'])->name('dismiss');
         });
@@ -436,6 +417,22 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
             Route::post('/from-case/{case}', [StrReportController::class, 'createFromCase'])->name('create-from-case');
             Route::patch('/{strReport}/submit', [StrReportController::class, 'submit'])->name('submit');
             Route::patch('/{strReport}/acknowledge', [StrReportController::class, 'acknowledge'])->name('acknowledge');
+        });
+    });
+
+    // Read-only screening views are shared beyond compliance via the
+    // view_screening_results matrix grant (tellers by default). Mutations
+    // (screen, confirm, dismiss) stay inside role:access_compliance above.
+    Route::middleware('role:access_compliance,view_screening_results')->group(function () {
+        Route::prefix('compliance/screening')->name('compliance.screening.')->group(function () {
+            Route::get('/{customerId}', [ScreeningController::class, 'show'])->name('show');
+            Route::get('/{customerId}/history', [ScreeningController::class, 'history'])->name('history');
+            Route::get('/{customerId}/status', [ScreeningController::class, 'status'])->name('status');
+        });
+
+        Route::prefix('compliance/screening-matches')->name('compliance.screening.matches.')->group(function () {
+            Route::get('/', [ScreeningMatchController::class, 'index'])->name('index');
+            Route::get('/{resultId}', [ScreeningMatchController::class, 'show'])->name('show');
         });
     });
 
@@ -574,6 +571,18 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     Route::middleware(['role:manage_role_permissions', 'mfa.verified'])->prefix('admin/role-permissions')->name('admin.role-permissions.')->group(function () {
         Route::get('/', [RolePermissionController::class, 'index'])->name('index');
         Route::post('/', [RolePermissionController::class, 'update'])->name('update')->middleware('password.confirm');
+    });
+
+    // Sanction list sources — admin only. Add/remove sources and trigger
+    // a manual sync of a remote feed.
+    Route::middleware(['role:admin', 'mfa.verified'])->prefix('admin/sanctions')->name('admin.sanctions.')->group(function () {
+        Route::get('/', [SanctionSourceController::class, 'index'])->name('index');
+        Route::post('/', [SanctionSourceController::class, 'store'])->name('store');
+        // Same throttle as the compliance import route (5 / 10 min): each
+        // call downloads and imports an external list synchronously.
+        Route::post('/{list}/sync', [SanctionSourceController::class, 'sync'])
+            ->name('sync')->middleware('throttle:5,10');
+        Route::delete('/{list}', [SanctionSourceController::class, 'destroy'])->name('destroy');
     });
 
     // Branch/HQ Scope — read-only matrix documenting the operating boundary

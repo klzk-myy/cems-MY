@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SanctionListType;
+use App\Enums\SanctionSourceFormat;
 use App\Enums\UpdateStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property SanctionListType $list_type 'UNSCR', 'MOHA', 'Domestic', 'Internal'
  * @property string|null $source_url
- * @property string|null $source_format 'XML', 'CSV', 'JSON'
+ * @property SanctionSourceFormat|null $source_format
  * @property string|null $source_file
  * @property int $uploaded_by
  * @property bool $is_active
@@ -66,6 +67,7 @@ class SanctionList extends BaseModel
         'last_attempted_at' => 'datetime',
         'entry_count' => 'integer',
         'list_type' => SanctionListType::class,
+        'source_format' => SanctionSourceFormat::class,
         'update_status' => UpdateStatus::class,
     ];
 

@@ -41,6 +41,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $history->links() }}</div>
         </x-card>
 
         <x-button variant="secondary" href="{{ url()->previous() }}">Back</x-button>

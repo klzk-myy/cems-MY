@@ -24,7 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int|null $customer_id
  * @property int $user_id
- * @property string $till_id
+ * @property string|null $till_id
  * @property TransactionType $type
  * @property string $currency_code
  * @property string|null $counterparty_country ISO 3-letter country code
@@ -38,6 +38,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $hold_reason Reason for hold status
  * @property int|null $approved_by User ID who approved
  * @property Carbon|null $approved_at
+ * @property int|null $reexecuted_by User ID who triggered re-execution (null = system job)
+ * @property Carbon|null $reexecuted_at
  * @property CddLevel $cdd_level
  * @property Carbon|null $cancelled_at
  * @property int|null $cancelled_by
@@ -53,7 +55,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $branch_id
  * @property int|null $counter_id
  * @property int|null $teller_allocation_id Allocation pinned at creation for balance apply/reverse
- * @property string $till_id
+ * @property string|null $till_id
  * @property string|null $base_rate
  * @property bool $rate_override
  * @property int|null $rate_override_approved_by
@@ -143,6 +145,8 @@ class Transaction extends TransactionModel
         'teller_allocation_id' => 'integer',
         'approved_by' => 'integer',
         'approved_at' => 'datetime',
+        'reexecuted_by' => 'integer',
+        'reexecuted_at' => 'datetime',
         'compliance_cleared_by' => 'integer',
         'compliance_cleared_at' => 'datetime',
         'approval_sync_failed' => 'boolean',

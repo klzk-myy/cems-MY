@@ -9,15 +9,13 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\TransactionImport;
-use App\Services\Accounting\CurrencyPositionLockService;
-use App\Services\Accounting\CurrencyPositionService;
+use App\Models\User;
 use App\Services\Branch\TillBalanceManager;
-use App\Services\Compliance\ComplianceService;
+use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\ExchangeCalculator;
 use App\Services\Transaction\InitialStatusResolver;
-use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionImportService;
 use App\Services\Transaction\TransactionMonitoringService;
@@ -42,22 +40,29 @@ trait TransactionImportTestHelpers
             'risk_rating' => RiskRating::Low->value,
         ]);
         $counter = Counter::factory()->create(['code' => 'MAIN']);
+
+        // The import runs the shared booking gate, so the importer must be a
+        // real user bound to the counter's branch (till scoping is enforced).
+        $user = User::factory()->manager()->create(['branch_id' => $counter->branch_id]);
+
         TillBalance::factory()->create([
             'till_id' => $counter->code,
             'currency_code' => $currency->code,
+            'branch_id' => $counter->branch_id,
             'date' => today(),
             'opening_balance' => '10000',
         ]);
         TillBalance::factory()->create([
             'till_id' => $counter->code,
             'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
             'date' => today(),
             'opening_balance' => '100000',
         ]);
 
         $import = $createImport
             ? TransactionImport::factory()->create([
-                'imported_by' => $customer->id,
+                'imported_by' => $user->id,
                 'status' => TransactionImportStatus::Pending->value,
             ])
             : null;
@@ -66,28 +71,30 @@ trait TransactionImportTestHelpers
             'currency' => $currency,
             'customer' => $customer,
             'counter' => $counter,
+            'user' => $user,
             'import' => $import,
         ];
     }
 
     private function createImportService(
         string $threshold,
-        ?ComplianceService $complianceService = null,
-        ?RateManagementService $rateManagementService = null
+        ?RateManagementServiceInterface $rateManagementService = null
     ): TransactionImportService {
         $thresholdService = $this->createMock(ThresholdService::class);
         $thresholdService->method('getAutoApproveThreshold')->willReturn($threshold);
 
+        // The import delegates the booking gate to TransactionCreationService,
+        // so rate/compliance mocks must be bound in the container to take
+        // effect — constructor injection alone no longer reaches them.
+        if ($rateManagementService) {
+            $this->app->instance(RateManagementServiceInterface::class, $rateManagementService);
+        }
+
         return new TransactionImportService(
             app(MathService::class),
-            $complianceService ?? app(ComplianceService::class),
-            app(CurrencyPositionService::class),
             app(TransactionMonitoringService::class),
-            $thresholdService,
             app(TillBalanceManager::class),
             app(TransactionCreationService::class),
-            $rateManagementService ?? app(RateManagementService::class),
-            app(CurrencyPositionLockService::class),
             new InitialStatusResolver(app(MathService::class), $thresholdService),
             app(ExchangeCalculator::class),
         );

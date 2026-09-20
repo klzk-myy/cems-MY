@@ -11,6 +11,7 @@ use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\TillBalance;
+use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
@@ -52,7 +53,7 @@ class TransactionValidationService implements TransactionValidationInterface
         }
     }
 
-    public function validateTillBalance(string $tillId, string $currencyCode): TillBalance
+    public function validateTillBalance(string $tillId, string $currencyCode, ?User $user = null): TillBalance
     {
         $counter = Counter::findByCodeOrId($tillId);
 
@@ -62,9 +63,10 @@ class TransactionValidationService implements TransactionValidationInterface
 
         // Mirror the ValidTill rule's cross-branch guard: a user may only book
         // against tills of their own branch. Report a foreign-branch till as
-        // missing instead of leaking its existence. Without an authenticated
-        // user (CLI/queue context) there is nothing to scope by.
-        $user = ActorContext::capture()->user;
+        // missing instead of leaking its existence. Callers without an
+        // authenticated request (queue jobs, CSV import) must pass the actor
+        // explicitly — with no user at all there is nothing to scope by.
+        $user ??= ActorContext::capture()->user;
 
         if ($user !== null && $user->branch_id !== null
             && (int) $counter->branch_id !== (int) $user->branch_id) {

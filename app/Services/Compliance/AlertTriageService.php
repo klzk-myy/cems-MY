@@ -247,7 +247,7 @@ class AlertTriageService
             // the stale in-memory status check before the transaction was a TOCTOU race.
             $lockedAlert = Alert::whereKey($alert->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($lockedAlert->status === FlagStatus::Resolved || $lockedAlert->status === FlagStatus::Rejected) {
+            if ($lockedAlert->status->isTerminal()) {
                 throw new CaseManagementException('Cannot resolve an already resolved or rejected alert.');
             }
 
@@ -287,7 +287,7 @@ class AlertTriageService
         return DB::transaction(function () use ($alert, $dismissedBy) {
             $lockedAlert = Alert::whereKey($alert->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($lockedAlert->status === FlagStatus::Resolved || $lockedAlert->status === FlagStatus::Rejected) {
+            if ($lockedAlert->status->isTerminal()) {
                 throw new CaseManagementException('Cannot dismiss an already resolved or rejected alert.');
             }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
+use App\Enums\RateSide;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\RequiresPermission;
@@ -219,7 +220,7 @@ class RateController extends Controller
         $result = $this->rateService->validateTransactionRate(
             $validated['rate'],
             $validated['currency_code'],
-            $validated['type'],
+            RateSide::from($validated['type']),
             $this->resolveBranchId(Auth::user(), $request),
             Auth::user()?->role
         );

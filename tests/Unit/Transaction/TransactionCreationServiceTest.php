@@ -44,6 +44,7 @@ use App\Services\Transaction\TransactionRecoveryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -92,7 +93,11 @@ class TransactionCreationServiceTest extends TestCase
 
     private function context(array $overrides = []): TransactionCreationContext
     {
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'Low',
+            'occupation' => 'Engineer',
+            'employer_name' => 'Acme Sdn Bhd',
+        ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         $currency = Currency::factory()->create(['code' => 'USD']);
         $tillBalance = TillBalance::factory()->create([
@@ -106,6 +111,7 @@ class TransactionCreationServiceTest extends TestCase
                 'till_id' => $counter->code,
                 'currency_code' => 'MYR',
                 'branch_id' => $counter->branch_id,
+                'opening_balance' => $overrides['myrOpening'] ?? '10000.0000',
             ]);
         }
 
@@ -119,6 +125,7 @@ class TransactionCreationServiceTest extends TestCase
             'rate' => '4.5000',
             'purpose' => 'Travel',
             'source_of_funds' => 'Savings',
+            'source_of_wealth' => 'Business Ownership',
             'till_id' => (string) $counter->code,
         ];
 
@@ -126,7 +133,7 @@ class TransactionCreationServiceTest extends TestCase
             data: array_merge($data, $overrides['data'] ?? []),
             customer: $customer,
             tillBalance: $tillBalance,
-            cddLevel: $overrides['cddLevel'] ?? CddLevel::Standard,
+            cddLevel: $overrides['cddLevel'] ?? CddLevel::Simplified,
             holdRequired: $overrides['holdRequired'] ?? false,
             status: $overrides['status'] ?? TransactionStatus::Completed,
             amountMyr: $overrides['amountMyr'] ?? '450.00',
@@ -185,11 +192,219 @@ class TransactionCreationServiceTest extends TestCase
     }
 
     #[Test]
+    public function create_rejects_standard_cdd_transaction_when_customer_profile_is_incomplete(): void
+    {
+        Currency::factory()->create(['code' => 'USD', 'rate_unit' => 1]);
+
+        // Sparse record: the nullable profile fields Standard CDD requires
+        // (pd-00.md 14C.10.1) are all missing.
+        $customer = Customer::factory()->create([
+            'address' => null,
+            'phone' => null,
+            'occupation' => null,
+            'employer_name' => null,
+            'risk_rating' => 'Low',
+        ]);
+        $counter = Counter::factory()->create(['status' => 'active']);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        // 2,500 USD × 4.5 = RM 11,250 → Standard CDD (>= RM10,000).
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '2500',
+            'rate' => '4.5',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $this->tellerAllocation($user, $counter, 'USD');
+
+        try {
+            $this->completedBuyService()->prepareAndCreate($data, $user->id);
+            $this->fail('Expected ValidationException for missing Standard CDD fields');
+        } catch (ValidationException $e) {
+            $this->assertEquals(
+                ['address', 'employer_name', 'occupation', 'phone'],
+                collect($e->errors())->keys()->sort()->values()->all()
+            );
+        }
+    }
+
+    #[Test]
+    public function create_rejects_specific_cdd_transaction_when_address_missing(): void
+    {
+        Currency::factory()->create(['code' => 'USD', 'rate_unit' => 1]);
+
+        $customer = Customer::factory()->create([
+            'address' => null,
+            'phone' => '+60123456789',
+            'occupation' => 'Engineer',
+            'employer_name' => 'Acme Sdn Bhd',
+            'risk_rating' => 'Low',
+        ]);
+        $counter = Counter::factory()->create(['status' => 'active']);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        // 1,000 USD × 4.5 = RM 4,500 → Specific CDD (RM3,000-10,000).
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '1000',
+            'rate' => '4.5',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $this->tellerAllocation($user, $counter, 'USD');
+
+        try {
+            $this->completedBuyService()->prepareAndCreate($data, $user->id);
+            $this->fail('Expected ValidationException for missing address');
+        } catch (ValidationException $e) {
+            $this->assertEquals(['address'], collect($e->errors())->keys()->all());
+        }
+    }
+
+    #[Test]
+    public function create_rejects_simplified_cdd_when_address_missing(): void
+    {
+        Currency::factory()->create(['code' => 'USD', 'rate_unit' => 1]);
+
+        // 14A.10.3 still requires residential/mailing address even at the
+        // lowest tier — only phone/occupation/employer may stay blank.
+        $customer = Customer::factory()->create([
+            'address' => null,
+            'phone' => null,
+            'occupation' => null,
+            'employer_name' => null,
+            'risk_rating' => 'Low',
+        ]);
+        $counter = Counter::factory()->create(['status' => 'active']);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        // 100 USD × 4.5 = RM 450 → Simplified CDD.
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100',
+            'rate' => '4.5',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $this->tellerAllocation($user, $counter, 'USD');
+
+        try {
+            $this->completedBuyService()->prepareAndCreate($data, $user->id);
+            $this->fail('Expected ValidationException for missing address');
+        } catch (ValidationException $e) {
+            $this->assertEquals(['address'], collect($e->errors())->keys()->all());
+        }
+    }
+
+    #[Test]
+    public function create_drawer_less_buy_uses_user_branch_and_no_till(): void
+    {
+        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency->shouldReceive('findDuplicate')->andReturnNull();
+        $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->twice();
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->once();
+
+        // Drawer-less bookings must never touch the till balance manager.
+        $till = Mockery::mock(TillBalanceManager::class);
+        $till->shouldNotReceive('applyTransaction');
+
+        $service = $this->service([
+            'idempotency' => $idempotency,
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+            'till' => $till,
+        ]);
+
+        $customer = Customer::factory()->create();
+        $user = User::factory()->create();
+
+        $context = new TransactionCreationContext(
+            data: [
+                'customer_id' => $customer->id,
+                'type' => TransactionType::Buy->value,
+                'currency_code' => 'USD',
+                'quantity' => '100.00',
+                'rate' => '4.5000',
+                'purpose' => 'Travel',
+                'source_of_funds' => 'Savings',
+            ],
+            customer: $customer,
+            tillBalance: null,
+            cddLevel: CddLevel::Simplified,
+            holdRequired: false,
+            status: TransactionStatus::Completed,
+            amountMyr: '450.00',
+            user: $user,
+            allocation: null,
+        );
+
+        $transaction = $service->create($context);
+
+        $this->assertEquals(TransactionStatus::Completed, $transaction->status);
+        $this->assertNull($transaction->till_id);
+        $this->assertNull($transaction->counter_id);
+        $this->assertEquals($user->branch_id, $transaction->branch_id);
+    }
+
+    #[Test]
     public function create_normalizes_unit_quoted_rate_to_per_unit_for_storage(): void
     {
         Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1000000]);
 
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
         $counter = Counter::factory()->create(['status' => 'active']);
         $tillBalance = TillBalance::factory()->create([
             'till_id' => $counter->code,
@@ -229,7 +444,7 @@ class TransactionCreationServiceTest extends TestCase
     {
         Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1, 'rate_inverse' => true]);
 
-        $customer = Customer::factory()->create();
+        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
         $counter = Counter::factory()->create(['status' => 'active']);
         TillBalance::factory()->create([
             'till_id' => $counter->code,
@@ -327,6 +542,7 @@ class TransactionCreationServiceTest extends TestCase
 
         $this->completedBuyService()->create($this->context([
             'amountMyr' => '50000.00',
+            'myrOpening' => '100000.0000',
         ]));
 
         // Scoped assertion: monitoring flags may legitimately produce alert
@@ -870,7 +1086,11 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function prepare_and_create_builds_context_and_delegates_to_create(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'Low',
+            'occupation' => 'Engineer',
+            'employer_name' => 'Acme Sdn Bhd',
+        ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         Currency::factory()->create(['code' => 'USD']);
         $tillBalance = TillBalance::factory()->create([
@@ -935,13 +1155,17 @@ class TransactionCreationServiceTest extends TestCase
     }
 
     #[Test]
-    public function sell_stock_check_scopes_pending_reservations_by_till_id(): void
+    public function sell_stock_check_scopes_pending_reservations_by_branch(): void
     {
-        // Regression: ensureStockForSell must count pending reservations by till_id,
-        // not branch_id, to match the scope used by reserveStock() and
-        // getAvailableBalance(). A reservation on the actual till must block a
-        // subsequent Sell that exceeds the remaining position.
-        $customer = Customer::factory()->create();
+        // Regression: ensureStockForSell must count pending reservations
+        // branch-wide — a pending Sell on one till holds stock against the
+        // shared branch position, so it must block a Sell on ANOTHER till
+        // that exceeds the remaining position.
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'Low',
+            'occupation' => 'Engineer',
+            'employer_name' => 'Acme Sdn Bhd',
+        ]);
         $currency = Currency::factory()->create(['code' => 'USD']);
         $counter = Counter::factory()->create(['status' => 'active']);
 
@@ -960,11 +1184,13 @@ class TransactionCreationServiceTest extends TestCase
             'current_rate' => '4.5000',
         ]);
 
-        // A pending reservation for the SAME till for 900 units.
+        // A pending reservation for 900 units held by a DIFFERENT till on the
+        // same branch — branch scoping must still count it.
         StockReservation::create([
             'transaction_id' => Transaction::factory()->create()->id,
             'currency_code' => 'USD',
-            'till_id' => $counter->code,
+            'till_id' => 'OTHER-TILL',
+            'branch_id' => $counter->branch_id,
             'quantity' => '900.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),

@@ -2,6 +2,7 @@
 
 namespace App\Services\Contracts;
 
+use App\Enums\RateSide;
 use App\Enums\UserRole;
 use App\Models\ExchangeRate;
 use App\Models\User;
@@ -29,7 +30,7 @@ interface RateManagementServiceInterface
     public function validateTransactionRate(
         string $submittedRate,
         string $currencyCode,
-        string $transactionType = 'buy',
+        RateSide $side = RateSide::Buy,
         ?int $branchId = null,
         ?UserRole $role = null
     ): array;

@@ -508,26 +508,28 @@ class TransactionServiceTest extends TestCase
     public function get_available_balance_excludes_pending_reservations(): void
     {
         // Create a position with 1000 USD (positions key on currency + branch)
+        $branch = Branch::factory()->create();
         CurrencyPosition::factory()->create([
             'currency_code' => 'USD',
-            'branch_id' => 'TEST-TILL',
+            'branch_id' => (string) $branch->id,
             'quantity' => '1000.00',
             'average_cost' => '4.50',
             'current_rate' => '4.50',
         ]);
 
-        // Create a pending reservation for 300 USD
+        // Create a pending reservation for 300 USD on the same branch —
+        // reservations are summed branch-wide, regardless of till.
         StockReservation::factory()->create([
-            'transaction_id' => 99999, // dummy
             'currency_code' => 'USD',
             'till_id' => 'TEST-TILL',
+            'branch_id' => $branch->id,
             'quantity' => '300.00',
             'status' => StockReservationStatus::Pending,
             'expires_at' => now()->addHours(24),
             'created_by' => $this->teller->id,
         ]);
 
-        $available = $this->positionService->getAvailableBalance('USD', 'TEST-TILL');
+        $available = $this->positionService->getAvailableBalance('USD', (string) $branch->id);
 
         $this->assertEquals('700.000000', $available);
     }
@@ -539,14 +541,17 @@ class TransactionServiceTest extends TestCase
         // to test reservation consumption during approval.
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
         $this->approvePepFor($customer);
-        $counter = Counter::factory()->create();
+        // The till must sit in the teller's branch — validateTillBalance
+        // scopes counters to the actor's branch.
+        $counter = Counter::factory()->create(['branch_id' => $this->branch->id]);
 
-        // Create till balances
+        // Create till balances — a Sell pays FCY out of the drawer, so the
+        // USD till must physically hold the stock being sold.
         TillBalance::factory()->create([
             'till_id' => (string) $counter->code,
             'branch_id' => $counter->branch_id,
             'currency_code' => 'USD',
-            'opening_balance' => '0',
+            'opening_balance' => '5000.00',
             'date' => today(),
             'opened_by' => $this->teller->id,
         ]);
@@ -599,7 +604,7 @@ class TransactionServiceTest extends TestCase
             ->clearHold($transaction->fresh(), $compliance->id);
         $result = $this->transactionService->approveTransaction($transaction->fresh(), $compliance->id);
 
-        $this->assertTrue($result['success']);
+        $this->assertTrue($result['success'], $result['message'] ?? '');
 
         // Verify reservation was consumed
         $reservation->refresh();
@@ -612,9 +617,11 @@ class TransactionServiceTest extends TestCase
         // Use a PEP customer so the transaction is held for approval.
         $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
         $this->approvePepFor($customer);
-        $branch = Branch::factory()->create();
+        // The till must sit in the teller's branch — validateTillBalance
+        // scopes counters to the actor's branch.
+        $branch = $this->branch;
         $counter = Counter::factory()->create([
-            'code' => (string) $branch->id,
+            'code' => 'BR'.$branch->id.'X',
             'branch_id' => $branch->id,
         ]);
 

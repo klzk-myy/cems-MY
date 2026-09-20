@@ -2,6 +2,7 @@
 
 namespace App\Services\Compliance;
 
+use App\Enums\SanctionSourceFormat;
 use App\Services\Concerns\ValidatesContentFormat;
 use App\Services\Concerns\ValidatesSanctionsUrl;
 use Illuminate\Http\Client\Response;
@@ -28,14 +29,14 @@ class SanctionsDownloadService
      *
      * @param  string  $url  Source URL
      * @param  string  $filename  Target filename
-     * @param  string  $format  Expected format (XML, CSV, JSON)
+     * @param  SanctionSourceFormat  $format  Expected format
      * @param  int  $retryAttempts  Number of retry attempts
      * @return array{success: bool, filepath: string|null, checksum: string|null, error: string|null, format_valid: bool}
      */
     public function download(
         string $url,
         string $filename,
-        string $format = 'XML',
+        SanctionSourceFormat $format = SanctionSourceFormat::Xml,
         int $retryAttempts = 3
     ): array {
         $this->validateUrl($url);
@@ -72,7 +73,7 @@ class SanctionsDownloadService
                         'success' => false,
                         'filepath' => null,
                         'checksum' => null,
-                        'error' => "Downloaded content is not valid {$format}",
+                        'error' => "Downloaded content is not valid {$format->value}",
                         'format_valid' => false,
                     ];
                 }
@@ -144,13 +145,12 @@ class SanctionsDownloadService
     /**
      * Validate downloaded content matches expected format.
      */
-    protected function validateFormat(string $content, string $format): bool
+    protected function validateFormat(string $content, SanctionSourceFormat $format): bool
     {
         return match ($format) {
-            'XML' => $this->validateXml($content),
-            'JSON' => $this->validateJson($content),
-            'CSV' => $this->validateCsv($content),
-            default => true,
+            SanctionSourceFormat::Xml => $this->validateXml($content),
+            SanctionSourceFormat::Json => $this->validateJson($content),
+            SanctionSourceFormat::Csv => $this->validateCsv($content),
         };
     }
 

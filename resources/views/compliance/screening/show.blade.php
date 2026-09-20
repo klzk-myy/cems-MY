@@ -32,7 +32,7 @@
                 <dl class="space-y-4">
                     <div class="flex justify-between gap-4">
                         <dt class="text-sm text-ink-muted">Name</dt>
-                        <dd class="text-sm text-ink font-medium text-right">{{ $customer->full_name }}</dd>
+                        <dd class="text-sm text-ink font-medium text-right"><x-customer-link :customer="$customer" /></dd>
                     </div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-sm text-ink-muted">Customer ID</dt>

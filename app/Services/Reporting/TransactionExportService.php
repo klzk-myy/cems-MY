@@ -3,6 +3,7 @@
 namespace App\Services\Reporting;
 
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 
@@ -16,9 +17,14 @@ class TransactionExportService
     /**
      * Export transactions to CSV within a date range.
      *
+     * Branch isolation mirrors the index: users without
+     * canManageAllBranches are confined to their own branch — a submitted
+     * branch_id is intersected with (never widened beyond) that scope, so a
+     * branch-scoped user cannot exfiltrate another branch's customer data.
+     *
      * @return string The file path of the generated CSV
      */
-    public function exportTransactions(array $filters, int $userId): string
+    public function exportTransactions(array $filters, User $user): string
     {
         $query = Transaction::with(['customer', 'branch', 'creator'])
             ->when($filters['date_from'] ?? null, fn ($q) => $q->where('created_at', '>=', Carbon::parse($filters['date_from'])->startOfDay()))
@@ -26,6 +32,10 @@ class TransactionExportService
             ->when($filters['branch_id'] ?? null, fn ($q) => $q->where('branch_id', $filters['branch_id']))
             ->when($filters['type'] ?? null, fn ($q) => $q->where('type', $filters['type']))
             ->when($filters['status'] ?? null, fn ($q) => $q->where('status', $filters['status']));
+
+        if (! $user->role->canManageAllBranches()) {
+            $query->where('branch_id', $user->branch_id);
+        }
 
         // Chunked export: a wide date range can match hundreds of thousands of
         // rows — materializing them via ->get() would exhaust memory. Keyset
@@ -38,12 +48,13 @@ class TransactionExportService
             'id' => $t->id,
             'date' => $t->created_at?->format('Y-m-d H:i'),
             'customer' => $t->customer?->full_name,
-            'type' => $t->type,
+            // type/status are BackedEnums — fputcsv cannot stringify them.
+            'type' => $t->type instanceof \BackedEnum ? $t->type->value : $t->type,
             'currency' => $t->currency_code,
             'foreign_amount' => $t->quantity,
             'rate' => $t->rate,
             'local_amount' => $t->amount_myr,
-            'status' => $t->status,
+            'status' => $t->status instanceof \BackedEnum ? $t->status->value : $t->status,
             'branch' => $t->branch?->name,
             'created_by' => $t->creator?->username,
         ]));

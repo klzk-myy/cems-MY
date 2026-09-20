@@ -4,12 +4,11 @@
 
         <div x-data="transactionWizard"
              data-api-base="{{ url('api/v1') }}"
-             data-branch-id="{{ auth()->user()?->branch_id ?? '' }}"
              data-idempotency-key="{{ $idempotencyKey }}"
              data-currencies='@json($currencies ?? [])'
              data-currency-units='@json($currencyUnits ?? [])'
              data-currency-inverses='@json($currencyInverses ?? [])'
-             class="max-w-4xl mx-auto">
+             class="w-full">
 
         <form @submit.prevent="submitStep()">
 
@@ -73,15 +72,6 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">Local Amount (MYR)</label>
                         <input type="text" :value="amountMyr" readonly class="w-full px-4 py-2.5 text-sm border border-border rounded-lg bg-canvas-subtle">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Till / Counter</label>
-                        <select x-model="formData.till_id" class="w-full px-4 py-2.5 text-sm border border-border rounded-lg">
-                            <option value="">Select till</option>
-                            <template x-for="(name, code) in counters" :key="code">
-                                <option :value="code" x-text="name + ' (' + code + ')'"></option>
-                            </template>
-                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Purpose</label>

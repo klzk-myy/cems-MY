@@ -202,4 +202,25 @@ enum ComplianceFlagType: string
             self::CounterfeitCurrency,
         ];
     }
+
+    /**
+     * All high-priority flag types — single source for approval blocks,
+     * compliance queues, and dashboards so they can't drift apart.
+     *
+     * @return array<int, self>
+     */
+    public static function highPriorityCases(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $t) => $t->isHighPriority()));
+    }
+
+    /**
+     * Backing values of the high-priority flag types, for query bindings.
+     *
+     * @return array<int, string>
+     */
+    public static function highPriorityValues(): array
+    {
+        return array_map(fn (self $t) => $t->value, self::highPriorityCases());
+    }
 }

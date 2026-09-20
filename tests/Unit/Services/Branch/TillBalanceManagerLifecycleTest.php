@@ -10,7 +10,6 @@ use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\Branch\CounterService;
 use App\Services\Branch\TillBalanceManager;
-use App\Services\Branch\TillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -104,7 +103,7 @@ class TillBalanceManagerLifecycleTest extends TestCase
     }
 
     #[Test]
-    public function close_till_calculates_variance_using_till_service_calculate_net_flow(): void
+    public function close_till_calculates_variance_from_expected_balance(): void
     {
         $till = Counter::factory()->create();
         $currency = Currency::factory()->create();
@@ -115,21 +114,15 @@ class TillBalanceManagerLifecycleTest extends TestCase
             'till_id' => $till->code,
             'currency_code' => $currency->code,
             'opening_balance' => '1000.00',
+            'buy_quantity' => '300.00',
+            'sell_quantity' => '50.00',
             'opened_by' => $user->id,
             'closed_at' => null,
             'closed_by' => null,
         ]);
 
-        $tillService = Mockery::mock(TillService::class);
-        $tillService->shouldReceive('calculateNetFlow')
-            ->once()
-            ->with($till->code, $currency->code)
-            ->andReturn('250.00');
-
-        $this->app->instance(TillService::class, $tillService);
-        $manager = app(TillBalanceManager::class);
-
-        $updated = $manager->closeTill($balance, '1250.00', $closer->id, 'End of day');
+        // Expected = 1000 + 300 - 50 = 1250
+        $updated = $this->manager->closeTill($balance, '1250.00', $closer->id, 'End of day');
 
         $this->assertEquals('1250.0000', (string) $updated->closing_balance);
         $this->assertEquals('0.0000', (string) $updated->variance);
@@ -163,19 +156,15 @@ class TillBalanceManagerLifecycleTest extends TestCase
             'till_id' => $till->code,
             'currency_code' => $currency->code,
             'opening_balance' => '500.00',
+            'buy_quantity' => '150.00',
+            'sell_quantity' => '50.00',
             'opened_by' => $user->id,
             'closed_at' => null,
             'closed_by' => null,
         ]);
 
-        $tillService = Mockery::mock(TillService::class);
-        $tillService->shouldReceive('calculateNetFlow')
-            ->andReturn('100.00');
-
-        $this->app->instance(TillService::class, $tillService);
-        $manager = app(TillBalanceManager::class);
-
-        $updated = $manager->closeTill($balance, '650.00', $closer->id);
+        // Expected = 500 + 150 - 50 = 600; closing 650 -> variance +50
+        $updated = $this->manager->closeTill($balance, '650.00', $closer->id);
 
         $this->assertEquals('650.0000', (string) $updated->closing_balance);
         $this->assertEquals('50.0000', (string) $updated->variance);

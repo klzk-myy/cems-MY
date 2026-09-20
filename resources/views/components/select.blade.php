@@ -39,7 +39,7 @@ $selectedValue = $name ? old($name, $rawValue instanceof \BackedEnum ? $rawValue
                    {{ $attrs->get('class', '') }}">
         <option value="">{{ $placeholder }}</option>
         @foreach($options as $optValue => $optLabel)
-            <option value="{{ $optValue }}" @selected($selectedValue == $optValue)>
+            <option value="{{ $optValue }}" @selected($selectedValue !== null && ! is_array($selectedValue) && (string) $selectedValue === (string) $optValue)>
                 {{ $optLabel }}
             </option>
         @endforeach

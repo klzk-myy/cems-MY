@@ -167,7 +167,7 @@ class MfaController extends Controller
             return $this->notFoundResponse('MFA secret not found.');
         }
 
-        $valid = $this->mfaService->verifyCode($secret, $validated['code']);
+        $valid = $this->mfaService->verifyUserCode($user, $validated['code']);
 
         if (! $valid) {
             $valid = $this->mfaService->verifyRecoveryCode($user, $validated['code']);

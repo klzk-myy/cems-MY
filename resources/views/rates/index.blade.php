@@ -114,6 +114,7 @@
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
+                <div class="mt-4">{{ $rates->links() }}</div>
             </x-card>
 
             {{-- Override Rate Modal --}}

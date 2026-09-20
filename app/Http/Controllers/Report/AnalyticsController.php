@@ -228,7 +228,7 @@ class AnalyticsController extends Controller
             return [
                 'name' => $customer->full_name,
                 'customer_code' => sprintf('CUST-%06d', $customer->id),
-                'id_number' => $customer->id_number_masked,
+                'id_number' => $customer->id_number,
                 'transaction_count' => $customer->transactions_count,
                 'total_volume' => $customer->transactions_sum_amount_myr,
                 'avg_value' => $customer->transactions_count > 0

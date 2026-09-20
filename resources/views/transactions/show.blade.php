@@ -44,10 +44,6 @@
                     <p class="text-sm font-medium text-ink">{{ number_format((float) $transaction->amount_myr, 2) }}</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-ink-muted mb-1">Counter</label>
-                    <p class="text-sm text-ink">{{ $transaction->counter_id ?? 'N/A' }}</p>
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Branch</label>
                     <p class="text-sm text-ink">{{ $transaction->branch?->name ?? 'N/A' }}</p>
                 </div>
@@ -66,7 +62,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Customer Name</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer?->full_name ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink"><x-customer-link :customer="$transaction->customer" /></p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">Customer ID</label>
@@ -78,7 +74,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">ID Number</label>
-                    <p class="text-sm text-ink">{{ $transaction->customer->id_number_masked ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink"><x-customer-link :customer="$transaction->customer" field="id_number" /></p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-muted mb-1">CDD Level</label>
@@ -108,6 +104,26 @@
                 @if($transaction->compliance_cleared_at)
                     <div class="mt-1 text-xs">Cleared at {{ $transaction->compliance_cleared_at->format('Y-m-d H:i') }}</div>
                 @endif
+            </x-alert>
+        @endif
+
+        @if($transaction->refundTransaction)
+            <x-alert type="info" title="Reversed — Refund Issued">
+                This transaction was reversed. Refund
+                <a href="{{ route('transactions.show', $transaction->refundTransaction->id) }}" class="font-medium underline">
+                    #{{ $transaction->refundTransaction->id }}
+                </a>
+                is {{ $transaction->refundTransaction->status?->label() ?? 'pending' }}.
+            </x-alert>
+        @endif
+
+        @if($transaction->is_refund && $transaction->originalTransaction)
+            <x-alert type="warning" title="Refund Transaction">
+                This is a reversal refund for
+                <a href="{{ route('transactions.show', $transaction->originalTransaction->id) }}" class="font-medium underline">
+                    Transaction #{{ $transaction->originalTransaction->id }}
+                </a>
+                ({{ $transaction->originalTransaction->status?->label() ?? 'N/A' }}).
             </x-alert>
         @endif
 
@@ -142,6 +158,19 @@
                 @if(! in_array($transaction->status, [\App\Enums\TransactionStatus::Cancelled, \App\Enums\TransactionStatus::Reversed, \App\Enums\TransactionStatus::Rejected, \App\Enums\TransactionStatus::Finalized, \App\Enums\TransactionStatus::PendingCancellation], true))
                     @can('requestCancellation', $transaction)
                         <x-button href="{{ route('transactions.cancel', $transaction->id) }}" variant="danger">Request Cancellation</x-button>
+                    @endcan
+                @endif
+                @if($canReverse ?? false)
+                    @can('reverse', $transaction)
+                        <x-button href="{{ route('transactions.reverse', $transaction->id) }}" variant="danger">Reverse Transaction</x-button>
+                    @endcan
+                @endif
+                @if($transaction->is_refund && $transaction->status === \App\Enums\TransactionStatus::Approved)
+                    @can('completeRefund', $transaction)
+                        <form method="POST" action="{{ route('transactions.complete-refund', $transaction->id) }}" class="contents">
+                            @csrf
+                            <x-button type="submit" variant="primary">Complete Refund</x-button>
+                        </form>
                     @endcan
                 @endif
                 <x-button href="{{ route('transactions.print', $transaction->id) }}" variant="secondary">Print Receipt</x-button>

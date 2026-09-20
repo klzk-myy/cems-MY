@@ -62,7 +62,7 @@
                                 <td class="px-4 py-3 text-sm">
                                     <a href="{{ route('compliance.risk-dashboard.customer', $customer) }}"
                                        class="text-primary hover:underline">
-                                        {{ $customer->full_name }}
+                                        <x-customer-link :customer="$customer" />
                                     </a>
                                     <div class="text-xs text-ink-muted">#{{ $customer->id }}</div>
                                 </td>

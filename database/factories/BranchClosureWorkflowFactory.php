@@ -23,6 +23,7 @@ class BranchClosureWorkflowFactory extends Factory
             'branch_id' => Branch::factory(),
             'initiated_by' => User::factory(),
             'status' => $this->faker->randomElement(['initiated', 'settled', 'finalized']),
+            'business_date' => now()->toDateString(),
             'checklist' => [
                 'cash_balanced' => $this->faker->boolean,
                 'vault_sealed' => $this->faker->boolean,

@@ -5,7 +5,7 @@
 <x-app-layout title="Verify MFA" {{ $attributes }}>
     <x-page-header title="Two-Factor Verification" description="Enter the 6-digit code from your authenticator app." />
 
-    <x-card class="max-w-lg">
+    <x-card>
         <form method="POST" action="{{ route('mfa.verify.store') }}">
             @csrf
             <x-input type="text" name="code" label="Verification Code" placeholder="Enter 6-digit code" maxlength="6" required autofocus />

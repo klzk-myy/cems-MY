@@ -2,13 +2,10 @@
 
 namespace App\Services\Branch;
 
-use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\TillBalance;
-use App\Models\Transaction;
 use App\Services\System\MathService;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -52,39 +49,6 @@ class TillService
     public function calculateVariance(string $actualClosing, string $expectedClosing): string
     {
         return $this->mathService->subtract($actualClosing, $expectedClosing);
-    }
-
-    /**
-     * Calculate net flow from transactions for a till.
-     *
-     * @return string Net flow (buy - sell)
-     */
-    public function calculateNetFlow(string $tillId, string $currencyCode, ?string $date = null): string
-    {
-        $date = $date ?? now()->toDateString();
-
-        // Only Completed/Finalized transactions actually moved till cash (via
-        // applyTransaction). Counting cancelled, failed, or pending transactions
-        // would distort the expected closing balance and variance at close time.
-        //
-        // Bucket by when the cash actually moved: approved_at for approved
-        // transactions (applyTransaction runs at approval), created_at for
-        // auto-completed ones. A pending transaction created before midnight
-        // and approved after belongs to the approval day, not the request day.
-        $netFlow = Transaction::where('till_id', $tillId)
-            ->where('currency_code', $currencyCode)
-            ->whereIn('status', [
-                TransactionStatus::Completed->value,
-                TransactionStatus::Finalized->value,
-            ])
-            ->whereRaw('COALESCE(approved_at, created_at) BETWEEN ? AND ?', [
-                Carbon::parse($date)->startOfDay(),
-                Carbon::parse($date)->endOfDay(),
-            ])
-            ->selectRaw("SUM(CASE WHEN type='Buy' THEN amount_myr ELSE -amount_myr END) as net")
-            ->value('net') ?? '0';
-
-        return (string) $netFlow;
     }
 
     /**

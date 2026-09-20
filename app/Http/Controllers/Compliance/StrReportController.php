@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\StrReportStatus;
-use App\Exceptions\Domain\DomainException;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStrReportRequest;
 use App\Models\Compliance\ComplianceCase;
@@ -12,8 +12,6 @@ use App\Services\AuditService;
 use App\Services\Compliance\StrReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -28,6 +26,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class StrReportController extends Controller
 {
+    use HandlesControllerErrors;
+
     public function __construct(
         protected StrReportService $strReportService,
         protected AuditService $auditService
@@ -76,20 +76,8 @@ class StrReportController extends Controller
 
         try {
             $report = $this->strReportService->createFromCase($case, $request->user());
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
         } catch (\Throwable $e) {
-            Log::error('STR draft creation failed', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'case_id' => $case->id,
-                'exception_class' => $e::class,
-                'controller' => static::class,
-                'action' => 'createFromCase',
-            ]);
-
-            return redirect()->route('compliance.cases.show', $case->id)
-                ->with('error', 'Failed to create STR draft: '.$e->getMessage());
+            return $this->handleExceptionWeb($e, 'STR draft creation failed', 'Failed to create STR draft.', ['case_id' => $case->id]);
         }
 
         return redirect()->route('compliance.str.show', $report)
@@ -106,19 +94,8 @@ class StrReportController extends Controller
                 (string) $request->validated('bnm_reference'),
                 $request->user()
             );
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
         } catch (\Throwable $e) {
-            Log::error('STR submit failed', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'str_report_id' => $strReport->id,
-                'exception_class' => $e::class,
-                'controller' => static::class,
-                'action' => 'submit',
-            ]);
-
-            return back()->with('error', 'Failed to submit STR: '.$e->getMessage());
+            return $this->handleExceptionWeb($e, 'STR submit failed', 'Failed to submit STR.', ['str_report_id' => $strReport->id]);
         }
 
         return back()->with('success', 'STR submitted to BNM.');
@@ -130,19 +107,8 @@ class StrReportController extends Controller
 
         try {
             $this->strReportService->acknowledge($strReport, $request->user());
-        } catch (ValidationException|DomainException $e) {
-            throw $e;
         } catch (\Throwable $e) {
-            Log::error('STR acknowledge failed', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'str_report_id' => $strReport->id,
-                'exception_class' => $e::class,
-                'controller' => static::class,
-                'action' => 'acknowledge',
-            ]);
-
-            return back()->with('error', 'Failed to acknowledge STR: '.$e->getMessage());
+            return $this->handleExceptionWeb($e, 'STR acknowledge failed', 'Failed to acknowledge STR.', ['str_report_id' => $strReport->id]);
         }
 
         return back()->with('success', 'STR acknowledged by BNM.');
@@ -197,7 +163,7 @@ class StrReportController extends Controller
                     fputcsv($handle, [
                         $report->reference(),
                         $report->bnm_reference,
-                        $report->customer->id_number_masked ?? ('CUST-'.$report->customer_id),
+                        $report->customer->id_number ?? ('CUST-'.$report->customer_id),
                         number_format((float) $report->trigger_amount_myr, 4, '.', ''),
                         $report->trigger_reason,
                         $report->status->value,

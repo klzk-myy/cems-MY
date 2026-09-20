@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\BranchScopedQuery;
+use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Requests\CloseTillRequest;
 use App\Http\Requests\OpenTillRequest;
 use App\Http\Requests\TillReconciliationRequest;
@@ -21,13 +22,12 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Branch\TillService;
 use App\Services\System\MathService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class StockCashController extends Controller
 {
-    use BranchScopedQuery;
+    use BranchScopedQuery, HandlesControllerErrors;
 
     public function __construct(
         protected MathService $mathService,
@@ -47,7 +47,8 @@ class StockCashController extends Controller
         $user = auth()->user();
 
         // Get current positions
-        $positions = $this->currencyPositionService->getVisiblePositionsForUser($user);
+        $allPositions = $this->currencyPositionService->getVisiblePositionsForUser($user);
+        $positions = $allPositions->paginate(25);
         $totalPnl = $this->currencyPositionService->getTotalPnl();
 
         // Get till information (scoped to the user's branch - admins see all)
@@ -69,7 +70,7 @@ class StockCashController extends Controller
 
         $stats = [
             'total_currencies' => Currency::where('is_active', true)->count(),
-            'active_positions' => $positions->count(),
+            'active_positions' => $allPositions->count(),
             'open_tills' => count($openTills),
             'closed_tills' => count($closedTills),
             'total_variance' => $totalVariance,
@@ -130,9 +131,7 @@ class StockCashController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', 'Till operation failed. Please try again.');
         } catch (\Throwable $e) {
-            Log::error('Failed to open till', ['error' => $e->getMessage()]);
-
-            return back()->with('error', 'Unable to open till. Please try again.');
+            return $this->handleExceptionWeb($e, 'Failed to open till', 'Unable to open till. Please try again.');
         }
 
         // Log till opening
@@ -185,9 +184,7 @@ class StockCashController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', 'Till operation failed. Please try again.');
         } catch (\Throwable $e) {
-            Log::error('Failed to close till', ['error' => $e->getMessage()]);
-
-            return back()->with('error', 'Unable to close till. Please try again.');
+            return $this->handleExceptionWeb($e, 'Failed to close till', 'Unable to close till. Please try again.');
         }
 
         // Log till closing
@@ -228,8 +225,7 @@ class StockCashController extends Controller
             ->where('branch_id', $position->branch_id)
             ->where('type', TransactionType::Buy)
             ->orderBy('created_at', 'desc')
-            ->limit(50)
-            ->get();
+            ->paginate(50);
 
         return view('stock-cash.position', compact('position', 'transactions'));
     }
@@ -248,7 +244,7 @@ class StockCashController extends Controller
             TillBalance::with(['currency', 'opener', 'closer', 'counter'])
                 ->where('till_id', $validated['till_id'])
                 ->whereDate('date', $date)
-        )->get();
+        )->paginate(25);
 
         if ($balances->isEmpty()) {
             return back()->with('error', 'No data found for specified till and date.');
@@ -283,20 +279,20 @@ class StockCashController extends Controller
         $tillBalance = $tillBalances->first();
 
         // Get all transactions for this till on this date
-        $transactions = Transaction::with(['customer', 'currency'])
+        $allTransactions = Transaction::with(['customer', 'currency'])
             ->where('till_id', $tillId)
             ->forDateRange($date, $date)
             ->orderBy('created_at', 'asc')
             ->get();
 
         // Generate summary and reconciliation using service
-        $buyTransactions = $transactions->where('type', TransactionType::Buy);
-        $sellTransactions = $transactions->where('type', TransactionType::Sell);
+        $buyTransactions = $allTransactions->where('type', TransactionType::Buy);
+        $sellTransactions = $allTransactions->where('type', TransactionType::Sell);
 
         $summary = [
             'opening_balance' => $tillBalance->opening_balance,
             'total_buy_count' => $buyTransactions->count(),
-            'total_buy_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Buy),
+            'total_buy_amount' => $this->tillService->calculateTransactionSum($allTransactions, TransactionType::Buy),
             // Foreign-currency totals: calculateTransactionSum() sums amount_myr
             // (MYR), so these are computed separately for the FCY summary rows.
             'total_buy_foreign' => $buyTransactions->reduce(
@@ -304,20 +300,22 @@ class StockCashController extends Controller
                 '0'
             ),
             'total_sell_count' => $sellTransactions->count(),
-            'total_sell_amount' => $this->tillService->calculateTransactionSum($transactions, TransactionType::Sell),
+            'total_sell_amount' => $this->tillService->calculateTransactionSum($allTransactions, TransactionType::Sell),
             'total_sell_foreign' => $sellTransactions->reduce(
                 fn (string $carry, Transaction $transaction) => $this->mathService->add($carry, (string) $transaction->quantity),
                 '0'
             ),
-            'total_transactions' => $transactions->count(),
+            'total_transactions' => $allTransactions->count(),
             'net_flow' => $this->mathService->subtract(
-                $this->tillService->calculateTransactionSum($transactions, TransactionType::Buy),
-                $this->tillService->calculateTransactionSum($transactions, TransactionType::Sell)
+                $this->tillService->calculateTransactionSum($allTransactions, TransactionType::Buy),
+                $this->tillService->calculateTransactionSum($allTransactions, TransactionType::Sell)
             ),
         ];
 
         // Generate reconciliation data using service
         $reconciliation = $this->tillService->generateReconciliation($tillBalances);
+
+        $transactions = $allTransactions->paginate(50);
 
         return view('stock-cash.reconciliation', compact(
             'tillBalances',

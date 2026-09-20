@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $transaction_id
  * @property string $currency_code
  * @property string $till_id
+ * @property int|null $branch_id
  * @property string $quantity
  * @property StockReservationStatus $status
  * @property Carbon|null $expires_at
@@ -28,6 +29,7 @@ class StockReservation extends BaseModel
         'transaction_id',
         'currency_code',
         'till_id',
+        'branch_id',
         'quantity',
         'status',
         'expires_at',

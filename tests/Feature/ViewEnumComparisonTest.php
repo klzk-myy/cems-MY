@@ -119,6 +119,7 @@ class ViewEnumComparisonTest extends TestCase
         $transfer = StockTransfer::factory()->create([
             'status' => StockTransferStatus::InTransit->value,
             'requested_by' => $user->id,
+            'source_branch_id' => $user->branch_id,
             'source_branch_name' => $user->branch->name,
         ]);
 

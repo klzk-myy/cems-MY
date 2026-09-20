@@ -72,7 +72,7 @@ class RateController extends Controller
         unset($rate);
 
         return view('rates.index', [
-            'rates' => $rates,
+            'rates' => collect($rates)->paginate(25),
             'availableDates' => $availableDates,
             'currentBranch' => $branch,
             'canSelectBranch' => $user->role->canManageAllBranches(),
@@ -124,7 +124,7 @@ class RateController extends Controller
         $branch = $branchId ? Branch::find($branchId) : null;
 
         return view('rates.units', [
-            'currencies' => $currencies,
+            'currencies' => $currencies->paginate(25),
             'currentBranch' => $branch,
             'canSelectBranch' => $user->role->canManageAllBranches(),
             'branches' => $user->role->canManageAllBranches()

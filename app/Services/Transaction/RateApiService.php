@@ -2,6 +2,7 @@
 
 namespace App\Services\Transaction;
 
+use App\Enums\RateSide;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Models\Branch;
 use App\Models\Currency;
@@ -66,6 +67,13 @@ class RateApiService
         ];
     }
 
+    /**
+     * Seconds a failed upstream fetch is negative-cached. During an outage
+     * every caller would otherwise issue the full retry ladder per call and
+     * hammer the API; the marker fails fast for this window instead.
+     */
+    private const FAILURE_CACHE_SECONDS = 30;
+
     public function fetchLatestRates(?int $branchId = null): array
     {
         if (empty($this->apiKey)) {
@@ -73,31 +81,58 @@ class RateApiService
         }
 
         $cacheKey = CacheKeys::exchangeRates($branchId);
+        $failureKey = $cacheKey.':failure';
 
-        return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId) {
-            $response = Http::timeout(30)
-                ->connectTimeout(10)
-                ->retry(3, 100)
-                ->get("{$this->baseUrl}/latest/MYR");
+        // A dead cache store must not block fetches entirely — read the
+        // marker defensively.
+        try {
+            if (Cache::has($failureKey)) {
+                throw new InvalidRateException(
+                    'Failed to fetch exchange rates: upstream unavailable (fail-fast window active).'
+                );
+            }
+        } catch (InvalidRateException $e) {
+            throw $e;
+        } catch (\Throwable) {
+            // cache unavailable — proceed to the live fetch
+        }
 
-            if (! $response->successful()) {
-                throw new InvalidRateException('Failed to fetch exchange rates: '.$response->body());
+        try {
+            return Cache::remember($cacheKey, $this->rateThresholds()['cache_duration'], function () use ($branchId) {
+                $response = Http::timeout(30)
+                    ->connectTimeout(10)
+                    ->retry(3, 100)
+                    ->get("{$this->baseUrl}/latest/MYR");
+
+                if (! $response->successful()) {
+                    throw new InvalidRateException('Failed to fetch exchange rates: '.$response->body());
+                }
+
+                $data = $response->json();
+
+                if (! isset($data['rates'])) {
+                    throw new InvalidRateException('Invalid API response format');
+                }
+
+                $processed = $this->processRates($data['rates'], $data['time_last_updated'] ?? time());
+
+                $this->storeRatesToTable($processed, $branchId);
+                $this->logRatesToHistory($processed, $branchId);
+                $this->invalidatePerCurrencyCache($processed, $branchId);
+
+                return $processed;
+            });
+        } catch (\Throwable $e) {
+            // Upstream fetch failures get a short fail-fast marker so
+            // concurrent callers do not each retry the full ladder.
+            try {
+                Cache::put($failureKey, true, self::FAILURE_CACHE_SECONDS);
+            } catch (\Throwable) {
+                // cache store unavailable — skip the marker, never mask the real error
             }
 
-            $data = $response->json();
-
-            if (! isset($data['rates'])) {
-                throw new InvalidRateException('Invalid API response format');
-            }
-
-            $processed = $this->processRates($data['rates'], $data['time_last_updated'] ?? time());
-
-            $this->storeRatesToTable($processed, $branchId);
-            $this->logRatesToHistory($processed, $branchId);
-            $this->invalidatePerCurrencyCache($processed, $branchId);
-
-            return $processed;
-        });
+            throw $e;
+        }
     }
 
     /**
@@ -400,7 +435,7 @@ class RateApiService
     /**
      * @return numeric-string|null
      */
-    public function getCurrentRate(string $currencyCode, string $type = 'mid', ?int $branchId = null): ?string
+    public function getCurrentRate(string $currencyCode, RateSide $side = RateSide::Mid, ?int $branchId = null): ?string
     {
         $query = ExchangeRate::where('currency_code', $currencyCode)->active();
         if ($branchId !== null) {
@@ -428,13 +463,13 @@ class RateApiService
         // row's own quote convention here.
         $toPerUnit = fn (string $quoted) => $exchangeRate->perUnitRate($quoted);
 
-        return match ($type) {
-            'buy' => $toPerUnit($exchangeRate->rate_buy),
-            'sell' => $toPerUnit($exchangeRate->rate_sell),
+        return match ($side) {
+            RateSide::Buy => $toPerUnit($exchangeRate->rate_buy),
+            RateSide::Sell => $toPerUnit($exchangeRate->rate_sell),
             // Keep the per-unit 8-decimal convention: rounding the mid to
             // the display precision would collapse low-value currencies
             // (e.g. IDR 0.000235 → 0.0002).
-            'mid' => bcadd(
+            RateSide::Mid => bcadd(
                 $this->mathService->divide(
                     bcadd(
                         $toPerUnit($exchangeRate->rate_buy),
@@ -447,7 +482,6 @@ class RateApiService
                 '0',
                 8
             ),
-            default => $toPerUnit($exchangeRate->rate_buy),
         };
     }
 
@@ -464,7 +498,7 @@ class RateApiService
     public function validateRateDeviation(
         string $submittedRate,
         string $currencyCode,
-        string $type = 'buy',
+        RateSide $side = RateSide::Buy,
         ?int $branchId = null
     ): array {
         // The submitted rate arrives in the currency's configured quote
@@ -474,7 +508,7 @@ class RateApiService
         $convention = QuoteConvention::forCode($currencyCode);
         $submittedPerUnit = $convention->toPerUnit($submittedRate);
 
-        $marketRate = $this->getCurrentRate($currencyCode, $type, $branchId);
+        $marketRate = $this->getCurrentRate($currencyCode, $side, $branchId);
 
         if ($marketRate === null) {
             // No card for this currency: the guard cannot run, so the booking
@@ -484,7 +518,7 @@ class RateApiService
             // currencies with no card, because they trade unguarded.
             Log::warning('Rate deviation check skipped: no exchange-rate card for currency', [
                 'currency_code' => $currencyCode,
-                'type' => $type,
+                'type' => $side->value,
                 'branch_id' => $branchId,
             ]);
 

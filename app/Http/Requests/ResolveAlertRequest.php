@@ -13,7 +13,6 @@ class ResolveAlertRequest extends AuthorizedFormRequest
     {
         return [
             'resolution' => 'required|string|max:5000',
-            'resolution_type' => 'required|in:false_positive,legitimate,escalated,closed',
         ];
     }
 }

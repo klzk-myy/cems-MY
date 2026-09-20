@@ -443,6 +443,15 @@ class ThresholdService implements ThresholdServiceInterface
         return (int) $this->get('structuring', 'min_transactions', 'FALLBACK_STRUCTURING_MIN_TXNS');
     }
 
+    /**
+     * Aggregate MYR across sub-threshold bookings that must be reached
+     * before a structuring finding is raised.
+     */
+    public function getStructuringAggregateTrigger(): string
+    {
+        return (string) $this->get('structuring', 'aggregate_trigger', 'FALLBACK_STRUCTURING_AGGREGATE');
+    }
+
     public function getStructuringHourlyWindow(): int
     {
         return (int) $this->get('structuring', 'hourly_window', 'FALLBACK_STRUCTURING_HOURLY_WINDOW');

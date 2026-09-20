@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ImportStatus;
+use App\Enums\ImportTrigger;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,9 +16,9 @@ use Illuminate\Support\Carbon;
  * @property int $records_updated
  * @property int $records_deactivated
  * @property int $records_skipped
- * @property string $status 'success', 'partial', 'failed'
+ * @property ImportStatus $status
  * @property string|null $error_message
- * @property string $triggered_by 'scheduled', 'manual'
+ * @property ImportTrigger $triggered_by
  * @property int|null $user_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -42,5 +44,7 @@ class AdverseMediaImportLog extends BaseModel
         'records_updated' => 'integer',
         'records_deactivated' => 'integer',
         'records_skipped' => 'integer',
+        'status' => ImportStatus::class,
+        'triggered_by' => ImportTrigger::class,
     ];
 }

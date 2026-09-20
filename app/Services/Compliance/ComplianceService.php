@@ -13,7 +13,6 @@ use App\Models\FlaggedTransaction;
 use App\Models\SanctionEntry;
 use App\Models\ScreeningResult;
 use App\Models\Transaction;
-use App\Repositories\CustomerRepository;
 use App\Services\Contracts\ComplianceServiceInterface;
 use App\Services\CustomerScreeningService;
 use App\Services\DTOs\ComplianceCheckResult;
@@ -22,6 +21,7 @@ use App\Services\Risk\VelocityRiskService;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Support\LikeEscaper;
 use Carbon\Carbon;
 
 /**
@@ -206,7 +206,7 @@ class ComplianceService implements ComplianceServiceInterface
 
         // Escape LIKE wildcards to prevent false matches (e.g. % and _ in names)
         // Also escape backslash so our ESCAPE clause behaves predictably.
-        $pattern = '%'.CustomerRepository::escapeLike($customerName).'%';
+        $pattern = '%'.LikeEscaper::escape($customerName).'%';
 
         // Use parameter binding with explicit ESCAPE clause to prevent SQL injection
         $query = SanctionEntry::query();
@@ -492,7 +492,7 @@ class ComplianceService implements ComplianceServiceInterface
         return FlaggedTransaction::whereHas('transaction', function ($query) use ($customerId) {
             $query->where('customer_id', $customerId);
         })
-            ->where('status', '!=', FlagStatus::Resolved->value)
+            ->whereNotIn('status', FlagStatus::terminalValues())
             ->with('transaction')
             ->orderBy('created_at', 'desc')
             ->get()

@@ -1,5 +1,5 @@
 <x-app-layout title="MFA Recovery">
-    <div class="max-w-lg mx-auto p-6 space-y-6">
+    <div class="p-6 space-y-6">
         <x-page-header
             title="Account Recovery"
             description="Recover access to your account using recovery codes"

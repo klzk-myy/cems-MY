@@ -27,7 +27,7 @@ class ChartOfAccountsController extends Controller
 
     public function index(): View
     {
-        $accounts = ChartOfAccount::query()->orderBy('account_code')->get();
+        $accounts = ChartOfAccount::query()->orderBy('account_code')->paginate(50);
 
         $trialBalance = $this->ledgerService->getTrialBalance(now()->toDateString());
 

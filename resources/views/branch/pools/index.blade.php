@@ -55,6 +55,7 @@
                         @endforelse
                     </x-slot:tbody>
                 </x-table>
+                <div class="mt-4">{{ $pools->links() }}</div>
             </div>
         </x-card>
     </div>

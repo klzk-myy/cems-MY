@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header title="Create Customer" description="Add a new customer to the system" />
 
-        <x-card title="Customer Information" description="Enter the customer's details below" class="max-w-2xl">
+        <x-card title="Customer Information" description="Enter the customer's details below">
             <form method="POST" action="{{ route('customers.store') }}">
                 @csrf
 

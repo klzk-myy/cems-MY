@@ -324,12 +324,17 @@ enum UserRole: string
 
     /**
      * Whether the admin-managed role_permissions matrix grants this
-     * permission to the role. Admin is exempt — it operates the matrix and
-     * BNM requires an always-capable principal officer.
+     * permission to the role. Admin is governed by the matrix like every
+     * other role — only ManageRolePermissions is pinned so the matrix UI
+     * cannot lock out every administrator.
      */
     private function matrixAllows(Permission $permission): bool
     {
-        if ($this === self::Admin) {
+        // Admin is matrix-governed like every other role, with one exception:
+        // the matrix management permission itself can never be revoked from
+        // Admin — doing so would lock every administrator out of the
+        // permission UI with no way back in.
+        if ($this === self::Admin && $permission === Permission::ManageRolePermissions) {
             return true;
         }
 

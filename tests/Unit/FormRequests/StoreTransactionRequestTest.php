@@ -29,12 +29,15 @@ class StoreTransactionRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_customer_id_to_be_present(): void
+    public function it_allows_nullable_customer_id_for_inline_registration(): void
     {
         $request = new StoreTransactionRequest;
         $rules = $request->rules();
 
-        $this->assertStringContainsString('required', $rules['customer_id']);
+        // customer_id is nullable — inline registration supplies identity
+        // fields (full_name, id_number, ...) instead and resolves the record
+        // server-side in CustomerService::resolveForBooking.
+        $this->assertStringContainsString('nullable', $rules['customer_id']);
         $this->assertStringContainsString('exists:customers,id', $rules['customer_id']);
     }
 

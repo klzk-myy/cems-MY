@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
+use App\Enums\RateSide;
 use App\Enums\StockReservationStatus;
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
@@ -20,6 +21,7 @@ use App\Exceptions\Domain\TransactionBlockedException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
+use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -40,6 +42,7 @@ use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use App\Services\Contracts\TransactionValidationInterface;
+use App\Services\DTOs\PreValidationResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -52,6 +55,7 @@ use App\ValueObjects\QuoteConvention;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class TransactionCreationService implements TransactionCreationServiceInterface
@@ -84,61 +88,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $user = User::findOrFail($userId);
         $ipAddress ??= ActorContext::capture()->ipAddress;
 
-        $this->validationService->validateCurrency($data['currency_code']);
-        $this->validationService->validateIpAddress($ipAddress);
-
-        // Head-office branches are non-trading: they manage an MYR expense
-        // float only and must never book exchange transactions.
-        $branch = $user->branch;
-        if ($branch instanceof Branch && ! $branch->canTrade()) {
-            throw new TransactionValidationException(
-                field: 'branch_id',
-                message: 'Head office branches cannot process transactions'
-            );
-        }
-
-        $tillBalance = $this->validationService->validateTillBalance($data['till_id'], $data['currency_code']);
-        /** @var Customer $customer */
-        $customer = Customer::findOrFail($data['customer_id']);
-
-        // Frozen, blocked, or deactivated (closed / sanction-hit) customers
-        // cannot book new transactions (BNM freeze-order enforcement).
-        if ($customer->transactions_blocked || $customer->is_frozen || ! $customer->is_active) {
-            throw new CustomerBlockedException(
-                (int) $customer->id,
-                (string) ($customer->freeze_reason ?? $customer->closure_reason ?? 'account blocked from transactions')
-            );
-        }
-
-        // KYC document lifecycle enforcement (BNM): customers whose identity
-        // documents have all expired past the grace period cannot book new
-        // transactions. Customers without documents are unaffected.
-        if ($this->kycDocumentExpiryService->hasAllIdentityDocumentsExpired($customer)) {
-            throw new KycExpiredException((int) $customer->id);
-        }
-
-        // Branch isolation: fail closed when the user's branch has no
-        // relationship with this customer (same rule as CustomerPolicy::view).
-        $this->ensureCustomerIsWithinUserBranch($customer, $user);
-
-        // Rate tolerance guard: the teller-entered rate must sit within the
-        // configured deviation of the current market rate, mirroring the
-        // bulk-import check so manual bookings cannot bypass it. Skipped
-        // when no market rate is configured for the currency.
-        $rateCheck = $this->rateManagementService->validateTransactionRate(
-            (string) $data['rate'],
-            (string) $data['currency_code'],
-            strtolower((string) $data['type']),
-            $user->branch_id,
-            $user->role
-        );
-
-        if (! ($rateCheck['valid'] ?? true)) {
-            throw new TransactionValidationException(
-                field: 'rate',
-                message: $rateCheck['reason'] ?? 'Rate deviation exceeds the maximum allowed'
-            );
-        }
+        [$tillBalance, $customer] = $this->assertBookingEligibility($user, $data, $ipAddress);
 
         $exchangeResult = $this->resolveExchangeCalculator()->calculate(
             TransactionType::from((string) $data['type']),
@@ -152,16 +102,12 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         // Submitted rates are unit-quoted (per currencies.rate_unit foreign
         // units); transactions store the normalized per-unit rate so the
-        // quantity × rate = amount_myr ledger invariant stays exact.
-        $data['rate'] = $exchangeResult['rate'];
+        // quantity × rate = amount_myr ledger invariant stays exact. The
+        // submitted payload stays untouched — the normalized rate travels
+        // on the context instead of mutating $data in place.
+        $normalizedRate = $exchangeResult['rate'];
 
-        $this->validationService->validatePepRequirements($customer, $data);
-
-        $validationResult = $this->validationService->preValidate($customer, $amountMyr, $data['currency_code']);
-
-        if ($validationResult->isBlocked()) {
-            throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
-        }
+        $validationResult = $this->runComplianceGates($customer, $data, $amountMyr);
 
         $allocation = $this->tellerAllocationService->resolveForTransaction(
             $user,
@@ -191,9 +137,106 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             // TransactionApprovalService — only genuine compliance holds may
             // populate it; threshold/risk-driven approvals stay approvable.
             holdReason: $validationResult->isHoldRequired() ? $initialStatus->holdReason : null,
+            normalizedRate: $normalizedRate,
         );
 
         return $this->create($context, $user->id, $ipAddress);
+    }
+
+    /**
+     * Shared booking gate — the single eligibility check every creation path
+     * (web form, wizard, API, CSV import) must pass before a transaction
+     * record exists. Import calls this per row with the importing user so the
+     * CSV path can never bypass customer-state, KYC, PEP-adjacent branch, or
+     * rate-tolerance rules.
+     *
+     * @param  array<string, mixed>  $data  Row/request payload (unit-quoted rate).
+     * @return array{0: ?TillBalance, 1: Customer} locked till row (null when booking drawer-less) and validated customer
+     */
+    public function assertBookingEligibility(User $user, array $data, ?string $ipAddress = null): array
+    {
+        $this->validationService->validateCurrency($data['currency_code']);
+        $this->validationService->validateIpAddress($ipAddress);
+
+        // Head-office branches are non-trading: they manage an MYR expense
+        // float only and must never book exchange transactions.
+        $branch = $user->branch;
+        if ($branch instanceof Branch && ! $branch->canTrade()) {
+            throw new TransactionValidationException(
+                field: 'branch_id',
+                message: 'Head office branches cannot process transactions'
+            );
+        }
+
+        // The drawer is optional: bookings without a till keep custody at the
+        // teller allocation and skip till balances entirely. A supplied till
+        // still goes through the full open-balance check.
+        $tillBalance = filled($data['till_id'] ?? null)
+            ? $this->validationService->validateTillBalance($data['till_id'], $data['currency_code'], $user)
+            : null;
+        /** @var Customer $customer */
+        $customer = Customer::findOrFail($data['customer_id']);
+
+        // Frozen, blocked, or deactivated (closed / sanction-hit) customers
+        // cannot book new transactions (BNM freeze-order enforcement).
+        if ($customer->transactions_blocked || $customer->is_frozen || ! $customer->is_active) {
+            throw new CustomerBlockedException(
+                (int) $customer->id,
+                (string) ($customer->freeze_reason ?? $customer->closure_reason ?? 'account blocked from transactions')
+            );
+        }
+
+        // KYC document lifecycle enforcement (BNM): customers whose identity
+        // documents have all expired past the grace period cannot book new
+        // transactions. Customers without documents are unaffected.
+        if ($this->kycDocumentExpiryService->hasAllIdentityDocumentsExpired($customer)) {
+            throw new KycExpiredException((int) $customer->id);
+        }
+
+        // Branch isolation: fail closed when the user's branch has no
+        // relationship with this customer (same rule as CustomerPolicy::view).
+        $this->ensureCustomerIsWithinUserBranch($customer, $user);
+
+        // Rate tolerance guard: the submitted rate must sit within the
+        // configured deviation of the current market rate. Scoped to the
+        // user's branch; branch-less users (admin/HQ importers) scope to the
+        // till's branch when one was booked. Skipped when no market rate is
+        // configured.
+        $rateCheck = $this->rateManagementService->validateTransactionRate(
+            (string) $data['rate'],
+            (string) $data['currency_code'],
+            RateSide::fromTransactionType(TransactionType::from((string) $data['type'])),
+            $user->branch_id ?? $tillBalance?->branch_id,
+            $user->role
+        );
+
+        if (! ($rateCheck['valid'] ?? true)) {
+            throw new TransactionValidationException(
+                field: 'rate',
+                message: $rateCheck['reason'] ?? 'Rate deviation exceeds the maximum allowed'
+            );
+        }
+
+        return [$tillBalance, $customer];
+    }
+
+    /**
+     * PEP requirements + sanctions/CDD/risk/hold pre-validation — the second
+     * half of the booking gate, run after the amount is converted to MYR.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function runComplianceGates(Customer $customer, array $data, string $amountMyr): PreValidationResult
+    {
+        $this->validationService->validatePepRequirements($customer, $data);
+
+        $validationResult = $this->validationService->preValidate($customer, $amountMyr, $data['currency_code']);
+
+        if ($validationResult->isBlocked()) {
+            throw new TransactionBlockedException($validationResult->getBlocks()[0]['message']);
+        }
+
+        return $validationResult;
     }
 
     public function create(TransactionCreationContext $context, ?int $userId = null, ?string $ipAddress = null): Transaction
@@ -203,16 +246,23 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $userId ??= $user->id;
         $ipAddress ??= ActorContext::capture()->ipAddress;
 
+        $this->assertCustomerCddRequirements($context->customer, $context->cddLevel, $data);
+
+        // The booking branch scopes the day-close freeze, position lock, and
+        // stock checks: the booked till's branch when a drawer is used, else
+        // the acting user's branch (drawer-less custody ends at the
+        // allocation).
+        $txnBranchId = (int) ($context->tillBalance?->branch_id ?? $context->user->branch_id ?? $data['branch_id'] ?? 0);
+
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
         // Failed and retried (or parked in the DLQ) instead of disappearing.
-        $transaction = DB::transaction(function () use ($context, $data, $userId) {
+        $transaction = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
             // A finalized day close freezes the branch's books for that
             // business date — no new transactions can be booked on it.
             // Checked inside the transaction under the workflow-row lock so
             // a racing finalize serializes against the booking.
             $today = now()->toDateString();
-            $txnBranchId = (int) $context->tillBalance->branch_id;
 
             if (BranchClosureWorkflow::freezesDateForUpdate($txnBranchId, $today)) {
                 $branchCode = Branch::whereKey($txnBranchId)->value('code') ?? (string) $txnBranchId;
@@ -222,14 +272,14 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
             // Acquire position lock FIRST for both Buy and Sell to prevent race conditions
             // This ensures stock check, idempotency check, and transaction creation happen atomically
-            $lockedPosition = $this->acquirePositionLock($data, $context->tillBalance);
+            $lockedPosition = $this->acquirePositionLock($data, $txnBranchId);
 
             // BNM position limit: reject Buys that would push the branch
             // position above the configured ceiling (checked under the lock;
             // Sells reduce the position so cannot breach a maximum).
             $this->assertPositionLimit($lockedPosition, $data);
 
-            $this->ensureStockForSell($data, $context->tillBalance, $lockedPosition);
+            $this->ensureStockForSell($data, $txnBranchId, $lockedPosition);
 
             $existingByIdempotencyKey = $this->idempotencyService->findDuplicate(
                 $data['idempotency_key'] ?? null,
@@ -270,10 +320,10 @@ class TransactionCreationService implements TransactionCreationServiceInterface
                 // it: the phase-1 lock was released at commit, so without this a
                 // concurrent Sell could pass the phase-1 availability check and
                 // both transactions oversell against the same committed balance.
-                DB::transaction(function () use ($transaction, $context, $ipAddress) {
-                    $lockedPosition = $this->acquirePositionLock($context->data, $context->tillBalance);
-                    $this->ensureStockForSell($context->data, $context->tillBalance, $lockedPosition);
-                    $this->applyCompletedSideEffects($transaction, $context, $ipAddress);
+                DB::transaction(function () use ($transaction, $context, $ipAddress, $txnBranchId) {
+                    $lockedPosition = $this->acquirePositionLock($context->data, $txnBranchId);
+                    $this->ensureStockForSell($context->data, $txnBranchId, $lockedPosition);
+                    $this->applyCompletedSideEffects($transaction, $context, $ipAddress, $txnBranchId);
                 });
             } catch (Throwable $e) {
                 $this->recordBookingFailure($transaction, $e, $context, $user, $ipAddress);
@@ -306,6 +356,55 @@ class TransactionCreationService implements TransactionCreationServiceInterface
      * through the normal flow and must not receive retroactive confirmation
      * emails; Failed bookings were never booked.
      */
+    /**
+     * Enforce BNM field requirements for the CDD tier the transaction amount
+     * falls into (pd-00.md 14C.12/14C.10/14C.13). name/id_type/id_number/
+     * date_of_birth/nationality are schema-required, so only the nullable
+     * profile fields are checked here:
+     *
+     * - Simplified (14A.10.3): residential/mailing address
+     * - Specific (14A.11.1, RM3,000–10,000): address + purpose of transaction
+     *   (purpose is already a required transaction field)
+     * - Standard (14A.9.1, >= RM10,000): + contact number, occupation type,
+     *   employer name / nature of business
+     * - Enhanced (14A.12.1, risk-based): Standard set + source of wealth or
+     *   source of funds; PEPs must provide BOTH, so source_of_wealth is
+     *   enforced for PEP customers (source_of_funds is already required)
+     *
+     * Identity fields (name, ID, DOB, nationality) are required at
+     * registration for every tier and enforced by the form request.
+     *
+     * Runs for every booking path (web, wizard, API, import) after the CDD
+     * level is determined, before any transaction record exists.
+     */
+    private function assertCustomerCddRequirements(Customer $customer, CddLevel $cddLevel, array $data): void
+    {
+        $required = match ($cddLevel) {
+            CddLevel::Simplified, CddLevel::Specific => ['address'],
+            CddLevel::Standard, CddLevel::Enhanced => ['address', 'phone', 'occupation', 'employer_name'],
+        };
+
+        $messages = [];
+        foreach ($required as $field) {
+            // address/phone are stored encrypted; raw-attribute presence is
+            // enough to prove the data was captured at registration.
+            if (empty($customer->getRawOriginal($field))) {
+                $messages[$field] = "Customer {$field} is required for {$cddLevel->value} CDD.";
+            }
+        }
+
+        // 14C.13.1(c): PEPs must provide BOTH source of funds (already a
+        // required field) and source of wealth; for other Enhanced triggers
+        // either source satisfies the requirement.
+        if ($cddLevel === CddLevel::Enhanced && $customer->pep_status && blank($data['source_of_wealth'] ?? null)) {
+            $messages['source_of_wealth'] = 'Source of wealth is required for PEP customers.';
+        }
+
+        if ($messages !== []) {
+            throw ValidationException::withMessages($messages);
+        }
+    }
+
     private function escalateLargeTransactionToCompliance(Transaction $transaction): void
     {
         try {
@@ -385,19 +484,20 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     /**
      * Create a transaction for import (no teller allocation, no request context).
      *
-     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
+     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id?: string|null}  $data
      * @param  User  $user  The user performing the import
      */
     public function createForImport(
         array $data,
         Customer $customer,
-        TillBalance $tillBalance,
+        ?TillBalance $tillBalance,
         CddLevel $cddLevel,
         TransactionStatus $status,
         string $amountMyr,
         User $user,
         ?string $holdReason = null,
-        ?string $ipAddress = null
+        ?string $ipAddress = null,
+        ?string $normalizedRate = null
     ): Transaction {
         $context = new TransactionCreationContext(
             data: $data,
@@ -410,6 +510,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             user: $user,
             allocation: null, // No teller allocation for imports
             holdReason: $holdReason,
+            normalizedRate: $normalizedRate,
         );
 
         return $this->create($context, $user->id, $ipAddress);
@@ -437,7 +538,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         }
     }
 
-    private function ensureStockForSell(array $data, TillBalance $tillBalance, ?CurrencyPosition $lockedPosition = null): void
+    private function ensureStockForSell(array $data, int $branchId, ?CurrencyPosition $lockedPosition = null): void
     {
         if ($data['type'] !== TransactionType::Sell->value) {
             return;
@@ -447,10 +548,10 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         if ($lockedPosition) {
             $quantity = $lockedPosition->quantity ?? '0';
 
-            // Check reservations within the same till (reservations are scoped by till_id,
-            // matching getAvailableBalance() which also filters reservations by till_id).
+            // Reservations protect the branch-level position — sum all pending
+            // reservations for the branch (matching getAvailableBalance()).
             $reserved = StockReservation::where('currency_code', $data['currency_code'])
-                ->where('till_id', (string) $tillBalance->till_id)
+                ->where('branch_id', (string) $branchId)
                 ->where('status', StockReservationStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
@@ -460,8 +561,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         } else {
             $availableBalance = $this->positionService->getAvailableBalance(
                 $data['currency_code'],
-                isset($data['branch_id']) ? (string) $data['branch_id'] : (string) $tillBalance->branch_id,
-                (string) $tillBalance->till_id
+                isset($data['branch_id']) ? (string) $data['branch_id'] : (string) $branchId
             );
         }
 
@@ -474,13 +574,13 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         }
     }
 
-    private function acquirePositionLock(array $data, TillBalance $tillBalance): ?CurrencyPosition
+    private function acquirePositionLock(array $data, int $branchId): ?CurrencyPosition
     {
         // Lock position for both Buy and Sell to prevent race conditions
         // on stock availability checks and position updates
         return $this->positionService->getPositionWithLock(
             $data['currency_code'],
-            (string) $tillBalance->branch_id
+            (string) $branchId
         );
     }
 
@@ -571,14 +671,23 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $transaction = new Transaction([
             'customer_id' => $context->customer->id,
             'user_id' => $context->user->id,
-            'branch_id' => $context->tillBalance->branch_id,
-            'till_id' => $data['till_id'],
-            'counter_id' => $data['counter_id'] ?? null,
+            // Drawer-less bookings scope to the acting user's branch.
+            'branch_id' => $context->tillBalance?->branch_id ?? $context->user->branch_id,
+            // Store the booked till balance's code — callers may submit an
+            // id or code, but the transaction always records the code. Null
+            // when no drawer was used.
+            'till_id' => $context->tillBalance?->till_id,
+            // counter_id is the relational FK — always derived from the
+            // booked till so it can never diverge from till_id regardless
+            // of what a caller submitted (web, API, wizard, import).
+            'counter_id' => $context->tillBalance !== null
+                ? Counter::findByCodeOrId($context->tillBalance->till_id)?->id
+                : null,
             'type' => $data['type'],
             'currency_code' => $data['currency_code'],
             'quantity' => $data['quantity'],
             'amount_myr' => $context->amountMyr,
-            'rate' => $data['rate'],
+            'rate' => $context->normalizedRate ?? $data['rate'],
             'purpose' => $data['purpose'],
             'source_of_funds' => $data['source_of_funds'],
             'source_of_wealth' => $data['source_of_wealth'] ?? null,
@@ -596,25 +705,29 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         return $transaction->refresh();
     }
 
-    private function applyCompletedSideEffects(Transaction $transaction, TransactionCreationContext $context, ?string $ipAddress): void
+    private function applyCompletedSideEffects(Transaction $transaction, TransactionCreationContext $context, ?string $ipAddress, int $txnBranchId): void
     {
         $data = $context->data;
 
         $this->positionService->updatePosition(
             $data['currency_code'],
             $data['quantity'],
-            $data['rate'],
+            $context->normalizedRate ?? $data['rate'],
             $data['type'],
-            (string) $context->tillBalance->branch_id,
+            (string) $txnBranchId,
             $transaction
         );
 
-        $this->tillBalanceManager->applyTransaction(
-            $context->tillBalance,
-            TransactionType::from($data['type']),
-            $context->amountMyr,
-            $data['quantity']
-        );
+        // Drawer-less bookings carry no till row — custody stays at the
+        // teller allocation, which is applied below.
+        if ($context->tillBalance !== null) {
+            $this->tillBalanceManager->applyTransaction(
+                $context->tillBalance,
+                TransactionType::from($data['type']),
+                $context->amountMyr,
+                $data['quantity']
+            );
+        }
 
         $this->tellerAllocationService->applyTransactionAllocation($transaction, $context->allocation);
 

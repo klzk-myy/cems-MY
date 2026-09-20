@@ -14,9 +14,9 @@ use App\Http\Resources\Api\V1\CustomerCollection;
 use App\Http\Resources\Api\V1\CustomerResource;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
-use App\Repositories\CustomerRepository;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
+use App\Support\LikeEscaper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +40,7 @@ class CustomerController extends Controller
         $query = Customer::query();
 
         if ($request->has('search') && ! empty($request->search)) {
-            $searchTerm = '%'.CustomerRepository::escapeLike($request->search).'%';
+            $searchTerm = '%'.LikeEscaper::escape($request->search).'%';
             $query->whereRaw('full_name LIKE ? ESCAPE ?', [$searchTerm, '\\']);
         }
 

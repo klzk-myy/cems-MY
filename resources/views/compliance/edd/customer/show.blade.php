@@ -11,11 +11,11 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Name</label>
-                    <p class="text-ink">{{ $customer?->full_name ?? '-' }}</p>
+                    <p class="text-ink"><x-customer-link :customer="$customer" /></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">ID Number</label>
-                    <p class="text-ink font-mono">{{ $customer?->id_number_masked ?? '-' }}</p>
+                    <p class="text-ink font-mono">{{ $customer?->id_number ?? '-' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Nationality</label>

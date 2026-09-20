@@ -4,13 +4,18 @@ namespace App\Services\Contracts;
 
 use App\Models\Customer;
 use App\Models\TillBalance;
+use App\Models\User;
 use App\Services\DTOs\PreValidationResult;
 
 interface TransactionValidationInterface
 {
     public function validateCurrency(string $currencyCode): void;
 
-    public function validateTillBalance(string $tillId, string $currencyCode): TillBalance;
+    /**
+     * @param  User|null  $user  Explicit actor for queue/CLI contexts where no
+     *                           authenticated user exists; defaults to ActorContext.
+     */
+    public function validateTillBalance(string $tillId, string $currencyCode, ?User $user = null): TillBalance;
 
     public function validateIpAddress(?string $ipAddress): void;
 

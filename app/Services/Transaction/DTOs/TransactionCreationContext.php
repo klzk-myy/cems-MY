@@ -10,9 +10,9 @@ use App\Models\TillBalance;
 use App\Models\User;
 
 /**
- * @property array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string} $data
+ * @property array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id?: string|null} $data
  * @property Customer $customer
- * @property TillBalance $tillBalance
+ * @property TillBalance|null $tillBalance Null when booking drawer-less — custody ends at the teller allocation
  * @property CddLevel $cddLevel
  * @property bool $holdRequired
  * @property TransactionStatus $status
@@ -20,13 +20,14 @@ use App\Models\User;
  * @property string $amountMyr
  * @property User $user
  * @property TellerAllocation|null $allocation Teller allocation for update (null for non-tellers)
+ * @property string|null $normalizedRate Per-unit rate derived by the exchange calculator; null means data['rate'] is already normalized
  */
 final class TransactionCreationContext
 {
     public function __construct(
         public readonly array $data,
         public readonly Customer $customer,
-        public readonly TillBalance $tillBalance,
+        public readonly ?TillBalance $tillBalance,
         public readonly CddLevel $cddLevel,
         public readonly bool $holdRequired,
         public readonly TransactionStatus $status,
@@ -34,5 +35,6 @@ final class TransactionCreationContext
         public readonly User $user,
         public readonly ?TellerAllocation $allocation = null,
         public readonly ?string $holdReason = null,
+        public readonly ?string $normalizedRate = null,
     ) {}
 }

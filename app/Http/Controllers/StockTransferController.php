@@ -37,12 +37,19 @@ class StockTransferController extends Controller
         // (as source or destination).
         if (! $user?->isAdmin()) {
             $identifiers = StockTransferPolicy::branchIdentifiers($user);
+            $branchId = $user?->branch_id;
 
-            if ($identifiers === []) {
+            if ($identifiers === [] && $branchId === null) {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->where(function ($q) use ($identifiers) {
-                    $q->whereIn('source_branch_name', $identifiers)
+                $query->where(function ($q) use ($identifiers, $branchId) {
+                    if ($branchId !== null) {
+                        // Real identity: name snapshots can drift on rename.
+                        $q->where('source_branch_id', $branchId)
+                            ->orWhere('destination_branch_id', $branchId);
+                    }
+                    // Legacy rows written before the FK columns carry only names.
+                    $q->orWhereIn('source_branch_name', $identifiers)
                         ->orWhereIn('destination_branch_name', $identifiers);
                 });
             }

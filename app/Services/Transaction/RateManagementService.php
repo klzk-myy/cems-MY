@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Enums\Permission;
+use App\Enums\RateSide;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\InvalidRateException;
 use App\Models\Branch;
@@ -331,14 +332,14 @@ class RateManagementService implements RateManagementServiceInterface
     public function validateTransactionRate(
         string $submittedRate,
         string $currencyCode,
-        string $transactionType = 'buy',
+        RateSide $side = RateSide::Buy,
         ?int $branchId = null,
         ?UserRole $role = null,
     ): array {
         $result = $this->rateApiService->validateRateDeviation(
             $submittedRate,
             $currencyCode,
-            $transactionType,
+            $side,
             $branchId
         );
 

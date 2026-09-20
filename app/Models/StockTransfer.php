@@ -16,8 +16,10 @@ use Illuminate\Support\Carbon;
  * @property string $transfer_number
  * @property string $type 'Standard', 'Emergency', 'Scheduled', 'Return'
  * @property StockTransferStatus $status
- * @property string|null $source_branch_name
- * @property string|null $destination_branch_name
+ * @property int|null $source_branch_id
+ * @property int|null $destination_branch_id
+ * @property string|null $source_branch_name Display snapshot — identity lives on the FK columns
+ * @property string|null $destination_branch_name Display snapshot — identity lives on the FK columns
  * @property int $requested_by
  * @property Carbon|null $requested_at
  * @property int|null $branch_manager_approved_by
@@ -41,6 +43,8 @@ class StockTransfer extends BaseModel
         'transfer_number',
         'type',
         'status',
+        'source_branch_id',
+        'destination_branch_id',
         'source_branch_name',
         'destination_branch_name',
         'requested_by',
@@ -73,6 +77,22 @@ class StockTransfer extends BaseModel
     public const TYPE_SCHEDULED = 'Scheduled';
 
     public const TYPE_RETURN = 'Return';
+
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
+    public function sourceBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'source_branch_id');
+    }
+
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
+    public function destinationBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'destination_branch_id');
+    }
 
     /**
      * @return BelongsTo<User, $this>

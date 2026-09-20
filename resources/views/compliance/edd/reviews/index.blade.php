@@ -35,7 +35,7 @@
                             </td>
                             <td class="py-3 pr-4">
                                 @if($record->customer)
-                                    {{ $record->customer->full_name ?? $record->customer->name ?? 'Customer #'.$record->customer->id }}
+                                    <x-customer-link :customer="$record->customer" :fallback="'Customer #'.$record->customer_id" />
                                 @else
                                     <span class="text-ink-muted">—</span>
                                 @endif

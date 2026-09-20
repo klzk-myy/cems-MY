@@ -2,15 +2,20 @@
 
 namespace Tests\Unit;
 
+use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use App\Models\Alert;
 use App\Models\Customer;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
+use App\Services\Transaction\Checks\FlagDescriptor;
+use App\Services\Transaction\Checks\TransactionCheck;
 use App\Services\Transaction\Checks\TransactionCheckRegistry;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -124,25 +129,17 @@ class TransactionMonitoringServiceTest extends TestCase
     public function new_monitoring_flag_carries_customer_id_and_creates_alert(): void
     {
         $customer = Customer::factory()->create();
+        $transaction = Transaction::factory()->create(['customer_id' => $customer->id]);
 
-        $transaction = Transaction::factory()->create([
-            'customer_id' => $customer->id,
-            'amount_myr' => '100.00',
-            'currency_code' => 'USD',
-        ]);
+        $service = $this->serviceWithCheck([new FlagDescriptor(
+            type: ComplianceFlagType::Velocity,
+            reason: '24h velocity exceeded: RM 150000',
+            auditEvent: 'aml_velocity_alert_triggered',
+        )]);
 
-        // Force a velocity flag by seeding 24h history above the velocity threshold.
-        $velocityThreshold = (string) config('thresholds.velocity_24h', '100000');
-        $transaction->amount_myr = $velocityThreshold;
-        $transaction->save();
+        $result = $service->monitorTransaction($transaction);
 
-        $result = $this->service->monitorTransaction($transaction);
-
-        $flag = FlaggedTransaction::where('transaction_id', $transaction->id)->first();
-
-        if ($flag === null) {
-            $this->markTestSkipped('No monitoring flag triggered for this transaction shape');
-        }
+        $flag = FlaggedTransaction::where('transaction_id', $transaction->id)->sole();
 
         $this->assertSame($customer->id, $flag->customer_id);
 
@@ -158,21 +155,17 @@ class TransactionMonitoringServiceTest extends TestCase
     public function re_monitoring_does_not_create_duplicate_alerts_for_same_flag(): void
     {
         $customer = Customer::factory()->create();
+        $transaction = Transaction::factory()->create(['customer_id' => $customer->id]);
 
-        $transaction = Transaction::factory()->create([
-            'customer_id' => $customer->id,
-            'amount_myr' => (string) config('thresholds.velocity_24h', '100000'),
-            'currency_code' => 'USD',
-        ]);
+        $service = $this->serviceWithCheck([new FlagDescriptor(
+            type: ComplianceFlagType::Velocity,
+            reason: '24h velocity exceeded: RM 150000',
+        )]);
 
-        $this->service->monitorTransaction($transaction);
-        $this->service->monitorTransaction($transaction);
+        $service->monitorTransaction($transaction);
+        $service->monitorTransaction($transaction);
 
         $flagIds = FlaggedTransaction::where('transaction_id', $transaction->id)->pluck('id');
-
-        if ($flagIds->isEmpty()) {
-            $this->markTestSkipped('No monitoring flag triggered for this transaction shape');
-        }
 
         $alertCount = Alert::whereIn('flagged_transaction_id', $flagIds)->count();
 
@@ -180,6 +173,89 @@ class TransactionMonitoringServiceTest extends TestCase
             $flagIds->count(),
             $alertCount,
             'Each flag must have at most one alert across repeated monitoring runs'
+        );
+    }
+
+    /**
+     * @param  array<int, FlagDescriptor>  $descriptors
+     */
+    private function serviceWithCheck(array $descriptors): TransactionMonitoringService
+    {
+        $check = new class($descriptors) implements TransactionCheck
+        {
+            public function __construct(private array $descriptors) {}
+
+            public function check(Transaction $transaction): array
+            {
+                return $this->descriptors;
+            }
+        };
+
+        $registry = Mockery::mock(TransactionCheckRegistry::class);
+        $registry->shouldReceive('checks')->andReturn([$check]);
+
+        return new TransactionMonitoringService(
+            $registry,
+            new AuditService,
+            app(AlertTriageService::class)
+        );
+    }
+
+    #[Test]
+    public function re_monitoring_does_not_resurrect_a_resolved_flag_for_the_same_reason(): void
+    {
+        $customer = Customer::factory()->create();
+        $transaction = Transaction::factory()->create(['customer_id' => $customer->id]);
+
+        $service = $this->serviceWithCheck([new FlagDescriptor(
+            type: ComplianceFlagType::Structuring,
+            reason: 'Structuring pattern detected for customer',
+        )]);
+
+        $service->monitorTransaction($transaction);
+
+        $flag = FlaggedTransaction::where('transaction_id', $transaction->id)->sole();
+        $flag->update(['status' => FlagStatus::Resolved, 'resolved_at' => now()]);
+
+        $result = $service->monitorTransaction($transaction);
+
+        $this->assertSame(1, FlaggedTransaction::where('transaction_id', $transaction->id)->count());
+        $this->assertSame(
+            $flag->id,
+            $result['flags'][0]->id,
+            'Monitoring must return the reviewed flag, not create a replacement'
+        );
+        $this->assertSame(FlagStatus::Resolved, $result['flags'][0]->status);
+    }
+
+    #[Test]
+    public function re_monitoring_still_flags_a_materially_different_reason(): void
+    {
+        $customer = Customer::factory()->create();
+        $transaction = Transaction::factory()->create(['customer_id' => $customer->id]);
+
+        FlaggedTransaction::create([
+            'transaction_id' => $transaction->id,
+            'customer_id' => $customer->id,
+            'flag_type' => ComplianceFlagType::Structuring,
+            'flag_reason' => 'Structuring pattern detected for customer',
+            'status' => FlagStatus::Resolved,
+            'resolved_at' => now(),
+        ]);
+
+        $service = $this->serviceWithCheck([new FlagDescriptor(
+            type: ComplianceFlagType::Structuring,
+            reason: 'Confirmed sanctions-network layering via shell entities',
+        )]);
+
+        $service->monitorTransaction($transaction);
+
+        $flags = FlaggedTransaction::where('transaction_id', $transaction->id)->orderBy('id')->get();
+        $this->assertCount(2, $flags);
+        $this->assertSame(
+            FlagStatus::Open,
+            $flags->last()->status,
+            'The distinct finding must be a live flag that can block approval'
         );
     }
 }

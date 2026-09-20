@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Models\User;
 use App\Services\System\NotificationBadgeService;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,8 @@ use Illuminate\Notifications\DatabaseNotification;
  */
 class NotificationController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected NotificationBadgeService $badgeService,
     ) {}
@@ -60,13 +63,13 @@ class NotificationController extends Controller
      * everyone else) so branch-level staff never receive operational failure
      * counts.
      *
-     * Response payload: { count: int, dlq_count: int }
+     * Response payload: { success: true, message: string, data: { count: int, dlq_count: int } }
      */
     public function unreadCount(): JsonResponse
     {
         $user = auth()->user();
 
-        return response()->json([
+        return $this->successResponse([
             'count' => $user ? $this->badgeService->unreadCount($user) : 0,
             'dlq_count' => $this->badgeService->dlqCount($user),
         ]);

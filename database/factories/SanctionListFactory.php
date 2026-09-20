@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SanctionListType;
 use App\Models\SanctionList;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,7 @@ class SanctionListFactory extends Factory
         return [
             'name' => $this->faker->company().' Sanctions List',
             'slug' => $this->faker->unique()->slug(2),
-            'list_type' => $this->faker->randomElement(['UNSCR', 'MOHA', 'Domestic', 'Internal']),
+            'list_type' => $this->faker->randomElement(SanctionListType::cases()),
             'source_file' => $this->faker->word().'.csv',
             'uploaded_by' => User::factory(),
             'is_active' => true,

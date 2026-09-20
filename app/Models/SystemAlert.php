@@ -7,6 +7,9 @@ use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $message
+ */
 class SystemAlert extends SystemModel
 {
     use HasFactory;

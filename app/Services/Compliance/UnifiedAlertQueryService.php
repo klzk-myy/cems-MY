@@ -85,7 +85,7 @@ class UnifiedAlertQueryService
         /** @var Collection<int, UnifiedRow> $rows */
         $rows = collect($paginator->items());
 
-        // Resolve masked customer ICs for just this page's rows — the accessor
+        // Resolve customer IDs for just this page's rows — the accessor
         // decrypts the stored value and cannot run inside the UNION query.
         $customers = Customer::whereIn('id', $rows->pluck('customer_id')->filter()->unique())
             ->get()
@@ -278,7 +278,7 @@ class UnifiedAlertQueryService
             'customer' => $row->customer_id ? [
                 'id' => $row->customer_id,
                 'name' => $customer->full_name ?? $row->customer_name ?? 'Customer #'.$row->customer_id,
-                'ic' => $customer?->id_number_masked,
+                'ic' => $customer?->id_number,
             ] : null,
             'assigned_to' => $row->assigned_to,
             'description' => Str::limit($description, 100),
@@ -319,8 +319,7 @@ class UnifiedAlertQueryService
             .'sum(case when status = ? and updated_at >= ? and updated_at <= ? then 1 else 0 end) as resolved_today',
             [
                 AlertPriority::Critical->value,
-                FlagStatus::Resolved->value,
-                FlagStatus::Rejected->value,
+                ...FlagStatus::terminalValues(),
                 FlagStatus::Resolved->value,
                 today()->startOfDay(),
                 today()->endOfDay(),

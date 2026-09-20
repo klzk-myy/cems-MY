@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UpdateStatus;
 use App\Models\SanctionList;
 use Illuminate\Console\Command;
 
@@ -43,7 +44,7 @@ class SanctionsStatus extends Command
                 $list->list_type?->label(),
                 $list->entry_count,
                 $list->last_updated_at ? $list->last_updated_at->format('Y-m-d H:i') : 'Never',
-                $this->formatStatus($list->update_status?->value),
+                $this->formatStatus($list->update_status),
                 $list->isAutoUpdated() ? 'Auto' : 'Manual',
             ];
         })->toArray();
@@ -57,8 +58,8 @@ class SanctionsStatus extends Command
 
         // Summary statistics
         $totalEntries = $lists->sum('entry_count');
-        $failedUpdates = $lists->where('update_status', 'failed')->count();
-        $neverRun = $lists->where('update_status', 'never_run')->count();
+        $failedUpdates = $lists->where('update_status', UpdateStatus::Failed)->count();
+        $neverRun = $lists->where('update_status', UpdateStatus::NeverRun)->count();
 
         $this->info('Summary:');
         $this->line("  Total Lists: {$lists->count()}");
@@ -93,12 +94,12 @@ class SanctionsStatus extends Command
             ['ID', $list->id],
             ['Type', $list->list_type?->label()],
             ['Source URL', $list->source_url ?? 'N/A'],
-            ['Source Format', $list->source_format ?? 'N/A'],
+            ['Source Format', $list->source_format->value ?? 'N/A'],
             ['Active', $list->is_active ? 'Yes' : 'No'],
             ['Entries', $list->entry_count],
             ['Last Updated', $list->last_updated_at ? $list->last_updated_at->format('Y-m-d H:i:s') : 'Never'],
             ['Last Attempted', $list->last_attempted_at ? $list->last_attempted_at->format('Y-m-d H:i:s') : 'Never'],
-            ['Update Status', $this->formatStatus($list->update_status?->value)],
+            ['Update Status', $this->formatStatus($list->update_status)],
             ['Checksum', $list->last_checksum ? substr($list->last_checksum, 0, 16).'...' : 'N/A'],
             ['Auto Updated', $list->isAutoUpdated() ? 'Yes' : 'No'],
         ];
@@ -114,13 +115,13 @@ class SanctionsStatus extends Command
         return Command::SUCCESS;
     }
 
-    protected function formatStatus(?string $status): string
+    protected function formatStatus(?UpdateStatus $status): string
     {
         return match ($status) {
-            'success' => '<fg=green>Success</>',
-            'failed' => '<fg=red>Failed</>',
-            'pending' => '<fg=yellow>Pending</>',
-            'never_run' => '<fg=gray>Never Run</>',
+            UpdateStatus::Success => '<fg=green>Success</>',
+            UpdateStatus::Failed => '<fg=red>Failed</>',
+            UpdateStatus::Pending => '<fg=yellow>Pending</>',
+            UpdateStatus::NeverRun => '<fg=gray>Never Run</>',
             default => '<fg=gray>Unknown</>',
         };
     }

@@ -49,7 +49,7 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-ink">{{ $case->case_number }}</td>
                             <td class="px-4 py-3 text-sm text-ink">{{ $case->case_type?->label() }}</td>
-                            <td class="px-4 py-3 text-sm text-ink">{{ $case->customer?->full_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-ink"><x-customer-link :customer="$case->customer" /></td>
                             <td class="px-4 py-3 text-sm">
                                 <x-badge
                                     :variant="match ($case->priority?->value) {
@@ -94,6 +94,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $cases->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Transaction;
 
+use App\Enums\ApprovalStatus;
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
+use App\Enums\FlagStatus;
 use App\Enums\StockReservationStatus;
 use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionConfirmationStatus;
@@ -63,9 +65,16 @@ class TransactionApprovalServiceTest extends TestCase
             $tellerAllocation->shouldReceive('applyTransactionAllocation')->andReturnNull();
         }
 
+        $position = $mocks['position'] ?? Mockery::mock(CurrencyPositionService::class);
+        if (! isset($mocks['position'])) {
+            // reject() releases any pending reservation — a no-op when none
+            // exists, so the default mock tolerates the call.
+            $position->shouldReceive('releaseStockReservation')->zeroOrMoreTimes()->andReturnNull();
+        }
+
         return new TransactionApprovalService(
             $mocks['monitoring'] ?? Mockery::mock(TransactionMonitoringService::class),
-            $mocks['position'] ?? Mockery::mock(CurrencyPositionService::class),
+            $position,
             $mocks['accounting'] ?? Mockery::mock(TransactionAccountingService::class),
             $mocks['audit'] ?? Mockery::mock(AuditTrailHelper::class),
             $mocks['till'] ?? app(TillBalanceManager::class),
@@ -123,9 +132,11 @@ class TransactionApprovalServiceTest extends TestCase
     private function monitoringMock(array $flags = []): TransactionMonitoringService
     {
         $mock = Mockery::mock(TransactionMonitoringService::class);
-        $mock->shouldReceive('monitorTransaction')->andReturn([
+        $mock->shouldReceive('monitorTransaction')->andReturnUsing(fn ($transaction) => [
+            'transaction_id' => $transaction->id,
             'flags' => $flags,
             'flags_created' => count($flags),
+            'status' => $transaction->status,
         ]);
 
         return $mock;
@@ -242,6 +253,107 @@ class TransactionApprovalServiceTest extends TestCase
     }
 
     #[Test]
+    public function approve_succeeds_when_high_priority_flag_is_resolved(): void
+    {
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter);
+
+        $resolvedFlag = new FlaggedTransaction([
+            'flag_type' => ComplianceFlagType::Structuring,
+            'status' => FlagStatus::Resolved,
+        ]);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('updatePosition')->once();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransactionSealed')->once();
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock([$resolvedFlag]),
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertTrue($result->success);
+        $this->assertSame(TransactionStatus::Completed, $result->transaction->status);
+    }
+
+    #[Test]
+    public function approve_blocked_by_persisted_high_priority_flag_not_reemitted_by_monitoring(): void
+    {
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter);
+
+        // Sanction hits are written by screening jobs, not the check
+        // registry — monitoring returns nothing, yet the live flag must
+        // still block approval.
+        FlaggedTransaction::create([
+            'transaction_id' => $transaction->id,
+            'customer_id' => $transaction->customer_id,
+            'flag_type' => ComplianceFlagType::SanctionMatch,
+            'flag_reason' => 'Sanctions screening hit',
+            'status' => FlagStatus::Open,
+        ]);
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')
+            ->once()
+            ->withArgs(fn (int $id, string $action) => $action === 'transaction_approval_blocked');
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock(),
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('Approval blocked', $result->message);
+        $this->assertSame(TransactionStatus::PendingApproval, $transaction->refresh()->status);
+    }
+
+    #[Test]
+    public function approve_blocked_when_open_flag_is_shadowed_by_resolved_flag_dedupe(): void
+    {
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter);
+
+        // A live open flag with a dissimilar reason coexists with the
+        // resolved flag monitoring deduped onto — the open one must still
+        // block even though it is absent from this run's emitted flags.
+        FlaggedTransaction::create([
+            'transaction_id' => $transaction->id,
+            'customer_id' => $transaction->customer_id,
+            'flag_type' => ComplianceFlagType::Structuring,
+            'flag_reason' => 'A materially different suspicion',
+            'status' => FlagStatus::Open,
+        ]);
+
+        $resolvedFlag = new FlaggedTransaction([
+            'flag_type' => ComplianceFlagType::Structuring,
+            'status' => FlagStatus::Resolved,
+        ]);
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->zeroOrMoreTimes();
+
+        $result = $this->service([
+            'monitoring' => $this->monitoringMock([$resolvedFlag]),
+            'audit' => $audit,
+        ])->approve($transaction, $approver->id);
+
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('Approval blocked', $result->message);
+        $this->assertSame(TransactionStatus::PendingApproval, $transaction->refresh()->status);
+    }
+
+    #[Test]
     public function approve_returns_failure_when_version_mismatch(): void
     {
         $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
@@ -284,6 +396,9 @@ class TransactionApprovalServiceTest extends TestCase
         config(['thresholds.reporting.str' => '50000']);
         $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
+        // The Buy pays 75,000 MYR out of the drawer — fund it past the floor.
+        TillBalance::where('till_id', $counter->code)->where('currency_code', 'MYR')
+            ->update(['opening_balance' => '100000.0000']);
         $transaction = $this->pendingTransaction($counter, ['amount_myr' => '75000.00']);
 
         TransactionConfirmation::factory()->create([
@@ -409,10 +524,11 @@ class TransactionApprovalServiceTest extends TestCase
         ]);
 
         $position = Mockery::mock(CurrencyPositionService::class);
-        $position->shouldReceive('getPositionWithLock')->andReturn(CurrencyPosition::factory()->make());
-        $position->shouldReceive('getAvailableBalance')
-            ->with($transaction->currency_code, (string) $transaction->branch_id, (string) $transaction->till_id)
-            ->andReturn('100.00');
+        // Approval now compares the sell quantity against the locked
+        // position's raw quantity — the transaction's own reservation must
+        // not be subtracted from its own availability check.
+        $position->shouldReceive('getPositionWithLock')
+            ->andReturn(CurrencyPosition::factory()->make(['quantity' => '100.00']));
         $position->shouldReceive('consumeStockReservation')->never();
 
         $result = $this->service([
@@ -435,8 +551,8 @@ class TransactionApprovalServiceTest extends TestCase
         ]);
 
         $position = Mockery::mock(CurrencyPositionService::class);
-        $position->shouldReceive('getPositionWithLock')->andReturn(CurrencyPosition::factory()->make());
-        $position->shouldReceive('getAvailableBalance')->andReturn('1000.00');
+        $position->shouldReceive('getPositionWithLock')
+            ->andReturn(CurrencyPosition::factory()->make(['quantity' => '1000.00']));
         $position->shouldReceive('consumeStockReservation')
             ->with($transaction->id)
             ->andReturnNull();
@@ -675,11 +791,78 @@ class TransactionApprovalServiceTest extends TestCase
         $this->assertTrue($result->success);
         $this->assertSame(TransactionStatus::Completed, $result->transaction->status);
 
-        $history = $result->transaction->fresh()->transition_history;
+        // System re-execution must not masquerade as an approval by the
+        // original teller: approved_by/approved_at stay null and the executor
+        // is recorded separately.
+        $fresh = $result->transaction->fresh();
+        $this->assertNull($fresh->approved_by);
+        $this->assertNull($fresh->approved_at);
+        $this->assertNotNull($fresh->reexecuted_at);
+
+        $history = $fresh->transition_history;
         $last = array_pop($history);
         $this->assertSame(TransactionStatus::Failed->value, $last['from']);
         $this->assertSame(TransactionStatus::Completed->value, $last['to']);
         $this->assertSame('Automated retry after failure', $last['reason']);
+    }
+
+    #[Test]
+    public function complete_refund_records_refund_completed_audit(): void
+    {
+        $approver = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter, [
+            'status' => TransactionStatus::Approved,
+            'is_refund' => true,
+            'approved_by' => $approver->id,
+            'approved_at' => now(),
+        ]);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        // The reversal already restored position/till/journal/allocation on
+        // the original transaction — completing the refund must not re-book
+        // those legs.
+        $position->shouldReceive('updatePosition')->never();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->never();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        // Exactly one audit record: refund_completed, Approved -> Completed.
+        // The previous implementation double-wrote a mislabelled
+        // transaction_approved record alongside the refund one.
+        $audit->shouldReceive('recordTransactionSealed')
+            ->once()
+            ->withArgs(function (int $transactionId, string $action, array $metadata) {
+                return $action === 'refund_completed'
+                    && $metadata['old']['status'] === TransactionStatus::Approved->value
+                    && $metadata['new']['status'] === TransactionStatus::Completed->value;
+            });
+
+        $result = $this->service([
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ])->completeRefund($transaction, $approver->id);
+
+        $this->assertTrue($result->success);
+        $this->assertSame(TransactionStatus::Completed, $result->transaction->status);
+    }
+
+    #[Test]
+    public function complete_refund_rejects_non_compliance_tier(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $counter = $this->openTill();
+        $transaction = $this->pendingTransaction($counter, [
+            'status' => TransactionStatus::Approved,
+            'is_refund' => true,
+        ]);
+
+        $this->expectException(TransactionValidationException::class);
+        $this->expectExceptionMessage('require compliance officer approval');
+
+        $this->service()->completeRefund($transaction, $teller->id);
     }
 
     #[Test]
@@ -703,10 +886,7 @@ class TransactionApprovalServiceTest extends TestCase
         $position = Mockery::mock(CurrencyPositionService::class);
         $position->shouldReceive('getPositionWithLock')
             ->with($transaction->currency_code, (string) $transaction->branch_id)
-            ->andReturn(CurrencyPosition::factory()->make());
-        $position->shouldReceive('getAvailableBalance')
-            ->with($transaction->currency_code, (string) $transaction->branch_id, (string) $transaction->till_id)
-            ->andReturn('1000.00');
+            ->andReturn(CurrencyPosition::factory()->make(['quantity' => '1000.00']));
         $position->shouldReceive('consumeStockReservation')
             ->with($transaction->id)
             ->andReturnNull();
@@ -828,7 +1008,7 @@ class TransactionApprovalServiceTest extends TestCase
             $teller,
             TransactionOutcomeNotification::class,
             function (TransactionOutcomeNotification $notification) use ($transaction, $rejector) {
-                return $notification->outcome === 'rejected'
+                return $notification->outcome === ApprovalStatus::Rejected
                     && $notification->reason === 'Duplicate entry'
                     && $notification->actorName === $rejector->username
                     && $notification->transaction->id === $transaction->id;

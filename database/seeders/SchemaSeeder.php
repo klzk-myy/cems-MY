@@ -2,9 +2,35 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AccountType;
 use App\Enums\AmlRuleType;
+use App\Enums\ApprovalStatus;
+use App\Enums\BankReconciliationStatus;
+use App\Enums\CheckStatus;
+use App\Enums\ComplianceFlagType;
+use App\Enums\EntityType;
+use App\Enums\FiscalYearStatus;
+use App\Enums\FlagStatus;
+use App\Enums\HighRiskCountryRiskLevel;
+use App\Enums\ImportStatus;
+use App\Enums\ImportTrigger;
 use App\Enums\Permission;
+use App\Enums\PoolRemittanceStatus;
+use App\Enums\RelationType;
+use App\Enums\ReportGeneratedStatus;
+use App\Enums\RiskRating;
+use App\Enums\SanctionSourceFormat;
+use App\Enums\StockTransferStatus;
+use App\Enums\SystemAlertLevel;
+use App\Enums\SystemHealthCheckStatus;
+use App\Enums\SystemLogSeverity;
+use App\Enums\TellerAllocationStatus;
+use App\Enums\TestResultStatus;
+use App\Enums\TransactionConfirmationStatus;
+use App\Enums\UpdateStatus;
 use App\Enums\UserRole;
+use App\Models\AdverseMediaEntry;
+use App\Models\StockTransfer;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Seeder;
@@ -18,6 +44,14 @@ use Illuminate\Support\Facades\Schema;
  * This seeder is the single source of truth for the schema so the
  * project no longer depends on the migrations directory. Running it drops
  * and recreates every table, mirroring a migrate:fresh reset.
+ *
+ * Counter/till dual keys: `till_id` columns store the counter's unique
+ * business code (`counters.code`) and are the working/reporting key on
+ * code-keyed tables (transactions, till_balances, stock_reservations,
+ * revaluation_entries). `counter_id` is the relational FK to counters.id,
+ * used by lifecycle tables (counter_sessions, teller_allocations,
+ * counter_handovers, emergency_closures) and populated alongside till_id
+ * on transactions.
  */
 class SchemaSeeder extends Seeder
 {
@@ -271,6 +305,7 @@ class SchemaSeeder extends Seeder
             $table->enum('role', array_column(UserRole::cases(), 'value'))->default('teller');
             $table->boolean('mfa_enabled')->default(false);
             $table->text('mfa_secret')->nullable();
+            $table->unsignedBigInteger('mfa_last_timestep')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_login_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -293,7 +328,7 @@ class SchemaSeeder extends Seeder
             $table->string('year_code');
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('status', ['draft', 'open', 'closed', 'archived', 'deleted'])->default('open');
+            $table->enum('status', array_column(FiscalYearStatus::cases(), 'value'))->default('open');
             $table->unsignedBigInteger('closed_by')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -366,7 +401,7 @@ class SchemaSeeder extends Seeder
         Schema::create('chart_of_accounts', function (Blueprint $table) {
             $table->string('account_code')->primary();
             $table->string('account_name');
-            $table->enum('account_type', ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense', 'Off-Balance']);
+            $table->enum('account_type', array_column(AccountType::cases(), 'value'));
             $table->string('parent_code')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->nullable();
@@ -425,7 +460,7 @@ class SchemaSeeder extends Seeder
             $table->string('url')->nullable();
             $table->text('snippet')->nullable();
             $table->date('published_at')->nullable();
-            $table->enum('severity', ['low', 'medium', 'high'])->default('medium');
+            $table->enum('severity', AdverseMediaEntry::SEVERITIES)->default('medium');
             $table->boolean('is_active')->default(true);
             $table->string('record_hash');
             $table->timestamp('created_at')->nullable();
@@ -443,9 +478,9 @@ class SchemaSeeder extends Seeder
             $table->integer('records_updated')->default(0);
             $table->integer('records_deactivated')->default(0);
             $table->integer('records_skipped')->default(0);
-            $table->enum('status', ['success', 'partial', 'failed'])->default('success');
+            $table->enum('status', array_column(ImportStatus::cases(), 'value'))->default('success');
             $table->text('error_message')->nullable();
-            $table->enum('triggered_by', ['scheduled', 'manual'])->default('manual');
+            $table->enum('triggered_by', array_column(ImportTrigger::cases(), 'value'))->default('manual');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -549,7 +584,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('user_id');
-            $table->string('till_id')->default('MAIN');
+            $table->string('till_id')->nullable();
             $table->string('type', 64);
             $table->string('currency_code', 8);
             $table->decimal('amount_myr', 18, 4);
@@ -563,6 +598,11 @@ class SchemaSeeder extends Seeder
             $table->timestamp('compliance_cleared_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();
+            // System re-execution (ProcessTransactionRetry) is not an approval:
+            // approved_by stays null and the re-execution is recorded here.
+            // A null reexecuted_by means the automated job performed it.
+            $table->unsignedBigInteger('reexecuted_by')->nullable();
+            $table->timestamp('reexecuted_at')->nullable();
             $table->string('cdd_level');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -625,6 +665,7 @@ class SchemaSeeder extends Seeder
             $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
             $table->foreign('approved_by')->references('id')->on('users');
+            $table->foreign('reexecuted_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('rate_override_approved_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('compliance_cleared_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('user_id')->references('id')->on('users');
@@ -639,9 +680,9 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('transaction_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable();
-            $table->enum('flag_type', ['Large_Amount', 'Sanctions_Hit', 'Velocity', 'Structuring', 'EDD_Required', 'Pep_Status', 'Sanction_Match', 'High_Risk_Customer', 'Unusual_Pattern', 'Manual_Review', 'High_Risk_Country', 'Round_Amount', 'Profile_Deviation', 'Aml_Rule_Triggered', 'Counterfeit_Currency']);
+            $table->enum('flag_type', array_column(ComplianceFlagType::cases(), 'value'));
             $table->text('flag_reason');
-            $table->enum('status', ['open', 'under_review', 'resolved', 'escalated', 'rejected'])->default('open');
+            $table->enum('status', array_column(FlagStatus::cases(), 'value'))->default('open');
             $table->unsignedBigInteger('assigned_to')->nullable();
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->text('notes')->nullable();
@@ -813,7 +854,7 @@ class SchemaSeeder extends Seeder
             $table->text('description');
             $table->decimal('debit', 18, 4)->default(0);
             $table->decimal('credit', 18, 4)->default(0);
-            $table->enum('status', ['unmatched', 'matched', 'exception'])->default('unmatched');
+            $table->enum('status', array_column(BankReconciliationStatus::cases(), 'value'))->default('unmatched');
             $table->unsignedBigInteger('matched_to_journal_entry_id')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamp('matched_at')->nullable();
@@ -822,7 +863,7 @@ class SchemaSeeder extends Seeder
             $table->timestamp('updated_at')->nullable();
             $table->string('check_number')->nullable();
             $table->date('check_date')->nullable();
-            $table->enum('check_status', ['issued', 'presented', 'cleared', 'returned', 'stopped'])->nullable();
+            $table->enum('check_status', array_column(CheckStatus::cases(), 'value'))->nullable();
             $table->string('check_payee')->nullable();
             $table->index(['account_code', 'statement_date'], 'bank_reconciliations_account_code_statement_date_index');
             $table->index('status', 'bank_reconciliations_status_index');
@@ -839,12 +880,21 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('initiated_by');
             $table->string('status', 64)->default('initiated');
+            $table->date('business_date');
             $table->text('checklist')->nullable();
             $table->timestamp('settlement_at')->nullable();
             $table->timestamp('finalized_at')->nullable();
+            $table->timestamp('reopened_at')->nullable();
+            // One active (initiated/settled) workflow per branch: the key is
+            // branch_id while active, NULL otherwise — unique index rejects a
+            // second active workflow while NULLs never collide.
+            $table->unsignedBigInteger('active_workflow_key')
+                ->storedAs("case when status in ('initiated','settled') then branch_id else null end")
+                ->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
+            $table->unique('active_workflow_key', 'branch_closure_workflows_one_active_unique');
             $table->index(['branch_id', 'status'], 'branch_closure_workflows_branch_id_status_index');
             $table->index(['status', 'created_at'], 'branch_closure_workflows_status_created_at_index');
             $table->foreign('initiated_by')->references('id')->on('users')->cascadeOnDelete();
@@ -872,7 +922,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('to_branch_id');
             $table->string('currency_code', 8);
             $table->decimal('amount_myr', 20, 4);
-            $table->enum('status', ['pending', 'acknowledged', 'cancelled'])->default('pending');
+            $table->enum('status', array_column(PoolRemittanceStatus::cases(), 'value'))->default('pending');
             $table->unsignedBigInteger('initiated_by');
             $table->timestamp('initiated_at')->nullable();
             $table->unsignedBigInteger('acknowledged_by')->nullable();
@@ -1035,7 +1085,7 @@ class SchemaSeeder extends Seeder
             $table->decimal('requested_quantity', 20, 4);
             $table->decimal('daily_limit_myr', 20, 4)->default(0);
             $table->decimal('daily_used_myr', 20, 4)->default(0);
-            $table->enum('status', ['pending', 'approved', 'active', 'returned', 'closed', 'auto_returned', 'rejected', 'cancelled'])->default('pending');
+            $table->enum('status', array_column(TellerAllocationStatus::cases(), 'value'))->default('pending');
             $table->date('session_date');
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();
@@ -1212,7 +1262,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('related_customer_id')->nullable();
-            $table->enum('relation_type', ['spouse', 'child', 'parent', 'sibling', 'close_associate', 'business_partner', 'beneficial_owner', 'director', 'signatory', 'related_entity']);
+            $table->enum('relation_type', array_column(RelationType::cases(), 'value'));
             $table->string('related_name');
             $table->string('id_type')->nullable();
             $table->string('id_number_encrypted')->nullable();
@@ -1240,8 +1290,8 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->integer('old_score')->nullable();
             $table->integer('new_score');
-            $table->enum('old_rating', ['Low', 'Medium', 'High'])->nullable();
-            $table->enum('new_rating', ['Low', 'Medium', 'High']);
+            $table->enum('old_rating', array_column(RiskRating::cases(), 'value'))->nullable();
+            $table->enum('new_rating', array_column(RiskRating::cases(), 'value'));
             $table->text('change_reason');
             $table->unsignedBigInteger('assessed_by')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -1476,7 +1526,7 @@ class SchemaSeeder extends Seeder
         Schema::create('high_risk_countries', function (Blueprint $table) {
             $table->string('country_code', 8)->primary();
             $table->string('country_name');
-            $table->enum('risk_level', ['High', 'Grey']);
+            $table->enum('risk_level', array_column(HighRiskCountryRiskLevel::cases(), 'value'));
             $table->string('source');
             $table->date('list_date');
             $table->timestamp('created_at')->nullable();
@@ -1569,7 +1619,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->string('transaction_type');
-            $table->enum('status', ['pending', 'approved', 'rejected', 'expired'])->default('pending');
+            $table->enum('status', array_column(ApprovalStatus::cases(), 'value'))->default('pending');
             $table->string('approval_level')->default('head_office_senior_management');
             $table->timestamp('requested_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
@@ -1653,7 +1703,7 @@ class SchemaSeeder extends Seeder
             $table->string('file_format');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->enum('status', ['pending', 'generated', 'failed', 'submitted', 'archived'])->default('generated');
+            $table->enum('status', array_column(ReportGeneratedStatus::cases(), 'value'))->default('generated');
             $table->timestamp('submitted_at')->nullable();
             $table->unsignedBigInteger('submitted_by')->nullable();
             $table->integer('version')->default(1);
@@ -1718,10 +1768,10 @@ class SchemaSeeder extends Seeder
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->string('source_url')->nullable();
-            $table->enum('source_format', ['XML', 'CSV', 'JSON'])->nullable();
+            $table->enum('source_format', array_column(SanctionSourceFormat::cases(), 'value'))->nullable();
             $table->timestamp('last_updated_at')->nullable();
             $table->timestamp('last_attempted_at')->nullable();
-            $table->enum('update_status', ['success', 'failed', 'pending', 'never_run'])->default('never_run');
+            $table->enum('update_status', array_column(UpdateStatus::cases(), 'value'))->default('never_run');
             $table->text('last_error_message')->nullable();
             $table->integer('entry_count')->default(0);
             $table->string('last_checksum')->nullable();
@@ -1741,7 +1791,7 @@ class SchemaSeeder extends Seeder
             $table->id();
             $table->unsignedBigInteger('list_id');
             $table->string('entity_name');
-            $table->enum('entity_type', ['Individual', 'Organization', 'Vessel', 'Aircraft'])->default('Individual');
+            $table->enum('entity_type', array_column(EntityType::cases(), 'value'))->default('Individual');
             $table->text('aliases')->nullable();
             $table->string('nationality', 64)->nullable();
             $table->date('date_of_birth')->nullable();
@@ -1776,9 +1826,9 @@ class SchemaSeeder extends Seeder
             $table->integer('records_added')->default(0);
             $table->integer('records_updated')->default(0);
             $table->integer('records_deactivated')->default(0);
-            $table->enum('status', ['success', 'partial', 'failed'])->default('success');
+            $table->enum('status', array_column(ImportStatus::cases(), 'value'))->default('success');
             $table->text('error_message')->nullable();
-            $table->enum('triggered_by', ['scheduled', 'manual'])->default('scheduled');
+            $table->enum('triggered_by', array_column(ImportTrigger::cases(), 'value'))->default('scheduled');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -1848,6 +1898,10 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('transaction_id');
             $table->string('currency_code', 8);
             $table->string('till_id');
+            // Reservations protect the branch-level currency position, so the
+            // owner's branch id is stored directly — summing by till_id let a
+            // pending Sell on one till hide stock from another till's checks.
+            $table->unsignedBigInteger('branch_id')->nullable();
             $table->decimal('quantity', 18, 4);
             $table->string('status', 64)->default('pending');
             $table->timestamp('expires_at')->nullable();
@@ -1857,6 +1911,7 @@ class SchemaSeeder extends Seeder
             $table->index('transaction_id', 'stock_reservations_transaction_id_index');
             $table->index('created_by', 'stock_reservations_created_by_index');
             $table->index(['currency_code', 'till_id', 'status'], 'stock_reservations_currency_code_till_id_status_index');
+            $table->index(['branch_id', 'currency_code', 'status', 'expires_at'], 'stock_reservations_branch_availability_index');
             $table->foreign('transaction_id')->references('id')->on('transactions')->restrictOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
@@ -1865,8 +1920,12 @@ class SchemaSeeder extends Seeder
         Schema::create('stock_transfers', function (Blueprint $table) {
             $table->id();
             $table->string('transfer_number');
-            $table->enum('type', ['Standard', 'Emergency', 'Scheduled', 'Return']);
-            $table->enum('status', ['requested', 'branch_manager_approved', 'hq_approved', 'in_transit', 'partially_received', 'received', 'completed', 'cancelled', 'rejected'])->default('requested');
+            $table->enum('type', [StockTransfer::TYPE_STANDARD, StockTransfer::TYPE_EMERGENCY, StockTransfer::TYPE_SCHEDULED, StockTransfer::TYPE_RETURN]);
+            $table->enum('status', array_column(StockTransferStatus::cases(), 'value'))->default('requested');
+            // Real branch identity; the *_name columns remain as display
+            // snapshots only — every resolution path uses the FKs.
+            $table->unsignedBigInteger('source_branch_id')->nullable();
+            $table->unsignedBigInteger('destination_branch_id')->nullable();
             $table->string('source_branch_name')->nullable();
             $table->string('destination_branch_name')->nullable();
             $table->unsignedBigInteger('requested_by');
@@ -1885,11 +1944,15 @@ class SchemaSeeder extends Seeder
             $table->timestamp('deleted_at')->nullable();
             $table->index(['status', 'type'], 'stock_transfers_status_type_index');
             $table->index('requested_by', 'stock_transfers_requested_by_index');
+            $table->index('source_branch_id', 'stock_transfers_source_branch_index');
+            $table->index('destination_branch_id', 'stock_transfers_destination_branch_index');
             $table->unique('transfer_number', 'stock_transfers_transfer_number_unique');
             $table->index(['hq_approved_by', 'branch_manager_approved_by'], 'idx_6563f6a5a0e1');
             $table->foreign('hq_approved_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('branch_manager_approved_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('requested_by')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('source_branch_id')->references('id')->on('branches')->nullOnDelete();
+            $table->foreign('destination_branch_id')->references('id')->on('branches')->nullOnDelete();
         });
 
         Schema::create('stock_transfer_items', function (Blueprint $table) {
@@ -1937,7 +2000,7 @@ class SchemaSeeder extends Seeder
 
         Schema::create('system_alerts', function (Blueprint $table) {
             $table->id();
-            $table->enum('level', ['info', 'warning', 'critical'])->default('info');
+            $table->enum('level', array_column(SystemAlertLevel::cases(), 'value'))->default('info');
             $table->text('message');
             $table->string('source')->nullable();
             $table->text('metadata')->nullable();
@@ -1957,7 +2020,7 @@ class SchemaSeeder extends Seeder
         Schema::create('system_health_checks', function (Blueprint $table) {
             $table->id();
             $table->string('check_name', 64);
-            $table->enum('status', ['ok', 'warning', 'critical'])->default('ok');
+            $table->enum('status', array_column(SystemHealthCheckStatus::cases(), 'value'))->default('ok');
             $table->text('message')->nullable();
             $table->timestamp('checked_at');
             $table->timestamp('created_at')->nullable();
@@ -1980,11 +2043,15 @@ class SchemaSeeder extends Seeder
             $table->text('user_agent')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->enum('severity', ['INFO', 'WARNING', 'ERROR', 'CRITICAL'])->default('INFO');
+            $table->enum('severity', array_column(SystemLogSeverity::cases(), 'value'))->default('INFO');
             $table->string('session_id')->nullable();
             $table->text('description')->nullable();
             $table->string('previous_hash', 128)->nullable();
             $table->string('entry_hash', 128)->nullable();
+            // 'quarantined' marks a permanently unsealable row so later
+            // entries can seal across it via a GAP:<id> previous_hash marker.
+            $table->string('seal_status', 16)->nullable();
+            $table->unsignedSmallInteger('seal_attempts')->default(0);
             $table->index(['entity_type', 'entity_id'], 'system_logs_entity_type_entity_id_index');
             $table->index('created_at', 'system_logs_created_at_index');
             $table->index('session_id', 'system_logs_session_id_index');
@@ -2007,7 +2074,7 @@ class SchemaSeeder extends Seeder
             $table->integer('skipped')->default(0);
             $table->integer('assertions')->default(0);
             $table->decimal('duration', 8, 2);
-            $table->enum('status', ['passed', 'failed', 'error', 'running'])->default('running');
+            $table->enum('status', array_column(TestResultStatus::cases(), 'value'))->default('running');
             $table->text('output')->nullable();
             $table->text('failures')->nullable();
             $table->text('errors')->nullable();
@@ -2079,7 +2146,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('confirmed_by')->nullable();
             $table->timestamp('confirmed_at')->nullable();
-            $table->enum('status', ['pending', 'confirmed', 'rejected', 'expired'])->default('pending');
+            $table->enum('status', array_column(TransactionConfirmationStatus::cases(), 'value'))->default('pending');
             $table->string('confirmation_token')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->text('notes')->nullable();

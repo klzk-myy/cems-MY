@@ -499,16 +499,16 @@ parameters:
 			path: app/Console/Commands/ValidateRouteConsistency.php
 
 		-
-			message: '#^Method App\\DTO\\PepCessationResult\:\:__construct\(\) has parameter \$factors with no value type specified in iterable type array\.$#'
+			message: '#^Method App\\Services\\DTOs\\PepCessationResult\:\:__construct\(\) has parameter \$factors with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: app/DTO/PepCessationResult.php
+			path: app/Services/DTOs/PepCessationResult.php
 
 		-
-			message: '#^Method App\\DTO\\PepCessationResult\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method App\\Services\\DTOs\\PepCessationResult\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: app/DTO/PepCessationResult.php
+			path: app/Services/DTOs/PepCessationResult.php
 
 		-
 			message: '#^Method App\\Enums\\AmlRuleType\:\:defaultConditions\(\) return type has no value type specified in iterable type array\.$#'

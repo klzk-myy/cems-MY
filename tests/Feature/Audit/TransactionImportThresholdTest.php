@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Audit;
 
-use App\Enums\CddLevel;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
-use App\Services\Compliance\ComplianceService;
-use App\Services\DTOs\ComplianceCheckResult;
+use App\Models\Customer;
+use App\Services\Contracts\TransactionHoldServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\TransactionImportTestHelpers;
@@ -28,7 +27,7 @@ class TransactionImportThresholdTest extends TestCase
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,
                 'status' => TransactionStatus::PendingApproval->value,
-                'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
+                'hold_reason' => null, // threshold pendings don't carry a compliance-clear gate
             ]);
         } finally {
             unlink($csv);
@@ -47,7 +46,7 @@ class TransactionImportThresholdTest extends TestCase
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,
                 'status' => TransactionStatus::PendingApproval->value,
-                'hold_reason' => 'Transaction amount exceeds auto-approve threshold',
+                'hold_reason' => null, // threshold pendings don't carry a compliance-clear gate
             ]);
         } finally {
             unlink($csv);
@@ -58,7 +57,9 @@ class TransactionImportThresholdTest extends TestCase
     {
         // D1: Medium risk alone does not force approval — documented policy.
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
-        $customer->update(['risk_rating' => RiskRating::Medium->value]);
+        // risk_rating is a workflow field (not fillable) — set it directly.
+        Customer::whereKey($customer->id)
+            ->update(['risk_rating' => RiskRating::Medium->value]);
 
         $service = $this->createImportService('5000');
         $csv = $this->createCsv("{$customer->id},Buy,USD,500,4.0,Business,Salary,MAIN");
@@ -80,13 +81,13 @@ class TransactionImportThresholdTest extends TestCase
     {
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
 
-        $complianceService = $this->createMock(ComplianceService::class);
-        $complianceService->method('requiresHold')->willReturn(
-            new ComplianceCheckResult(requiresHold: true, reasons: ['Customer risk requires review'])
-        );
-        $complianceService->method('determineCDDLevel')->willReturn(CddLevel::Standard);
+        // A compliance hold now comes from the shared preValidate gate — bind
+        // the hold service mock so TransactionCreationService picks it up.
+        $holdService = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdService->method('requiresHold')->willReturn(true);
+        $this->app->instance(TransactionHoldServiceInterface::class, $holdService);
 
-        $service = $this->createImportService('5000', $complianceService);
+        $service = $this->createImportService('5000');
         $csv = $this->createCsv("{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN");
 
         try {
@@ -95,7 +96,7 @@ class TransactionImportThresholdTest extends TestCase
             $this->assertDatabaseHas('transactions', [
                 'customer_id' => $customer->id,
                 'status' => TransactionStatus::PendingApproval->value,
-                'hold_reason' => 'Customer risk requires review; Transaction amount exceeds auto-approve threshold',
+                'hold_reason' => 'Compliance hold; Transaction amount exceeds auto-approve threshold',
             ]);
         } finally {
             unlink($csv);

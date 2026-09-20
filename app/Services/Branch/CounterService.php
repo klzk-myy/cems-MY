@@ -8,6 +8,7 @@ use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
+use App\Exceptions\Domain\MissingClosingFloatException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\TillAlreadyOpenException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
@@ -173,6 +174,16 @@ class CounterService
         $now = now();
 
         return DB::transaction(function () use ($session, $user, $closingFloats, $notes, $supervisor, $now) {
+            // Re-check session state on the locked row: the early guard above
+            // runs on a possibly-stale instance, so a second concurrent close
+            // must hit this serialized check and throw here instead of
+            // double-writing closing balances.
+            $session = CounterSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+
+            if (! $session->isOpen()) {
+                throw new SessionClosedException;
+            }
+
             // Pre-fetch all currencies and till balances to avoid N+1
             $currencyIds = collect($closingFloats)->pluck('currency_id')->unique()->toArray();
 
@@ -197,6 +208,23 @@ class CounterService
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('currency_code');
+
+            // Every open till row must be counted. Previously a currency left
+            // out of closingFloats stayed open forever after the session
+            // closed — an orphaned drawer. Fail closed and force a count for
+            // each open currency.
+            $countedCurrencies = collect($closingFloats)->map(function ($float) use ($currencies) {
+                $currency = $currencies->get($float['currency_id'])
+                    ?? $currencies->first(fn ($c) => $c->getKey() == $float['currency_id']);
+
+                return $currency?->code;
+            })->filter()->unique();
+
+            $uncounted = $tillBalances->keys()->diff($countedCurrencies)->values();
+
+            if ($uncounted->isNotEmpty()) {
+                throw new MissingClosingFloatException($uncounted->all(), $session->tillCode());
+            }
 
             // Single pass: validate variance AND collect update data
             $updates = [];

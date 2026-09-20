@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
+use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
@@ -459,5 +460,35 @@ class CustomerRiskScoringServiceTest extends TestCase
         // No end date = recent/high influence
         $this->assertEquals('high', $result->factors['informal_influence']['level']);
         $this->assertFalse($result->canCessate);
+    }
+
+    #[Test]
+    public function needing_rescreening_uses_latest_snapshot_only(): void
+    {
+        $due = Customer::factory()->create();
+        RiskScoreSnapshot::factory()->create([
+            'customer_id' => $due->id,
+            'snapshot_date' => now()->subDays(40),
+            'next_screening_date' => now()->subDays(5),
+        ]);
+
+        // Old snapshot is overdue, but the latest screening moved the due
+        // date forward — this customer must NOT be listed.
+        $notDue = Customer::factory()->create();
+        RiskScoreSnapshot::factory()->create([
+            'customer_id' => $notDue->id,
+            'snapshot_date' => now()->subDays(100),
+            'next_screening_date' => now()->subDays(10),
+        ]);
+        RiskScoreSnapshot::factory()->create([
+            'customer_id' => $notDue->id,
+            'snapshot_date' => now()->subDays(5),
+            'next_screening_date' => now()->addDays(60),
+        ]);
+
+        $results = $this->service->getCustomersNeedingRescreening();
+
+        $this->assertTrue($results->contains('id', $due->id));
+        $this->assertFalse($results->contains('id', $notDue->id));
     }
 }

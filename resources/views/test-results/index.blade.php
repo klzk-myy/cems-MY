@@ -13,7 +13,7 @@
             <x-stat-card label="Avg Pass Rate" :value="$statistics['pass_rate'] . '%'" color="purple" />
         </x-stat-grid>
 
-        <x-filter-bar>
+        <x-filter-bar method="GET">
             <x-select name="status" :options="['' => 'All Statuses', 'passed' => 'Passed', 'failed' => 'Failed', 'error' => 'Error']" :selected="request('status')" inline />
             <x-select name="suite" :options="collect($suites)->mapWithKeys(fn ($suite) => [$suite => $suite])->prepend('All Suites', '')->toArray()" :selected="request('suite')" inline />
             <x-button variant="primary" type="submit">Filter</x-button>

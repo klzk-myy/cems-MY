@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\TransactionStatus;
+use App\Enums\TransactionType;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\Rule;
 
 /**
  * Transaction Index Request
@@ -29,7 +31,12 @@ class IndexTransactionRequest extends AuthorizedFormRequest
     {
         return [
             'search' => 'nullable|string|max:100',
-            'status' => 'nullable|string|in:'.implode(',', array_map(fn ($case) => $case->value, TransactionStatus::cases())),
+            'status' => ['nullable', 'string', Rule::enum(TransactionStatus::class)],
+            'type' => ['nullable', 'string', Rule::enum(TransactionType::class)],
+            'currency_code' => 'nullable|string|size:3',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'is_refund' => 'nullable|boolean',
             'customer_id' => 'nullable|integer|exists:customers,id',
         ];
     }

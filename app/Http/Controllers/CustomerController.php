@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Enums\RiskRating;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\HandlesControllerErrors;
+use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Requests\CloseCustomerRequest;
 use App\Http\Requests\FreezeCustomerRequest;
 use App\Http\Requests\StoreCustomerNoteRequest;
@@ -34,7 +35,7 @@ use Illuminate\View\View;
  */
 class CustomerController extends Controller
 {
-    use HandlesControllerErrors;
+    use ApiResponse, HandlesControllerErrors;
 
     public function __construct(
         protected CustomerService $customerService,
@@ -82,10 +83,7 @@ class CustomerController extends Controller
                 ]])->toArray()
         );
 
-        return response()->json([
-            'success' => true,
-            'rates' => $rates,
-        ]);
+        return $this->successResponse(['rates' => $rates]);
     }
 
     /**
@@ -97,6 +95,9 @@ class CustomerController extends Controller
             'search' => $request->get('search'),
             'risk_rating' => $request->get('risk_rating'),
             'nationality' => $request->get('nationality'),
+            'id_type' => $request->get('id_type'),
+            'cdd_level' => $request->get('cdd_level'),
+            'customer_type' => $request->get('customer_type'),
             'sort_by' => $request->get('sort_by', 'created_at'),
             'sort_dir' => $request->get('sort_dir', 'desc'),
             'per_page' => 20,
@@ -106,7 +107,7 @@ class CustomerController extends Controller
         // Boolean filters are only included when actually supplied: the index
         // action treats a present key as an explicit filter, so always adding
         // them would force every plain listing into inactive-only results.
-        foreach (['is_active', 'pep_status'] as $booleanFilter) {
+        foreach (['is_active', 'pep_status', 'sanction_hit', 'is_frozen'] as $booleanFilter) {
             if (($value = $request->get($booleanFilter)) !== null && $value !== '') {
                 $filters[$booleanFilter] = $value;
             }
@@ -206,12 +207,18 @@ class CustomerController extends Controller
 
         $decryptedPhone = $this->customerService->decryptPhone($customer);
 
+        $screeningResults = $customer->screeningResults()
+            ->with(['sanctionEntry', 'adverseMediaEntry', 'transaction'])
+            ->latest('created_at')
+            ->paginate(10);
+
         return view('customers.show', compact(
             'customer',
             'transactionStats',
             'notes',
             'customerShowData',
-            'decryptedPhone'
+            'decryptedPhone',
+            'screeningResults'
         ));
     }
 

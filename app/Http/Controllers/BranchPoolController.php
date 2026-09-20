@@ -36,10 +36,10 @@ class BranchPoolController extends Controller
         $allBranches = $user->role->canManageAllBranches();
 
         $pools = $allBranches
-            ? BranchPool::with('branch')->orderBy('branch_id')->orderBy('currency_code')->get()
+            ? BranchPool::with('branch')->orderBy('branch_id')->orderBy('currency_code')->paginate(25)
             : ($branch instanceof Branch
-                ? $this->poolService->getAllPoolsForBranch($branch)
-                : collect());
+                ? $this->poolService->getAllPoolsForBranch($branch)->paginate(25)
+                : collect()->paginate(25));
 
         $branches = $allBranches ? Branch::orderBy('name')->get() : collect();
         $currencies = Currency::where('is_active', true)->orderBy('code')->get();

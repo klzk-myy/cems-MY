@@ -20,7 +20,7 @@
                 <div>
                     <span class="text-ink-muted">Customer:</span>
                     @if($record->customer)
-                        {{ $record->customer->full_name ?? $record->customer->name ?? 'Customer #'.$record->customer->id }}
+                        <x-customer-link :customer="$record->customer" :fallback="'Customer #'.$record->customer_id" />
                         @if($portalUrl)
                             — <a href="{{ $portalUrl }}" class="text-primary hover:underline" target="_blank" rel="noopener">open customer portal</a>
                         @endif

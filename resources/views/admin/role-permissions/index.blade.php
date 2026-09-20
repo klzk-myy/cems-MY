@@ -1,6 +1,6 @@
 <x-app-layout title="Role Permissions">
     <div class="space-y-6">
-        <x-page-header title="Role Permissions" description="Grant or revoke any permission for any role. The current settings are shown checked; Default restores the built-in role capabilities. Administrator always retains full access." />
+        <x-page-header title="Role Permissions" description="Grant or revoke any permission for any role, including Administrator. The current settings are shown checked; Default restores the built-in role capabilities. Administrator always retains permission-matrix management so the page cannot lock itself out." />
 
         <x-card>
             <form method="POST" action="{{ route('admin.role-permissions.update') }}">
@@ -33,7 +33,10 @@
                                                         // into permissions[role][permission], matching the
                                                         // dotted lookups in validateUpdateRequest().
                                                         $checkboxName = "permissions[{$role->value}][{$permission->value}]";
-                                                        $isAdminLocked = $role === \App\Enums\UserRole::Admin;
+                                                        // Only the matrix-management permission stays locked
+                                                        // for Admin — revoking it would lock every admin out.
+                                                        $isAdminLocked = $role === \App\Enums\UserRole::Admin
+                                                            && $permission === \App\Enums\Permission::ManageRolePermissions;
                                                     @endphp
                                                     <td class="px-4 py-3 text-center">
                                                         <label class="inline-flex items-center justify-center cursor-pointer">

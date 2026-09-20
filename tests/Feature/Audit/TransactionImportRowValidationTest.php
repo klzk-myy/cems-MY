@@ -2,13 +2,10 @@
 
 namespace Tests\Feature\Audit;
 
-use App\Enums\CddLevel;
 use App\Enums\TransactionImportStatus;
 use App\Models\Customer;
 use App\Models\TillBalance;
-use App\Services\Compliance\ComplianceService;
-use App\Services\DTOs\ComplianceCheckResult;
-use App\Services\Transaction\RateManagementService;
+use App\Services\Contracts\RateManagementServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\TransactionImportTestHelpers;
@@ -22,10 +19,10 @@ class TransactionImportRowValidationTest extends TestCase
     use RefreshDatabase;
     use TransactionImportTestHelpers;
 
-    private function processRow(string $row, ?ComplianceService $complianceService = null, ?RateManagementService $rateManagementService = null): mixed
+    private function processRow(string $row, ?RateManagementServiceInterface $rateManagementService = null): mixed
     {
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
-        $service = $this->createImportService('999999', $complianceService, $rateManagementService);
+        $service = $this->createImportService('999999', $rateManagementService);
         $csv = $this->createCsv(str_replace('{customer}', (string) $customer->id, $row));
 
         try {
@@ -64,12 +61,12 @@ class TransactionImportRowValidationTest extends TestCase
     {
         $import = $this->processRow('{customer},Buy,USD,100,4.0,Business,Salary,NOPE');
 
-        $this->assertRowError($import, 'Till NOPE is not open for USD');
+        $this->assertRowError($import, 'Till balance not found for USD at till NOPE');
     }
 
     public function test_aberrant_rate_is_rejected(): void
     {
-        $rateManagement = $this->createMock(RateManagementService::class);
+        $rateManagement = $this->createMock(RateManagementServiceInterface::class);
         $rateManagement->method('validateTransactionRate')->willReturn([
             'valid' => false,
             'reason' => 'Rate deviation exceeds maximum allowed',
@@ -101,15 +98,21 @@ class TransactionImportRowValidationTest extends TestCase
 
     public function test_sanctioned_customer_is_rejected(): void
     {
-        $complianceService = $this->createMock(ComplianceService::class);
-        $complianceService->method('checkSanctionMatch')->willReturn(true);
-        $complianceService->method('determineCDDLevel')->willReturn(CddLevel::Standard);
-        $complianceService->method('requiresHold')->willReturn(
-            new ComplianceCheckResult(requiresHold: false, reasons: [])
-        );
+        ['customer' => $customer, 'import' => $import] = $this->createFixtures();
+        // A prior sanction hit screens as a hard block through the shared
+        // preValidate gate — no ComplianceService mock needed. sanction_hit is
+        // a workflow field (not fillable), so update via the query builder.
+        Customer::whereKey($customer->id)->update(['sanction_hit' => true]);
 
-        $import = $this->processRow('{customer},Buy,USD,100,4.0,Business,Salary,MAIN', complianceService: $complianceService);
+        $service = $this->createImportService('999999');
+        $csv = $this->createCsv("{$customer->id},Buy,USD,100,4.0,Business,Salary,MAIN");
 
-        $this->assertRowError($import, 'sanctions screening');
+        try {
+            $service->process($import, $csv);
+        } finally {
+            unlink($csv);
+        }
+
+        $this->assertRowError($import->refresh(), 'Sanctions match');
     }
 }

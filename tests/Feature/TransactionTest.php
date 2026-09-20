@@ -2,14 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TellerAllocationStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
+use App\Models\TellerAllocation;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Customer\CustomerService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -86,6 +90,216 @@ class TransactionTest extends TestCase
             'currency_code' => 'USD',
             'quantity' => '100.00',
             'status' => TransactionStatus::Completed,
+        ]);
+    }
+
+    /**
+     * Counter selection is transparent: a teller with an open counter
+     * session posts no counter_id/till_id and the booking lands on the
+     * counter they are seated at.
+     */
+    #[Test]
+    public function open_session_supplies_the_booking_counter(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $customer = $this->createTestCustomer();
+        $counter = $this->setupOpenTill($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+        $response = $this->post('/transactions', [
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.50',
+            'customer_id' => $customer->id,
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'branch_id' => $counter->branch_id,
+            'idempotency_key' => uniqid('test_', true),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('transactions', [
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'counter_id' => $counter->id,
+            'till_id' => (string) $counter->code,
+            'status' => TransactionStatus::Completed,
+        ]);
+    }
+
+    /**
+     * Drawer-less booking: no open session and no till — custody ends at the
+     * teller allocation, so the record lands with null till_id/counter_id.
+     */
+    #[Test]
+    public function booking_without_session_or_till_succeeds_drawer_less(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $customer = $this->createTestCustomer();
+        $branch = $this->createTestBranch();
+        $teller->forceFill(['branch_id' => $branch->id])->save();
+
+        // Custody ends at the allocation — drawer-less bookings still draw
+        // stock from an active teller allocation.
+        TellerAllocation::create([
+            'user_id' => $teller->id,
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'allocated_quantity' => '10000.00',
+            'current_quantity' => '10000.00',
+            'requested_quantity' => '10000.00',
+            'daily_limit_myr' => '500000.0000',
+            'daily_used_myr' => '0.0000',
+            'status' => TellerAllocationStatus::Active,
+            'session_date' => now()->toDateString(),
+        ]);
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+        $response = $this->post('/transactions', [
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.50',
+            'customer_id' => $customer->id,
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'branch_id' => $branch->id,
+            'idempotency_key' => uniqid('test_', true),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('transactions', [
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'till_id' => null,
+            'counter_id' => null,
+            'status' => TransactionStatus::Completed,
+        ]);
+    }
+
+    /**
+     * The customer section doubles as registration: submitting customer
+     * fields without a customer_id creates the record and books against it.
+     */
+    #[Test]
+    public function booking_registers_inline_customer_when_no_match(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $counter = $this->setupOpenTill($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+        $response = $this->post('/transactions', [
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.50',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'branch_id' => $counter->branch_id,
+            'counter_id' => $counter->id,
+            'idempotency_key' => uniqid('test_', true),
+            'full_name' => 'Inline Registered Customer',
+            'id_type' => 'MyKad',
+            'id_number' => '900101-14-'.str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
+            'date_of_birth' => '1990-01-01',
+            'nationality' => 'MY',
+            'phone' => '+6012'.str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT),
+            'address' => '12 Jalan Test, Kuala Lumpur',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('customers', ['full_name' => 'Inline Registered Customer']);
+        $this->assertDatabaseHas('transactions', [
+            'currency_code' => 'USD',
+            'status' => TransactionStatus::Completed,
+        ]);
+    }
+
+    /**
+     * Returning customer by ID: when the keyed-in ID number already belongs
+     * to an active customer, the booking links that record instead of
+     * failing on the duplicate-identity rule.
+     */
+    #[Test]
+    public function booking_links_existing_customer_when_id_number_matches(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $customer = $this->createTestCustomer();
+        // The blind index is not mass-assignable — set it directly so the
+        // duplicate-identity lookup can find this fixture by ID number.
+        $customer->forceFill([
+            'id_number_hash' => CustomerService::computeBlindIndex('123456789012'),
+        ])->save();
+        $counter = $this->setupOpenTill($teller, 'USD');
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+        $response = $this->post('/transactions', [
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.50',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'branch_id' => $counter->branch_id,
+            'counter_id' => $counter->id,
+            'idempotency_key' => uniqid('test_', true),
+            'full_name' => 'Test Customer',
+            'id_type' => 'MyKad',
+            // Same identity as createTestCustomer's encrypted fixture.
+            'id_number' => '123456789012',
+            'date_of_birth' => '1990-01-01',
+            'nationality' => 'MY',
+            'address' => '12 Jalan Test, Kuala Lumpur',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('transactions', [
+            'customer_id' => $customer->id,
+            'status' => TransactionStatus::Completed,
+        ]);
+    }
+
+    /**
+     * A submitted counter never overrides the session counter — money must
+     * move in the drawer the teller is actually seated at.
+     */
+    #[Test]
+    public function session_counter_overrides_submitted_counter(): void
+    {
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $customer = $this->createTestCustomer();
+        $counter = $this->setupOpenTill($teller, 'USD');
+        $otherCounter = $this->createTestCounter(['branch_id' => $counter->branch_id]);
+
+        $this->actingAs($teller);
+        $this->setMfaVerification($teller);
+        $response = $this->post('/transactions', [
+            'type' => TransactionType::Buy->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.50',
+            'customer_id' => $customer->id,
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'branch_id' => $counter->branch_id,
+            'counter_id' => $otherCounter->id,
+            'idempotency_key' => uniqid('test_', true),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('transactions', [
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'counter_id' => $counter->id,
+            'till_id' => (string) $counter->code,
         ]);
     }
 
@@ -258,7 +472,12 @@ class TransactionTest extends TestCase
     public function large_transaction_requires_approval(): void
     {
         $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $customer = $this->createTestCustomer();
+        // 54,000 MYR lands in Standard CDD — the customer record must already
+        // carry the profile fields that tier requires.
+        $customer = $this->createTestCustomer([
+            'occupation' => 'Engineer',
+            'employer_name' => 'Acme Sdn Bhd',
+        ]);
 
         // threshold is 50,000 MYR. At 4.5 rate, 12,000 USD is 54,000 MYR
         // Need openingBalance > 54000 MYR for allocation to pass

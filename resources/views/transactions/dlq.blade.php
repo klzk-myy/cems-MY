@@ -28,7 +28,7 @@
                         <tr class="border-t border-border hover:bg-canvas-subtle">
                             <td class="px-4 py-3 font-mono text-sm">{{ $transaction->reference }}</td>
                             <td class="px-4 py-3">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
-                            <td class="px-4 py-3">{{ $transaction->customer->full_name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3"><x-customer-link :customer="$transaction->customer" /></td>
                             <td class="px-4 py-3">
                                 <x-badge variant="{{ $transaction->type->value === 'Buy' ? 'success' : 'danger' }}">
                                     {{ $transaction->type->label() }}

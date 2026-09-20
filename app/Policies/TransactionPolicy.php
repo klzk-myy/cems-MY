@@ -146,6 +146,45 @@ class TransactionPolicy
     }
 
     /**
+     * Determine whether the user can reverse a completed transaction.
+     * Reversal creates a compliance-gated refund record, so it is restricted
+     * to roles holding reverse_transactions (manager, compliance, admin by
+     * default), branch-scoped for non-admins, and never self-reversal.
+     */
+    public function reverse(User $user, Transaction $transaction): bool
+    {
+        if (! $user->role->canPerform(Permission::ReverseTransactions)) {
+            return false;
+        }
+
+        // Segregation of duties: the requester must differ from the creator.
+        if ($transaction->user_id === $user->id) {
+            return false;
+        }
+
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        return $transaction->branch_id === $user->branch_id;
+    }
+
+    /**
+     * Determine whether the user can complete an approved refund transaction.
+     * Completing a refund releases funds, so it stays on the approval tier —
+     * the same compliance/admin gate as approve(), applied to refund records
+     * that have reached Approved status.
+     */
+    public function completeRefund(User $user, Transaction $transaction): bool
+    {
+        if (! $transaction->is_refund || ! $transaction->status->isApproved()) {
+            return false;
+        }
+
+        return $this->approve($user, $transaction);
+    }
+
+    /**
      * Determine whether the user can reject cancellation of the transaction.
      * Managers, compliance officers, and admins can reject cancellation for transactions in their branch.
      */

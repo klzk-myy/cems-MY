@@ -1,7 +1,7 @@
 <x-app-layout title="Notification Preferences">
     <x-page-header title="Notification Preferences" description="Choose which in-app and email notifications you receive." />
 
-    <form method="POST" action="{{ route('notifications.preferences.update') }}" class="max-w-xl space-y-4">
+    <form method="POST" action="{{ route('notifications.preferences.update') }}" class="space-y-4">
         @csrf
 
         @if (session('success'))

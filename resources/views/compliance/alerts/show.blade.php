@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Customer</label>
-                    <p class="text-sm text-ink">{{ $alert->customer?->full_name ?? 'N/A' }}</p>
+                    <p class="text-sm text-ink"><x-customer-link :customer="$alert->customer" /></p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-ink-muted uppercase mb-1">Created At</label>
@@ -84,7 +84,7 @@
                         @if($transaction)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at?->format('Y-m-d') ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm text-ink">{{ $transaction->type?->label() ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm text-ink">RM {{ number_format($transaction->amount_myr ?? 0, 2) }}</td>
                             </tr>
@@ -99,7 +99,6 @@
                 <form method="POST" action="{{ route('compliance.alerts.resolve', $alert) }}" class="inline">
                     @csrf
                     <input type="hidden" name="resolution" value="Resolved via alert detail page">
-                    <input type="hidden" name="resolution_type" value="legitimate">
                     <x-button variant="primary" type="submit">Resolve Alert</x-button>
                 </form>
                 <form method="POST" action="{{ route('compliance.alerts.dismiss', $alert) }}" class="inline">

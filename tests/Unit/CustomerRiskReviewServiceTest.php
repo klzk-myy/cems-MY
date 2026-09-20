@@ -180,4 +180,33 @@ class CustomerRiskReviewServiceTest extends TestCase
         $this->assertEquals(1, $results['processed']);
         $this->assertGreaterThanOrEqual(0, $results['changed']);
     }
+
+    #[Test]
+    public function process_due_reviews_ignores_stale_overdue_snapshots(): void
+    {
+        $customer = Customer::factory()->create(['risk_score' => 50]);
+
+        // An old screening whose due date passed…
+        RiskScoreSnapshot::factory()->create([
+            'customer_id' => $customer->id,
+            'snapshot_date' => now()->subDays(100),
+            'overall_score' => 50,
+            'overall_rating_label' => 'Medium',
+            'next_screening_date' => now()->subDays(10),
+        ]);
+
+        // …but the customer was rescreened since, with a future due date.
+        RiskScoreSnapshot::factory()->create([
+            'customer_id' => $customer->id,
+            'snapshot_date' => now()->subDays(5),
+            'overall_score' => 50,
+            'overall_rating_label' => 'Medium',
+            'next_screening_date' => now()->addDays(60),
+        ]);
+
+        $results = $this->service->processDueReviews(50);
+
+        $this->assertEquals(0, $results['processed']);
+        $this->assertEquals(0, $results['errors']);
+    }
 }

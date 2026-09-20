@@ -51,6 +51,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $accounts->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

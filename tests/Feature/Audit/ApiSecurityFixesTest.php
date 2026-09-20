@@ -6,7 +6,6 @@ use App\Enums\UserRole;
 use App\Exceptions\Domain\UserManagementException;
 use App\Http\Requests\AuthorizedFormRequest;
 use App\Models\Branch;
-use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
@@ -145,17 +144,6 @@ class ApiSecurityFixesTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.0.id', $transaction->id);
-    }
-
-    public function test_teller_cannot_close_counter(): void
-    {
-        $branch = Branch::factory()->create();
-        $teller = User::factory()->for($branch)->create(['role' => UserRole::Teller]);
-        $counter = Counter::factory()->for($branch)->create();
-
-        $this->actingAs($teller)
-            ->post(route('counters.close', $counter))
-            ->assertForbidden();
     }
 
     public function test_password_hash_is_not_mass_assignable(): void

@@ -88,7 +88,7 @@
                             <td class="px-4 py-3 text-sm text-ink">{{ $transaction->id }}</td>
                             <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at->format('d M Y H:i') }}</td>
                             <td class="px-4 py-3 text-sm text-ink">
-                                {{ $transaction->customer->full_name ?? 'N/A' }}
+                                <x-customer-link :customer="$transaction->customer" />
                             </td>
                             <td class="px-4 py-3 text-sm text-ink">
                                 {{ $transaction->currency?->code ?? 'N/A' }}
@@ -120,6 +120,7 @@
                     @endforelse
                 </x-slot:tbody>
             </x-table>
+            <div class="mt-4">{{ $transactions->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

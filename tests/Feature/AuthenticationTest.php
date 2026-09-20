@@ -141,6 +141,17 @@ class AuthenticationTest extends TestCase
     }
 
     #[Test]
+    public function authenticated_user_can_logout_via_get(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/logout');
+
+        $response->assertRedirect('/');
+        $this->assertGuest();
+    }
+
+    #[Test]
     public function dashboard_is_accessible_to_authenticated_users(): void
     {
         $user = User::factory()->create();

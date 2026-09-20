@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EntityType;
+use Illuminate\Validation\Rule;
+
 class StoreSanctionEntryRequest extends AuthorizedFormRequest
 {
     public function authorize(): bool
@@ -14,7 +17,7 @@ class StoreSanctionEntryRequest extends AuthorizedFormRequest
         return [
             'list_id' => 'required|integer|exists:sanction_lists,id',
             'entity_name' => 'required|string|max:255',
-            'entity_type' => 'required|in:Individual,Organization,Vessel,Aircraft',
+            'entity_type' => ['required', Rule::enum(EntityType::class)],
             'aliases' => 'nullable|string',
             'nationality' => 'nullable|string|max:100',
             'date_of_birth' => 'nullable|date',

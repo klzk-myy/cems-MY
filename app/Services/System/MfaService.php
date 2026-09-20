@@ -92,8 +92,56 @@ class MfaService
 
     /**
      * Verify a TOTP code against a user's secret.
+     *
+     * Stateless check used only during MFA setup (no enrolled user binding
+     * yet). For enrolled users use verifyUserCode() — it additionally
+     * enforces single-use per code window.
      */
     public function verifyCode(string $secret, string $code): bool
+    {
+        return $this->matchingTimestep($secret, $code) !== null;
+    }
+
+    /**
+     * Verify a TOTP code for an enrolled user with replay protection.
+     *
+     * A valid code is accepted only when its time window is strictly newer
+     * than the last accepted one — the same code cannot be submitted twice,
+     * and a stale-window code is rejected once a newer window was used.
+     * The timestep is recorded on the locked user row so two concurrent
+     * submissions of the same code serialize and the second one fails.
+     */
+    public function verifyUserCode(User $user, string $code): bool
+    {
+        $secret = $this->getSecret($user);
+
+        if (! $secret) {
+            return false;
+        }
+
+        $timestep = $this->matchingTimestep($secret, $code);
+
+        if ($timestep === null) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($user, $timestep) {
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+
+            if ($timestep <= (int) ($lockedUser->mfa_last_timestep ?? -1)) {
+                return false;
+            }
+
+            $lockedUser->forceFill(['mfa_last_timestep' => $timestep])->save();
+
+            return true;
+        });
+    }
+
+    /**
+     * The TOTP time window a code matches (±1 step tolerance), or null.
+     */
+    protected function matchingTimestep(string $secret, string $code): ?int
     {
         $secret = strtoupper($secret);
         $code = trim($code);
@@ -101,20 +149,19 @@ class MfaService
         // Use the configured digit count instead of hardcoding 6 so the code
         // remains valid if cems.mfa.digits is changed.
         if (! preg_match('/^\d{'.$this->digits.'}$/', $code)) {
-            return false;
+            return null;
         }
 
-        // Check current and previous time windows (allow 1 step tolerance)
         $currentTime = time();
 
         for ($offset = -1; $offset <= 1; $offset++) {
             $expectedCode = $this->generateCode($secret, $currentTime + ($offset * $this->period));
             if (hash_equals($expectedCode, $code)) {
-                return true;
+                return intdiv($currentTime + ($offset * $this->period), $this->period);
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -212,13 +259,17 @@ class MfaService
 
         foreach ($recoveryCodes as $recoveryCode) {
             if (PasswordHash::check($code, $recoveryCode->code_hash)) {
-                // Mark as used
-                $recoveryCode->update([
-                    'used' => true,
-                    'used_at' => now(),
-                ]);
+                // Atomic consume: two concurrent submissions of the same
+                // code serialize on the used=false predicate — exactly one
+                // update can affect the row.
+                $consumed = MfaRecoveryCode::where('id', $recoveryCode->id)
+                    ->where('used', false)
+                    ->update([
+                        'used' => true,
+                        'used_at' => now(),
+                    ]);
 
-                return true;
+                return $consumed === 1;
             }
         }
 

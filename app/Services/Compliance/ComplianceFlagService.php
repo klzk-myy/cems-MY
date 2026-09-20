@@ -102,9 +102,7 @@ class ComplianceFlagService
                     'resolved_today' => FlaggedTransaction::where('status', FlagStatus::Resolved->value)
                         ->whereBetween('resolved_at', [today()->startOfDay(), today()->endOfDay()])
                         ->count(),
-                    'high_priority' => FlaggedTransaction::whereIn('flag_type', ['Sanction_Match', 'Structuring', 'Velocity'])
-                        ->where('status', '!=', FlagStatus::Resolved->value)
-                        ->count(),
+                    'high_priority' => FlaggedTransaction::highPriority()->count(),
                 ];
             }
         );

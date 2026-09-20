@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $full_name
  * @property IdType $id_type
- * @property-read string $id_number_masked
+ * @property-read string|null $id_number
  * @property string $nationality
  * @property Carbon $date_of_birth
  * @property string|null $address
@@ -60,7 +60,7 @@ class CustomerResource extends JsonResource
             'id' => $this->id,
             'full_name' => $this->full_name,
             'id_type' => $this->id_type,
-            'id_number_masked' => $this->id_number_masked,
+            'id_number' => $this->id_number,
             'nationality' => $this->nationality,
             'date_of_birth' => $this->date_of_birth?->toIso8601String(),
             'address' => $this->address,

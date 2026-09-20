@@ -3,7 +3,6 @@
 namespace Tests\Feature\Audit;
 
 use App\Models\Branch;
-use App\Models\Counter;
 use App\Models\FlaggedTransaction;
 use App\Models\TillBalance;
 use App\Models\Transaction;
@@ -86,31 +85,6 @@ class WebControllerAuthGapsTest extends TestCase
             ->assertViewHas('stats', function (array $stats) {
                 return ($stats['flagged'] ?? -1) === 0;
             });
-    }
-
-    public function test_counter_open_form_is_blocked_for_other_branch_counter(): void
-    {
-        $branchA = Branch::factory()->create();
-        $branchB = Branch::factory()->create();
-
-        $teller = User::factory()->for($branchA)->teller()->create();
-        $counterB = Counter::factory()->create(['branch_id' => $branchB->id]);
-
-        $this->actingAs($teller)
-            ->get(route('counters.open', $counterB))
-            ->assertForbidden();
-    }
-
-    public function test_counter_open_form_is_allowed_for_own_branch_counter(): void
-    {
-        $branchA = Branch::factory()->create();
-
-        $teller = User::factory()->for($branchA)->teller()->create();
-        $counterA = Counter::factory()->create(['branch_id' => $branchA->id]);
-
-        $this->actingAs($teller)
-            ->get(route('counters.open', $counterA))
-            ->assertOk();
     }
 
     public function test_stock_cash_index_scopes_today_balances_to_own_branch(): void
