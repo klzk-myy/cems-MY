@@ -96,7 +96,7 @@ class ChartOfAccountsViewerTest extends TestCase
                 ->assertOk();
 
             foreach (ChartOfAccount::pluck('account_code') as $code) {
-                if (str_contains($response->getContent(), (string) $code)) {
+                if (str_contains((string) $response->getContent(), (string) $code)) {
                     $seen->push($code);
                 }
             }

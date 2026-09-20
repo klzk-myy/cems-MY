@@ -256,6 +256,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function add_daily_used_within_limit_enforces_cap_atomically(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'daily_limit_myr' => '1000.0000',
             'daily_used_myr' => '600.0000',
@@ -273,6 +274,7 @@ class TellerAllocationTest extends TestCase
     {
         // daily_limit_myr is NOT NULL default 0 — a zero limit blocks any spend,
         // same as hasDailyLimitRemaining().
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'daily_limit_myr' => '0.0000',
             'daily_used_myr' => '0.0000',
@@ -285,6 +287,7 @@ class TellerAllocationTest extends TestCase
     #[Test]
     public function sequential_amounts_preserve_decimal_precision(): void
     {
+        /** @var TellerAllocation $allocation */
         $allocation = TellerAllocation::factory()->create([
             'current_quantity' => '0.0000',
             'daily_used_myr' => '0.0000',

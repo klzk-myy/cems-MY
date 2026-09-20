@@ -88,7 +88,7 @@ class MyStockPageTest extends TestCase
         $response->assertSee('802.00');   // RM Dr
 
         // The row math: Current = Opening + Buy - Sell = 200 + 100 - 200 = 100.
-        $this->assertStringContainsString('100.00', $response->getContent());
+        $this->assertStringContainsString('100.00', (string) $response->getContent());
     }
 
     #[Test]

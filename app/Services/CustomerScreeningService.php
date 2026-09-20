@@ -121,8 +121,11 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
      * Entries matching ANY of the given tokens in any of the given columns —
      * the same LIKE-escaped prefilter findCandidates applies per customer.
      *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
      * @param  array<int, string>  $tokens
-     * @return Collection<int, Model>
+     * @return Collection<int, TModel>
      */
     private function tokenPrefilteredPool(
         Builder $query,
@@ -133,7 +136,8 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
             return new Collection;
         }
 
-        return $query
+        /** @var Collection<int, TModel> */
+        $pool = $query
             ->where(function ($q) use ($tokens, $columns) {
                 foreach ($tokens as $token) {
                     $escapedToken = LikeEscaper::escape($token);
@@ -144,7 +148,10 @@ class CustomerScreeningService implements CustomerScreeningServiceInterface
                 }
             })
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->toBase();
+
+        return $pool;
     }
 
     public function getHistory(Customer $customer): Collection

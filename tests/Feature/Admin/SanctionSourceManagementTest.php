@@ -65,7 +65,7 @@ class SanctionSourceManagementTest extends TestCase
             ->assertSee('History List')
             ->assertSee('Partial')
             ->assertSee('Manual')
-            ->assertSee($this->admin->name)
+            ->assertSee($this->admin->username)
             ->assertSee('120');
     }
 

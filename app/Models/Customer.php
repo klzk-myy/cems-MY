@@ -265,6 +265,7 @@ class Customer extends BaseModel
     public function scopeWhereLatestSnapshotNeedsRescreening(Builder $query): Builder
     {
         return $query->whereHas('latestRiskSnapshot', function ($snapshotQuery) {
+            /** @var Builder<RiskScoreSnapshot> $snapshotQuery */
             $snapshotQuery->needsRescreening();
         });
     }

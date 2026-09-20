@@ -124,7 +124,7 @@
                             <td class="px-4 py-3 text-sm text-ink-muted">
                                 {{ $log->triggered_by?->label() ?? '—' }}
                                 @if ($log->user)
-                                    <div class="text-xs text-ink-muted">{{ $log->user->name }}</div>
+                                    <div class="text-xs text-ink-muted">{{ $log->user->username }}</div>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-muted max-w-xs truncate" title="{{ $log->error_message ?? '' }}">

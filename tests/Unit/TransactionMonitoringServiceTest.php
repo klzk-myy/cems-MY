@@ -183,6 +183,9 @@ class TransactionMonitoringServiceTest extends TestCase
     {
         $check = new class($descriptors) implements TransactionCheck
         {
+            /**
+             * @param  array<int, FlagDescriptor>  $descriptors
+             */
             public function __construct(private array $descriptors) {}
 
             public function check(Transaction $transaction): array

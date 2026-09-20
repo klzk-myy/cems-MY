@@ -252,7 +252,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         // stock checks: the booked till's branch when a drawer is used, else
         // the acting user's branch (drawer-less custody ends at the
         // allocation).
-        $txnBranchId = (int) ($context->tillBalance?->branch_id ?? $context->user->branch_id ?? $data['branch_id'] ?? 0);
+        $txnBranchId = (int) ($context->tillBalance->branch_id ?? $context->user->branch_id ?? $data['branch_id'] ?? 0);
 
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
@@ -376,6 +376,8 @@ class TransactionCreationService implements TransactionCreationServiceInterface
      *
      * Runs for every booking path (web, wizard, API, import) after the CDD
      * level is determined, before any transaction record exists.
+     *
+     * @param  array<string, mixed>  $data
      */
     private function assertCustomerCddRequirements(Customer $customer, CddLevel $cddLevel, array $data): void
     {
@@ -672,7 +674,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             'customer_id' => $context->customer->id,
             'user_id' => $context->user->id,
             // Drawer-less bookings scope to the acting user's branch.
-            'branch_id' => $context->tillBalance?->branch_id ?? $context->user->branch_id,
+            'branch_id' => $context->tillBalance->branch_id ?? $context->user->branch_id,
             // Store the booked till balance's code — callers may submit an
             // id or code, but the transaction always records the code. Null
             // when no drawer was used.

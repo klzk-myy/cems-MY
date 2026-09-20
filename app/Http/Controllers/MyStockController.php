@@ -111,7 +111,7 @@ class MyStockController extends Controller
     }
 
     /**
-     * @return list<array{currency_code: string, opening: string, buy_quantity: string, buy_myr: string, sell_quantity: string, sell_myr: string, current: string}>
+     * @return list<array{currency_code: string, opening: float, buy_quantity: float, buy_myr: float, sell_quantity: float, sell_myr: float, current: float}>
      */
     private function buildCurrencyRows(int $userId, Carbon $date): array
     {
@@ -127,13 +127,13 @@ class MyStockController extends Controller
 
         $currencyCodes = $openings->keys()->merge($movements->keys())->unique()->sort()->values();
 
-        return $currencyCodes
-            ->map(function (string $code) use ($openings, $movements) {
+        return array_values($currencyCodes
+            ->map(function (int|string $code) use ($openings, $movements) {
                 $movement = $movements->get($code) ?? ['buy_quantity' => 0.0, 'buy_myr' => 0.0, 'sell_quantity' => 0.0, 'sell_myr' => 0.0];
                 $opening = (float) ($openings->get($code) ?? 0);
 
                 return [
-                    'currency_code' => $code,
+                    'currency_code' => (string) $code,
                     'opening' => $opening,
                     'buy_quantity' => $movement['buy_quantity'],
                     'buy_myr' => $movement['buy_myr'],
@@ -142,7 +142,7 @@ class MyStockController extends Controller
                     'current' => $opening + $movement['buy_quantity'] - $movement['sell_quantity'],
                 ];
             })
-            ->all();
+            ->all());
     }
 
     /**

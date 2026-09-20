@@ -279,6 +279,9 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         }
     }
 
+    /**
+     * @param  array{flags: array<int, FlaggedTransaction>}  $amlResult
+     */
     private function handleAmlBlocks(Transaction $transaction, array $amlResult, int $approverId, ?string $ipAddress): ?ApprovalResult
     {
         // Flags already dispositioned by compliance (resolved/rejected) are

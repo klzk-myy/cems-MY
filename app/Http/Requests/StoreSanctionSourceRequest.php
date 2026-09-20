@@ -13,6 +13,9 @@ class StoreSanctionSourceRequest extends AuthorizedFormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

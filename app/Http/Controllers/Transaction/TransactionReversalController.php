@@ -70,7 +70,7 @@ class TransactionReversalController extends Controller
         $refund = $transaction->fresh()->refundTransaction;
 
         return redirect()->route('transactions.show', $refund ?? $transaction)
-            ->with('success', 'Transaction reversed. Refund transaction #'.($refund?->id ?? '?').' created and pending compliance approval.');
+            ->with('success', 'Transaction reversed. Refund transaction #'.($refund->id ?? '?').' created and pending compliance approval.');
     }
 
     /**

@@ -62,7 +62,7 @@ class SanctionImportLog extends BaseModel
             'status' => $this->status->value,
             'error_message' => $this->error_message,
             'triggered_by' => $this->triggered_by->value,
-            'user_name' => $this->user?->name,
+            'user_name' => $this->user?->username,
         ];
     }
 

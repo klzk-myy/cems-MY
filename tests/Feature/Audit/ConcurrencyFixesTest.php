@@ -136,6 +136,7 @@ class ConcurrencyFixesTest extends TestCase
         $counter = Counter::factory()->for($branch)->create();
 
         // Create TillBalance for USD (for the transaction's currency)
+        /** @var TillBalance $tillBalance */
         $tillBalance = TillBalance::factory()->for($counter)->create([
             'branch_id' => $branch->id,
             'currency_code' => 'USD',

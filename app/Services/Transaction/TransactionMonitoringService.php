@@ -4,6 +4,7 @@ namespace App\Services\Transaction;
 
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
+use App\Enums\TransactionStatus;
 use App\Models\Alert;
 use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
@@ -23,6 +24,9 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
         protected AlertTriageService $alertTriageService
     ) {}
 
+    /**
+     * @return array{transaction_id: int, flags_created: int, flags: array<int, FlaggedTransaction>, status: TransactionStatus}
+     */
     public function monitorTransaction(Transaction $transaction): array
     {
         return DB::transaction(function () use ($transaction) {

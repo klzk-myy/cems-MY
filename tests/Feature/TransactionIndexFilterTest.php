@@ -36,6 +36,9 @@ class TransactionIndexFilterTest extends TestCase
         $this->customerId = $this->createTestCustomer()->id;
     }
 
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
     private function makeTransaction(array $overrides = []): Transaction
     {
         return Transaction::factory()->create(array_merge([

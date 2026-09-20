@@ -8,9 +8,11 @@ use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\InsufficientAllocationBalanceException;
 use App\Models\Traits\BelongsToBranch;
 use App\Support\BcmathHelper;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -159,10 +161,14 @@ class TellerAllocation extends BaseModel
      */
     public function deduct(float|string $quantity): bool
     {
-        $affected = static::query()
-            ->where($this->getKeyName(), $this->getKey())
-            ->where('current_quantity', '>=', $quantity)
-            ->decrement('current_quantity', $this->toNumericAmount($quantity));
+        $affected = $this->applyDecimalDelta(
+            self::query()
+                ->where($this->getKeyName(), $this->getKey())
+                ->where('current_quantity', '>=', $quantity),
+            'current_quantity',
+            '-',
+            $quantity
+        );
 
         $this->refresh();
 
@@ -179,13 +185,23 @@ class TellerAllocation extends BaseModel
 
     public function add(float|string $quantity): void
     {
-        $this->increment('current_quantity', $this->toNumericAmount($quantity));
+        $this->applyDecimalDelta(
+            self::query()->where($this->getKeyName(), $this->getKey()),
+            'current_quantity',
+            '+',
+            $quantity
+        );
         $this->refresh();
     }
 
     public function addDailyUsed(float|string $amountMyr): void
     {
-        $this->increment('daily_used_myr', $this->toNumericAmount($amountMyr));
+        $this->applyDecimalDelta(
+            self::query()->where($this->getKeyName(), $this->getKey()),
+            'daily_used_myr',
+            '+',
+            $amountMyr
+        );
         $this->refresh();
     }
 
@@ -207,10 +223,14 @@ class TellerAllocation extends BaseModel
             return;
         }
 
-        $affected = static::query()
-            ->where($this->getKeyName(), $this->getKey())
-            ->whereRaw('daily_used_myr + ? <= daily_limit_myr', [$this->toNumericAmount($amountMyr)])
-            ->increment('daily_used_myr', $this->toNumericAmount($amountMyr));
+        $affected = $this->applyDecimalDelta(
+            self::query()
+                ->where($this->getKeyName(), $this->getKey())
+                ->whereRaw('daily_used_myr + ? <= daily_limit_myr', [$this->toNumericAmount($amountMyr)]),
+            'daily_used_myr',
+            '+',
+            $amountMyr
+        );
 
         $this->refresh();
 
@@ -223,8 +243,28 @@ class TellerAllocation extends BaseModel
 
     public function subtractDailyUsed(float|string $amountMyr): void
     {
-        $this->decrement('daily_used_myr', $this->toNumericAmount($amountMyr));
+        $this->applyDecimalDelta(
+            self::query()->where($this->getKeyName(), $this->getKey()),
+            'daily_used_myr',
+            '-',
+            $amountMyr
+        );
         $this->refresh();
+    }
+
+    /**
+     * Decimal-precise column adjustment. increment()/decrement() are typed
+     * float|int by Larastan, and passing money through float would introduce
+     * IEEE-754 drift — a raw expression keeps the BCMath string end-to-end.
+     * (incrementEach() itself interpolates the amount the same way.)
+     *
+     * @param  Builder<TellerAllocation>  $query
+     */
+    private function applyDecimalDelta(Builder $query, string $column, string $operator, float|string $amount): int
+    {
+        $amount = $this->toNumericAmount($amount);
+
+        return $query->update([$column => DB::raw("{$column} {$operator} {$amount}")]);
     }
 
     /**

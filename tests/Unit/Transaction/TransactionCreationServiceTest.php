@@ -100,6 +100,7 @@ class TransactionCreationServiceTest extends TestCase
         ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         $currency = Currency::factory()->create(['code' => 'USD']);
+        /** @var TillBalance $tillBalance */
         $tillBalance = TillBalance::factory()->create([
             'till_id' => $counter->code,
             'currency_code' => 'USD',
@@ -1169,6 +1170,7 @@ class TransactionCreationServiceTest extends TestCase
         $currency = Currency::factory()->create(['code' => 'USD']);
         $counter = Counter::factory()->create(['status' => 'active']);
 
+        /** @var TillBalance $tillBalance */
         $tillBalance = TillBalance::factory()->create([
             'till_id' => $counter->code,
             'currency_code' => 'USD',
