@@ -3,8 +3,8 @@
 namespace Database\Factories\Compliance;
 
 use App\Enums\AlertPriority;
-use App\Enums\ComplianceFlagType;
 use App\Enums\AlertStatus;
+use App\Enums\ComplianceFlagType;
 use App\Models\Compliance\Alert;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;

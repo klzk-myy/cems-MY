@@ -3,8 +3,8 @@
 namespace App\Models\Compliance;
 
 use App\Enums\AlertPriority;
-use App\Enums\ComplianceFlagType;
 use App\Enums\AlertStatus;
+use App\Enums\ComplianceFlagType;
 use App\Models\BaseModel;
 use App\Models\Customer;
 use App\Models\User;
