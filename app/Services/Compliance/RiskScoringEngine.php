@@ -10,8 +10,8 @@ use App\Enums\TransactionStatus;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Compliance\CustomerBehavioralBaseline;
 use App\Models\Compliance\CustomerRiskProfile;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use App\Models\Customer;
-use App\Models\EnhancedDiligenceRecord;
 use App\Models\HighRiskCountry;
 use App\Models\Transaction;
 use App\Services\System\MathService;
@@ -67,13 +67,7 @@ class RiskScoringEngine
      */
     public function calculateScore(int $customerId): int
     {
-        $factors = $this->getFactorContributions($customerId);
-        $total = self::BASE_SCORE;
-        foreach ($factors as $factor) {
-            $total = $this->math->add((string) $total, (string) $factor['contribution']);
-        }
-
-        return min((int) $total, 100);
+        return $this->calculateScoreWithFactors($customerId)['score'];
     }
 
     /**

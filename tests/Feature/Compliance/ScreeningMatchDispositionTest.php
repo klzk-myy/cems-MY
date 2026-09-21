@@ -4,10 +4,10 @@ namespace Tests\Feature\Compliance;
 
 use App\Enums\SystemAlertLevel;
 use App\Models\AdverseMediaEntry;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\Customer;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
-use App\Models\ScreeningResult;
 use App\Models\SystemAlert;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -3,15 +3,16 @@
 namespace App\Services\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Enums\UserRole;
 use App\Events\AlertCreated;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
@@ -172,18 +173,23 @@ class AlertTriageService
 
         $previousAssignee = $alert->assigned_to;
 
-        $alert->update(['assigned_to' => $userId]);
+        // Assignment and its audit entry commit together — the same atomicity
+        // resolveAlert/dismissAlert already get from their DB::transaction
+        // wrappers, and the guarantee bulkAssign relies on per item.
+        DB::transaction(function () use ($alert, $userId, $previousAssignee) {
+            $alert->update(['assigned_to' => $userId]);
 
-        $this->auditService->logWithSeverity(
-            'alert_assigned',
-            [
-                'description' => "Alert #{$alert->id} assigned to user {$userId}".($previousAssignee ? " (reassigned from {$previousAssignee})" : ''),
-                'alert_id' => $alert->id,
-                'assigned_to' => $userId,
-                'previous_assignee' => $previousAssignee,
-            ],
-            'INFO'
-        );
+            $this->auditService->logWithSeverity(
+                'alert_assigned',
+                [
+                    'description' => "Alert #{$alert->id} assigned to user {$userId}".($previousAssignee ? " (reassigned from {$previousAssignee})" : ''),
+                    'alert_id' => $alert->id,
+                    'assigned_to' => $userId,
+                    'previous_assignee' => $previousAssignee,
+                ],
+                'INFO'
+            );
+        });
 
         return $alert->fresh();
     }
@@ -250,7 +256,7 @@ class AlertTriageService
             }
 
             $lockedAlert->update([
-                'status' => FlagStatus::Resolved,
+                'status' => AlertStatus::Resolved,
                 'case_id' => null,
                 'reviewed_by' => $resolvedBy,
                 'resolved_at' => now(),
@@ -290,7 +296,7 @@ class AlertTriageService
             }
 
             $lockedAlert->update([
-                'status' => FlagStatus::Rejected,
+                'status' => AlertStatus::Rejected,
                 'reviewed_by' => $dismissedBy,
                 'resolved_at' => now(),
             ]);
@@ -371,16 +377,16 @@ class AlertTriageService
 
         return [
             'total' => $baseQuery->count(),
-            'critical' => $baseQuery->where('priority', AlertPriority::Critical)->count(),
-            'high' => $baseQuery->where('priority', AlertPriority::High)->count(),
-            'medium' => $baseQuery->where('priority', AlertPriority::Medium)->count(),
-            'low' => $baseQuery->where('priority', AlertPriority::Low)->count(),
+            'critical' => $baseQuery->where('priority', AlertPriority::Critical->value)->count(),
+            'high' => $baseQuery->where('priority', AlertPriority::High->value)->count(),
+            'medium' => $baseQuery->where('priority', AlertPriority::Medium->value)->count(),
+            'low' => $baseQuery->where('priority', AlertPriority::Low->value)->count(),
             'unassigned' => $baseQuery->whereNull('assigned_to')->count(),
             'overdue' => $this->getOverdueCount(),
-            'pending' => $baseQuery->where('status', FlagStatus::Open)->count(),
-            'in_progress' => $baseQuery->whereIn('status', [FlagStatus::UnderReview, FlagStatus::Escalated])->count(),
+            'pending' => $baseQuery->where('status', AlertStatus::Open->value)->count(),
+            'in_progress' => $baseQuery->whereIn('status', [AlertStatus::UnderReview->value, AlertStatus::Escalated->value])->count(),
             'resolved_today' => Alert::whereBetween('updated_at', [today()->startOfDay(), today()->endOfDay()])
-                ->where('status', FlagStatus::Resolved)->count(),
+                ->where('status', AlertStatus::Resolved->value)->count(),
         ];
     }
 
@@ -490,7 +496,7 @@ class AlertTriageService
                         return;
                     }
 
-                    if ($alert->status === FlagStatus::Resolved) {
+                    if ($alert->status === AlertStatus::Resolved) {
                         $results['failed']++;
                         $results['errors'][] = "Alert {$alertId} is already resolved";
 

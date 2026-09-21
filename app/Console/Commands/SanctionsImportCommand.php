@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Console\Command;
 

@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Enums\MatchType;
-use App\Models\SanctionEntry;
+use App\Models\Compliance\SanctionEntry;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

@@ -3,6 +3,7 @@
 namespace App\Services\Compliance;
 
 use App\Enums\SanctionSourceFormat;
+use App\Exceptions\Domain\SanctionsImportException;
 use App\Services\Concerns\ValidatesContentFormat;
 use App\Services\Concerns\ValidatesSanctionsUrl;
 use Illuminate\Http\Client\Response;
@@ -250,7 +251,7 @@ class SanctionsDownloadService
             $currentUrl = $this->resolveRedirectUrl($currentUrl, $location);
         }
 
-        throw new \RuntimeException("Too many redirects ({$maxHops}) fetching {$url}");
+        throw new SanctionsImportException("Too many redirects ({$maxHops}) fetching {$url}");
     }
 
     /**

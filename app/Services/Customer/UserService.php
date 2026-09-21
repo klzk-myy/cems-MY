@@ -195,7 +195,7 @@ class UserService
             // pluck + FOR UPDATE locks every admin row; a count() query
             // cannot take row locks, so count the locked ids in PHP.
             $admins = count(
-                User::where('role', UserRole::Admin)->lockForUpdate()->pluck('id')->all()
+                User::where('role', UserRole::Admin->value)->lockForUpdate()->pluck('id')->all()
             );
 
             if ($user->isAdmin() && $admins <= 1) {
@@ -256,97 +256,6 @@ class UserService
         );
 
         return $user->fresh();
-    }
-
-    /**
-     * Toggle a user's active status with validation.
-     *
-     * Validates that:
-     * - Not deactivating self
-     * - Not deactivating last active admin
-     *
-     * @param  User  $user  User to toggle
-     * @param  int  $toggledBy  User ID toggling the status
-     * @return User Updated user
-     *
-     * @throws UserManagementException If validation fails
-     */
-    public function toggleActive(User $user, int $toggledBy): User
-    {
-        // Prevent deactivating self
-        if ($user->id === $toggledBy) {
-            throw new UserManagementException('Cannot deactivate your own account.');
-        }
-
-        // Prevent deactivating last admin
-        if ($user->isAdmin() && $user->is_active && User::where('role', UserRole::Admin)->where('is_active', true)->count() <= 1) {
-            throw new UserManagementException('Cannot deactivate the last active admin.');
-        }
-
-        $this->assertCanManageUser(User::findOrFail($toggledBy), $user);
-
-        $oldStatus = $user->is_active;
-        $user->update(['is_active' => ! $user->is_active]);
-
-        // Log status toggle
-        $this->auditService->log(
-            'user_status_toggled',
-            $toggledBy,
-            'User',
-            $user->id,
-            ['is_active' => $oldStatus],
-            ['is_active' => $user->is_active]
-        );
-
-        return $user->fresh();
-    }
-
-    /**
-     * Check if a user can be deleted.
-     *
-     * @param  User  $user  User to check
-     * @param  int  $requesterId  User ID requesting deletion
-     * @return bool True if user can be deleted
-     */
-    public function canDelete(User $user, int $requesterId): bool
-    {
-        // Prevent deleting the last admin
-        if ($user->isAdmin() && User::where('role', UserRole::Admin)->count() <= 1) {
-            return false;
-        }
-
-        // Prevent self-deletion
-        if ($user->id === $requesterId) {
-            return false;
-        }
-
-        $requester = User::find($requesterId);
-
-        return $requester !== null && $this->actorCanManage($requester, $user);
-    }
-
-    /**
-     * Check if a user's active status can be toggled.
-     *
-     * @param  User  $user  User to check
-     * @param  int  $requesterId  User ID requesting toggle
-     * @return bool True if status can be toggled
-     */
-    public function canToggleActive(User $user, int $requesterId): bool
-    {
-        // Prevent deactivating self
-        if ($user->id === $requesterId) {
-            return false;
-        }
-
-        // Prevent deactivating last admin
-        if ($user->isAdmin() && $user->is_active && User::where('role', UserRole::Admin)->where('is_active', true)->count() <= 1) {
-            return false;
-        }
-
-        $requester = User::find($requesterId);
-
-        return $requester !== null && $this->actorCanManage($requester, $user);
     }
 
     /**
@@ -430,7 +339,7 @@ class UserService
         // waits on the locked admin rows, then recounts after commit. Without
         // it two requests could both see count() > 1 and zero out the pool.
         $activeAdmins = count(
-            User::where('role', UserRole::Admin)
+            User::where('role', UserRole::Admin->value)
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->pluck('id')

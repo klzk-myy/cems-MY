@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use Illuminate\Console\Command;
 
 class VerifyAuditChainCommand extends Command
@@ -11,12 +11,12 @@ class VerifyAuditChainCommand extends Command
 
     protected $description = 'Verify the tamper-evident audit hash chain integrity';
 
-    public function handle(AuditService $auditService): int
+    public function handle(AuditChainService $auditChainService): int
     {
         $limitOption = $this->option('limit');
         $limit = $limitOption !== null && $limitOption !== '' ? max(1, (int) $limitOption) : null;
 
-        $result = $auditService->verifyChainIntegrity($limit);
+        $result = $auditChainService->verifyChainIntegrity($limit);
 
         if ((bool) ($result['valid'] ?? false)) {
             $this->info($result['message'] ?? 'Audit chain OK.');

@@ -5,7 +5,7 @@ namespace Tests\Feature\Audit;
 use App\Enums\TransactionImportStatus;
 use App\Models\Customer;
 use App\Models\TillBalance;
-use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\Transaction\RateManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\TransactionImportTestHelpers;
@@ -19,7 +19,7 @@ class TransactionImportRowValidationTest extends TestCase
     use RefreshDatabase;
     use TransactionImportTestHelpers;
 
-    private function processRow(string $row, ?RateManagementServiceInterface $rateManagementService = null): mixed
+    private function processRow(string $row, ?RateManagementService $rateManagementService = null): mixed
     {
         ['customer' => $customer, 'import' => $import] = $this->createFixtures();
         $service = $this->createImportService('999999', $rateManagementService);
@@ -66,7 +66,7 @@ class TransactionImportRowValidationTest extends TestCase
 
     public function test_aberrant_rate_is_rejected(): void
     {
-        $rateManagement = $this->createMock(RateManagementServiceInterface::class);
+        $rateManagement = $this->createMock(RateManagementService::class);
         $rateManagement->method('validateTransactionRate')->willReturn([
             'valid' => false,
             'reason' => 'Rate deviation exceeds maximum allowed',

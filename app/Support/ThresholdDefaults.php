@@ -99,4 +99,11 @@ final class ThresholdDefaults
     public const FALLBACK_RATE_OVERRIDE_LIMIT_TELLER = '0.5';
 
     public const FALLBACK_RATE_OVERRIDE_LIMIT_MANAGER = '2.0';
+
+    /**
+     * Position-limit utilization bands (percent of the configured limit).
+     */
+    public const FALLBACK_POSITION_UTILIZATION_WARNING = '75';
+
+    public const FALLBACK_POSITION_UTILIZATION_CRITICAL = '90';
 }

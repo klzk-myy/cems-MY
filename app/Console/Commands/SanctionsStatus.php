@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\UpdateStatus;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use Illuminate\Console\Command;
 
 class SanctionsStatus extends Command
@@ -58,8 +58,8 @@ class SanctionsStatus extends Command
 
         // Summary statistics
         $totalEntries = $lists->sum('entry_count');
-        $failedUpdates = $lists->where('update_status', UpdateStatus::Failed)->count();
-        $neverRun = $lists->where('update_status', UpdateStatus::NeverRun)->count();
+        $failedUpdates = $lists->where('update_status', UpdateStatus::Failed->value)->count();
+        $neverRun = $lists->where('update_status', UpdateStatus::NeverRun->value)->count();
 
         $this->info('Summary:');
         $this->line("  Total Lists: {$lists->count()}");

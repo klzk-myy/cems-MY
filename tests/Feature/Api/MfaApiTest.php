@@ -9,8 +9,8 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\System\MfaService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
@@ -228,7 +228,7 @@ class MfaApiTest extends TestCase
             'branch_id' => $branch->id,
         ]);
 
-        $creationService = $this->mock(TransactionCreationServiceInterface::class);
+        $creationService = $this->mock(TransactionCreationService::class);
         $creationService->shouldReceive('prepareAndCreate')
             ->andReturn($transaction);
 

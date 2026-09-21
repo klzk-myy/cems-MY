@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\CddLevel;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\TransactionBlockedException;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\MapsTransactionExceptionsToFields;
@@ -16,16 +17,10 @@ use App\Models\CounterSession;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\User;
-use App\Services\Branch\TellerAllocationService;
-use App\Services\Contracts\TransactionCreationServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
-use App\Services\System\MathService;
 use App\Services\System\WizardSessionService;
-use App\Services\ThresholdService;
-use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\ExchangeCalculator;
-use App\Services\Transaction\InitialStatusResolver;
-use App\Services\Transaction\TransactionApprovalService;
+use App\Services\Transaction\TransactionCreationService;
+use App\Services\Transaction\TransactionValidationService;
 use App\ValueObjects\QuoteConvention;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,16 +36,10 @@ class TransactionWizardController extends Controller
     use MapsTransactionExceptionsToFields;
 
     public function __construct(
-        protected TransactionValidationInterface $validationService,
-        protected TransactionCreationServiceInterface $creationService,
-        protected TransactionApprovalService $approvalService,
+        protected TransactionValidationService $validationService,
+        protected TransactionCreationService $creationService,
         protected WizardSessionService $wizardSessionService,
-        protected MathService $mathService,
         protected ExchangeCalculator $exchangeCalculator,
-        protected TellerAllocationService $tellerAllocationService,
-        protected ThresholdService $thresholdService,
-        protected InitialStatusResolver $statusResolver,
-
     ) {}
 
     /**
@@ -76,14 +65,12 @@ class TransactionWizardController extends Controller
         $customer = Customer::find($validated['customer_id']);
 
         if (! $customer instanceof Customer) {
-            return $this->errorResponse('Customer not found.', [], 404);
+            return $this->notFoundResponse('Customer not found.');
         }
 
         // Branch isolation: refuse to leak existence/risk flags of customers
         // that belong to another branch.
-        if ($denied = $this->authorizeAssignedBranch('You are not authorized to create transactions for this customer.')) {
-            return $denied;
-        }
+        $this->authorizeAssignedBranch('You are not authorized to create transactions for this customer.');
 
         // Calculate local amount (single source of truth for the conversion).
         // The entered rate is quoted per the currency's convention
@@ -211,13 +198,6 @@ class TransactionWizardController extends Controller
             ]
         );
 
-        // The session rate is quoted per the currency's convention
-        // (currencies.rate_unit + rate_inverse); the stored transaction
-        // keeps the normalized per-unit rate, carried on the context rather
-        // than mutating the submitted payload in place.
-        $normalizedRate = QuoteConvention::forCode((string) $transactionData['currency_code'])
-            ->toPerUnit((string) $transactionData['rate']);
-
         try {
             // The live session wins over the step-1 snapshot: a teller who
             // reseated mid-wizard books on the drawer they are actually at.
@@ -230,59 +210,19 @@ class TransactionWizardController extends Controller
 
             $user = User::findOrFail(auth()->id());
 
-            // Shared booking gate at submit time — identical to the web, API,
-            // and import paths: currency/IP validation, non-trading branch
-            // rejection, till balance, customer blocked/frozen state, KYC
-            // expiry, branch scope, and rate tolerance. The step-1 checks are
-            // advisory only; a customer frozen or expired while the wizard
-            // was open must fail here, not book.
-            [$tillBalance, $customer] = $this->creationService
-                ->assertBookingEligibility($user, $transactionData, request()->ip());
-
-            $amountMyr = (string) $sessionData['amount_myr'];
-
-            // Re-run the compliance gates fresh — PEP/sanctions/CDD/risk/hold
-            // state may have changed since step 1 cached its result.
-            $validationResult = $this->creationService
-                ->runComplianceGates($customer, $transactionData, $amountMyr);
-
-            // Never downgrade due diligence: the effective CDD level is the
-            // higher of the fresh assessment and the step-1 tier (which may
-            // carry a teller-requested upgrade the documents were collected
-            // under).
-            $sessionCddLevel = CddLevel::from($sessionData['cdd_level']);
-            $freshCddLevel = $validationResult->getCDDLevel();
-            $cddLevel = array_search($freshCddLevel, CddLevel::cases(), true) >= array_search($sessionCddLevel, CddLevel::cases(), true)
-                ? $freshCddLevel
-                : $sessionCddLevel;
-
-            $allocation = $this->tellerAllocationService->resolveForTransaction(
+            // Shared orchestration — the same eligibility gate, exchange
+            // calculation, compliance gates, allocation and status resolution
+            // the web/API paths run inside buildCreationContext(). The step-1
+            // CDD tier is passed as a floor so the effective level never
+            // downgrades below the tier documents were collected under.
+            $context = $this->creationService->buildCreationContext(
                 $user,
-                [
-                    'type' => (string) $transactionData['type'],
-                    'currency_code' => (string) $transactionData['currency_code'],
-                ],
-                $amountMyr
+                $transactionData,
+                CddLevel::from($sessionData['cdd_level']),
+                request()->ip()
             );
 
-            $holdRequired = $validationResult->isHoldRequired();
-            $initialStatus = $this->statusResolver->resolve($amountMyr, $holdRequired, $customer->risk_rating);
-
-            $context = new TransactionCreationContext(
-                data: $transactionData,
-                customer: $customer,
-                tillBalance: $tillBalance,
-                cddLevel: $cddLevel,
-                holdRequired: $holdRequired,
-                status: $initialStatus->status,
-                amountMyr: $amountMyr,
-                user: $user,
-                allocation: $allocation,
-                // hold_reason doubles as the compliance-clear gate — only a
-                // genuine hold may populate it, not threshold/risk reasons.
-                holdReason: $holdRequired ? $initialStatus->holdReason : null,
-                normalizedRate: $normalizedRate,
-            );
+            $holdRequired = $context->holdRequired;
 
             $transaction = $this->creationService->create($context, $user->id, request()->ip());
 
@@ -354,7 +294,7 @@ class TransactionWizardController extends Controller
         // migration window negligible, and refusing is safer than trusting an
         // unbound session in an AML workflow.
         if ((int) ($sessionData['user_id'] ?? 0) !== (int) auth()->id()) {
-            return $this->errorResponse('You do not own this wizard session', [], 403, ['status' => 'forbidden']);
+            throw new PermissionDeniedException('You do not own this wizard session');
         }
 
         return $sessionData;

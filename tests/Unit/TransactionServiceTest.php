@@ -24,7 +24,7 @@ use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\System\MathService;
 use App\Services\Transaction\TransactionApprovalService;
-use App\Services\Transaction\TransactionService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,7 +35,7 @@ class TransactionServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected TransactionService $transactionService;
+    protected TransactionCreationService $transactionService;
 
     protected CurrencyPositionService $positionService;
 
@@ -60,7 +60,7 @@ class TransactionServiceTest extends TestCase
         parent::setUp();
 
         // Use Laravel container to resolve services with correct dependencies
-        $this->transactionService = app(TransactionService::class);
+        $this->transactionService = app(TransactionCreationService::class);
         $this->positionService = app(CurrencyPositionService::class);
         $this->mathService = app(MathService::class);
 
@@ -94,7 +94,7 @@ class TransactionServiceTest extends TestCase
             'id_number_encrypted' => encrypt('123456789012'),
             'nationality' => 'MY',
             'date_of_birth' => '1990-01-15',
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'cdd_level' => 'Simplified',
             'is_active' => true,
         ]);
@@ -172,7 +172,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
@@ -200,7 +200,7 @@ class TransactionServiceTest extends TestCase
         ];
 
         // Should succeed even without existing position
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
@@ -226,7 +226,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
@@ -253,7 +253,7 @@ class TransactionServiceTest extends TestCase
         $this->expectException(TillBalanceMissingException::class);
         $this->expectExceptionMessage('Till balance not found');
 
-        $this->transactionService->createTransaction($data, $this->teller->id);
+        $this->transactionService->prepareAndCreate($data, $this->teller->id);
     }
 
     #[Test]
@@ -273,7 +273,7 @@ class TransactionServiceTest extends TestCase
         $this->expectException(InvalidIpAddressException::class);
         $this->expectExceptionMessage('Invalid IP address format');
 
-        $this->transactionService->createTransaction($data, $this->teller->id, 'invalid-ip');
+        $this->transactionService->prepareAndCreate($data, $this->teller->id, 'invalid-ip');
     }
 
     #[Test]
@@ -291,7 +291,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Verify precision is maintained
         $this->assertStringContainsString('.', $transaction->amount_myr);
@@ -313,7 +313,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Verify audit log was created
         $this->assertDatabaseHas('system_logs', [
@@ -342,10 +342,10 @@ class TransactionServiceTest extends TestCase
         ];
 
         // Create first transaction
-        $transaction1 = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction1 = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Attempt to create duplicate with same key
-        $transaction2 = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction2 = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Should return the same transaction
         $this->assertEquals($transaction1->id, $transaction2->id);
@@ -368,7 +368,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $this->transactionService->createTransaction($data, $this->teller->id);
+        $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Refresh foreign currency till balance
         $this->tillBalance->refresh();
@@ -411,7 +411,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_buy_', true),
         ];
 
-        $this->transactionService->createTransaction($buyData, $this->teller->id);
+        $this->transactionService->prepareAndCreate($buyData, $this->teller->id);
         $this->tillBalance->refresh();
 
         // After BUY: buy_quantity should increase, sell_quantity unchanged
@@ -431,7 +431,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_sell_', true),
         ];
 
-        $this->transactionService->createTransaction($sellData, $this->teller->id);
+        $this->transactionService->prepareAndCreate($sellData, $this->teller->id);
         $this->tillBalance->refresh();
 
         // After SELL: sell_quantity should increase, buy_quantity unchanged
@@ -460,21 +460,21 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
         $this->assertEquals(CddLevel::Simplified, $transaction->cdd_level);
 
         // Test Specific CDD (RM 3,000 - 10,000) per pd-00.md 14C.12.1
         $data['quantity'] = '1000.00'; // 1000 * 4.5 = 4500 MYR
         $data['idempotency_key'] = uniqid('test_', true);
 
-        $transaction2 = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction2 = $this->transactionService->prepareAndCreate($data, $this->teller->id);
         $this->assertEquals(CddLevel::Specific, $transaction2->cdd_level);
 
         // Test Standard CDD (>= RM 10,000) per pd-00.md 14C.12.2
         $data['quantity'] = '3000.00'; // 3000 * 4.5 = 13500 MYR
         $data['idempotency_key'] = uniqid('test_', true);
 
-        $transaction3 = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction3 = $this->transactionService->prepareAndCreate($data, $this->teller->id);
         $this->assertEquals(CddLevel::Standard, $transaction3->cdd_level);
     }
 
@@ -498,7 +498,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertEquals(CddLevel::Enhanced, $transaction->cdd_level);
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
@@ -539,7 +539,7 @@ class TransactionServiceTest extends TestCase
     {
         // Use a PEP customer so the transaction is held for approval, which is required
         // to test reservation consumption during approval.
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => true]);
         $this->approvePepFor($customer);
         // The till must sit in the teller's branch — validateTillBalance
         // scopes counters to the actor's branch.
@@ -589,7 +589,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => (string) $counter->code,
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
 
@@ -602,9 +602,9 @@ class TransactionServiceTest extends TestCase
         $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         app(TransactionApprovalService::class)
             ->clearHold($transaction->fresh(), $compliance->id);
-        $result = $this->transactionService->approveTransaction($transaction->fresh(), $compliance->id);
+        $result = app(TransactionApprovalService::class)->approve($transaction->fresh(), $compliance->id);
 
-        $this->assertTrue($result['success'], $result['message'] ?? '');
+        $this->assertTrue($result->success, $result->message);
 
         // Verify reservation was consumed
         $reservation->refresh();
@@ -615,7 +615,7 @@ class TransactionServiceTest extends TestCase
     public function approval_fails_if_stock_no_longer_available(): void
     {
         // Use a PEP customer so the transaction is held for approval.
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => true]);
         $this->approvePepFor($customer);
         // The till must sit in the teller's branch — validateTillBalance
         // scopes counters to the actor's branch.
@@ -667,7 +667,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $counter->code,
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Manually reduce position to 100 (simulating another transaction consuming stock)
         $position->update(['quantity' => '100.00']);
@@ -676,17 +676,17 @@ class TransactionServiceTest extends TestCase
         $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         app(TransactionApprovalService::class)
             ->clearHold($transaction->fresh(), $compliance->id);
-        $result = $this->transactionService->approveTransaction($transaction->fresh(), $compliance->id);
+        $result = app(TransactionApprovalService::class)->approve($transaction->fresh(), $compliance->id);
 
-        $this->assertFalse($result['success']);
-        $this->assertStringContainsString('Insufficient stock', $result['message']);
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('Insufficient stock', $result->message);
     }
 
     #[Test]
     public function myr_till_balance_updated_on_buy_transaction(): void
     {
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => false,
         ]);
 
@@ -729,7 +729,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $tillId,
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);
 
@@ -746,7 +746,7 @@ class TransactionServiceTest extends TestCase
     public function myr_till_balance_updated_on_sell_transaction(): void
     {
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => false,
         ]);
 
@@ -788,7 +788,7 @@ class TransactionServiceTest extends TestCase
             'till_id' => $tillId,
         ];
 
-        $this->transactionService->createTransaction($data, $this->teller->id);
+        $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Verify MYR balance was increased (received MYR from foreign currency sale)
         $myrBalance = TillBalance::where('till_id', $tillId)
@@ -823,7 +823,7 @@ class TransactionServiceTest extends TestCase
         $this->expectException(TransactionValidationException::class);
         $this->expectExceptionMessage('Source of wealth is required for PEP customers');
 
-        $this->transactionService->createTransaction($dataWithoutWealth, $this->teller->id);
+        $this->transactionService->prepareAndCreate($dataWithoutWealth, $this->teller->id);
     }
 
     #[Test]
@@ -846,7 +846,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_pep_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals('Investment Portfolio', $transaction->source_of_wealth);
@@ -857,7 +857,7 @@ class TransactionServiceTest extends TestCase
     public function non_pep_transaction_requires_only_source_of_funds(): void
     {
         // Ensure customer is NOT a PEP
-        $this->customer->update(['pep_status' => false, 'risk_rating' => 'Low']);
+        $this->customer->update(['pep_status' => false, 'risk_rating' => 'low']);
 
         // Should succeed with only source_of_funds (source_of_wealth not required for non-PEPs)
         $data = [
@@ -873,7 +873,7 @@ class TransactionServiceTest extends TestCase
             'idempotency_key' => uniqid('test_non_pep_', true),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertNull($transaction->source_of_wealth);

@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\CddLevel;
 use App\Enums\CounterSessionStatus;
 use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Models\CounterSession;
 use App\Models\Currency;
-use App\Models\FlaggedTransaction;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Support\ActorContext;
@@ -639,7 +640,7 @@ class EodReconciliationService
         $transactions = Transaction::with(['user', 'branch'])
             ->completed()
             ->whereBetween('approved_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
-            ->where('cdd_level', 'Enhanced')
+            ->where('cdd_level', CddLevel::Enhanced->value)
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
             })
@@ -687,7 +688,7 @@ class EodReconciliationService
     {
         return Transaction::whereBetween('approved_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
             ->completed()
-            ->where('cdd_level', 'Enhanced')
+            ->where('cdd_level', CddLevel::Enhanced->value)
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
             })

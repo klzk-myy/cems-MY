@@ -223,7 +223,7 @@ class StockCashController extends Controller
         $transactions = Transaction::with(['customer', 'currency'])
             ->where('currency_code', $position->currency_code)
             ->where('branch_id', $position->branch_id)
-            ->where('type', TransactionType::Buy)
+            ->where('type', TransactionType::Buy->value)
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
@@ -286,8 +286,8 @@ class StockCashController extends Controller
             ->get();
 
         // Generate summary and reconciliation using service
-        $buyTransactions = $allTransactions->where('type', TransactionType::Buy);
-        $sellTransactions = $allTransactions->where('type', TransactionType::Sell);
+        $buyTransactions = $allTransactions->where('type', TransactionType::Buy->value);
+        $sellTransactions = $allTransactions->where('type', TransactionType::Sell->value);
 
         $summary = [
             'opening_balance' => $tillBalance->opening_balance,

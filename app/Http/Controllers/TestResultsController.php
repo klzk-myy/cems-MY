@@ -116,8 +116,8 @@ class TestResultsController extends Controller
             'daily_summary' => $runs->groupBy(fn (TestResult $run) => $run->created_at->format('Y-m-d'))
                 ->map(fn (Collection $group) => [
                     'date' => $group->first()->created_at->format('Y-m-d'),
-                    'passed' => $group->where('status', TestResultStatus::Passed)->count(),
-                    'failed' => $group->whereIn('status', [TestResultStatus::Failed, TestResultStatus::Error])->count(),
+                    'passed' => $group->where('status', TestResultStatus::Passed->value)->count(),
+                    'failed' => $group->whereIn('status', [TestResultStatus::Failed->value, TestResultStatus::Error->value])->count(),
                     'pass_rate' => round($group->avg('pass_rate') ?? 0, 2),
                 ])
                 ->values()
@@ -183,7 +183,7 @@ class TestResultsController extends Controller
                 'date' => $group->first()->created_at->format('Y-m-d'),
                 'pass_rate' => round($group->avg('pass_rate') ?? 0, 2),
                 'total_runs' => $group->count(),
-                'failed_count' => $group->where('status', TestResultStatus::Failed)->count(),
+                'failed_count' => $group->where('status', TestResultStatus::Failed->value)->count(),
             ])
             ->values();
     }

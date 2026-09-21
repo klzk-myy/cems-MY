@@ -7,7 +7,7 @@ use App\Enums\Permission;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
 use App\Exceptions\Domain\NoActiveCounterSessionException;
-use App\Exceptions\Domain\UnauthorizedException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Models\Counter;
 use App\Models\CounterSession;
 use App\Models\EmergencyClosure;
@@ -124,7 +124,7 @@ class EmergencyCounterService
     public function acknowledge(EmergencyClosure $closure, User $manager): EmergencyClosure
     {
         if (! $manager->role->canPerform(Permission::ManageCounters)) {
-            throw new UnauthorizedException('Only users permitted to manage counters can acknowledge emergency closures');
+            throw new PermissionDeniedException('Only users permitted to manage counters can acknowledge emergency closures');
         }
 
         $closure->update([

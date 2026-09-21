@@ -9,7 +9,7 @@ use App\Http\Requests\Api\V1\Compliance\AlertIndexRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkAssignAlertRequest;
 use App\Http\Requests\Api\V1\Compliance\BulkResolveAlertRequest;
 use App\Http\Resources\Api\V1\AlertResource;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\JsonResponse;
 
@@ -45,7 +45,7 @@ class AlertController extends Controller
             $query->where('status', $request->status);
         }
 
-        $perPage = $request->get('per_page', 50);
+        $perPage = $request->get('per_page', 20);
         $alerts = $query->orderByRaw("CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END")
             ->orderByDesc('risk_score')
             ->paginate($perPage);

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UnifiedAlertIndexRequest;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Services\Compliance\UnifiedAlertQueryService;
 use App\ValueObjects\UnifiedAlertFilters;
 use Illuminate\View\View;

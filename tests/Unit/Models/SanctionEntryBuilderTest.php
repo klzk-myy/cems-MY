@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Enums\SanctionStatus;
-use App\Models\SanctionEntry;
+use App\Models\Compliance\SanctionEntry;
 use PHPUnit\Framework\TestCase;
 
 class SanctionEntryBuilderTest extends TestCase

@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Models\StrReport;
+use App\Models\Compliance\StrReport;
 use App\Models\User;
 
 /**
@@ -11,7 +11,7 @@ use App\Models\User;
  *
  * STR records are regulatory filings: only Compliance Officers and Admins
  * may view or act on them. Laravel auto-discovers this policy for
- * App\Models\StrReport by convention (no AuthServiceProvider entry needed).
+ * App\Models\Compliance\StrReport by convention (no AuthServiceProvider entry needed).
  */
 class StrReportPolicy
 {

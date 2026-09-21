@@ -6,10 +6,10 @@ use App\Enums\AmlRuleType;
 use App\Enums\EddStatus;
 use App\Enums\TransactionStatus;
 use App\Models\AmlRule;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\Customer;
-use App\Models\EnhancedDiligenceRecord;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Compliance\ComplianceService;
@@ -59,7 +59,7 @@ class FaultAnalysisTest extends TestCase
             'customer_id' => $customer->id,
             'edd_reference' => 'EDD-202604-0001',
             'status' => EddStatus::Incomplete,
-            'risk_level' => 'Medium',
+            'risk_level' => 'medium',
             'source_of_funds' => 'Valid source of funds', // Non-empty
             'purpose_of_transaction' => '', // Empty string - should fail
         ]);
@@ -81,7 +81,7 @@ class FaultAnalysisTest extends TestCase
             'customer_id' => $customer->id,
             'edd_reference' => 'EDD-202604-0002',
             'status' => EddStatus::Incomplete,
-            'risk_level' => 'Medium',
+            'risk_level' => 'medium',
             'source_of_funds' => 'Some funds',
             'purpose_of_transaction' => '', // Empty - should fail
         ]);
@@ -91,7 +91,7 @@ class FaultAnalysisTest extends TestCase
             'customer_id' => $customer->id,
             'edd_reference' => 'EDD-202604-0003',
             'status' => EddStatus::Incomplete,
-            'risk_level' => 'Medium',
+            'risk_level' => 'medium',
             'source_of_funds' => '',
             'purpose_of_transaction' => 'Some purpose',
         ]);
@@ -112,7 +112,7 @@ class FaultAnalysisTest extends TestCase
             'customer_id' => $customer->id,
             'edd_reference' => 'EDD-202604-0004',
             'status' => EddStatus::Incomplete,
-            'risk_level' => 'Medium',
+            'risk_level' => 'medium',
             'source_of_funds' => 'Valid source of funds',
             'purpose_of_transaction' => 'Valid purpose',
         ]);

@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\CddLevel;
+use App\Enums\ExpectedFrequency;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Validator;
 
 class TransactionWizardStep2Request extends AuthorizedFormRequest
@@ -45,7 +47,7 @@ class TransactionWizardStep2Request extends AuthorizedFormRequest
             $rules['customer.passport'] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
             $rules['customer.beneficial_owner'] = ['required', 'string', 'max:255'];
             $rules['customer.source_of_wealth'] = ['required', 'string', 'max:500'];
-            $rules['transaction.expected_frequency'] = ['required', 'string', 'in:weekly,monthly,quarterly,annually'];
+            $rules['transaction.expected_frequency'] = ['required', new Enum(ExpectedFrequency::class)];
         }
 
         return $rules;

@@ -65,22 +65,20 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if ($response = $this->requirePermissionResponse(
+        $this->requirePermission(
             Permission::AccessRates,
             'Only users with the Manage Exchange Rates permission can fetch rates from API'
-        )) {
-            return $response;
-        }
+        );
 
         // Branch rate cards: a non-admin manager fetches/sets rates for their
         // own branch only; admins may target any branch.
         $result = $this->rateService->fetchAndStoreRates($user, $user->role->canManageAllBranches() ? null : $user->branch_id);
 
-        if (! $result['success']) {
-            return $this->errorResponse($result['message'], [], 500);
+        if (! $result->success) {
+            return $this->errorResponse($result->message, [], 500);
         }
 
-        return $this->successResponse($result['rates'] ?? null, $result['message']);
+        return $this->successResponse($result->rates ?: null, $result->message);
     }
 
     /**
@@ -91,7 +89,7 @@ class RateController extends Controller
         $rate = $this->rateService->getRateCard($currencyCode, $this->resolveBranchId(Auth::user(), $request));
 
         if (! $rate) {
-            return $this->errorResponse("No rate found for {$currencyCode}", [], 404);
+            return $this->notFoundResponse("No rate found for {$currencyCode}");
         }
 
         return $this->successResponse($rate);
@@ -140,12 +138,10 @@ class RateController extends Controller
     {
         $user = Auth::user();
 
-        if ($response = $this->requirePermissionResponse(
+        $this->requirePermission(
             Permission::AccessRates,
             'Only users with the Manage Exchange Rates permission can copy previous rates'
-        )) {
-            return $response;
-        }
+        );
 
         $validated = $request->validated();
 
@@ -153,11 +149,11 @@ class RateController extends Controller
 
         $result = $this->rateService->copyPreviousRates($targetDate, $this->resolveBranchId(Auth::user(), $request));
 
-        if (! $result['success']) {
-            return $this->errorResponse($result['message'], [], 404);
+        if (! $result->success) {
+            return $this->notFoundResponse($result->message);
         }
 
-        return $this->successResponse($result['rates'] ?? null, $result['message']);
+        return $this->successResponse($result->rates, $result->message);
     }
 
     /**

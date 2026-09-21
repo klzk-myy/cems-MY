@@ -75,7 +75,7 @@ class BranchClosingService
         $branch = $workflow->branch;
 
         if (! $branch instanceof Branch) {
-            throw new \RuntimeException("Closure workflow {$workflow->id} has no branch assigned.");
+            throw new InvalidStateException("Closure workflow {$workflow->id} has no branch assigned.");
         }
 
         return [
@@ -286,7 +286,7 @@ class BranchClosingService
             $branch = $lockedWorkflow->branch;
 
             if (! $branch instanceof Branch) {
-                throw new \RuntimeException("Closure workflow {$lockedWorkflow->id} has no branch assigned.");
+                throw new InvalidStateException("Closure workflow {$lockedWorkflow->id} has no branch assigned.");
             }
 
             // Settlement force-returns allocations to the branch pool; running
@@ -372,7 +372,7 @@ class BranchClosingService
     protected function checkDocumentsFinalized(Branch $branch, BranchClosureWorkflow $workflow): bool
     {
         $pendingWorkflows = BranchClosureWorkflow::where('branch_id', $branch->id)
-            ->whereNotIn('status', ['finalized'])
+            ->whereNotIn('status', [BranchClosureStatus::Finalized->value])
             ->where('id', '!=', $workflow->id)
             ->count();
 

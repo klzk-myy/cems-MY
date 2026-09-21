@@ -309,4 +309,18 @@ return [
     'low_stock' => [
         'threshold' => env('THRESHOLD_LOW_STOCK', '10000'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Position Utilization Bands
+    |--------------------------------------------------------------------------
+    |
+    | Percentage-of-limit bands used by the position limit report: at or above
+    | 'warning' a currency is flagged Warning, at or above 'critical' Critical.
+    |
+    */
+    'position_utilization' => [
+        'warning' => env('THRESHOLD_POSITION_UTILIZATION_WARNING', ThresholdDefaults::FALLBACK_POSITION_UTILIZATION_WARNING),
+        'critical' => env('THRESHOLD_POSITION_UTILIZATION_CRITICAL', ThresholdDefaults::FALLBACK_POSITION_UTILIZATION_CRITICAL),
+    ],
 ];

@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\StrReportStatus;
+use App\Exceptions\Domain\FileOperationException;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubmitStrReportRequest;
-use App\Models\StrReport;
+use App\Models\Compliance\StrReport;
 use App\Services\AuditService;
 use App\Services\Compliance\StrReportService;
 use Illuminate\Http\RedirectResponse;
@@ -51,10 +52,10 @@ class StrReportController extends Controller
         $reports = $query->paginate(25)->withQueryString();
 
         $stats = [
-            'drafts' => StrReport::where('status', StrReportStatus::Draft)->count(),
-            'submitted' => StrReport::where('status', StrReportStatus::Submitted)->count(),
-            'acknowledged' => StrReport::where('status', StrReportStatus::Acknowledged)->count(),
-            'rejected' => StrReport::where('status', StrReportStatus::Rejected)->count(),
+            'drafts' => StrReport::where('status', StrReportStatus::Draft->value)->count(),
+            'submitted' => StrReport::where('status', StrReportStatus::Submitted->value)->count(),
+            'acknowledged' => StrReport::where('status', StrReportStatus::Acknowledged->value)->count(),
+            'rejected' => StrReport::where('status', StrReportStatus::Rejected->value)->count(),
         ];
 
         return view('compliance.str.index', compact('reports', 'stats'));
@@ -128,7 +129,7 @@ class StrReportController extends Controller
             $handle = fopen('php://output', 'w');
 
             if ($handle === false) {
-                throw new \RuntimeException('Unable to open output stream for CSV export.');
+                throw new FileOperationException('Unable to open output stream for CSV export.');
             }
 
             fputcsv($handle, [

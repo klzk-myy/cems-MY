@@ -17,7 +17,7 @@ use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Transaction\TransactionService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -26,7 +26,7 @@ class TransactionServicePrepareTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected TransactionService $service;
+    protected TransactionCreationService $service;
 
     protected Branch $branch;
 
@@ -42,7 +42,7 @@ class TransactionServicePrepareTest extends TestCase
     {
         parent::setUp();
 
-        $this->service = app(TransactionService::class);
+        $this->service = app(TransactionCreationService::class);
         $this->branch = Branch::factory()->create();
         $this->counter = Counter::factory()->create([
             'branch_id' => $this->branch->id,
@@ -53,7 +53,7 @@ class TransactionServicePrepareTest extends TestCase
             'is_active' => true,
         ]);
         $this->customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => false,
         ]);
         $this->teller = User::factory()->create([
@@ -132,7 +132,7 @@ class TransactionServicePrepareTest extends TestCase
     #[Test]
     public function prepare_and_create_holds_small_transaction_for_high_risk_customer(): void
     {
-        $this->customer->forceFill(['risk_rating' => 'High'])->save();
+        $this->customer->forceFill(['risk_rating' => 'high'])->save();
 
         // 100 USD * 4.50 = 450 MYR — below the auto-approve threshold, but
         // High-risk customers never auto-complete.
@@ -144,7 +144,7 @@ class TransactionServicePrepareTest extends TestCase
     #[Test]
     public function prepare_and_create_completes_small_transaction_for_medium_risk_customer(): void
     {
-        $this->customer->forceFill(['risk_rating' => 'Medium'])->save();
+        $this->customer->forceFill(['risk_rating' => 'medium'])->save();
 
         // 100 USD * 4.50 = 450 MYR — Medium risk without a hold flag
         // auto-completes below the RM10,000 threshold.
@@ -211,7 +211,7 @@ class TransactionServicePrepareTest extends TestCase
     #[Test]
     public function create_transaction_delegates_to_prepare_and_create(): void
     {
-        $transaction = $this->service->createTransaction($this->baseData(), $this->teller->id, '127.0.0.1');
+        $transaction = $this->service->prepareAndCreate($this->baseData(), $this->teller->id, '127.0.0.1');
 
         $this->assertInstanceOf(Transaction::class, $transaction);
         $this->assertEquals(TransactionStatus::Completed, $transaction->status);

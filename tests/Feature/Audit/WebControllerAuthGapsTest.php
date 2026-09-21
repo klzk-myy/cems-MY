@@ -3,7 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Models\Branch;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;

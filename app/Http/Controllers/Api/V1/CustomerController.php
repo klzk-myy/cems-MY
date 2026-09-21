@@ -16,6 +16,7 @@ use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Models\Customer;
 use App\Services\AuditService;
 use App\Services\Customer\CustomerService;
+use App\Services\System\CacheInvalidationService;
 use App\Support\LikeEscaper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,6 +30,7 @@ class CustomerController extends Controller
     public function __construct(
         protected CustomerService $customerService,
         protected AuditService $auditService,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     public function index(CustomerIndexRequest $request): JsonResource
@@ -65,7 +67,7 @@ class CustomerController extends Controller
 
     /**
      * Create a new customer.
-     * Initial risk_rating is always 'Low' - automated risk scoring module determines actual risk.
+     * Initial risk_rating is always 'low' — automated risk scoring module determines actual risk.
      */
     public function store(StoreCustomerRequest $request): JsonResponse
     {
@@ -168,6 +170,11 @@ class CustomerController extends Controller
         $customerId = $customer->id;
 
         $customer->delete();
+
+        // Flush the per-customer cache — without this getCustomer() keeps
+        // serving the soft-deleted record until TTL expiry.
+        $this->cacheInvalidationService->forgetCustomer($customerId);
+        $this->cacheInvalidationService->invalidate('customers');
 
         // Log customer deletion with AuditService (hash-chained for compliance)
         $this->auditService->logCustomer('customer_deleted', $customerId, [

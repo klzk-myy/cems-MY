@@ -29,19 +29,7 @@ class CaseApiTest extends TestCase
     }
 
     #[Test]
-    public function update_rejects_lowercase_priority(): void
-    {
-        $case = ComplianceCase::factory()->create();
-
-        $this->actingAs(User::factory()->create(['role' => 'compliance_officer']))
-            ->patchJson("/api/v1/compliance/cases/{$case->id}", [
-                'priority' => 'high',
-            ])
-            ->assertStatus(422);
-    }
-
-    #[Test]
-    public function update_accepts_titlecase_priority(): void
+    public function update_rejects_titlecase_priority(): void
     {
         $case = ComplianceCase::factory()->create();
 
@@ -49,8 +37,20 @@ class CaseApiTest extends TestCase
             ->patchJson("/api/v1/compliance/cases/{$case->id}", [
                 'priority' => 'High',
             ])
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function update_accepts_lowercase_priority(): void
+    {
+        $case = ComplianceCase::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => 'compliance_officer']))
+            ->patchJson("/api/v1/compliance/cases/{$case->id}", [
+                'priority' => 'high',
+            ])
             ->assertOk()
-            ->assertJsonPath('data.priority', 'High');
+            ->assertJsonPath('data.priority', 'high');
     }
 
     #[Test]
@@ -65,7 +65,7 @@ class CaseApiTest extends TestCase
             ->postJson('/api/v1/compliance/cases', [
                 'case_type' => 'Investigation',
                 'assigned_to' => $assignee->id,
-                'severity' => 'Medium',
+                'severity' => 'medium',
                 'summary' => 'Test case',
             ])
             ->assertStatus(422);
@@ -83,7 +83,7 @@ class CaseApiTest extends TestCase
                 'case_type' => 'Investigation',
                 'assigned_to' => $assignee->id,
                 'customer_id' => $customer->id,
-                'severity' => 'Medium',
+                'severity' => 'medium',
                 'summary' => 'Test case',
             ])
             ->assertStatus(201)

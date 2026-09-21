@@ -177,8 +177,8 @@ class TransactionConfirmationServiceTest extends TestCase
         $validated = ['confirmation_action' => 'confirm', 'notes' => 'Test'];
         $result = $this->service->confirm($confirmation, $validated, $user->id);
 
-        $this->assertTrue($result['success']);
-        $this->assertEquals('Transaction confirmed and pending final approval.', $result['message']);
+        $this->assertTrue($result->success);
+        $this->assertEquals('Transaction confirmed and pending final approval.', $result->message);
     }
 
     #[Test]

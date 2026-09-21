@@ -30,16 +30,16 @@ class RiskPortfolioApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.total', 3)
-            ->assertJsonPath('data.by_tier.Critical', 1)
-            ->assertJsonPath('data.by_tier.High', 1)
-            ->assertJsonPath('data.by_tier.Low', 1);
+            ->assertJsonPath('data.by_tier.critical', 1)
+            ->assertJsonPath('data.by_tier.high', 1)
+            ->assertJsonPath('data.by_tier.low', 1);
 
         $payload = $response->json();
 
         $this->assertIsInt($payload['data']['total']);
-        $this->assertIsInt($payload['data']['by_tier']['Critical']);
-        $this->assertIsInt($payload['data']['by_tier']['High']);
-        $this->assertIsInt($payload['data']['by_tier']['Low']);
+        $this->assertIsInt($payload['data']['by_tier']['critical']);
+        $this->assertIsInt($payload['data']['by_tier']['high']);
+        $this->assertIsInt($payload['data']['by_tier']['low']);
     }
 
     #[Test]

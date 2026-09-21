@@ -11,10 +11,10 @@ use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
 use App\Services\DTOs\PepCessationResult;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -147,8 +147,8 @@ class CustomerRiskScoringService
         $newLevel = $this->getRiskLevel($newSnapshot->overall_score);
         if ($this->isRiskLevelHigher($oldLevel, $newLevel)) {
             $this->auditService->logCustomerRiskEvent('customer_risk_level_upgraded', $customerId, [
-                'old' => ['risk_level' => $oldLevel],
-                'new' => ['risk_level' => $newLevel],
+                'old' => ['risk_level' => $oldLevel?->value],
+                'new' => ['risk_level' => $newLevel?->value],
             ]);
         }
 
@@ -371,18 +371,9 @@ class CustomerRiskScoringService
         return now()->addDays($days);
     }
 
-    protected function getRiskLevel(?int $score): string
+    protected function getRiskLevel(?int $score): ?RiskRating
     {
-        if ($score === null) {
-            return 'Unknown';
-        }
-
-        return match (true) {
-            $score >= 80 => 'Critical',
-            $score >= 60 => 'High',
-            $score >= 30 => 'Medium',
-            default => 'Low',
-        };
+        return $score === null ? null : $this->ratingForScore($score);
     }
 
     /**
@@ -399,11 +390,9 @@ class CustomerRiskScoringService
         };
     }
 
-    protected function isRiskLevelHigher(string $oldLevel, string $newLevel): bool
+    protected function isRiskLevelHigher(?RiskRating $oldLevel, ?RiskRating $newLevel): bool
     {
-        $levels = ['Unknown' => 0, 'Low' => 1, 'Medium' => 2, 'High' => 3, 'Critical' => 4];
-
-        return ($levels[$newLevel] ?? 0) > ($levels[$oldLevel] ?? 0);
+        return ($newLevel?->weight() ?? 0) > ($oldLevel?->weight() ?? 0);
     }
 
     public function assessPepCessation(Customer $customer): PepCessationResult

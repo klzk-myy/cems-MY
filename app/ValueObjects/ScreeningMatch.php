@@ -2,7 +2,7 @@
 
 namespace App\ValueObjects;
 
-use App\Models\SanctionEntry;
+use App\Models\Compliance\SanctionEntry;
 
 class ScreeningMatch
 {

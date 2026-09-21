@@ -4,8 +4,8 @@ namespace App\Services\Compliance;
 
 use App\Enums\SanctionStatus;
 use App\Exceptions\Domain\SanctionsImportException;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\Parsing\OpenSanctionsJsonParser;
 use App\Services\Compliance\Parsing\SanctionsEntryMapper;
 use Illuminate\Support\Collection;

@@ -10,13 +10,14 @@ use App\Enums\SanctionStatus;
 use App\Enums\UpdateStatus;
 use App\Events\SanctionsListUpdated;
 use App\Exceptions\Domain\SanctionsImportException;
-use App\Models\SanctionImportLog;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionImportLog;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\Parsing\CsvSanctionsParser;
 use App\Services\Compliance\Parsing\OpenSanctionsJsonParser;
 use App\Services\Compliance\Parsing\SanctionsEntryMapper;
 use App\Services\Compliance\Parsing\XmlSanctionsParser;
 use App\Support\ActorContext;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 
@@ -107,22 +108,16 @@ class SanctionsImportService
             $entries = $this->mapper->parseEntries($data, $list);
             $result = $this->synchronizer->syncEntries($entries, $list);
 
-            $list->update([
+            $this->recordImportOutcome($list, [
                 'last_updated_at' => now(),
                 'update_status' => UpdateStatus::Success,
                 'last_error_message' => null,
                 'entry_count' => $list->entries()->where('status', SanctionStatus::Active->value)->count(),
-            ]);
-
-            SanctionImportLog::create([
-                'list_id' => $list->id,
-                'imported_at' => now(),
-                'source_url' => $list->source_url,
+            ], [
                 'records_added' => $result['created'],
                 'records_updated' => $result['updated'],
                 'records_deactivated' => $result['deactivated'],
                 'is_manual' => $manual,
-                ...$this->attributionFor($manual),
                 'status' => ImportStatus::Success,
             ]);
 
@@ -131,20 +126,14 @@ class SanctionsImportService
             return $this->enrichResult($result);
 
         } catch (\Exception $e) {
-            $list->update([
+            $this->recordImportOutcome($list, [
                 'update_status' => UpdateStatus::Failed,
                 'last_error_message' => $e->getMessage(),
-            ]);
-
-            SanctionImportLog::create([
-                'list_id' => $list->id,
-                'imported_at' => now(),
-                'source_url' => $list->source_url,
+            ], [
                 'records_added' => 0,
                 'records_updated' => 0,
                 'records_deactivated' => 0,
                 'is_manual' => $manual,
-                ...$this->attributionFor($manual),
                 'status' => ImportStatus::Failed,
                 'error_message' => $e->getMessage(),
             ]);
@@ -342,23 +331,17 @@ class SanctionsImportService
             return null;
         }
 
-        $list->update([
+        $this->recordImportOutcome($list, [
             'last_dataset_version' => $version,
             'last_updated_at' => now(),
             'update_status' => UpdateStatus::Success,
             'last_error_message' => null,
             'entry_count' => $list->entries()->where('status', SanctionStatus::Active->value)->count(),
-        ]);
-
-        SanctionImportLog::create([
-            'list_id' => $list->id,
-            'imported_at' => now(),
-            'source_url' => $list->source_url,
+        ], [
             'records_added' => $totals['created'],
             'records_updated' => $totals['updated'],
             'records_deactivated' => $totals['deactivated'],
             'is_manual' => $manual,
-            ...$this->attributionFor($manual),
             'status' => ImportStatus::fromCounts($totals['errors'], $totals['created'], $totals['updated']),
         ]);
 
@@ -397,6 +380,29 @@ class SanctionsImportService
     }
 
     /**
+     * Persist the list's outcome fields and its import-log row atomically —
+     * an unguarded pair can leave update_status stuck at Pending (or a
+     * Success/Failed status with no audit row) when the second write fails.
+     *
+     * @param  array<string, mixed>  $listAttributes
+     * @param  array<string, mixed>  $logAttributes
+     */
+    private function recordImportOutcome(SanctionList $list, array $listAttributes, array $logAttributes): void
+    {
+        DB::transaction(function () use ($list, $listAttributes, $logAttributes) {
+            $list->update($listAttributes);
+
+            SanctionImportLog::create([
+                'list_id' => $list->id,
+                'imported_at' => now(),
+                'source_url' => $list->source_url,
+                ...$this->attributionFor($logAttributes['is_manual'] ?? false),
+                ...$logAttributes,
+            ]);
+        });
+    }
+
+    /**
      * Record an unchanged check: the source version equals the stored version,
      * so no download or sync was needed.
      *
@@ -404,21 +410,15 @@ class SanctionsImportService
      */
     protected function markChecked(SanctionList $list, bool $manual): array
     {
-        $list->update([
+        $this->recordImportOutcome($list, [
             'last_attempted_at' => now(),
             'update_status' => UpdateStatus::Success,
             'last_error_message' => null,
-        ]);
-
-        SanctionImportLog::create([
-            'list_id' => $list->id,
-            'imported_at' => now(),
-            'source_url' => $list->source_url,
+        ], [
             'records_added' => 0,
             'records_updated' => 0,
             'records_deactivated' => 0,
             'is_manual' => $manual,
-            ...$this->attributionFor($manual),
             'status' => ImportStatus::Success,
         ]);
 

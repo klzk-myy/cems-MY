@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\ReportGenerated;
 use App\Models\Transaction;
 use App\Services\Compliance\ComplianceFlagService;

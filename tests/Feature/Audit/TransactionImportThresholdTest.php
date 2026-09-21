@@ -5,7 +5,7 @@ namespace Tests\Feature\Audit;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
 use App\Models\Customer;
-use App\Services\Contracts\TransactionHoldServiceInterface;
+use App\Services\Transaction\TransactionHoldService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\TransactionImportTestHelpers;
@@ -83,9 +83,9 @@ class TransactionImportThresholdTest extends TestCase
 
         // A compliance hold now comes from the shared preValidate gate — bind
         // the hold service mock so TransactionCreationService picks it up.
-        $holdService = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdService = $this->createMock(TransactionHoldService::class);
         $holdService->method('requiresHold')->willReturn(true);
-        $this->app->instance(TransactionHoldServiceInterface::class, $holdService);
+        $this->app->instance(TransactionHoldService::class, $holdService);
 
         $service = $this->createImportService('5000');
         $csv = $this->createCsv("{$customer->id},Buy,USD,2000,4.0,Business,Salary,MAIN");

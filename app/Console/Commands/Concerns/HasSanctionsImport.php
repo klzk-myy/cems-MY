@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Concerns;
 
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 
 trait HasSanctionsImport
 {

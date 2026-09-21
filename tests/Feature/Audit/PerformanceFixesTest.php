@@ -3,9 +3,9 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\EddStatus;
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use App\Models\SystemLog;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use App\Services\Compliance\ComplianceReportingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ class PerformanceFixesTest extends TestCase
     {
         SystemLog::factory()->count(5)->create(['entry_hash' => 'abc']);
 
-        $service = app(AuditService::class);
+        $service = app(AuditChainService::class);
         $result = $service->verifyChainIntegrity();
 
         $this->assertArrayHasKey('valid', $result);

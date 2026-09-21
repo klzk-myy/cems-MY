@@ -37,7 +37,7 @@ class ReservationScopeTest extends ConcurrentTestCase
         $this->customer = Customer::factory()->create([
             'sanction_hit' => false,
             'pep_status' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
         $this->compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 

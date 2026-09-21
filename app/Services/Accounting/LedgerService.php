@@ -307,7 +307,7 @@ class LedgerService
      */
     public function getProfitAndLoss(string $fromDate, string $toDate, ?int $branchId = null): array
     {
-        $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $revenues = ChartOfAccount::where('account_type', AccountType::Revenue->value)->get();
         $revenueData = [];
         $totalRevenue = '0';
 
@@ -325,7 +325,7 @@ class LedgerService
             $totalRevenue = $this->mathService->add($totalRevenue, $balance);
         }
 
-        $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
+        $expenses = ChartOfAccount::where('account_type', AccountType::Expense->value)->get();
         $expenseData = [];
         $totalExpenses = '0';
 
@@ -412,9 +412,9 @@ class LedgerService
      */
     public function getBalanceSheet(string $asOfDate, ?int $branchId = null): array
     {
-        $assets = ChartOfAccount::where('account_type', 'Asset')->get();
-        $liabilities = ChartOfAccount::where('account_type', 'Liability')->get();
-        $equities = ChartOfAccount::where('account_type', 'Equity')->get();
+        $assets = ChartOfAccount::where('account_type', AccountType::Asset->value)->get();
+        $liabilities = ChartOfAccount::where('account_type', AccountType::Liability->value)->get();
+        $equities = ChartOfAccount::where('account_type', AccountType::Equity->value)->get();
 
         $allBalances = $this->getAggregatedAccountBalances(null, $asOfDate, $branchId);
 

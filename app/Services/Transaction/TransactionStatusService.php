@@ -3,9 +3,8 @@
 namespace App\Services\Transaction;
 
 use App\Models\Transaction;
-use App\Services\Contracts\TransactionStatusServiceInterface;
 
-class TransactionStatusService implements TransactionStatusServiceInterface
+class TransactionStatusService
 {
     public function __construct(
         protected TransactionReversalService $reversalService

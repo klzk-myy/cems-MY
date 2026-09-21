@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Compliance\SanctionEntry;
 use App\Models\Customer;
 use App\Models\JournalEntry;
-use App\Models\SanctionEntry;
 use App\Models\Transaction;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;

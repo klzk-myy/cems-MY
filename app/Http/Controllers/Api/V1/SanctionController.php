@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
+use App\Http\Controllers\Api\V1\Traits\LegacyApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sanction\SearchSanctionRequest;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class SanctionController extends Controller
 {
     use ApiResponse;
+    use LegacyApiResponse;
 
     public function __construct(
         protected CustomerScreeningService $screeningService
@@ -40,7 +42,7 @@ class SanctionController extends Controller
 
         // Legacy non-standard envelope (query/matches/count/action/confidence_score);
         // preserved to avoid breaking API consumers.
-        return response()->json([
+        return $this->legacyJsonResponse([
             'success' => true,
             'query' => $validated['name'],
             'matches' => $response->matches->toArray(),

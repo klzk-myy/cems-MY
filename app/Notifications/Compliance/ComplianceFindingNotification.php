@@ -41,7 +41,7 @@ class ComplianceFindingNotification extends Notification implements ShouldQueue
     protected function buildMessage(): string
     {
         $type = $this->finding->finding_type->label();
-        $severity = $this->finding->severity->value;
+        $severity = $this->finding->severity->label();
 
         return "[{$severity}] {$type} finding detected — requires review";
     }
@@ -52,7 +52,7 @@ class ComplianceFindingNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $findingType = $this->finding->finding_type->label();
-        $severity = $this->finding->severity->value;
+        $severity = $this->finding->severity->label();
         $subjectInfo = $this->finding->subject;
         $url = "/compliance/findings/{$this->finding->id}";
 

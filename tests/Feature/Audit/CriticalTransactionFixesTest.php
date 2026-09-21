@@ -21,13 +21,13 @@ use App\Models\TransactionConfirmation;
 use App\Models\User;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Accounting\MonthEndCloseService;
-use App\Services\Contracts\TransactionServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\Reporting\ReportingService;
 use App\Services\Screening\RelatedPartyDiligenceService;
 use App\Services\System\MathService;
 use App\Services\Transaction\StockTransferService;
 use App\Services\Transaction\TransactionCancellationService;
+use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -83,8 +83,8 @@ class CriticalTransactionFixesTest extends TestCase
 
         $this->actingAs($teller);
 
-        $service = app(TransactionServiceInterface::class);
-        $service->createTransaction([
+        $service = app(TransactionCreationService::class);
+        $service->prepareAndCreate([
             'customer_id' => $customer->id,
             'till_id' => $till->code,
             'type' => TransactionType::Buy->value,

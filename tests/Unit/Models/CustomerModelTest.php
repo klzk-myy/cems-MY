@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Compliance\CustomerRiskHistory;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\CustomerNote;
-use App\Models\CustomerRiskHistory;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

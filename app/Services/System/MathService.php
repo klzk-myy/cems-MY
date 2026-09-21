@@ -3,7 +3,6 @@
 namespace App\Services\System;
 
 use App\Exceptions\Domain\MathValidationException;
-use App\Services\Contracts\MathServiceInterface;
 
 /**
  * Math Service
@@ -19,7 +18,7 @@ use App\Services\Contracts\MathServiceInterface;
  * calculations and database storage. Exchange rates use explicit scale=8
  * where needed (decimal(18,8) in DB).
  */
-class MathService implements MathServiceInterface
+class MathService
 {
     /**
      * Decimal scale for BCMath operations.

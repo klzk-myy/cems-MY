@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting\Generators;
 
+use App\Enums\PositionHealthStatus;
 use App\Models\CurrencyPosition;
 use App\Services\Reporting\CsvReportWriter;
 use App\Services\System\MathService;
@@ -100,6 +101,8 @@ class PositionReportGenerator
 
         $data = [];
         $totalExposure = '0';
+        $warningBand = $this->thresholdService->getPositionUtilizationWarning();
+        $criticalBand = $this->thresholdService->getPositionUtilizationCritical();
 
         foreach ($positions as $position) {
             $limit = $limits[$position->currency_code] ?? null;
@@ -124,9 +127,7 @@ class PositionReportGenerator
                 'average_cost' => $position->average_cost,
                 'current_rate' => $position->current_rate,
                 'exposure_myr' => $this->mathService->multiply($currentQuantity, $position->current_rate ?? '0'),
-                'status' => $this->mathService->compare($utilization, '90') >= 0
-                    ? 'Critical'
-                    : ($this->mathService->compare($utilization, '75') >= 0 ? 'Warning' : 'Normal'),
+                'status' => $this->healthStatus($utilization, $warningBand, $criticalBand)->value,
             ];
 
             $totalExposure = $this->mathService->add(
@@ -141,10 +142,23 @@ class PositionReportGenerator
             'positions' => $data,
             'summary' => [
                 'total_currencies' => count($data),
-                'currencies_at_warning' => collect($data)->where('status', 'Warning')->count(),
-                'currencies_at_critical' => collect($data)->where('status', 'Critical')->count(),
+                'currencies_at_warning' => collect($data)->where('status', PositionHealthStatus::Warning->value)->count(),
+                'currencies_at_critical' => collect($data)->where('status', PositionHealthStatus::Critical->value)->count(),
             ],
         ];
+    }
+
+    private function healthStatus(string $utilization, string $warningBand, string $criticalBand): PositionHealthStatus
+    {
+        if ($this->mathService->compare($utilization, $criticalBand) >= 0) {
+            return PositionHealthStatus::Critical;
+        }
+
+        if ($this->mathService->compare($utilization, $warningBand) >= 0) {
+            return PositionHealthStatus::Warning;
+        }
+
+        return PositionHealthStatus::Normal;
     }
 
     public function generatePositionLimitCsv(): string
@@ -179,7 +193,7 @@ class PositionReportGenerator
                 $row['average_cost'],
                 $row['current_rate'],
                 $row['exposure_myr'],
-                $row['status'],
+                PositionHealthStatus::tryFrom($row['status'])?->label() ?? $row['status'],
             ];
         }
 

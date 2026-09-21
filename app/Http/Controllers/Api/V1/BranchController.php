@@ -67,10 +67,7 @@ class BranchController extends Controller
     {
         $branch = Branch::findOrFail($id);
 
-        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
-        if ($authorization instanceof JsonResponse) {
-            return $authorization;
-        }
+        $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
 
         return $this->successResponse(new BranchResource($branch));
     }
@@ -117,10 +114,7 @@ class BranchController extends Controller
     {
         $branch = Branch::findOrFail($id);
 
-        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
-        if ($authorization instanceof JsonResponse) {
-            return $authorization;
-        }
+        $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
 
         $counters = $branch->counters()->get();
 
@@ -135,10 +129,7 @@ class BranchController extends Controller
     {
         $branch = Branch::findOrFail($id);
 
-        $authorization = $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
-        if ($authorization instanceof JsonResponse) {
-            return $authorization;
-        }
+        $this->authorizeBranchResource($branch, 'access', 'Unauthorized access to this branch');
 
         $users = $branch->users()->get();
 

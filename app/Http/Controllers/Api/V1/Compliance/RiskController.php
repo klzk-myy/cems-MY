@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
+use App\Exceptions\Domain\RiskProfileNotFoundException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\LockRiskProfileRequest;
@@ -115,7 +116,9 @@ class RiskController extends Controller
         $profile = CustomerRiskProfile::where('customer_id', (int) $customerId)->first();
 
         if (! $profile) {
-            abort(404, 'Risk profile not found.');
+            // Domain exception renders the standard {success:false} envelope
+            // at 404 via the global handler — no abort() needed.
+            throw new RiskProfileNotFoundException((int) $customerId);
         }
 
         return $profile;

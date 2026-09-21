@@ -7,17 +7,16 @@ use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
-use App\Models\FlaggedTransaction;
-use App\Models\SanctionEntry;
-use App\Models\ScreeningResult;
 use App\Models\Transaction;
-use App\Services\Contracts\ComplianceServiceInterface;
-use App\Services\CustomerScreeningService;
 use App\Services\DTOs\ComplianceCheckResult;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -38,7 +37,7 @@ use Carbon\Carbon;
  * - PDPA 2010 (Amended 2024)
  * - MIA accounting standards
  */
-class ComplianceService implements ComplianceServiceInterface
+class ComplianceService
 {
     /**
      * Encryption service for sensitive data operations.

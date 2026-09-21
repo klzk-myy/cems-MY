@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\User;
 
 class AlertPolicy

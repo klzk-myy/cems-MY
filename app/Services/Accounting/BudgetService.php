@@ -2,11 +2,13 @@
 
 namespace App\Services\Accounting;
 
+use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\AccountingPeriod;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -77,7 +79,7 @@ class BudgetService
 
         if (! $period) {
             Log::warning("BudgetService::updateActuals: accounting period '{$periodCode}' not found");
-            throw new \InvalidArgumentException("Accounting period '{$periodCode}' not found");
+            throw new AccountingPeriodException("Accounting period '{$periodCode}' not found");
         }
 
         $budgets = Budget::where('period_code', $periodCode)->get();
@@ -94,9 +96,11 @@ class BudgetService
             $period->end_date->toDateString()
         );
 
-        foreach ($budgets as $budget) {
-            $budget->update(['actual_myr' => $activity[$budget->account_code] ?? '0']);
-        }
+        DB::transaction(function () use ($budgets, $activity) {
+            foreach ($budgets as $budget) {
+                $budget->update(['actual_myr' => $activity[$budget->account_code] ?? '0']);
+            }
+        });
     }
 
     /**

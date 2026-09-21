@@ -31,12 +31,12 @@ enum CddLevel: string
         string $amountMyr,
         bool $isPep = false,
         bool $hasSanctionMatch = false,
-        RiskRating|string $riskRating = 'Low'
+        RiskRating|string $riskRating = 'low'
     ): self {
         // Handle enum or string
         $riskRatingValue = $riskRating instanceof RiskRating
             ? $riskRating->value
-            : $riskRating;
+            : strtolower($riskRating);
 
         // Enhanced Due Diligence triggers (risk-based, not amount-based per pd-00.md 14C.13)
         if ($isPep || $hasSanctionMatch || $riskRatingValue === RiskRating::High->value) {

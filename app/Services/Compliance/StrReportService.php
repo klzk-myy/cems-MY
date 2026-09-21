@@ -5,12 +5,13 @@ namespace App\Services\Compliance;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\StrReportStatus;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\FlaggedTransaction;
-use App\Models\StrReport;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\StrReport;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -42,18 +43,31 @@ class StrReportService
      */
     public function createFromCase(ComplianceCase $case, User $by): StrReport
     {
-        if ($case->status !== ComplianceCaseStatus::Closed) {
-            throw new CaseManagementException(
-                "STR drafts can only be created from closed cases (case {$case->case_number} is {$case->status->value})"
-            );
-        }
+        return DB::transaction(function () use ($case, $by) {
+            $lockedCase = ComplianceCase::whereKey($case->id)->lockForUpdate()->firstOrFail();
 
-        if (StrReport::where('case_id', $case->id)->exists()) {
-            throw new CaseManagementException(
-                "An STR already exists for case {$case->case_number}"
-            );
-        }
+            if ($lockedCase->status !== ComplianceCaseStatus::Closed) {
+                throw new CaseManagementException(
+                    "STR drafts can only be created from closed cases (case {$lockedCase->case_number} is {$lockedCase->status->value})"
+                );
+            }
 
+            if (StrReport::where('case_id', $lockedCase->id)->exists()) {
+                throw new CaseManagementException(
+                    "An STR already exists for case {$lockedCase->case_number}"
+                );
+            }
+
+            return $this->persistDraft($lockedCase, $by);
+        });
+    }
+
+    /**
+     * Threshold-check the case and insert the draft row. Runs under the
+     * caller's case-row lock so concurrent drafts serialize on the case.
+     */
+    private function persistDraft(ComplianceCase $case, User $by): StrReport
+    {
         $triggerAmountMyr = $this->computeTriggerAmountMyr($case);
 
         if (! $this->meetsThreshold($triggerAmountMyr)) {
@@ -92,39 +106,43 @@ class StrReportService
      */
     public function submit(StrReport $report, string $bnmReference, ?User $by = null): StrReport
     {
-        if ($report->status !== StrReportStatus::Draft) {
-            throw new CaseManagementException(
-                "Only draft STRs can be submitted (report {$report->id} is {$report->status->value})"
-            );
-        }
+        return DB::transaction(function () use ($report, $bnmReference, $by) {
+            $locked = StrReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
 
-        $taken = StrReport::where('bnm_reference', $bnmReference)
-            ->where('id', '!=', $report->id)
-            ->exists();
+            if ($locked->status !== StrReportStatus::Draft) {
+                throw new CaseManagementException(
+                    "Only draft STRs can be submitted (report {$locked->id} is {$locked->status->value})"
+                );
+            }
 
-        if ($taken) {
-            throw new CaseManagementException("BNM reference {$bnmReference} is already recorded on another STR");
-        }
+            $taken = StrReport::where('bnm_reference', $bnmReference)
+                ->where('id', '!=', $locked->id)
+                ->exists();
 
-        $oldStatus = $report->status->value;
+            if ($taken) {
+                throw new CaseManagementException("BNM reference {$bnmReference} is already recorded on another STR");
+            }
 
-        $report->update([
-            'bnm_reference' => $bnmReference,
-            'submitted_at' => now(),
-            'status' => StrReportStatus::Submitted,
-        ]);
+            $oldStatus = $locked->status->value;
 
-        $this->auditService->logAction('str_report_submitted', 'StrReport', $report->id, [
-            'user_id' => $by?->id,
-            'old_values' => ['status' => $oldStatus],
-            'new_values' => [
-                'status' => StrReportStatus::Submitted->value,
+            $locked->update([
                 'bnm_reference' => $bnmReference,
-                'submitted_at' => optional($report->submitted_at)->toIso8601String(),
-            ],
-        ], 'WARNING');
+                'submitted_at' => now(),
+                'status' => StrReportStatus::Submitted,
+            ]);
 
-        return $report->fresh();
+            $this->auditService->logAction('str_report_submitted', 'StrReport', $locked->id, [
+                'user_id' => $by?->id,
+                'old_values' => ['status' => $oldStatus],
+                'new_values' => [
+                    'status' => StrReportStatus::Submitted->value,
+                    'bnm_reference' => $bnmReference,
+                    'submitted_at' => optional($locked->submitted_at)->toIso8601String(),
+                ],
+            ], 'WARNING');
+
+            return $locked->fresh();
+        });
     }
 
     /**
@@ -134,29 +152,33 @@ class StrReportService
      */
     public function acknowledge(StrReport $report, ?User $by = null): StrReport
     {
-        if (! $report->status->canTransitionTo(StrReportStatus::Acknowledged)) {
-            throw new CaseManagementException(
-                "Only submitted STRs can be acknowledged (report {$report->id} is {$report->status->value})"
-            );
-        }
+        return DB::transaction(function () use ($report, $by) {
+            $locked = StrReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
 
-        $oldStatus = $report->status->value;
+            if (! $locked->status->canTransitionTo(StrReportStatus::Acknowledged)) {
+                throw new CaseManagementException(
+                    "Only submitted STRs can be acknowledged (report {$locked->id} is {$locked->status->value})"
+                );
+            }
 
-        $report->update([
-            'acknowledged_at' => now(),
-            'status' => StrReportStatus::Acknowledged,
-        ]);
+            $oldStatus = $locked->status->value;
 
-        $this->auditService->logAction('str_report_acknowledged', 'StrReport', $report->id, [
-            'user_id' => $by?->id,
-            'old_values' => ['status' => $oldStatus],
-            'new_values' => [
-                'status' => StrReportStatus::Acknowledged->value,
-                'acknowledged_at' => optional($report->acknowledged_at)->toIso8601String(),
-            ],
-        ]);
+            $locked->update([
+                'acknowledged_at' => now(),
+                'status' => StrReportStatus::Acknowledged,
+            ]);
 
-        return $report->fresh();
+            $this->auditService->logAction('str_report_acknowledged', 'StrReport', $locked->id, [
+                'user_id' => $by?->id,
+                'old_values' => ['status' => $oldStatus],
+                'new_values' => [
+                    'status' => StrReportStatus::Acknowledged->value,
+                    'acknowledged_at' => optional($locked->acknowledged_at)->toIso8601String(),
+                ],
+            ]);
+
+            return $locked->fresh();
+        });
     }
 
     /**

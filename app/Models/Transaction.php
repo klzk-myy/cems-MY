@@ -7,6 +7,7 @@ use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Bases\TransactionModel;
+use App\Models\Compliance\FlaggedTransaction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -191,7 +192,7 @@ class Transaction extends TransactionModel
 
     public function scopePendingApproval(Builder $query): Builder
     {
-        return $query->where('status', TransactionStatus::PendingApproval);
+        return $query->where('status', TransactionStatus::PendingApproval->value);
     }
 
     /**

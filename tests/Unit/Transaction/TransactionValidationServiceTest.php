@@ -11,10 +11,10 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
-use App\Services\Contracts\TransactionHoldServiceInterface;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\Security\IpValidationService;
 use App\Services\ThresholdService;
+use App\Services\Transaction\TransactionHoldService;
 use App\Services\Transaction\TransactionValidationService;
 use App\ValueObjects\RiskAnalysisResult;
 use App\ValueObjects\ScreeningResponse;
@@ -55,7 +55,7 @@ class TransactionValidationServiceTest extends TestCase
         $complianceMock->method('determineCDDLevel')
             ->willReturn(CddLevel::Standard);
 
-        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock = $this->createMock(TransactionHoldService::class);
         $holdMock->expects($this->once())
             ->method('requiresHold')
             ->with(CddLevel::Standard, [])
@@ -86,7 +86,7 @@ class TransactionValidationServiceTest extends TestCase
         $complianceMock->method('determineCDDLevel')
             ->willReturn(CddLevel::Enhanced);
 
-        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock = $this->createMock(TransactionHoldService::class);
         $holdMock->method('requiresHold')
             ->willReturn(true);
 
@@ -128,7 +128,7 @@ class TransactionValidationServiceTest extends TestCase
         $complianceMock->method('determineCDDLevel')
             ->willReturn(CddLevel::Standard);
 
-        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock = $this->createMock(TransactionHoldService::class);
         $holdMock->method('requiresHold')
             ->willReturn(false);
 
@@ -159,7 +159,7 @@ class TransactionValidationServiceTest extends TestCase
         $complianceMock->method('determineCDDLevel')
             ->willReturn(CddLevel::Standard);
 
-        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock = $this->createMock(TransactionHoldService::class);
         $holdMock->method('requiresHold')
             ->willReturn(false);
 
@@ -190,7 +190,7 @@ class TransactionValidationServiceTest extends TestCase
         $complianceMock->method('determineCDDLevel')
             ->willReturn(CddLevel::Simplified);
 
-        $holdMock = $this->createMock(TransactionHoldServiceInterface::class);
+        $holdMock = $this->createMock(TransactionHoldService::class);
         $holdMock->expects($this->once())
             ->method('requiresHold')
             ->with(
@@ -249,7 +249,7 @@ class TransactionValidationServiceTest extends TestCase
             $this->createScreeningMock(),
             $this->createMock(HistoricalRiskAnalysisService::class),
             $auditMock,
-            $this->createMock(TransactionHoldServiceInterface::class),
+            $this->createMock(TransactionHoldService::class),
             app(TillBalanceManager::class),
             app(IpValidationService::class),
         );

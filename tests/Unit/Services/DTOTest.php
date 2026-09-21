@@ -5,24 +5,10 @@ namespace Tests\Unit\Services;
 use App\Services\DTOs\AllocationValidationResult;
 use App\Services\DTOs\ComplianceCheckResult;
 use App\Services\DTOs\RateOverrideResult;
-use App\Services\DTOs\ValidationResult;
 use Tests\TestCase;
 
 class DTOTest extends TestCase
 {
-    public function test_validation_result_holds_data(): void
-    {
-        $result = new ValidationResult(
-            valid: true,
-            errors: [],
-            warnings: ['Low balance']
-        );
-
-        $this->assertTrue($result->valid);
-        $this->assertEmpty($result->errors);
-        $this->assertContains('Low balance', $result->warnings);
-    }
-
     public function test_allocation_validation_result(): void
     {
         $result = new AllocationValidationResult(

@@ -35,7 +35,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => false,
             'sanction_hit' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $amount = '2999.99';
@@ -51,7 +51,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => false,
             'sanction_hit' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $amount = '30000.00';
@@ -68,7 +68,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => false,
             'sanction_hit' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $amount = '100000.00'; // Large amount
@@ -86,7 +86,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => false,
             'sanction_hit' => false,
-            'risk_rating' => 'High',
+            'risk_rating' => 'high',
         ]);
 
         $amount = '1000.00'; // Small amount
@@ -104,7 +104,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => true,
             'sanction_hit' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
@@ -120,7 +120,7 @@ class ComplianceServiceTest extends TestCase
         $customer = Customer::factory()->create([
             'pep_status' => false,
             'sanction_hit' => true,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $cddLevel = $this->complianceService->determineCDDLevel($amount, $customer);
@@ -164,7 +164,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $result = $this->complianceService->requiresHold('1000.00', $customer);
@@ -177,7 +177,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $result = $this->complianceService->requiresHold('1000.00', $customer);
@@ -191,7 +191,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $result = $this->complianceService->requiresHold('50000.00', $customer);
@@ -205,7 +205,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $result = $this->complianceService->requiresHold('1000.00', $customer);
@@ -219,7 +219,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => false,
-            'risk_rating' => 'High',
+            'risk_rating' => 'high',
         ]);
 
         $result = $this->complianceService->requiresHold('1000.00', $customer);
@@ -233,7 +233,7 @@ class ComplianceServiceTest extends TestCase
     {
         $customer = Customer::factory()->create([
             'pep_status' => true,
-            'risk_rating' => 'High',
+            'risk_rating' => 'high',
         ]);
 
         $result = $this->complianceService->requiresHold('50000.00', $customer);

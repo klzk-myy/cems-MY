@@ -52,12 +52,12 @@ class ReportRun extends BaseModel
 
     public function scopeSuccessful($query)
     {
-        return $query->where('status', ReportRunStatus::Completed);
+        return $query->where('status', ReportRunStatus::Completed->value);
     }
 
     public function scopeFailed($query)
     {
-        return $query->where('status', ReportRunStatus::Failed);
+        return $query->where('status', ReportRunStatus::Failed->value);
     }
 
     public function getDownloadUrl(): ?string

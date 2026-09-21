@@ -283,10 +283,10 @@ class RateController extends Controller
 
         $result = $this->rateService->copyPreviousRates($targetDate, $branchId);
 
-        if (! $result['success']) {
-            return back()->with('error', $result['message']);
+        if (! $result->success) {
+            return back()->with('error', $result->message);
         }
 
-        return back()->with('success', $result['message']);
+        return back()->with('success', $result->message);
     }
 }

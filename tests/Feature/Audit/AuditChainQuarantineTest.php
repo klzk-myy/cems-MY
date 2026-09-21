@@ -9,6 +9,7 @@ use App\Models\SystemAlert;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
+use App\Services\Audit\AuditChainService;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -27,12 +28,12 @@ class AuditChainQuarantineTest extends TestCase
 {
     use RefreshDatabase;
 
-    private AuditService $auditService;
+    private AuditChainService $chainService;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->auditService = app(AuditService::class);
+        $this->chainService = app(AuditChainService::class);
     }
 
     private function makeLog(string $action = 'test_action'): SystemLog
@@ -52,10 +53,10 @@ class AuditChainQuarantineTest extends TestCase
         $b = $this->makeLog('b');
         $c = $this->makeLog('c');
 
-        $this->assertTrue($this->auditService->sealLogEntry($a->id));
+        $this->assertTrue($this->chainService->sealLogEntry($a->id));
 
         // b sits unsealed between a and c: c must not seal across a live gap.
-        $this->assertFalse($this->auditService->sealLogEntry($c->id));
+        $this->assertFalse($this->chainService->sealLogEntry($c->id));
         $this->assertNull($c->fresh()->entry_hash);
     }
 
@@ -66,21 +67,21 @@ class AuditChainQuarantineTest extends TestCase
         $bad = $this->makeLog('poisoned');
         $c = $this->makeLog('c');
 
-        $this->assertTrue($this->auditService->sealLogEntry($a->id));
+        $this->assertTrue($this->chainService->sealLogEntry($a->id));
 
         // The poisoned row sits unsealed; c cannot seal across it yet.
-        $this->assertFalse($this->auditService->sealLogEntry($c->id));
+        $this->assertFalse($this->chainService->sealLogEntry($c->id));
 
         // After N failed attempts the blocker is quarantined…
-        $this->auditService->quarantineEntry($bad->id);
+        $this->chainService->quarantineEntry($bad->id);
         $this->assertSame('quarantined', $bad->fresh()->seal_status);
 
         // …and c seals with an explicit gap boundary marker.
-        $this->assertTrue($this->auditService->sealLogEntry($c->id));
-        $this->assertSame(AuditService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
+        $this->assertTrue($this->chainService->sealLogEntry($c->id));
+        $this->assertSame(AuditChainService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
 
         // Quarantined rows are terminal: not counted as pending.
-        $this->assertSame(0, $this->auditService->getUnsealedCount());
+        $this->assertSame(0, $this->chainService->getUnsealedCount());
     }
 
     #[Test]
@@ -91,12 +92,12 @@ class AuditChainQuarantineTest extends TestCase
         $c = $this->makeLog('c');
         $d = $this->makeLog('d');
 
-        $this->auditService->sealLogEntry($a->id);
-        $this->auditService->quarantineEntry($bad->id);
-        $this->auditService->sealLogEntry($c->id);
-        $this->auditService->sealLogEntry($d->id);
+        $this->chainService->sealLogEntry($a->id);
+        $this->chainService->quarantineEntry($bad->id);
+        $this->chainService->sealLogEntry($c->id);
+        $this->chainService->sealLogEntry($d->id);
 
-        $result = $this->auditService->verifyChainIntegrity();
+        $result = $this->chainService->verifyChainIntegrity();
 
         $this->assertTrue($result['valid']);
         $this->assertSame(
@@ -116,14 +117,14 @@ class AuditChainQuarantineTest extends TestCase
         $bad = $this->makeLog('poisoned');
         $c = $this->makeLog('c');
 
-        $this->auditService->sealLogEntry($a->id);
+        $this->chainService->sealLogEntry($a->id);
 
         $job = new SealAuditHashJob($c->id);
 
         // The live handle() throws on the gap (retries in production);
         // after tries are exhausted Laravel invokes failed().
         try {
-            $job->handle($this->auditService);
+            $job->handle($this->chainService);
             $this->fail('expected gap exception');
         } catch (AuditIntegrityException $e) {
             $job->failed($e);
@@ -133,8 +134,8 @@ class AuditChainQuarantineTest extends TestCase
         Queue::assertPushed(SealAuditHashJob::class, fn ($j) => $j->logId === $c->id);
 
         // The re-dispatched job now seals c across the gap boundary.
-        $job->handle($this->auditService);
-        $this->assertSame(AuditService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
+        $job->handle($this->chainService);
+        $this->assertSame(AuditChainService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
         $this->assertNotNull($c->fresh()->entry_hash);
     }
 
@@ -150,18 +151,18 @@ class AuditChainQuarantineTest extends TestCase
                 ->update(['created_at' => now()->subHour()]);
         }
 
-        $this->auditService->sealLogEntry($a->id);
+        $this->chainService->sealLogEntry($a->id);
 
         // A row whose own seal always throws is the stall mode that needs
         // quarantine. Mock just that id; other ids use the real service.
-        $real = $this->auditService;
-        $mock = \Mockery::mock(AuditService::class)->makePartial();
+        $real = $this->chainService;
+        $mock = \Mockery::mock(AuditChainService::class)->makePartial();
         $mock->shouldReceive('sealLogEntry')->andReturnUsing(
             fn (int $id) => $id === $bad->id
                 ? throw new \RuntimeException('corrupted payload')
                 : $real->sealLogEntry($id)
         );
-        $this->instance(AuditService::class, $mock);
+        $this->instance(AuditChainService::class, $mock);
 
         // Sweep 1: bad row fails attempt 1; c defers on the gap.
         $this->assertSame(0, Artisan::call('audit:seal-pending', ['--older-than' => 30, '--attempts' => 2]));
@@ -173,7 +174,7 @@ class AuditChainQuarantineTest extends TestCase
         $this->assertSame(0, Artisan::call('audit:seal-pending', ['--older-than' => 30, '--attempts' => 2]));
 
         $this->assertSame('quarantined', $bad->fresh()->seal_status);
-        $this->assertSame(AuditService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
+        $this->assertSame(AuditChainService::GAP_PREFIX.$bad->id, $c->fresh()->previous_hash);
     }
 
     #[Test]

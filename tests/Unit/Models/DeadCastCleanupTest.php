@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

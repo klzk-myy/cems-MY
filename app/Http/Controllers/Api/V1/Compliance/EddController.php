@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
-use App\Enums\EddStatus;
+use App\Exceptions\Domain\EddValidationException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Compliance\EddIndexRequest;
@@ -11,12 +11,17 @@ use App\Http\Requests\Api\V1\Compliance\SubmitQuestionnaireRequest;
 use App\Http\Resources\Api\V1\EddRecordResource;
 use App\Http\Resources\Api\V1\EddTemplateResource;
 use App\Models\Compliance\EddQuestionnaireTemplate;
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Services\Compliance\EddService;
 use Illuminate\Http\JsonResponse;
 
 class EddController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(
+        protected EddService $eddService
+    ) {}
 
     /**
      * List EDD records with filtering.
@@ -74,29 +79,13 @@ class EddController extends Controller
 
         $record = EnhancedDiligenceRecord::findOrFail($id);
 
-        if (! $record->status->canSubmitQuestionnaire()) {
-            return $this->errorResponse('Cannot submit questionnaire in current status.', [], 422);
+        try {
+            $record = $this->eddService->submitQuestionnaire($record, $validated['responses'], (int) auth()->id());
+        } catch (EddValidationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
         }
 
-        $record->update([
-            'questionnaire_responses' => $validated['responses'],
-            'questionnaire_completed_at' => now(),
-            'questionnaire_completed_by' => auth()->id(),
-            'status' => EddStatus::QuestionnaireSubmitted,
-        ]);
-
-        return $this->successResponse(new EddRecordResource($record->fresh()), 'Questionnaire submitted successfully.');
-    }
-
-    /**
-     * Statuses a record must be in before it can be finalised (approved or
-     * rejected). The API flow submits the questionnaire (QuestionnaireSubmitted)
-     * and may pass through Pending Review; incomplete or pre-questionnaire
-     * records must not be finalised.
-     */
-    private function finalisableStatuses(): array
-    {
-        return [EddStatus::QuestionnaireSubmitted, EddStatus::PendingReview];
+        return $this->successResponse(new EddRecordResource($record), 'Questionnaire submitted successfully.');
     }
 
     /**
@@ -106,19 +95,11 @@ class EddController extends Controller
     {
         $record = EnhancedDiligenceRecord::with('flaggedTransaction')->findOrFail($id);
 
-        if (! in_array($record->status, $this->finalisableStatuses(), true)) {
-            return $this->errorResponse(
-                'Only records with a submitted questionnaire or in Pending Review can be approved (current: '.$record->status->value.').',
-                [],
-                422
-            );
+        try {
+            $record = $this->eddService->approve($record, auth()->user());
+        } catch (EddValidationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
         }
-
-        $record->update([
-            'status' => EddStatus::Approved,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
 
         return $this->successResponse(new EddRecordResource($record), 'EDD record approved.');
     }
@@ -132,20 +113,11 @@ class EddController extends Controller
 
         $record = EnhancedDiligenceRecord::findOrFail($id);
 
-        if (! in_array($record->status, $this->finalisableStatuses(), true)) {
-            return $this->errorResponse(
-                'Only records with a submitted questionnaire or in Pending Review can be rejected (current: '.$record->status->value.').',
-                [],
-                422
-            );
+        try {
+            $record = $this->eddService->reject($record, auth()->user(), $validated['reason']);
+        } catch (EddValidationException $e) {
+            return $this->errorResponse($e->getMessage(), [], 422);
         }
-
-        $record->update([
-            'status' => EddStatus::Rejected,
-            'review_notes' => $validated['reason'],
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
 
         return $this->successResponse(new EddRecordResource($record), 'EDD record rejected.');
     }

@@ -18,9 +18,9 @@ use App\Exceptions\Domain\TransactionApprovalException;
 use App\Exceptions\Domain\TransactionConfirmationRequiredException;
 use App\Exceptions\Domain\TransactionCreationException;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\StockReservation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
@@ -34,7 +34,6 @@ use App\Services\AuditService;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\AmlRuleEvaluator;
-use App\Services\Contracts\TransactionApprovalServiceInterface;
 use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -46,7 +45,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 
-class TransactionApprovalService implements TransactionApprovalServiceInterface
+class TransactionApprovalService
 {
     use AccountingEntriesTrait, TillBalanceTrait;
 
@@ -169,6 +168,11 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
                 ->firstOrFail();
 
             $this->validateApprovalEligibility($locked, $rejectorId);
+
+            // Same tier rule as approve(): rejection is an approval decision,
+            // so it requires the approve_transactions permission even when the
+            // caller bypasses the HTTP policy layer.
+            $this->validateApproverTier($locked, $rejectorId);
 
             if (! (new TransactionStateMachine($locked, $this->auditService))->reject($reason)) {
                 return null;
@@ -360,7 +364,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
     private function acquireLockAndCheckVersion(Transaction $transaction): Transaction
     {
         $lockedTransaction = Transaction::where('id', $transaction->id)
-            ->where('status', TransactionStatus::PendingApproval)
+            ->where('status', TransactionStatus::PendingApproval->value)
             ->lockForUpdate()
             ->first();
 
@@ -537,7 +541,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
             // stock was already deducted from the position and re-consumption
             // must not fail the retry.
             $alreadyConsumed = StockReservation::where('transaction_id', $transaction->id)
-                ->where('status', StockReservationStatus::Consumed)
+                ->where('status', StockReservationStatus::Consumed->value)
                 ->exists();
 
             if (! $alreadyConsumed) {
@@ -617,7 +621,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
         try {
             return DB::transaction(function () use ($transaction, $ipAddress) {
                 $lockedTransaction = Transaction::where('id', $transaction->id)
-                    ->where('status', TransactionStatus::Failed)
+                    ->where('status', TransactionStatus::Failed->value)
                     ->lockForUpdate()
                     ->first();
 
@@ -706,7 +710,7 @@ class TransactionApprovalService implements TransactionApprovalServiceInterface
 
         return DB::transaction(function () use ($transaction, $approverId, $ipAddress) {
             $lockedTransaction = Transaction::where('id', $transaction->id)
-                ->where('status', TransactionStatus::Approved)
+                ->where('status', TransactionStatus::Approved->value)
                 ->lockForUpdate()
                 ->firstOrFail();
 

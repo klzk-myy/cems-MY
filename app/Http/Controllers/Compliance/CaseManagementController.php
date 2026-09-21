@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Compliance;
 
 use App\Enums\CaseNoteType;
 use App\Enums\CaseResolution;
+use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Http\Controllers\Controller;
@@ -39,7 +40,12 @@ class CaseManagementController extends Controller
             $query->where('priority', $request->priority);
         }
 
-        $cases = $query->orderByRaw("CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 WHEN 'Low' THEN 4 ELSE 5 END")
+        $cases = $query->orderByRaw('CASE priority WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 WHEN ? THEN 4 ELSE 5 END', [
+            ComplianceCasePriority::Critical->value,
+            ComplianceCasePriority::High->value,
+            ComplianceCasePriority::Medium->value,
+            ComplianceCasePriority::Low->value,
+        ])
             ->orderBy('sla_deadline')
             ->paginate(25);
 

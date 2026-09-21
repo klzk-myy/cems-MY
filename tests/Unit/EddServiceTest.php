@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
-use App\Models\FlaggedTransaction;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\EddService;
 use App\Services\System\MathService;
@@ -35,12 +35,12 @@ class EddServiceTest extends TestCase
     {
         // Create a high-risk customer (triggers Enhanced CDD document requirements)
         $customer = Customer::factory()->create([
-            'risk_rating' => 'High',
+            'risk_rating' => 'high',
         ]);
 
         // Create EDD record with High risk level
         $flag = FlaggedTransaction::factory()->create(['customer_id' => $customer->id]);
-        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'High']);
+        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'high']);
 
         // Set source of funds and purpose (these alone would pass the old check)
         $eddRecord->update([
@@ -106,11 +106,11 @@ class EddServiceTest extends TestCase
     {
         // Create a medium-risk customer
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Medium',
+            'risk_rating' => 'medium',
         ]);
 
         $flag = FlaggedTransaction::factory()->create(['customer_id' => $customer->id]);
-        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'Medium']);
+        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'medium']);
 
         // Set source of funds and purpose
         $eddRecord->update([
@@ -127,11 +127,11 @@ class EddServiceTest extends TestCase
     public function edd_record_complete_with_empty_source_or_purpose(): void
     {
         $customer = Customer::factory()->create([
-            'risk_rating' => 'High',
+            'risk_rating' => 'high',
         ]);
 
         $flag = FlaggedTransaction::factory()->create(['customer_id' => $customer->id]);
-        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'High']);
+        $eddRecord = $this->eddService->createEddRecord($flag, ['risk_level' => 'high']);
 
         // Add all documents
         foreach (['MyKad', 'Proof_of_Address', 'Passport'] as $docType) {

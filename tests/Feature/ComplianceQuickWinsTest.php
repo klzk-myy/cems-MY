@@ -2,14 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ComplianceCasePriority;
 use App\Enums\ImportTrigger;
 use App\Enums\SystemAlertLevel;
 use App\Enums\UserRole;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\CustomerRiskProfile;
+use App\Models\Compliance\SanctionImportLog;
+use App\Models\Compliance\SanctionList;
 use App\Models\Customer;
-use App\Models\SanctionImportLog;
-use App\Models\SanctionList;
 use App\Models\SystemAlert;
 use App\Models\User;
 use App\Notifications\ComplianceCaseSlaBreachedNotification;
@@ -169,13 +170,13 @@ class ComplianceQuickWinsTest extends TestCase
 
         ComplianceCase::factory()->create([
             'status' => 'open',
-            'priority' => 'Critical',
+            'priority' => 'critical',
             'assigned_to' => $assignee->id,
             'sla_deadline' => now()->subHours(30),
         ]);
         ComplianceCase::factory()->create([
             'status' => 'under_review',
-            'priority' => 'Low',
+            'priority' => 'low',
             'assigned_to' => $otherAssignee->id,
             'sla_deadline' => now()->subHours(2),
         ]);
@@ -183,7 +184,7 @@ class ComplianceQuickWinsTest extends TestCase
         $result = app(CaseManagementService::class)->alertBreachedCases();
 
         $this->assertEquals(2, $result['breached']);
-        $this->assertEquals(1, $result['by_priority']['Critical'] ?? 0);
+        $this->assertEquals(1, $result['by_priority'][ComplianceCasePriority::Critical->value] ?? 0);
         $this->assertEquals(2, $result['notified']);
 
         Notification::assertSentTo($assignee, ComplianceCaseSlaBreachedNotification::class);

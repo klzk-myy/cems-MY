@@ -4,13 +4,12 @@ namespace App\Services;
 
 use App\Exceptions\Domain\ThresholdNotFoundException;
 use App\Models\ThresholdAudit;
-use App\Services\Contracts\ThresholdServiceInterface;
 use App\Support\ActorContext;
 use App\Support\ThresholdDefaults;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
-class ThresholdService implements ThresholdServiceInterface
+class ThresholdService
 {
     /**
      * In-memory snapshot of persisted threshold values for the current request.
@@ -610,5 +609,17 @@ class ThresholdService implements ThresholdServiceInterface
         }
 
         return $limits;
+    }
+
+    // Position utilization bands (percent of the configured position limit)
+
+    public function getPositionUtilizationWarning(): string
+    {
+        return (string) $this->get('position_utilization', 'warning', 'FALLBACK_POSITION_UTILIZATION_WARNING');
+    }
+
+    public function getPositionUtilizationCritical(): string
+    {
+        return (string) $this->get('position_utilization', 'critical', 'FALLBACK_POSITION_UTILIZATION_CRITICAL');
     }
 }

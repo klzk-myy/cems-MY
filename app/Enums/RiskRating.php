@@ -9,10 +9,10 @@ namespace App\Enums;
  */
 enum RiskRating: string
 {
-    case Low = 'Low';
-    case Medium = 'Medium';
-    case High = 'High';
-    case Critical = 'Critical';
+    case Low = 'low';
+    case Medium = 'medium';
+    case High = 'high';
+    case Critical = 'critical';
 
     /**
      * Get the refresh frequency in years for this risk rating.
@@ -24,6 +24,19 @@ enum RiskRating: string
             self::Medium => 2,
             self::High => 1,
             self::Critical => 0,
+        };
+    }
+
+    /**
+     * Ordering weight — higher means more severe.
+     */
+    public function weight(): int
+    {
+        return match ($this) {
+            self::Low => 1,
+            self::Medium => 2,
+            self::High => 3,
+            self::Critical => 4,
         };
     }
 

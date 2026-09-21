@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountingPeriodType;
 use App\Enums\AccountMappingKey;
+use App\Enums\AccountType;
 use App\Enums\FiscalYearStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\Permission;
@@ -293,7 +294,7 @@ class FiscalYearService
         ]);
 
         // Debit each revenue account
-        $revenueAccounts = ChartOfAccount::where('account_type', 'Revenue')->get();
+        $revenueAccounts = ChartOfAccount::where('account_type', AccountType::Revenue->value)->get();
         $balances = $this->getClosingBalancesForAccounts($revenueAccounts->pluck('account_code')->toArray(), $entryDate);
 
         // The summary offset must equal the sum of the lines actually posted.
@@ -367,7 +368,7 @@ class FiscalYearService
         ]);
 
         // Credit each expense account
-        $expenseAccounts = ChartOfAccount::where('account_type', 'Expense')->get();
+        $expenseAccounts = ChartOfAccount::where('account_type', AccountType::Expense->value)->get();
         $balances = $this->getClosingBalancesForAccounts($expenseAccounts->pluck('account_code')->toArray(), $entryDate);
 
         // Same rule as the revenue close: offset the sum of the posted lines,

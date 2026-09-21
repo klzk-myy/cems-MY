@@ -4,7 +4,7 @@ namespace App\Services\Compliance\Parsing;
 
 use App\Enums\EntityType;
 use App\Enums\SanctionStatus;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use App\Support\NameNormalizer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;

@@ -2,7 +2,7 @@
 
 namespace App\ValueObjects;
 
-use App\Models\ScreeningResult;
+use App\Models\Compliance\ScreeningResult;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 

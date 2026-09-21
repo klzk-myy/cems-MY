@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Eod\CounterReconciliationRequest;
@@ -41,9 +42,7 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        if ($response = $this->requireEodAccess()) {
-            return $response;
-        }
+        $this->assertEodAccess();
 
         $user = auth()->user();
         $branchId = isset($validated['branch_id']) ? (int) $validated['branch_id'] : null;
@@ -54,9 +53,7 @@ class EodReconciliationController extends Controller
             $branchId = (int) $user->branch_id;
         }
 
-        if ($response = $this->assertBranchAccess($branchId)) {
-            return $response;
-        }
+        $this->assertBranchAccess($branchId);
 
         try {
             $report = $this->eodService->generateDailyReconciliationSummary($carbonDate, $branchId);
@@ -81,15 +78,11 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        if ($response = $this->requireEodAccess()) {
-            return $response;
-        }
+        $this->assertEodAccess();
 
         // Counter reports bypass branch filtering inside the service, so the
         // counter itself must belong to the caller's branch.
-        if ($response = $this->assertCounterAccess($counterId)) {
-            return $response;
-        }
+        $this->assertCounterAccess($counterId);
 
         try {
             $report = $this->eodService->generateCounterReconciliation($counterId, $carbonDate);
@@ -113,9 +106,7 @@ class EodReconciliationController extends Controller
 
         $carbonDate = Carbon::parse($date);
 
-        if ($response = $this->requireEodAccess()) {
-            return $response;
-        }
+        $this->assertEodAccess();
 
         $branchId = isset($validated['branch_id']) ? (int) $validated['branch_id'] : null;
         $counterId = isset($validated['counter_id']) ? (int) $validated['counter_id'] : null;
@@ -123,9 +114,7 @@ class EodReconciliationController extends Controller
 
         // Explicit foreign branches are rejected for restricted roles, and a
         // missing scope defaults to the caller's own branch - never global.
-        if ($response = $this->assertBranchAccess($branchId)) {
-            return $response;
-        }
+        $this->assertBranchAccess($branchId);
 
         $user = auth()->user();
         if ($branchId === null && ! $this->hasGlobalEodScope($user) && $user->branch_id) {
@@ -134,9 +123,7 @@ class EodReconciliationController extends Controller
 
         // Counter-scoped reports bypass branch filtering inside the service,
         // so the requested counter must belong to the caller's branch.
-        if ($response = $this->assertCounterAccess($counterId)) {
-            return $response;
-        }
+        $this->assertCounterAccess($counterId);
 
         try {
             $report = $this->eodService->generateReconciliationReport($carbonDate, $branchId, $counterId);
@@ -169,13 +156,11 @@ class EodReconciliationController extends Controller
         }
     }
 
-    private function requireEodAccess(): ?JsonResponse
+    private function assertEodAccess(): void
     {
         if (! $this->canAccessEod(auth()->user())) {
-            return $this->errorResponse('Unauthorized. Manager, Compliance Officer, or Admin access required.', [], 403);
+            throw new PermissionDeniedException('access EOD reconciliation', 'Unauthorized. Manager, Compliance Officer, or Admin access required.');
         }
-
-        return null;
     }
 
     /**
@@ -193,7 +178,7 @@ class EodReconciliationController extends Controller
      * while users.branch_id is an int column, so a strict compare would
      * 403 the user's own branch.
      */
-    private function assertBranchAccess(?int $branchId): ?JsonResponse
+    private function assertBranchAccess(?int $branchId): void
     {
         $user = auth()->user();
 
@@ -202,10 +187,8 @@ class EodReconciliationController extends Controller
             && ! $this->hasGlobalEodScope($user)
             && (int) $user->branch_id !== $branchId
         ) {
-            return $this->errorResponse('You can only view reports for your own branch.', [], 403);
+            throw new PermissionDeniedException('You can only view reports for your own branch.');
         }
-
-        return null;
     }
 
     /**
@@ -213,25 +196,23 @@ class EodReconciliationController extends Controller
      * caller's branch (admins and compliance officers exempt). Unknown
      * counters fall through to the service's existing not-found handling.
      */
-    private function assertCounterAccess(?int $counterId): ?JsonResponse
+    private function assertCounterAccess(?int $counterId): void
     {
         if ($counterId === null) {
-            return null;
+            return;
         }
 
         $counter = Counter::find($counterId);
 
         if ($counter === null) {
-            return null;
+            return;
         }
 
         $user = auth()->user();
 
         if (! $this->hasGlobalEodScope($user) && (int) $counter->branch_id !== (int) $user->branch_id) {
-            return $this->errorResponse('You can only view reports for your own branch.', [], 403);
+            throw new PermissionDeniedException('You can only view reports for your own branch.');
         }
-
-        return null;
     }
 
     /**

@@ -6,11 +6,11 @@ use App\Enums\ComplianceCaseStatus;
 use App\Enums\StrReportStatus;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\StrReport;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
-use App\Models\StrReport;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Policies\StrReportPolicy;
@@ -163,7 +163,7 @@ class StrReportTest extends TestCase
         $this->assertTrue($admin->can('update', $report));
 
         // Policy is auto-discovered by convention (no AuthServiceProvider
-        // registration) for App\Models\StrReport.
+        // registration) for App\Models\Compliance\StrReport.
         $this->assertInstanceOf(StrReportPolicy::class, Gate::getPolicyFor($report));
     }
 }

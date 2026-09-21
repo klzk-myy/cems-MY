@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\ExportReconciliationRequest;
 use App\Http\Requests\Accounting\ImportBankStatementRequest;
@@ -99,7 +100,11 @@ class ReconciliationController extends Controller
      */
     public function manualMatch(ManualMatchReconciliationRequest $request, BankReconciliation $reconciliation): RedirectResponse
     {
-        $this->bankReconciliationService->manualMatch($reconciliation->id, $request->validated('journal_entry_id'));
+        try {
+            $this->bankReconciliationService->manualMatch($reconciliation->id, $request->validated('journal_entry_id'));
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('accounting.reconciliation')->with('success', 'Item matched to journal entry.');
     }

@@ -3,9 +3,9 @@
 namespace Tests\Unit\Models\Relationships;
 
 use App\Models\Compliance\EddQuestionnaireTemplate;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\EnhancedDiligenceRecord;
-use App\Models\FlaggedTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

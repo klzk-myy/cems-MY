@@ -3,9 +3,9 @@
 namespace Tests\Feature\Compliance;
 
 use App\Enums\RiskRating;
+use App\Models\Compliance\CustomerRiskHistory;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
-use App\Models\CustomerRiskHistory;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
@@ -15,12 +15,12 @@ use App\Services\Compliance\RiskCalculationService;
 use App\Services\Compliance\RiskScoreWriteBackService;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\Compliance\RoundTripDetector;
-use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\Risk\PatternRiskService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\ValueObjects\ScreeningResponse;
@@ -88,7 +88,7 @@ class RiskScoreWriteBackTest extends TestCase
             'pep_status' => false,
             'sanction_hit' => false,
             'risk_score' => 0,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $profile = $this->engine->recalculateForCustomer($customer->id);
@@ -101,7 +101,7 @@ class RiskScoreWriteBackTest extends TestCase
         $this->assertSame($profile->risk_score, $customer->risk_score);
         $riskRating = $customer->risk_rating;
         $this->assertInstanceOf(RiskRating::class, $riskRating);
-        $this->assertSame($profile->risk_tier === 'Critical' ? 'High' : $profile->risk_tier, (string) $riskRating->value);
+        $this->assertSame($profile->risk_tier === RiskRating::Critical->value ? RiskRating::High->value : $profile->risk_tier, (string) $riskRating->value);
         $this->assertNotNull($customer->risk_assessed_at);
     }
 
@@ -111,7 +111,7 @@ class RiskScoreWriteBackTest extends TestCase
         $customer = Customer::factory()->create([
             'nationality' => 'MY',
             'risk_score' => 0,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         $this->engine->recalculateForCustomer($customer->id);
@@ -125,7 +125,7 @@ class RiskScoreWriteBackTest extends TestCase
         $history = CustomerRiskHistory::where('customer_id', $customer->id)->first();
         $this->assertNotNull($history);
         $this->assertSame($customer->fresh()->risk_score, $history->new_score);
-        $this->assertEquals('Low', $history->old_rating->value);
+        $this->assertEquals(RiskRating::Low->value, $history->old_rating->value);
     }
 
     #[Test]
@@ -134,7 +134,7 @@ class RiskScoreWriteBackTest extends TestCase
         $customer = Customer::factory()->create([
             'nationality' => 'MY',
             'risk_score' => 0,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
 
         // Give the customer enough recent activity to produce a non-zero
@@ -174,7 +174,7 @@ class RiskScoreWriteBackTest extends TestCase
         $customer = Customer::factory()->create([
             'nationality' => 'MY',
             'risk_score' => 42,
-            'risk_rating' => 'Medium',
+            'risk_rating' => 'medium',
         ]);
         $assessedAtBefore = $customer->risk_assessed_at?->toIso8601String();
 

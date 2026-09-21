@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Compliance;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,8 +24,9 @@ class ScreeningController extends Controller
 
         $status = $this->screeningService->getStatus($customer);
 
-        $history = $this->screeningService->getHistory($customer)
-            ->map(fn ($r) => $r->toArray());
+        // Show renders the recent history strip — cap it at the query level
+        // instead of loading every screening row the customer has.
+        $history = $this->screeningService->getHistory($customer, 10);
 
         return view('compliance.screening.show', [
             'customer' => $customer,
@@ -55,9 +56,7 @@ class ScreeningController extends Controller
     {
         $customer = Customer::findOrFail($customerId);
 
-        $history = $this->screeningService->getHistory($customer)
-            ->map(fn ($r) => $r->toArray())
-            ->paginate(25);
+        $history = $this->screeningService->paginateHistory($customer, 25);
 
         return view('compliance.screening.history', compact('customer', 'history'));
     }

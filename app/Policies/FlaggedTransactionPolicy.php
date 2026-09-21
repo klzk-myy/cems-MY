@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\User;
 
 class FlaggedTransactionPolicy

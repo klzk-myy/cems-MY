@@ -12,7 +12,8 @@ use App\Models\ExchangeRate;
 use App\Models\ExchangeRateHistory;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\Contracts\RateManagementServiceInterface;
+use App\Services\DTOs\RateCopyResult;
+use App\Services\DTOs\RateFetchResult;
 use App\Services\DTOs\RateOverrideResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
@@ -26,7 +27,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class RateManagementService implements RateManagementServiceInterface
+class RateManagementService
 {
     public function __construct(
         protected RateApiService $rateApiService,
@@ -36,22 +37,14 @@ class RateManagementService implements RateManagementServiceInterface
         protected ThresholdService $thresholdService,
     ) {}
 
-    public function fetchAndStoreRates(?User $initiatedBy = null, ?int $branchId = null): array
+    public function fetchAndStoreRates(?User $initiatedBy = null, ?int $branchId = null): RateFetchResult
     {
         try {
             $rates = $this->rateApiService->fetchLatestRates($branchId);
 
-            return [
-                'success' => true,
-                'message' => 'Rates fetched and stored successfully',
-                'rates' => $rates,
-            ];
+            return new RateFetchResult(true, 'Rates fetched and stored successfully', $rates);
         } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Failed to fetch rates: '.$e->getMessage(),
-                'rates' => [],
-            ];
+            return new RateFetchResult(false, 'Failed to fetch rates: '.$e->getMessage());
         }
     }
 
@@ -534,9 +527,9 @@ class RateManagementService implements RateManagementServiceInterface
     }
 
     /**
-     * @return array{success: bool, message: string, copied_from_date?: string, rates: list<array{currency: string, old_buy: numeric-string, old_sell: numeric-string, new_buy: numeric-string, new_sell: numeric-string, rate_unit: string, mid: string}>}
+     * @param  string  $targetDate  The date whose rate card is copied forward
      */
-    public function copyPreviousRates(string $targetDate, ?int $branchId = null): array
+    public function copyPreviousRates(string $targetDate, ?int $branchId = null): RateCopyResult
     {
         // whereDate keeps the lookup correct regardless of whether the column
         // stores a pure date or a datetime (and across DB drivers).
@@ -552,11 +545,7 @@ class RateManagementService implements RateManagementServiceInterface
         $historicalRates = $historyQuery->get();
 
         if ($historicalRates->isEmpty()) {
-            return [
-                'success' => false,
-                'message' => "No rates found for date {$targetDate}",
-                'rates' => [],
-            ];
+            return new RateCopyResult(false, "No rates found for date {$targetDate}");
         }
 
         $currencyCodes = $historicalRates->pluck('currency_code')->unique();
@@ -580,59 +569,62 @@ class RateManagementService implements RateManagementServiceInterface
         // spread is what the new card actually carries.
         $spread = $this->configuredSpreadPercent();
 
-        $copied = [];
-        foreach ($historicalRates as $histRate) {
-            $exchangeRate = $exchangeRates->get($histRate->currency_code);
+        // The whole card commits together — a mid-loop failure must not leave
+        // some currencies on the copied card and others on the old one.
+        // Cache invalidation is deferred to afterCommit for the same reason.
+        $copied = DB::transaction(function () use ($historicalRates, $exchangeRates, $conventions, $spread, $targetDate, $branchId) {
+            $copied = [];
 
-            if ($exchangeRate) {
-                $oldBuy = $exchangeRate->rate_buy;
-                $oldSell = $exchangeRate->rate_sell;
+            foreach ($historicalRates as $histRate) {
+                $exchangeRate = $exchangeRates->get($histRate->currency_code);
 
-                // History stores the MID rate only — writing it to both
-                // rate_buy and rate_sell would flatten the spread to zero
-                // (violating the sell > buy invariant and giving away the
-                // margin). Normalize the mid to per-unit (bridging the
-                // history row's own unit/direction), re-derive the sides with
-                // the configured spread at per-unit precision, then re-quote
-                // into the currency's currently configured convention.
-                $perUnitMid = $histRate->perUnitRate((string) $histRate->rate);
-                $derived = $this->rateApiService->applySpread($perUnitMid, 8);
+                if ($exchangeRate) {
+                    $oldBuy = $exchangeRate->rate_buy;
+                    $oldSell = $exchangeRate->rate_sell;
 
-                $targetConvention = $conventions[$histRate->currency_code] ?? new QuoteConvention;
+                    // History stores the MID rate only — writing it to both
+                    // rate_buy and rate_sell would flatten the spread to zero
+                    // (violating the sell > buy invariant and giving away the
+                    // margin). Normalize the mid to per-unit (bridging the
+                    // history row's own unit/direction), re-derive the sides with
+                    // the configured spread at per-unit precision, then re-quote
+                    // into the currency's currently configured convention.
+                    $perUnitMid = $histRate->perUnitRate((string) $histRate->rate);
+                    $derived = $this->rateApiService->applySpread($perUnitMid, 8);
 
-                $newBuy = $targetConvention->fromPerUnit($derived['buy']);
-                $newSell = $targetConvention->fromPerUnit($derived['sell']);
+                    $targetConvention = $conventions[$histRate->currency_code] ?? new QuoteConvention;
 
-                $exchangeRate->update([
-                    'rate_buy' => $newBuy,
-                    'rate_sell' => $newSell,
-                    'rate_unit' => $targetConvention->unit,
-                    'rate_inverse' => $targetConvention->inverse,
-                    'source' => "copied_from_{$targetDate}",
-                    'spread_applied' => $spread,
-                    'fetched_at' => now(),
-                ]);
+                    $newBuy = $targetConvention->fromPerUnit($derived['buy']);
+                    $newSell = $targetConvention->fromPerUnit($derived['sell']);
 
-                // Invalidate per-currency cache so the copied rate is served immediately
-                $this->forgetRateCache($histRate->currency_code, $branchId);
+                    $exchangeRate->update([
+                        'rate_buy' => $newBuy,
+                        'rate_sell' => $newSell,
+                        'rate_unit' => $targetConvention->unit,
+                        'rate_inverse' => $targetConvention->inverse,
+                        'source' => "copied_from_{$targetDate}",
+                        'spread_applied' => $spread,
+                        'fetched_at' => now(),
+                    ]);
 
-                $copied[] = [
-                    'currency' => $histRate->currency_code,
-                    'old_buy' => $oldBuy,
-                    'old_sell' => $oldSell,
-                    'new_buy' => $newBuy,
-                    'new_sell' => $newSell,
-                    'rate_unit' => (string) $targetConvention->unit,
-                    'mid' => $histRate->rate,
-                ];
+                    // Invalidate per-currency cache so the copied rate is served immediately
+                    DB::afterCommit(fn () => $this->forgetRateCache($histRate->currency_code, $branchId));
+
+                    $copied[] = [
+                        'currency' => $histRate->currency_code,
+                        'old_buy' => $oldBuy,
+                        'old_sell' => $oldSell,
+                        'new_buy' => $newBuy,
+                        'new_sell' => $newSell,
+                        'rate_unit' => (string) $targetConvention->unit,
+                        'mid' => $histRate->rate,
+                    ];
+                }
             }
-        }
 
-        return [
-            'success' => true,
-            'message' => 'Rates copied successfully',
-            'copied_from_date' => $targetDate,
-            'rates' => $copied,
-        ];
+            return $copied;
+        });
+
+        return new RateCopyResult(true, 'Rates copied successfully', $copied, $targetDate);
     }
 }

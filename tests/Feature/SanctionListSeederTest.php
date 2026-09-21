@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\SanctionListType;
 use App\Enums\SanctionSourceFormat;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\User;
 use Database\Seeders\SanctionListSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

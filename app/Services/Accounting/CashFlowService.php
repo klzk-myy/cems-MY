@@ -4,7 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\JournalEntryStatus;
 use App\Models\JournalEntry;
-use App\Services\Contracts\MathServiceInterface;
+use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class CashFlowService
 {
     public function __construct(
-        protected MathServiceInterface $math,
+        protected MathService $math,
     ) {}
 
     public function getCashFlow(string $fromDate, string $toDate, ?int $branchId = null): array

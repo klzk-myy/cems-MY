@@ -3,18 +3,18 @@
 namespace Tests\Unit\Services\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
-use App\Enums\FlagStatus;
 use App\Events\CaseOpened;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\ComplianceCaseAssignedNotification;
@@ -141,7 +141,7 @@ class CaseManagementServiceTest extends TestCase
             'case_id' => $case->id,
             'customer_id' => $customer->id,
             'flagged_transaction_id' => $flag->id,
-            'status' => FlagStatus::Resolved,
+            'status' => AlertStatus::Resolved,
         ]);
 
         $closed = $this->service->closeCase($case, CaseResolution::NoConcern, 'cleared');
@@ -163,7 +163,7 @@ class CaseManagementServiceTest extends TestCase
         Alert::factory()->create([
             'case_id' => $case->id,
             'customer_id' => $customer->id,
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
         ]);
 
         $this->expectException(CaseManagementException::class);

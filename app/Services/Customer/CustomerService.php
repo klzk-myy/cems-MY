@@ -11,20 +11,20 @@ use App\Enums\IdType;
 use App\Enums\RiskRating;
 use App\Enums\StrReportStatus;
 use App\Events\CustomerRecordUpdated;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\StrReport;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
-use App\Models\StrReport;
 use App\Models\User;
 use App\Repositories\CustomerRepository;
 use App\Services\Audit\AuditTrailHelper;
 use App\Services\AuditService;
 use App\Services\Compliance\RiskScoringEngine;
-use App\Services\Contracts\CustomerServiceInterface;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
 use App\Services\System\EncryptionService;
+use App\Support\ActorContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -51,13 +51,8 @@ use Illuminate\Validation\ValidationException;
  * Note: This service handles multiple cross-cutting concerns. Consider splitting
  * into focused sub-services (e.g., CustomerScreeningService, CustomerEncryptionService,
  * CustomerSearchService) for future architecture improvements.
- *
- * Interface gap note: Several controller-used methods are not declared in
- * CustomerServiceInterface (e.g., createCustomerAction, updateCustomerAction,
- * closeCustomer, getCustomerShowData, getTransactionStats, uploadDocument).
- * The interface also lacks the optional $branchId parameter on searchCustomers.
  */
-class CustomerService implements CustomerServiceInterface
+class CustomerService
 {
     public function __construct(
         protected EncryptionService $encryptionService,
@@ -118,17 +113,13 @@ class CustomerService implements CustomerServiceInterface
             // Encrypt sensitive fields
             $encryptedData = $this->encryptCustomerData($data);
 
-            // Create customer - risk_rating will be determined by screening and risk scoring
+            // Create customer - risk_rating will be determined by screening and risk scoring.
             // id_number_hash / phone_hash are NOT mass-assignable on the model,
             // so they must be assigned explicitly before save - otherwise the
             // blind indexes are never persisted and duplicate-identity checks
             // plus AML aggregation silently degrade.
             $customer = new Customer($encryptedData);
-            foreach (['id_number_hash', 'phone_hash'] as $blindIndexField) {
-                if (array_key_exists($blindIndexField, $encryptedData)) {
-                    $customer->{$blindIndexField} = $encryptedData[$blindIndexField];
-                }
-            }
+            $this->assignBlindIndexes($customer, $encryptedData);
             $customer->save();
 
             // Screen against sanctions list FIRST - may set risk_rating to High if hit
@@ -148,7 +139,7 @@ class CustomerService implements CustomerServiceInterface
                     'pep_status' => $customer->pep_status,
                     'sanction_hit' => $customer->sanction_hit,
                 ],
-            ], $user, 'INFO', request()?->ip());
+            ], $user, 'INFO', ActorContext::capture()->ipAddress);
 
             return $customer;
         });
@@ -159,19 +150,41 @@ class CustomerService implements CustomerServiceInterface
     }
 
     /**
+     * Assign the non-fillable blind-index columns from encrypted payload data.
+     * Shared by create and update so neither path can persist a new encrypted
+     * value while leaving its lookup hash stale.
+     *
+     * @param  array<string, mixed>  $encryptedData
+     */
+    protected function assignBlindIndexes(Customer $customer, array $encryptedData): void
+    {
+        foreach (['id_number_hash', 'phone_hash'] as $blindIndexField) {
+            if (array_key_exists($blindIndexField, $encryptedData)) {
+                $customer->{$blindIndexField} = $encryptedData[$blindIndexField];
+            }
+        }
+    }
+
+    /**
      * Throw a validation error when another customer (including a soft-deleted
      * one) already holds the same ID number or phone blind index.
      *
      * @param  array<string, mixed>  $data  Raw customer input
+     * @param  int|null  $excludeCustomerId  Customer to exclude (update path)
      *
      * @throws ValidationException on duplicate identity
      */
-    protected function assertNoDuplicateBlindIndex(array $data): void
+    protected function assertNoDuplicateBlindIndex(array $data, ?int $excludeCustomerId = null): void
     {
         if (! empty($data['id_number'])) {
             $idHash = self::computeBlindIndex($data['id_number']);
 
-            if (Customer::withTrashed()->where('id_number_hash', $idHash)->exists()) {
+            $collision = Customer::withTrashed()
+                ->where('id_number_hash', $idHash)
+                ->when($excludeCustomerId, fn ($query) => $query->where('id', '!=', $excludeCustomerId))
+                ->exists();
+
+            if ($collision) {
                 throw ValidationException::withMessages([
                     'id_number' => 'A customer with this ID number already exists.',
                 ]);
@@ -181,7 +194,12 @@ class CustomerService implements CustomerServiceInterface
         if (! empty($data['phone'])) {
             $phoneHash = self::computeBlindIndex($data['phone']);
 
-            if (Customer::withTrashed()->where('phone_hash', $phoneHash)->exists()) {
+            $collision = Customer::withTrashed()
+                ->where('phone_hash', $phoneHash)
+                ->when($excludeCustomerId, fn ($query) => $query->where('id', '!=', $excludeCustomerId))
+                ->exists();
+
+            if ($collision) {
                 throw ValidationException::withMessages([
                     'phone' => 'A customer with this phone number already exists.',
                 ]);
@@ -200,6 +218,11 @@ class CustomerService implements CustomerServiceInterface
     public function updateCustomer(Customer $customer, array $data, int $userId): Customer
     {
         $customer = DB::transaction(function () use ($customer, $data, $userId) {
+            // Same duplicate-identity guard as create, excluding this customer:
+            // without it an id_number/phone update either collides with the
+            // unique index (500) or silently duplicates an identity.
+            $this->assertNoDuplicateBlindIndex($data, $customer->id);
+
             // Encrypt sensitive fields if provided
             $encryptedData = $this->encryptCustomerData($data);
 
@@ -209,6 +232,15 @@ class CustomerService implements CustomerServiceInterface
 
             // Update customer
             $customer->update($encryptedData);
+
+            // Blind-index columns are not mass-assignable — assign and save
+            // them explicitly or an id_number/phone change leaves the hashes
+            // pointing at the old identity.
+            $this->assignBlindIndexes($customer, $encryptedData);
+            if ($customer->isDirty(['id_number_hash', 'phone_hash'])) {
+                $customer->save();
+            }
+
             $changedFields = array_keys($customer->getChanges());
 
             // Re-screen against sanctions if name changed
@@ -230,7 +262,7 @@ class CustomerService implements CustomerServiceInterface
                     'full_name' => $customer->full_name,
                     'risk_rating' => $customer->risk_rating,
                 ],
-            ], $user, 'INFO', request()?->ip());
+            ], $user, 'INFO', ActorContext::capture()->ipAddress);
 
             return [$customer->fresh(), $changedFields];
         });
@@ -376,10 +408,9 @@ class CustomerService implements CustomerServiceInterface
      * or register the keyed-in details as a new customer when no match exists.
      * Either way the customer's empty profile fields are filled from the
      * submitted data so CDD tier requirements can be met without a separate
-     * edit screen. Shared by the web and API store paths so both honour the
-     * same resolve-or-register contract — without it a payload carrying
-     * inline customer fields but no customer_id reaches booking and fails on
-     * a null customer lookup.
+     * edit screen. Web store path only — the API deliberately requires an
+     * existing customer_id (its FormRequest enforces required|exists) and
+     * registers customers through POST /customers first.
      *
      * @param  array<string, mixed>  $data  Validated booking payload
      *
@@ -526,20 +557,25 @@ class CustomerService implements CustomerServiceInterface
             unset($encrypted['id_number']);
         }
 
-        // Encrypt address
-        if (! empty($data['address'])) {
-            $encrypted['address'] = $this->encryptionService->encrypt($data['address']);
+        // Nullable encrypted fields: an explicitly submitted empty value clears
+        // the column (and its blind index) rather than leaving stale ciphertext.
+        foreach (['address', 'employer_address'] as $clearable) {
+            if (array_key_exists($clearable, $data)) {
+                $encrypted[$clearable] = empty($data[$clearable])
+                    ? null
+                    : $this->encryptionService->encrypt($data[$clearable]);
+            }
         }
 
-        // Encrypt phone
-        if (! empty($data['phone'])) {
-            $encrypted['phone'] = $this->encryptionService->encrypt($data['phone']);
-            $encrypted['phone_hash'] = self::computeBlindIndex($data['phone']);
-        }
-
-        // Encrypt employer address
-        if (! empty($data['employer_address'])) {
-            $encrypted['employer_address'] = $this->encryptionService->encrypt($data['employer_address']);
+        // Encrypt phone + maintain its blind index
+        if (array_key_exists('phone', $data)) {
+            if (empty($data['phone'])) {
+                $encrypted['phone'] = null;
+                $encrypted['phone_hash'] = null;
+            } else {
+                $encrypted['phone'] = $this->encryptionService->encrypt($data['phone']);
+                $encrypted['phone_hash'] = self::computeBlindIndex($data['phone']);
+            }
         }
 
         return $encrypted;
@@ -689,16 +725,27 @@ class CustomerService implements CustomerServiceInterface
      */
     public function getCustomerShowData(Customer $customer): array
     {
+        // documents is eager-loaded by the caller — count in memory instead of
+        // relying on *_count attributes nobody populates.
+        $documents = $customer->documents;
+
         $documentStatus = [
-            'total' => $customer->documents_count,
-            'verified' => $customer->documents->filter->isVerified()->count(),
-            'pending' => $customer->documents->whereNull('verified_by')->whereNull('verified_at')->count(),
-            'expired' => $customer->documents->whereNotNull('expiry_date')->where('expiry_date', '<', now())->count(),
+            'total' => $documents->count(),
+            'verified' => $documents->filter->isVerified()->count(),
+            'pending' => $documents->whereNull('verified_by')->whereNull('verified_at')->count(),
+            'expired' => $documents->whereNotNull('expiry_date')->where('expiry_date', '<', now())->count(),
         ];
 
+        // One aggregate query — the transactions_count / transactions_sum_*
+        // convention attributes are never loaded on this page, so reading them
+        // rendered zeroed stat cards.
+        $aggregates = $customer->transactions()
+            ->selectRaw('COUNT(*) as aggregate_count, COALESCE(SUM(amount_myr), 0) as aggregate_sum')
+            ->first();
+
         $stats = [
-            'total_transactions' => $customer->transactions_count,
-            'total_value' => (float) ($customer->transactions_sum_amount_myr ?? 0),
+            'total_transactions' => (int) ($aggregates->aggregate_count ?? 0),
+            'total_value' => (float) ($aggregates->aggregate_sum ?? 0),
             'alerts' => Alert::where('customer_id', $customer->id)->count(),
             'str_filed' => StrReport::where('customer_id', $customer->id)
                 ->where('status', '!=', StrReportStatus::Draft->value)

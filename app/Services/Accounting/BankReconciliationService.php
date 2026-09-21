@@ -84,102 +84,6 @@ class BankReconciliationService
     }
 
     /**
-     * Create an outstanding check entry (check issued but not yet presented)
-     *
-     * @param  string  $accountCode  Cash/bank account code
-     * @param  array  $checkData  Check details (check_number, check_date, check_payee, amount_myr, etc.)
-     * @param  int  $userId  User creating the entry
-     */
-    public function createOutstandingCheck(string $accountCode, array $checkData, int $userId): BankReconciliation
-    {
-        return BankReconciliation::create([
-            'account_code' => $accountCode,
-            'statement_date' => $checkData['check_date'] ?? today(),
-            'reference' => $checkData['check_number'],
-            'description' => 'Check issued: '.($checkData['check_payee'] ?? 'Unknown payee'),
-            'debit' => $checkData['amount_myr'] ?? 0,
-            'credit' => 0,
-            'status' => BankReconciliationStatus::Unmatched->value,
-            'created_by' => $userId,
-            'check_number' => $checkData['check_number'],
-            'check_date' => $checkData['check_date'] ?? today(),
-            'check_status' => 'issued',
-            'check_payee' => $checkData['check_payee'] ?? null,
-        ]);
-    }
-
-    /**
-     * Present a check (mark as presented for payment)
-     */
-    public function presentCheck(int $reconciliationId, ?string $presentedDate = null): BankReconciliation
-    {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-
-        if ($record->check_status !== CheckStatus::Issued) {
-            throw new AccountingPeriodException("Check {$record->check_number} is not in 'issued' status.");
-        }
-
-        $record->update([
-            'check_status' => 'presented',
-        ]);
-
-        return $record;
-    }
-
-    /**
-     * Clear a check (mark as settled by bank)
-     */
-    public function clearCheck(int $reconciliationId, string $clearedDate): BankReconciliation
-    {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-
-        if (! in_array($record->check_status, [CheckStatus::Issued, CheckStatus::Presented])) {
-            throw new AccountingPeriodException("Check {$record->check_number} cannot be cleared from '{$record->check_status?->value}' status.");
-        }
-
-        $record->update([
-            'check_status' => 'cleared',
-            'status' => BankReconciliationStatus::Matched->value, // Auto-match when cleared
-        ]);
-
-        return $record;
-    }
-
-    /**
-     * Stop a check (cancel the check)
-     */
-    public function stopCheck(int $reconciliationId, string $reason, int $userId): BankReconciliation
-    {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-
-        if ($record->check_status === CheckStatus::Cleared) {
-            throw new AccountingPeriodException("Check {$record->check_number} has already been cleared and cannot be stopped.");
-        }
-
-        $record->update([
-            'check_status' => 'stopped',
-            'notes' => $record->notes ? $record->notes."; Stopped: {$reason}" : "Stopped: {$reason}",
-        ]);
-
-        return $record;
-    }
-
-    /**
-     * Return a check (e.g., insufficient funds)
-     */
-    public function returnCheck(int $reconciliationId, string $reason): BankReconciliation
-    {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-
-        $record->update([
-            'check_status' => 'returned',
-            'notes' => $record->notes ? $record->notes."; Returned: {$reason}" : "Returned: {$reason}",
-        ]);
-
-        return $record;
-    }
-
-    /**
      * Auto-match statement lines to journal entries
      */
     public function autoMatch(string $accountCode): void
@@ -216,11 +120,14 @@ class BankReconciliationService
                 ->first();
 
             if ($matchingEntry) {
-                $record->update([
-                    'status' => BankReconciliationStatus::Matched->value,
-                    'matched_to_journal_entry_id' => $matchingEntry->id,
-                    'matched_at' => now(),
-                ]);
+                try {
+                    $this->claimJournalEntry($record->id, $matchingEntry->id);
+                } catch (AccountingPeriodException) {
+                    // A concurrent run already claimed the entry (or the
+                    // record was resolved meanwhile) — skip it; a thrown
+                    // error here would abort the whole sweep.
+                    continue;
+                }
             }
         }
     }
@@ -392,11 +299,11 @@ class BankReconciliationService
             ->whereNotNull('check_number')
             ->where('check_date', '<=', $asOfDate);
 
-        $issued = (clone $query)->where('check_status', CheckStatus::Issued)->get();
-        $presented = (clone $query)->where('check_status', CheckStatus::Presented)->get();
-        $cleared = (clone $query)->where('check_status', CheckStatus::Cleared)->get();
-        $returned = (clone $query)->where('check_status', CheckStatus::Returned)->get();
-        $stopped = (clone $query)->where('check_status', CheckStatus::Stopped)->get();
+        $issued = (clone $query)->where('check_status', CheckStatus::Issued->value)->get();
+        $presented = (clone $query)->where('check_status', CheckStatus::Presented->value)->get();
+        $cleared = (clone $query)->where('check_status', CheckStatus::Cleared->value)->get();
+        $returned = (clone $query)->where('check_status', CheckStatus::Returned->value)->get();
+        $stopped = (clone $query)->where('check_status', CheckStatus::Stopped->value)->get();
 
         return [
             'account_code' => $accountCode,
@@ -443,7 +350,7 @@ class BankReconciliationService
         $asOfDate = $asOfDate ? Carbon::parse($asOfDate) : today();
         $outstanding = BankReconciliation::where('account_code', $accountCode)
             ->whereNotNull('check_number')
-            ->whereIn('check_status', [CheckStatus::Issued, CheckStatus::Presented])
+            ->whereIn('check_status', [CheckStatus::Issued->value, CheckStatus::Presented->value])
             ->where('check_date', '<=', $asOfDate)
             ->get();
 
@@ -507,24 +414,70 @@ class BankReconciliationService
      */
     public function markAsException(int $reconciliationId, string $reason, int $userId): BankReconciliation
     {
-        $record = BankReconciliation::findOrFail($reconciliationId);
+        return DB::transaction(function () use ($reconciliationId, $reason) {
+            $record = $this->lockedRecord($reconciliationId);
 
-        $record->update([
-            'status' => BankReconciliationStatus::Exception->value,
-            'notes' => $reason,
-        ]);
+            $record->update([
+                'status' => BankReconciliationStatus::Exception->value,
+                'notes' => $reason,
+            ]);
 
-        return $record;
+            return $record;
+        });
     }
 
     /**
      * Manually match a reconciliation record to a journal entry.
+     *
+     * @throws AccountingPeriodException when the entry is already claimed or
+     *                                   the record is no longer unmatched
      */
     public function manualMatch(int $reconciliationId, int $journalEntryId): BankReconciliation
     {
-        $record = BankReconciliation::findOrFail($reconciliationId);
-        $record->markMatched($journalEntryId);
+        return $this->claimJournalEntry($reconciliationId, $journalEntryId);
+    }
 
-        return $record;
+    /**
+     * Claim a journal entry for a reconciliation record. Locks the entry
+     * first (canonical lock order for every claim path), re-verifies it is
+     * unclaimed, then locks the record and re-checks it is still unmatched
+     * before writing — so an autoMatch/manualMatch pair can never bind one
+     * entry to two lines or overwrite a concurrently-resolved record.
+     *
+     * @throws AccountingPeriodException when the entry is already claimed or
+     *                                   the record is no longer unmatched
+     */
+    private function claimJournalEntry(int $reconciliationId, int $journalEntryId): BankReconciliation
+    {
+        return DB::transaction(function () use ($reconciliationId, $journalEntryId) {
+            JournalEntry::whereKey($journalEntryId)->lockForUpdate()->firstOrFail();
+
+            if (BankReconciliation::where('matched_to_journal_entry_id', $journalEntryId)->exists()) {
+                throw new AccountingPeriodException(
+                    "Journal entry {$journalEntryId} is already matched to another statement line."
+                );
+            }
+
+            $record = $this->lockedRecord($reconciliationId);
+
+            if ($record->status !== BankReconciliationStatus::Unmatched) {
+                throw new AccountingPeriodException(
+                    "Statement line {$reconciliationId} is no longer unmatched ({$record->status->value})."
+                );
+            }
+
+            $record->markMatched($journalEntryId);
+
+            return $record;
+        });
+    }
+
+    /**
+     * Re-read a reconciliation row under FOR UPDATE inside the caller's
+     * transaction so status checks and writes see the same row state.
+     */
+    private function lockedRecord(int $reconciliationId): BankReconciliation
+    {
+        return BankReconciliation::whereKey($reconciliationId)->lockForUpdate()->firstOrFail();
     }
 }

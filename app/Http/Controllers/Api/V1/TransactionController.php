@@ -13,8 +13,8 @@ use App\Http\Requests\Api\V1\TransactionIndexRequest;
 use App\Http\Resources\Api\V1\TransactionCollection;
 use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Transaction\ReceiptGenerationService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
@@ -23,7 +23,7 @@ class TransactionController extends Controller
     use ApiResponse, BranchScopedQuery, MapsTransactionExceptionsToFields;
 
     public function __construct(
-        protected TransactionCreationServiceInterface $creationService,
+        protected TransactionCreationService $creationService,
         protected ReceiptGenerationService $receiptService
     ) {}
 

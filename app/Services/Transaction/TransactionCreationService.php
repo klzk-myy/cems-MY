@@ -38,10 +38,6 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\KycDocumentExpiryService;
-use App\Services\Contracts\RateManagementServiceInterface;
-use App\Services\Contracts\TransactionCreationServiceInterface;
-use App\Services\Contracts\TransactionIdempotencyServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -59,25 +55,25 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
-class TransactionCreationService implements TransactionCreationServiceInterface
+class TransactionCreationService
 {
     use AccountingEntriesTrait, ExchangeCalculatorTrait, TillBalanceTrait;
 
     public function __construct(
-        protected TransactionIdempotencyServiceInterface $idempotencyService,
+        protected TransactionIdempotencyService $idempotencyService,
         protected CurrencyPositionService $positionService,
         protected TransactionAccountingService $transactionAccountingService,
         protected AuditTrailHelper $auditTrailHelper,
         protected TillBalanceManager $tillBalanceManager,
         protected CacheInvalidationService $cacheInvalidationService,
-        protected TransactionValidationInterface $validationService,
+        protected TransactionValidationService $validationService,
         protected MathService $mathService,
         protected ThresholdService $thresholdService,
         protected TellerAllocationService $tellerAllocationService,
         protected TransactionErrorHandler $errorHandler,
         protected TransactionRecoveryService $recoveryService,
         protected KycDocumentExpiryService $kycDocumentExpiryService,
-        protected RateManagementServiceInterface $rateManagementService,
+        protected RateManagementService $rateManagementService,
         protected InitialStatusResolver $statusResolver,
         protected ExchangeCalculator $exchangeCalculator,
         protected AlertTriageService $alertTriageService,
@@ -89,6 +85,23 @@ class TransactionCreationService implements TransactionCreationServiceInterface
         $user = User::findOrFail($userId);
         $ipAddress ??= ActorContext::capture()->ipAddress;
 
+        return $this->create($this->buildCreationContext($user, $data), $user->id, $ipAddress);
+    }
+
+    /**
+     * Assemble the full creation context for one booking — eligibility gate,
+     * exchange calculation, compliance gates, teller allocation and initial
+     * status. This is the single orchestration every creation path must use
+     * (web form, API; the wizard passes its session CDD floor via $cddFloor)
+     * so a gate added here can never be bypassed by a hand-rolled caller.
+     *
+     * @param  array<string, mixed>  $data  Unit-quoted rate payload.
+     * @param  CddLevel|null  $cddFloor  Never downgrade due diligence below this tier (e.g. the tier documents were collected under mid-wizard).
+     * @param  bool  $withAllocation  CSV imports settle straight to the booked
+     *                                till and never consume a teller allocation — pass false there.
+     */
+    public function buildCreationContext(User $user, array $data, ?CddLevel $cddFloor = null, ?string $ipAddress = null, bool $withAllocation = true): TransactionCreationContext
+    {
         [$tillBalance, $customer] = $this->assertBookingEligibility($user, $data, $ipAddress);
 
         $exchangeResult = $this->resolveExchangeCalculator()->calculate(
@@ -110,25 +123,35 @@ class TransactionCreationService implements TransactionCreationServiceInterface
 
         $validationResult = $this->runComplianceGates($customer, $data, $amountMyr);
 
-        $allocation = $this->tellerAllocationService->resolveForTransaction(
-            $user,
-            [
-                'type' => (string) $data['type'],
-                'currency_code' => (string) $data['currency_code'],
-            ],
-            $amountMyr
-        );
+        // Never downgrade due diligence: the effective CDD level is the
+        // higher of the fresh assessment and any caller-supplied floor.
+        $freshCddLevel = $validationResult->getCDDLevel();
+        $cddLevel = $cddFloor !== null
+            && array_search($cddFloor, CddLevel::cases(), true) > array_search($freshCddLevel, CddLevel::cases(), true)
+            ? $cddFloor
+            : $freshCddLevel;
+
+        $allocation = $withAllocation
+            ? $this->tellerAllocationService->resolveForTransaction(
+                $user,
+                [
+                    'type' => (string) $data['type'],
+                    'currency_code' => (string) $data['currency_code'],
+                ],
+                $amountMyr
+            )
+            : null;
         $initialStatus = $this->statusResolver->resolve(
             $amountMyr,
             $validationResult->isHoldRequired(),
             $customer->risk_rating
         );
 
-        $context = new TransactionCreationContext(
+        return new TransactionCreationContext(
             data: $data,
             customer: $customer,
             tillBalance: $tillBalance,
-            cddLevel: $validationResult->getCDDLevel(),
+            cddLevel: $cddLevel,
             holdRequired: $validationResult->isHoldRequired(),
             status: $initialStatus->status,
             amountMyr: $amountMyr,
@@ -140,8 +163,6 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             holdReason: $validationResult->isHoldRequired() ? $initialStatus->holdReason : null,
             normalizedRate: $normalizedRate,
         );
-
-        return $this->create($context, $user->id, $ipAddress);
     }
 
     /**
@@ -499,41 +520,6 @@ class TransactionCreationService implements TransactionCreationServiceInterface
     }
 
     /**
-     * Create a transaction for import (no teller allocation, no request context).
-     *
-     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id?: string|null}  $data
-     * @param  User  $user  The user performing the import
-     */
-    public function createForImport(
-        array $data,
-        Customer $customer,
-        ?TillBalance $tillBalance,
-        CddLevel $cddLevel,
-        TransactionStatus $status,
-        string $amountMyr,
-        User $user,
-        ?string $holdReason = null,
-        ?string $ipAddress = null,
-        ?string $normalizedRate = null
-    ): Transaction {
-        $context = new TransactionCreationContext(
-            data: $data,
-            customer: $customer,
-            tillBalance: $tillBalance,
-            cddLevel: $cddLevel,
-            holdRequired: $status === TransactionStatus::PendingApproval,
-            status: $status,
-            amountMyr: $amountMyr,
-            user: $user,
-            allocation: null, // No teller allocation for imports
-            holdReason: $holdReason,
-            normalizedRate: $normalizedRate,
-        );
-
-        return $this->create($context, $user->id, $ipAddress);
-    }
-
-    /**
      * Gate transaction creation on branch assignment.
      *
      * Customers are company-wide, so the only requirement is that the user
@@ -569,7 +555,7 @@ class TransactionCreationService implements TransactionCreationServiceInterface
             // reservations for the branch (matching getAvailableBalance()).
             $reserved = StockReservation::where('currency_code', $data['currency_code'])
                 ->where('branch_id', (string) $branchId)
-                ->where('status', StockReservationStatus::Pending)
+                ->where('status', StockReservationStatus::Pending->value)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
                 ->sum('quantity');

@@ -4,8 +4,8 @@ namespace Tests\Feature\Compliance;
 
 use App\Enums\ComplianceFlagType;
 use App\Enums\TransactionStatus;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\SystemAlert;
 use App\Models\Transaction;
 use App\Services\Compliance\AlertTriageService;

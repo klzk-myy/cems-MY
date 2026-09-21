@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\Audit\AuditChainService;
 use App\Services\AuditService;
 use App\Services\System\CacheOptimizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -94,7 +95,7 @@ class AuditServiceTest extends TestCase
             ]);
         }
 
-        $result = $this->auditService->verifyChainIntegrity();
+        $result = app(AuditChainService::class)->verifyChainIntegrity();
 
         $this->assertTrue($result['valid']);
         $this->assertNull($result['broken_at']);
@@ -125,7 +126,7 @@ class AuditServiceTest extends TestCase
             ->where('id', $entryIds[1])
             ->update(['entry_hash' => 'tampered_hash_value']);
 
-        $result = $this->auditService->verifyChainIntegrity();
+        $result = app(AuditChainService::class)->verifyChainIntegrity();
 
         $this->assertFalse($result['valid']);
         $this->assertNotNull($result['broken_at']);
@@ -313,7 +314,7 @@ class AuditServiceTest extends TestCase
         $log = $this->auditService->logWithSeverity('test_action', [], 'INFO');
 
         // Verify doesn't throw even with unsealed entries
-        $result = $this->auditService->verifyChainIntegrity();
+        $result = app(AuditChainService::class)->verifyChainIntegrity();
 
         // Should pass since unsealed entries are skipped
         $this->assertTrue($result['valid']);

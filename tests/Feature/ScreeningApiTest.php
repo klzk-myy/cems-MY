@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\Customer;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
-use App\Models\ScreeningResult;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;

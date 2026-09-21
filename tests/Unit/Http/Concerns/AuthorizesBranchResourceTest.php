@@ -3,12 +3,13 @@
 namespace Tests\Unit\Http\Concerns;
 
 use App\Enums\UserRole;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\User;
 use App\Services\System\PermissionService;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Auth;
 use Mockery;
 use Tests\TestCase;
@@ -46,7 +47,9 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $resource = Counter::factory()->make(['branch_id' => 5]);
 
-        $this->assertTrue($this->authorizeBranchResource($resource, 'update'));
+        $this->authorizeBranchResource($resource, 'update');
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_allows_resource_when_branch_id_matches_as_mixed_types(): void
@@ -58,7 +61,9 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $resource = Counter::factory()->make(['branch_id' => '5']);
 
-        $this->assertTrue($this->authorizeBranchResource($resource, 'update'));
+        $this->authorizeBranchResource($resource, 'update');
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_denies_resource_when_branch_id_differs(): void
@@ -70,10 +75,26 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $resource = Counter::factory()->make(['branch_id' => 6]);
 
-        $result = $this->authorizeBranchResource($resource, 'update');
+        $this->expectException(PermissionDeniedException::class);
 
-        $this->assertInstanceOf(JsonResponse::class, $result);
-        $this->assertEquals(403, $result->getStatusCode());
+        $this->authorizeBranchResource($resource, 'update');
+    }
+
+    public function test_denied_exception_carries_403_status(): void
+    {
+        $user = Mockery::mock(User::class)->makePartial();
+        $user->branch_id = 5;
+        $user->role = UserRole::Teller;
+        Auth::shouldReceive('user')->once()->andReturn($user);
+
+        $resource = Counter::factory()->make(['branch_id' => 6]);
+
+        try {
+            $this->authorizeBranchResource($resource, 'update');
+            $this->fail('Expected PermissionDeniedException');
+        } catch (PermissionDeniedException $e) {
+            $this->assertEquals(403, $e->getStatusCode());
+        }
     }
 
     public function test_allows_admin_regardless_of_branch_id(): void
@@ -85,7 +106,9 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $resource = Counter::factory()->make(['branch_id' => 99]);
 
-        $this->assertTrue($this->authorizeBranchResource($resource, 'update'));
+        $this->authorizeBranchResource($resource, 'update');
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_denies_unauthenticated_user(): void
@@ -94,10 +117,9 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $resource = Counter::factory()->make(['branch_id' => 5]);
 
-        $result = $this->authorizeBranchResource($resource, 'update');
+        $this->expectException(AuthenticationException::class);
 
-        $this->assertInstanceOf(JsonResponse::class, $result);
-        $this->assertEquals(401, $result->getStatusCode());
+        $this->authorizeBranchResource($resource, 'update');
     }
 
     public function test_allows_branch_resource_when_key_matches_user_branch_id(): void
@@ -109,6 +131,8 @@ class AuthorizesBranchResourceTest extends TestCase
 
         $branch = Branch::factory()->make(['id' => 5]);
 
-        $this->assertTrue($this->authorizeBranchResource($branch, 'access'));
+        $this->authorizeBranchResource($branch, 'access');
+
+        $this->addToAssertionCount(1);
     }
 }

@@ -4,11 +4,11 @@ namespace App\Services\Compliance\Monitors;
 
 use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\Customer;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
 use App\Services\Compliance\AlertTriageService;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\MathService;
 use Illuminate\Support\Facades\Log;
 

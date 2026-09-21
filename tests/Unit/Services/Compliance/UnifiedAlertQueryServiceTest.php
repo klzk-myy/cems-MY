@@ -6,7 +6,7 @@ use App\Enums\AlertPriority;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use App\Services\Compliance\UnifiedAlertQueryService;

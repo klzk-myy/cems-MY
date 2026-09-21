@@ -16,10 +16,10 @@ use App\Events\TransactionApproved;
 use App\Exceptions\Domain\SelfApprovalException;
 use App\Exceptions\Domain\TransactionConfirmationRequiredException;
 use App\Exceptions\Domain\TransactionValidationException;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\StockReservation;
 use App\Models\TellerAllocation;
 use App\Models\TillBalance;
@@ -992,7 +992,9 @@ class TransactionApprovalServiceTest extends TestCase
         Notification::fake();
 
         $teller = User::factory()->create(['role' => UserRole::Teller]);
-        $rejector = User::factory()->create(['role' => UserRole::Manager]);
+        // Rejection is an approval decision: the same approve_transactions
+        // tier applies, so the rejector must be a compliance officer.
+        $rejector = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
         $counter = $this->openTill();
         $transaction = $this->pendingTransaction($counter, ['user_id' => $teller->id]);
 

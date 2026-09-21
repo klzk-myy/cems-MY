@@ -1006,4 +1006,69 @@ class AccountingWorkflowTest extends TestCase
         // Verify credit matches large net loss
         $this->assertEquals(0, bccomp($expenseLedger->credit, $largeNetLoss, 4), 'Expense credit should match large net loss');
     }
+
+    #[Test]
+    public function backdated_journal_entry_repairs_running_balances_from_insertion_point(): void
+    {
+        AccountingPeriod::factory()->create([
+            'fiscal_year_id' => $this->fiscalYear->id,
+            'period_code' => '2026-02',
+            'period_type' => 'month',
+            'start_date' => '2026-02-01',
+            'end_date' => '2026-02-28',
+            'status' => 'open',
+        ]);
+
+        $post = fn (string $date, string $amount) => $this->accountingService->createJournalEntry(
+            [
+                ['account_code' => $this->cashAccount->account_code, 'debit' => $amount, 'credit' => '0.00'],
+                ['account_code' => $this->revenueAccount->account_code, 'debit' => '0.00', 'credit' => $amount],
+            ],
+            'Manual',
+            null,
+            "Entry for {$date}",
+            $date,
+            $this->manager->id,
+            $this->branch->id
+        );
+
+        $post('2026-02-05', '100.00');
+        $post('2026-02-10', '50.00');
+        $post('2026-02-20', '25.00');
+
+        // Backdated posting lands mid-chain; every row at/after the
+        // insertion point must be recomputed, earlier rows untouched.
+        $post('2026-02-15', '10.00');
+
+        $balances = AccountLedger::where('account_code', $this->cashAccount->account_code)
+            ->where('branch_id', $this->branch->id)
+            ->orderBy('entry_date')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->pluck('running_balance')
+            ->map(fn ($b) => (string) $b)
+            ->all();
+
+        $this->assertEquals(
+            ['100.0000', '150.0000', '160.0000', '185.0000'],
+            $balances
+        );
+
+        // A backdated posting at the head of the chain must rebuild all rows.
+        $post('2026-02-01', '7.00');
+
+        $balances = AccountLedger::where('account_code', $this->cashAccount->account_code)
+            ->where('branch_id', $this->branch->id)
+            ->orderBy('entry_date')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->pluck('running_balance')
+            ->map(fn ($b) => (string) $b)
+            ->all();
+
+        $this->assertEquals(
+            ['7.0000', '107.0000', '157.0000', '167.0000', '192.0000'],
+            $balances
+        );
+    }
 }

@@ -7,10 +7,10 @@ use App\Enums\Permission;
 use App\Enums\TellerAllocationStatus;
 use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\SessionClosedException;
 use App\Exceptions\Domain\SessionOwnershipException;
 use App\Exceptions\Domain\SupervisorRequiredException;
-use App\Exceptions\Domain\UnauthorizedException;
 use App\Exceptions\Domain\UserAlreadyAtCounterException;
 use App\Exceptions\Domain\VarianceThresholdException;
 use App\Models\BranchClosureWorkflow;
@@ -443,7 +443,7 @@ class CounterHandoverService
         // manager-only rule deadlocked: findPendingHandover scopes to
         // to_user_id, so a teller recipient could never acknowledge.
         if ($user->id !== $handover->to_user_id && $user->id !== $handover->supervisor_id) {
-            throw new UnauthorizedException('Only the designated recipient or the supervisor can acknowledge this handover');
+            throw new PermissionDeniedException('Only the designated recipient or the supervisor can acknowledge this handover');
         }
 
         DB::transaction(function () use ($handover, $verified, $notes) {
@@ -480,7 +480,7 @@ class CounterHandoverService
 
             // Return previous teller's allocation to branch pool
             $fromAllocation = TellerAllocation::where('user_id', $locked->from_user_id)
-                ->where('status', TellerAllocationStatus::Active)
+                ->where('status', TellerAllocationStatus::Active->value)
                 ->whereDate('session_date', now()->toDateString())
                 ->first();
 
@@ -490,7 +490,7 @@ class CounterHandoverService
 
             // Activate new teller's allocation
             $toAllocation = TellerAllocation::where('user_id', $locked->to_user_id)
-                ->where('status', TellerAllocationStatus::Approved)
+                ->where('status', TellerAllocationStatus::Approved->value)
                 ->whereDate('session_date', now()->toDateString())
                 ->first();
 

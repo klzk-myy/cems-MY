@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\EddStatus;
+use App\Exceptions\Domain\EddValidationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RejectEddReviewRequest;
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Services\Compliance\EddService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -14,12 +16,16 @@ use Illuminate\View\View;
 /**
  * Staff-facing EDD review surface.
  *
- * Mirrors Api/V1/Compliance/EddController approve/reject logic exactly,
- * including the finalisable-status gate: only QuestionnaireSubmitted and
- * PendingReview records may be approved or rejected.
+ * Approve/reject delegate to EddService, which re-checks the
+ * finalisable-status gate under a row lock — the same path the API
+ * controller uses.
  */
 class EddReviewController extends Controller
 {
+    public function __construct(
+        protected EddService $eddService
+    ) {}
+
     /**
      * List pending EDD reviews.
      */
@@ -72,18 +78,11 @@ class EddReviewController extends Controller
     {
         $this->authorize('update', $eddRecord);
 
-        if (! in_array($eddRecord->status, $this->finalisableStatuses(), true)) {
-            return back()->with(
-                'error',
-                'Only records with a submitted questionnaire or in Pending Review can be approved (current: '.$eddRecord->status->value.').'
-            );
+        try {
+            $this->eddService->approve($eddRecord, $request->user());
+        } catch (EddValidationException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $eddRecord->update([
-            'status' => EddStatus::Approved,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
 
         return redirect()
             ->route('compliance.edd-reviews.index')
@@ -97,21 +96,13 @@ class EddReviewController extends Controller
     {
         $this->authorize('update', $eddRecord);
 
-        if (! in_array($eddRecord->status, $this->finalisableStatuses(), true)) {
-            return back()->with(
-                'error',
-                'Only records with a submitted questionnaire or in Pending Review can be rejected (current: '.$eddRecord->status->value.').'
-            );
-        }
-
         $validated = $request->validated();
 
-        $eddRecord->update([
-            'status' => EddStatus::Rejected,
-            'review_notes' => $validated['reason'],
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
+        try {
+            $this->eddService->reject($eddRecord, $request->user(), $validated['reason']);
+        } catch (EddValidationException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('compliance.edd-reviews.index')
@@ -136,12 +127,12 @@ class EddReviewController extends Controller
 
     /**
      * Statuses a record must be in before it can be finalised (approved or
-     * rejected). Kept identical to the API controller's gate.
+     * rejected). Kept identical to the API controller's gate via EddService.
      *
      * @return array<int, EddStatus>
      */
     private function finalisableStatuses(): array
     {
-        return [EddStatus::QuestionnaireSubmitted, EddStatus::PendingReview];
+        return $this->eddService->finalisableStatuses();
     }
 }

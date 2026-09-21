@@ -3,12 +3,12 @@
 namespace Tests\Unit\Listeners;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
-use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Events\RiskScoreUpdated;
 use App\Listeners\ComplianceEventListener;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\RiskScoreSnapshot;
 use App\Models\SystemLog;
 use App\Services\AuditService;
@@ -121,7 +121,7 @@ class ComplianceEventListenerTest extends TestCase
         Alert::create([
             'customer_id' => $customer->id,
             'type' => ComplianceFlagType::RiskScoreEscalation,
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
             'priority' => AlertPriority::High,
             'risk_score' => 70,
             'reason' => 'existing escalation',

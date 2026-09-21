@@ -7,7 +7,7 @@ use App\Models\Transaction;
 class CancellationActionResult
 {
     private function __construct(
-        public bool $ok,
+        public bool $success,
         public string $message,
         public ?Transaction $transaction = null,
         public array $context = []

@@ -229,7 +229,7 @@ class CurrencyController extends Controller
 
         $hasOpenTransactions = Transaction::query()
             ->where('currency_code', $currency->code)
-            ->whereIn('status', [TransactionStatus::PendingApproval, TransactionStatus::PendingCancellation])
+            ->whereIn('status', [TransactionStatus::PendingApproval->value, TransactionStatus::PendingCancellation->value])
             ->exists();
 
         if ($hasOpenTransactions) {

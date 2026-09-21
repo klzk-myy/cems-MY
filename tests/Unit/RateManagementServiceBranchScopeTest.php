@@ -100,8 +100,8 @@ class RateManagementServiceBranchScopeTest extends TestCase
 
         $result = app(RateManagementService::class)->copyPreviousRates($targetDate);
 
-        $this->assertTrue($result['success']);
-        $this->assertSame(['USD'], collect($result['rates'])->pluck('currency')->all());
+        $this->assertTrue($result->success);
+        $this->assertSame(['USD'], collect($result->rates)->pluck('currency')->all());
 
         $companyCard->refresh();
         $this->assertSame("copied_from_{$targetDate}", $companyCard->source);
@@ -158,8 +158,8 @@ class RateManagementServiceBranchScopeTest extends TestCase
 
         $result = app(RateManagementService::class)->copyPreviousRates($targetDate, $branchA->id);
 
-        $this->assertTrue($result['success']);
-        $this->assertSame(['USD'], collect($result['rates'])->pluck('currency')->all());
+        $this->assertTrue($result->success);
+        $this->assertSame(['USD'], collect($result->rates)->pluck('currency')->all());
 
         // Branch A's own card took branch A's mid (4.9000), re-derived with the
         // configured spread, and the company card stayed untouched.

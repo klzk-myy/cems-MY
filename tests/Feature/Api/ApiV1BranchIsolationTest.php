@@ -150,7 +150,7 @@ class ApiV1BranchIsolationTest extends TestCase
         // ValidTill is branch-scoped — the till must sit in the teller's
         // branch for step 1 to reach the session-ownership check.
         $counter = Counter::factory()->create(['code' => 'WT1', 'id' => '999', 'branch_id' => $tellerA->branch_id]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $session = $this->actingAs($tellerA)
             ->postJson('/api/v1/wizard/transactions/step1', [

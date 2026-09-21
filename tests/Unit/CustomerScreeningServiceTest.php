@@ -3,15 +3,15 @@
 namespace Tests\Unit;
 
 use App\Enums\UserRole;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\Customer;
 use App\Models\CustomerRelation;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
-use App\Models\ScreeningResult;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\SanctionsMatchNotification;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;

@@ -3,16 +3,17 @@
 namespace App\Services\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\CaseNoteType;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
-use App\Enums\FlagStatus;
+use App\Enums\SystemLogSeverity;
 use App\Events\CaseOpened;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseNote;
 use App\Models\Compliance\ComplianceFinding;
@@ -218,7 +219,7 @@ class CaseManagementService
                     'description' => "Compliance case {$case->case_number} escalated",
                     'case_id' => $case->id,
                 ],
-                'severity' => 'WARNING',
+                'severity' => SystemLogSeverity::Warning->value,
             ],
         );
     }
@@ -484,7 +485,7 @@ class CaseManagementService
     protected function assertAllAlertsResolved(ComplianceCase $case): void
     {
         $unresolvedAlertIds = $case->alerts()
-            ->whereNotIn('status', FlagStatus::terminalValues())
+            ->whereNotIn('status', AlertStatus::terminalValues())
             ->pluck('id')
             ->all();
 
@@ -574,7 +575,12 @@ class CaseManagementService
     {
         return ComplianceCase::with(['customer', 'assignee', 'alerts'])
             ->open()
-            ->orderByRaw("CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 WHEN 'Low' THEN 4 ELSE 5 END")
+            ->orderByRaw('CASE priority WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 WHEN ? THEN 4 ELSE 5 END', [
+                ComplianceCasePriority::Critical->value,
+                ComplianceCasePriority::High->value,
+                ComplianceCasePriority::Medium->value,
+                ComplianceCasePriority::Low->value,
+            ])
             ->orderBy('sla_deadline')
             ->get();
     }
@@ -587,16 +593,16 @@ class CaseManagementService
         return [
             'total_open' => ComplianceCase::open()->count(),
             'critical' => ComplianceCase::open()
-                ->where('priority', ComplianceCasePriority::Critical)->count(),
+                ->where('priority', ComplianceCasePriority::Critical->value)->count(),
             'high' => ComplianceCase::open()
-                ->where('priority', ComplianceCasePriority::High)->count(),
+                ->where('priority', ComplianceCasePriority::High->value)->count(),
             'medium' => ComplianceCase::open()
-                ->where('priority', ComplianceCasePriority::Medium)->count(),
+                ->where('priority', ComplianceCasePriority::Medium->value)->count(),
             'low' => ComplianceCase::open()
-                ->where('priority', ComplianceCasePriority::Low)->count(),
+                ->where('priority', ComplianceCasePriority::Low->value)->count(),
             'overdue' => ComplianceCase::open()
                 ->where('sla_deadline', '<', now())->count(),
-            'pending_review' => ComplianceCase::where('status', ComplianceCaseStatus::PendingApproval)->count(),
+            'pending_review' => ComplianceCase::where('status', ComplianceCaseStatus::PendingApproval->value)->count(),
         ];
     }
 

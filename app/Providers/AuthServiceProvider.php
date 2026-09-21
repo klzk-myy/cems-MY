@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use App\Models\Alert;
 use App\Models\Branch;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\Customer;
-use App\Models\EnhancedDiligenceRecord;
-use App\Models\FlaggedTransaction;
 use App\Models\JournalEntry;
 use App\Models\StockTransfer;
 use App\Models\SystemLog;

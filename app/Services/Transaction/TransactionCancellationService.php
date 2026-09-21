@@ -4,22 +4,17 @@ namespace App\Services\Transaction;
 
 use App\Enums\Permission;
 use App\Enums\StockReservationStatus;
+use App\Enums\SystemLogSeverity;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Events\TransactionCancelled;
 use App\Exceptions\Domain\SegregationOfDutiesException;
-use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\TransactionCancellationPendingNotification;
-use App\Services\Accounting\AccountingService;
-use App\Services\Accounting\CurrencyPositionService;
 use App\Services\AuditService;
-use App\Services\Branch\TellerAllocationService;
-use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
-use App\Services\System\MathService;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -42,12 +37,7 @@ use Illuminate\Support\Str;
 class TransactionCancellationService
 {
     public function __construct(
-        protected MathService $mathService,
         protected AuditService $auditService,
-        protected AccountingService $accountingService,
-        protected CurrencyPositionService $positionService,
-        protected ComplianceService $complianceService,
-        protected TellerAllocationService $tellerAllocationService,
         protected TransactionReversalService $reversalService,
         protected StockReleaseService $stockReleaseService,
         protected CacheInvalidationService $cacheInvalidationService,
@@ -92,7 +82,10 @@ class TransactionCancellationService
                     'previous_status' => $previousStatus->value,
                 ]);
 
-                $this->notifyPendingCancellation($lockedTransaction, $requester, $reason);
+                // Notify only after the transition commits — sending inside
+                // this DB transaction could alert compliance to a
+                // cancellation that a later failure rolled back.
+                DB::afterCommit(fn () => $this->notifyPendingCancellation($lockedTransaction, $requester, $reason));
 
                 $this->auditService->logTransactionSealed(
                     'cancellation_requested',
@@ -104,7 +97,7 @@ class TransactionCancellationService
                             'reason' => $reason,
                             'requested_by' => $requester->id,
                         ],
-                        'severity' => 'CRITICAL',
+                        'severity' => SystemLogSeverity::Critical->value,
                     ]
                 );
             }
@@ -179,7 +172,7 @@ class TransactionCancellationService
             }
 
             $hasReservation = StockReservation::where('transaction_id', $lockedTransaction->id)
-                ->where('status', StockReservationStatus::Pending)
+                ->where('status', StockReservationStatus::Pending->value)
                 ->exists();
 
             // Enforce the state transition FIRST. Compensating side effects must not
@@ -193,31 +186,11 @@ class TransactionCancellationService
 
             if ($result) {
                 if ($previousStatus->isCompleted()) {
-                    $this->reversalService->reversePositions($lockedTransaction);
-
-                    // The till may have no open balance today (e.g. it was
-                    // closed before an older transaction is cancelled). Skip
-                    // the till leg - its books were already sealed - but still
-                    // complete the FX, journal and allocation reversal legs.
-                    try {
-                        $this->reversalService->reverseTillBalance($lockedTransaction);
-                    } catch (TillBalanceMissingException $e) {
-                        Log::warning('Skipping till balance reversal - no open till balance', [
-                            'transaction_id' => $lockedTransaction->id,
-                            'till_id' => $lockedTransaction->till_id,
-                            'currency_code' => $lockedTransaction->currency_code,
-                        ]);
-                    }
-
-                    $this->reverseTellerAllocation($lockedTransaction);
-                    $this->reversalService->createReversingJournalEntries($lockedTransaction, $approver->id);
-
-                    // Same compliance artefact as TransactionReversalService::
-                    // reverse(): the physical cash hand-back is acknowledged
-                    // through a PendingApproval refund record that completes
-                    // via complete-refund — skipping it would leave the books
-                    // reversed with no gated record of the cash movement.
-                    $refund = $this->reversalService->createRefundTransaction($lockedTransaction, $approver->id);
+                    // Same compensating legs and compliance-gated refund
+                    // artefact as TransactionReversalService::reverse() —
+                    // shared via runCompensatingLegs() so both paths undo
+                    // the books identically.
+                    $refund = $this->reversalService->runCompensatingLegs($lockedTransaction, $approver->id);
 
                     Log::info('Refund transaction created for completed-transaction cancellation', [
                         'transaction_id' => $lockedTransaction->id,
@@ -244,7 +217,7 @@ class TransactionCancellationService
                             'reason' => $reason,
                             'approved_by' => $approver->id,
                         ],
-                        'severity' => 'CRITICAL',
+                        'severity' => SystemLogSeverity::Critical->value,
                     ]
                 );
 
@@ -341,7 +314,7 @@ class TransactionCancellationService
                             'reason' => $reason,
                             'rejected_by' => $rejector->id,
                         ],
-                        'severity' => 'CRITICAL',
+                        'severity' => SystemLogSeverity::Critical->value,
                     ]
                 );
             }
@@ -382,16 +355,6 @@ class TransactionCancellationService
                 'transaction_id' => $transaction->id,
                 'current_status' => $transaction->status->value,
                 'within_window' => $this->reversalService->isWithinCancellationWindow($transaction),
-            ]);
-
-            return false;
-        }
-
-        if (! $this->reversalService->isWithinCancellationWindow($transaction)) {
-            Log::warning('Transaction reversal window has expired', [
-                'transaction_id' => $transaction->id,
-                'transaction_created_at' => $transaction->created_at->toIso8601String(),
-                'window_hours' => config('cems.transaction_cancellation_window_hours', 24),
             ]);
 
             return false;
@@ -601,10 +564,5 @@ class TransactionCancellationService
         }
 
         return null;
-    }
-
-    protected function reverseTellerAllocation(Transaction $transaction): void
-    {
-        $this->tellerAllocationService->reverseTransactionAllocation($transaction);
     }
 }

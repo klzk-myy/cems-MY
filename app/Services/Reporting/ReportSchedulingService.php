@@ -7,8 +7,8 @@ use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use App\Events\ReportGenerated;
-use App\Models\EnhancedDiligenceRecord;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Services\AuditService;
@@ -291,7 +291,7 @@ class ReportSchedulingService
         $totalRuns = ReportRun::count();
         $successfulRuns = ReportRun::successful()->count();
         $failedRuns = ReportRun::failed()->count();
-        $scheduledRuns = ReportRun::where('status', ReportRunStatus::Scheduled)->count();
+        $scheduledRuns = ReportRun::where('status', ReportRunStatus::Scheduled->value)->count();
 
         $recentRuns = ReportRun::with('generatedBy')
             ->orderByDesc('created_at')

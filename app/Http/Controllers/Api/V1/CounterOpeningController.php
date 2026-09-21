@@ -12,6 +12,7 @@ use App\Http\Requests\Api\V1\Counter\ApproveAndOpenRequest;
 use App\Http\Requests\Api\V1\Counter\InitiateOpeningRequest;
 use App\Http\Resources\Api\V1\CounterSessionResource;
 use App\Models\Branch;
+use App\Models\Counter;
 use App\Models\User;
 use App\Services\Branch\CounterOpeningWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -49,9 +50,7 @@ class CounterOpeningController extends Controller
             return $this->errorResponse('User has no assigned branch', [], 422);
         }
 
-        if ($response = $this->requirePermissionResponse(Permission::ManageCounters, 'Only users with the Manage Counters permission can view pending opening requests')) {
-            return $response;
-        }
+        $this->requirePermission(Permission::ManageCounters, 'Only users with the Manage Counters permission can view pending opening requests');
 
         $pending = $this->workflowService->getPendingRequestsForBranch($branch);
 
@@ -68,8 +67,8 @@ class CounterOpeningController extends Controller
         $user = Auth::user();
 
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $validated = $request->validated();
@@ -98,13 +97,11 @@ class CounterOpeningController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($response = $this->requirePermissionResponse(Permission::ManageCounters, 'Only users with the Manage Counters permission can approve and open counters')) {
-            return $response;
-        }
+        $this->requirePermission(Permission::ManageCounters, 'Only users with the Manage Counters permission can approve and open counters');
 
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $validated = $request->validated();

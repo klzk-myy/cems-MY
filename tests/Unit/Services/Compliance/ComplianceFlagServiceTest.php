@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\Compliance;
 
 use App\Enums\FlagStatus;
 use App\Enums\UserRole;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\Compliance\ComplianceFlagService;

@@ -3,36 +3,31 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Enums\Permission;
-use Illuminate\Http\JsonResponse;
+use App\Exceptions\Domain\PermissionDeniedException;
 
 /**
- * Helpers for returning a 403 JSON response when the authenticated user's
- * role does not hold a permission in the role_permissions matrix.
- *
- * Host controllers must provide an `errorResponse()` helper (e.g. by using
- * the `ApiResponse` trait).
+ * Throws a PermissionDeniedException (403, standard error envelope) when the
+ * authenticated user's role does not hold a permission in the
+ * role_permissions matrix.
  */
 trait RequiresPermission
 {
     /**
-     * Return a standardized 403 API response if the current user's role
-     * does not hold the given permission in the role_permissions matrix.
+     * Require the current user's role to hold the given permission, or throw.
      *
-     * Requires the host controller to provide an `errorResponse()` method
-     * (typically via the `ApiResponse` trait).
+     * @throws PermissionDeniedException
      */
-    protected function requirePermissionResponse(Permission $permission, ?string $message = null): ?JsonResponse
+    protected function requirePermission(Permission $permission, ?string $message = null): void
     {
         $user = auth()->user();
 
         if ($user && $user->role->canPerform($permission)) {
-            return null;
+            return;
         }
 
-        return $this->errorResponse(
-            $message ?? "Unauthorized. {$permission->label()} required.",
-            [],
-            403
+        throw new PermissionDeniedException(
+            $permission->label(),
+            $message ?? "Unauthorized. {$permission->label()} required."
         );
     }
 }

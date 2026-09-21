@@ -3,6 +3,7 @@
 namespace App\Models\Compliance;
 
 use App\Enums\RecalculationTrigger;
+use App\Enums\RiskRating;
 use App\Models\BaseModel;
 use App\Models\Customer;
 use App\Models\User;
@@ -138,10 +139,10 @@ class CustomerRiskProfile extends BaseModel
     public static function getTierForScore(int $score): string
     {
         return match (true) {
-            $score >= 80 => 'Critical',
-            $score >= 60 => 'High',
-            $score >= 30 => 'Medium',
-            default => 'Low',
+            $score >= 80 => RiskRating::Critical->value,
+            $score >= 60 => RiskRating::High->value,
+            $score >= 30 => RiskRating::Medium->value,
+            default => RiskRating::Low->value,
         };
     }
 

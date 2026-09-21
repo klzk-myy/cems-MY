@@ -5,7 +5,6 @@ namespace App\Services\Reporting;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use App\Models\ReportGenerated;
-use App\Services\Contracts\ReportingServiceInterface;
 use App\Services\Reporting\Generators\LedgerBackedReportGenerator;
 use App\Services\Reporting\Generators\LmcaReportGenerator;
 use App\Services\Reporting\Generators\Msb2ReportGenerator;
@@ -15,11 +14,11 @@ use App\Support\ActorContext;
 use Carbon\Carbon;
 
 /**
- * Reporting facade: keeps the public ReportingServiceInterface surface stable
+ * Reporting facade: keeps the public ReportingService surface stable
  * while each report family lives in a dedicated generator under
  * Reporting\Generators.
  */
-class ReportingService implements ReportingServiceInterface
+class ReportingService
 {
     public function __construct(
         protected Msb2ReportGenerator $msb2Generator,

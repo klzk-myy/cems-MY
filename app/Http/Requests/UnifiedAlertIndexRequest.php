@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Enums\AlertPriority;
+use App\Enums\UnifiedAlertStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UnifiedAlertIndexRequest extends FormRequest
 {
@@ -17,8 +19,8 @@ class UnifiedAlertIndexRequest extends FormRequest
     {
         return [
             'source' => ['nullable', Rule::in(['all', 'alert', 'finding'])],
-            'priority' => ['nullable', Rule::in(array_map('strtolower', array_column(AlertPriority::cases(), 'value')))],
-            'status' => ['nullable', Rule::in(['open', 'in_review', 'resolved', 'dismissed'])],
+            'priority' => ['nullable', new Enum(AlertPriority::class)],
+            'status' => ['nullable', new Enum(UnifiedAlertStatus::class)],
             'type' => ['nullable', 'string', 'max:100'],
             'customer' => ['nullable', 'string', 'max:255'],
             'from_date' => ['nullable', 'date'],

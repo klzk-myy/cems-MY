@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\SanctionListType;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 

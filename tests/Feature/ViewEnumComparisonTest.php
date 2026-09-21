@@ -7,7 +7,7 @@ use App\Enums\StockTransferStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\TillBalance;

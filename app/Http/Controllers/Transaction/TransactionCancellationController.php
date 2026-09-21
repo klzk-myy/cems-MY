@@ -36,7 +36,7 @@ class TransactionCancellationController extends Controller
             $validated['reason']
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return back()->with('error', $result->message);
         }
 
@@ -70,7 +70,7 @@ class TransactionCancellationController extends Controller
             $validated['reason'] ?? null
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return back()->with('error', $result->message);
         }
 
@@ -104,7 +104,7 @@ class TransactionCancellationController extends Controller
             $validated['reason']
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return back()->with('error', $result->message);
         }
 

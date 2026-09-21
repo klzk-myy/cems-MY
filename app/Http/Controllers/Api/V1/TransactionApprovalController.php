@@ -39,7 +39,7 @@ class TransactionApprovalController extends Controller
 
         $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return $this->errorResponse($result->message, [], 422);
         }
 
@@ -62,7 +62,9 @@ class TransactionApprovalController extends Controller
                 return $this->errorResponse('Transaction cannot be rejected from its current status.', [], 422);
             }
 
-            return $this->successResponse(new TransactionResource($transaction), 'Transaction has been rejected.');
+            // The service transitions a locked re-read — refresh so the
+            // resource serialises the post-rejection state.
+            return $this->successResponse(new TransactionResource($transaction->refresh()), 'Transaction has been rejected.');
         } catch (SelfApprovalException $e) {
             return $this->domainErrorResponse($e, 'You cannot reject your own transaction. Segregation of duties requires a different approver.');
         } catch (DomainException $e) {
@@ -126,10 +128,10 @@ class TransactionApprovalController extends Controller
             (int) auth()->id()
         );
 
-        if (! $result['success']) {
-            return $this->errorResponse($result['message'], [], 422);
+        if (! $result->success) {
+            return $this->errorResponse($result->message, [], 422);
         }
 
-        return $this->successResponse(new TransactionConfirmationResource($confirmation->fresh()), $result['message']);
+        return $this->successResponse(new TransactionConfirmationResource($confirmation->fresh()), $result->message);
     }
 }

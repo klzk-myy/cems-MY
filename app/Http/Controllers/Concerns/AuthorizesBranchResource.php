@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Models\Branch;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -18,52 +19,46 @@ use Illuminate\Support\Facades\Auth;
  *   - `authorizeBranchResource(Model $resource, ...)` — when you have the
  *     full model (looks up `branch_id` via `getAttribute`, or the primary key
  *     if the resource is a `Branch` itself).
- *   - `authorizeBranchResourceOrAbort(Model $resource, ...)` — web-controller
- *     variant that aborts instead of returning a JSON denial.
  *   - `authorizeAssignedBranch()` — gates on the user's own branch
  *     assignment rather than a resource's branch, for company-wide
  *     resources (e.g. customers).
  *
- * The first two return a 403 `JsonResponse` when unauthorized, or a truthy
- * value (`true` / `null`) when authorized.
+ * All accessors throw on denial: AuthenticationException (401) when
+ * unauthenticated, PermissionDeniedException (403) otherwise — rendered
+ * through the standard DomainException envelope.
  */
 trait AuthorizesBranchResource
 {
-    protected function authorizeBranchAccess(int $branchId): ?JsonResponse
+    protected function authorizeBranchAccess(int $branchId): void
     {
         $user = Auth::user();
 
         if ($user === null) {
-            return $this->denyResponse('Unauthenticated.', 401);
+            throw new AuthenticationException('Unauthenticated.');
         }
 
         if ($user->role->canManageAllBranches()) {
-            return null;
+            return;
         }
 
         if ((int) $branchId !== (int) $user->branch_id) {
-            return $this->denyResponse('You do not have permission to access this branch.', 403);
+            throw new PermissionDeniedException('access this branch', 'You do not have permission to access this branch.');
         }
-
-        return null;
     }
 
-    /**
-     * @return true|JsonResponse True when authorized, a 403/401 response otherwise.
-     */
     protected function authorizeBranchResource(
         Model $resource,
         string $action = 'access',
         ?string $message = null
-    ): true|JsonResponse {
+    ): void {
         $user = Auth::user();
 
         if ($user === null) {
-            return $this->denyResponse('Unauthenticated.', 401);
+            throw new AuthenticationException('Unauthenticated.');
         }
 
         if ($user->role->canManageAllBranches()) {
-            return true;
+            return;
         }
 
         $resourceBranchId = $resource instanceof Branch
@@ -74,39 +69,12 @@ trait AuthorizesBranchResource
         // therefore have no provable branch ownership: deny them for
         // non-admins instead of silently granting access to everyone.
         // (Admins were already allowed above.)
-        if ($resourceBranchId === null) {
-            return $this->denyResponse(
-                $message ?? "You can only {$action} resources for your own branch.",
-                403
+        if ($resourceBranchId === null || (int) $resourceBranchId !== (int) $user->branch_id) {
+            throw new PermissionDeniedException(
+                "{$action} resources",
+                $message ?? "You can only {$action} resources for your own branch."
             );
         }
-
-        if ((int) $resourceBranchId !== (int) $user->branch_id) {
-            return $this->denyResponse(
-                $message ?? "You can only {$action} resources for your own branch.",
-                403
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Web-controller variant of authorizeBranchResource(): aborts with the
-     * denial status/message instead of returning a JSON response.
-     */
-    protected function authorizeBranchResourceOrAbort(
-        Model $resource,
-        string $action = 'access',
-        ?string $message = null
-    ): true {
-        $result = $this->authorizeBranchResource($resource, $action, $message);
-
-        if ($result instanceof JsonResponse) {
-            abort($result->getStatusCode(), $result->getData(true)['message'] ?? 'Forbidden');
-        }
-
-        return true;
     }
 
     /**
@@ -118,30 +86,19 @@ trait AuthorizesBranchResource
      */
     protected function authorizeAssignedBranch(
         string $message = 'You are not authorized for this action.'
-    ): ?JsonResponse {
+    ): void {
         $user = Auth::user();
 
         if ($user === null) {
-            return $this->denyResponse('Unauthenticated.', 401);
+            throw new AuthenticationException('Unauthenticated.');
         }
 
         if ($user->role->canManageAllBranches()) {
-            return null;
+            return;
         }
 
         if ($user->role->requiresBranch() && $user->branch_id === null) {
-            return $this->denyResponse($message, 403);
+            throw new PermissionDeniedException('perform this action', $message);
         }
-
-        return null;
-    }
-
-    private function denyResponse(string $message, int $status): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'errors' => [],
-        ], $status);
     }
 }

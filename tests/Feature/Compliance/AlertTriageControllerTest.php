@@ -3,9 +3,9 @@
 namespace Tests\Feature\Compliance;
 
 use App\Enums\AlertPriority;
-use App\Enums\FlagStatus;
+use App\Enums\AlertStatus;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\Compliance\AlertTriageService;
@@ -119,7 +119,7 @@ class AlertTriageControllerTest extends TestCase
     #[Test]
     public function dismiss_updates_status_to_rejected_and_redirects(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $this->actingAs($this->officer)
             ->post(route('compliance.alerts.dismiss', $alert), [
@@ -130,14 +130,14 @@ class AlertTriageControllerTest extends TestCase
 
         $this->assertDatabaseHas('alerts', [
             'id' => $alert->id,
-            'status' => FlagStatus::Rejected->value,
+            'status' => AlertStatus::Rejected->value,
         ]);
     }
 
     #[Test]
     public function dismiss_rejects_already_resolved_alert(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Resolved]);
 
         $this->actingAs($this->officer)
             ->post(route('compliance.alerts.dismiss', $alert), [
@@ -147,14 +147,14 @@ class AlertTriageControllerTest extends TestCase
 
         $this->assertDatabaseMissing('alerts', [
             'id' => $alert->id,
-            'status' => FlagStatus::Rejected->value,
+            'status' => AlertStatus::Rejected->value,
         ]);
     }
 
     #[Test]
     public function dismiss_rejects_already_rejected_alert(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Rejected]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Rejected]);
 
         $this->actingAs($this->officer)
             ->post(route('compliance.alerts.dismiss', $alert), [
@@ -166,7 +166,7 @@ class AlertTriageControllerTest extends TestCase
     #[Test]
     public function resolve_alert_is_rejected_via_service_when_alert_already_terminal(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Resolved]);
         $service = app(AlertTriageService::class);
 
         $this->expectException(CaseManagementException::class);

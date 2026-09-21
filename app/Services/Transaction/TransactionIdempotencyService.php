@@ -4,10 +4,9 @@ namespace App\Services\Transaction;
 
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Models\Transaction;
-use App\Services\Contracts\TransactionIdempotencyServiceInterface;
 use Carbon\Carbon;
 
-class TransactionIdempotencyService implements TransactionIdempotencyServiceInterface
+class TransactionIdempotencyService
 {
     /**
      * Find an existing transaction by idempotency key.

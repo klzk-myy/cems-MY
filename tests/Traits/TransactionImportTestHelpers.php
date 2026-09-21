@@ -11,14 +11,11 @@ use App\Models\TillBalance;
 use App\Models\TransactionImport;
 use App\Models\User;
 use App\Services\Branch\TillBalanceManager;
-use App\Services\Contracts\RateManagementServiceInterface;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use App\Services\Transaction\ExchangeCalculator;
-use App\Services\Transaction\InitialStatusResolver;
+use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionImportService;
-use App\Services\Transaction\TransactionMonitoringService;
 
 trait TransactionImportTestHelpers
 {
@@ -78,25 +75,30 @@ trait TransactionImportTestHelpers
 
     private function createImportService(
         string $threshold,
-        ?RateManagementServiceInterface $rateManagementService = null
+        ?RateManagementService $rateManagementService = null
     ): TransactionImportService {
-        $thresholdService = $this->createMock(ThresholdService::class);
+        // Partial mock: the container-bound instance now reaches every
+        // ThresholdService consumer inside TransactionCreationService (CDD
+        // tiers, hold thresholds, position limits), so only the auto-approve
+        // threshold is stubbed and all other methods run for real.
+        $thresholdService = $this->getMockBuilder(ThresholdService::class)
+            ->onlyMethods(['getAutoApproveThreshold'])
+            ->getMock();
         $thresholdService->method('getAutoApproveThreshold')->willReturn($threshold);
 
         // The import delegates the booking gate to TransactionCreationService,
-        // so rate/compliance mocks must be bound in the container to take
-        // effect — constructor injection alone no longer reaches them.
+        // so rate/threshold/compliance mocks must be bound in the container to
+        // take effect — constructor injection alone no longer reaches them.
+        $this->app->instance(ThresholdService::class, $thresholdService);
+
         if ($rateManagementService) {
-            $this->app->instance(RateManagementServiceInterface::class, $rateManagementService);
+            $this->app->instance(RateManagementService::class, $rateManagementService);
         }
 
         return new TransactionImportService(
             app(MathService::class),
-            app(TransactionMonitoringService::class),
             app(TillBalanceManager::class),
             app(TransactionCreationService::class),
-            new InitialStatusResolver(app(MathService::class), $thresholdService),
-            app(ExchangeCalculator::class),
         );
     }
 

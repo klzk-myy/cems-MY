@@ -11,6 +11,7 @@ use App\Models\PepApprovalRequest;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 
 /**
  * PEP Approval Service
@@ -96,20 +97,27 @@ class PepApprovalService
             throw new PepApprovalRequiredException('Customer is not flagged as PEP');
         }
 
-        if (PepApprovalRequest::where('customer_id', $customer->id)
-            ->where('transaction_type', $transactionType)
-            ->where('status', ApprovalStatus::Pending)
-            ->exists()) {
-            throw new PepApprovalRequiredException('Pending approval already exists for this customer and transaction type');
-        }
+        // Lock the customer row as the mutex: without it two concurrent
+        // requests for the same transaction type can both pass the
+        // pending-check and create duplicate approval requests.
+        return DB::transaction(function () use ($customer, $transactionType) {
+            Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
 
-        return PepApprovalRequest::create([
-            'customer_id' => $customer->id,
-            'transaction_type' => $transactionType,
-            'status' => ApprovalStatus::Pending,
-            'approval_level' => 'head_office_senior_management',
-            'requested_at' => now(),
-        ]);
+            if (PepApprovalRequest::where('customer_id', $customer->id)
+                ->where('transaction_type', $transactionType)
+                ->where('status', ApprovalStatus::Pending->value)
+                ->exists()) {
+                throw new PepApprovalRequiredException('Pending approval already exists for this customer and transaction type');
+            }
+
+            return PepApprovalRequest::create([
+                'customer_id' => $customer->id,
+                'transaction_type' => $transactionType,
+                'status' => ApprovalStatus::Pending,
+                'approval_level' => 'head_office_senior_management',
+                'requested_at' => now(),
+            ]);
+        });
     }
 
     /**
@@ -120,37 +128,43 @@ class PepApprovalService
      */
     public function approve(PepApprovalRequest $request, User $approver): void
     {
-        if ($request->status !== ApprovalStatus::Pending) {
-            throw new PepApprovalRequiredException('Cannot approve: request is not in Pending status');
-        }
+        // Lock + re-check inside the transaction: two concurrent approvers
+        // could otherwise both pass the Pending check and double-approve.
+        DB::transaction(function () use ($request, $approver) {
+            $locked = PepApprovalRequest::whereKey($request->id)->lockForUpdate()->firstOrFail();
 
-        if ($this->isSelfApproval($request, $approver)) {
-            throw new PepApprovalRequiredException(
-                'Self-approval forbidden: segregation of duties requires an approver who did not initiate the PEP relationship'
-            );
-        }
+            if ($locked->status !== ApprovalStatus::Pending) {
+                throw new PepApprovalRequiredException('Cannot approve: request is not in Pending status');
+            }
 
-        $previousStatus = $request->status;
+            if ($this->isSelfApproval($locked, $approver)) {
+                throw new PepApprovalRequiredException(
+                    'Self-approval forbidden: segregation of duties requires an approver who did not initiate the PEP relationship'
+                );
+            }
 
-        $request->update([
-            'status' => ApprovalStatus::Approved,
-            'approved_by' => $approver->id,
-            'approved_at' => now(),
-        ]);
+            $previousStatus = $locked->status;
 
-        $this->auditService->logComplianceDecision('pep_approval_approved', $request->id, [
-            'entity_type' => 'PepApprovalRequest',
-            'old' => ['status' => $previousStatus->value],
-            'new' => [
-                'status' => ApprovalStatus::Approved->value,
+            $locked->update([
+                'status' => ApprovalStatus::Approved,
                 'approved_by' => $approver->id,
-                'customer_id' => $request->customer_id,
-                'transaction_type' => $request->transaction_type,
-                'approval_level' => $request->approval_level instanceof ApprovalLevel
-                    ? $request->approval_level->value
-                    : $request->approval_level,
-            ],
-        ]);
+                'approved_at' => now(),
+            ]);
+
+            $this->auditService->logComplianceDecision('pep_approval_approved', $locked->id, [
+                'entity_type' => 'PepApprovalRequest',
+                'old' => ['status' => $previousStatus->value],
+                'new' => [
+                    'status' => ApprovalStatus::Approved->value,
+                    'approved_by' => $approver->id,
+                    'customer_id' => $locked->customer_id,
+                    'transaction_type' => $locked->transaction_type,
+                    'approval_level' => $locked->approval_level instanceof ApprovalLevel
+                        ? $locked->approval_level->value
+                        : $locked->approval_level,
+                ],
+            ]);
+        });
     }
 
     /**
@@ -162,36 +176,40 @@ class PepApprovalService
      */
     public function reject(PepApprovalRequest $request, User $rejector, string $reason): void
     {
-        if ($request->status !== ApprovalStatus::Pending) {
-            throw new PepApprovalRequiredException('Cannot reject: request is not in Pending status');
-        }
+        DB::transaction(function () use ($request, $rejector, $reason) {
+            $locked = PepApprovalRequest::whereKey($request->id)->lockForUpdate()->firstOrFail();
 
-        if ($this->isSelfApproval($request, $rejector)) {
-            throw new PepApprovalRequiredException(
-                'Self-approval forbidden: segregation of duties requires a decision-maker who did not initiate the PEP relationship'
-            );
-        }
+            if ($locked->status !== ApprovalStatus::Pending) {
+                throw new PepApprovalRequiredException('Cannot reject: request is not in Pending status');
+            }
 
-        $previousStatus = $request->status;
+            if ($this->isSelfApproval($locked, $rejector)) {
+                throw new PepApprovalRequiredException(
+                    'Self-approval forbidden: segregation of duties requires a decision-maker who did not initiate the PEP relationship'
+                );
+            }
 
-        $request->update([
-            'status' => ApprovalStatus::Rejected,
-            'rejected_by' => $rejector->id,
-            'rejected_at' => now(),
-            'rejection_reason' => $reason,
-        ]);
+            $previousStatus = $locked->status;
 
-        $this->auditService->logComplianceDecision('pep_approval_rejected', $request->id, [
-            'entity_type' => 'PepApprovalRequest',
-            'old' => ['status' => $previousStatus->value],
-            'new' => [
-                'status' => ApprovalStatus::Rejected->value,
+            $locked->update([
+                'status' => ApprovalStatus::Rejected,
                 'rejected_by' => $rejector->id,
+                'rejected_at' => now(),
                 'rejection_reason' => $reason,
-                'customer_id' => $request->customer_id,
-                'transaction_type' => $request->transaction_type,
-            ],
-        ]);
+            ]);
+
+            $this->auditService->logComplianceDecision('pep_approval_rejected', $locked->id, [
+                'entity_type' => 'PepApprovalRequest',
+                'old' => ['status' => $previousStatus->value],
+                'new' => [
+                    'status' => ApprovalStatus::Rejected->value,
+                    'rejected_by' => $rejector->id,
+                    'rejection_reason' => $reason,
+                    'customer_id' => $locked->customer_id,
+                    'transaction_type' => $locked->transaction_type,
+                ],
+            ]);
+        });
     }
 
     /**
@@ -216,7 +234,7 @@ class PepApprovalService
     public function hasPendingApproval(Customer $customer): bool
     {
         return PepApprovalRequest::where('customer_id', $customer->id)
-            ->where('status', ApprovalStatus::Pending)
+            ->where('status', ApprovalStatus::Pending->value)
             ->exists();
     }
 
@@ -226,7 +244,7 @@ class PepApprovalService
     public function getPendingApproval(Customer $customer): ?PepApprovalRequest
     {
         return PepApprovalRequest::where('customer_id', $customer->id)
-            ->where('status', ApprovalStatus::Pending)
+            ->where('status', ApprovalStatus::Pending->value)
             ->latest()
             ->first();
     }
@@ -237,7 +255,7 @@ class PepApprovalService
     public function hasApprovedApproval(Customer $customer): bool
     {
         return PepApprovalRequest::where('customer_id', $customer->id)
-            ->where('status', ApprovalStatus::Approved)
+            ->where('status', ApprovalStatus::Approved->value)
             ->exists();
     }
 }

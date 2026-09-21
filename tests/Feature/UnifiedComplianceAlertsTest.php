@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use App\Models\User;
@@ -337,7 +337,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $customer->id,
-            'severity' => 'High',
+            'severity' => 'high',
             'finding_type' => 'Velocity_Exceeded',
             'status' => 'new',
             'details' => ['summary' => 'Test finding'],
@@ -358,7 +358,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $customer->id,
-            'severity' => 'High',
+            'severity' => 'high',
             'finding_type' => 'Velocity_Exceeded',
             'status' => 'new',
             'details' => ['summary' => 'Test finding'],
@@ -380,7 +380,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $customer->id,
-            'severity' => 'High',
+            'severity' => 'high',
             'finding_type' => 'Velocity_Exceeded',
             'status' => 'new',
             'details' => ['summary' => 'Older finding'],
@@ -389,7 +389,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $customer->id,
-            'severity' => 'Critical',
+            'severity' => 'critical',
             'finding_type' => 'Sanction_Match',
             'status' => 'new',
             'details' => ['summary' => 'Newer finding'],
@@ -415,7 +415,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $jane->id,
-            'severity' => 'High',
+            'severity' => 'high',
             'finding_type' => 'Velocity_Exceeded',
             'status' => 'new',
             'details' => ['summary' => 'Jane finding'],
@@ -424,7 +424,7 @@ class UnifiedComplianceAlertsTest extends TestCase
         ComplianceFinding::factory()->create([
             'subject_type' => 'Customer',
             'subject_id' => $john->id,
-            'severity' => 'Critical',
+            'severity' => 'critical',
             'finding_type' => 'Sanction_Match',
             'status' => 'new',
             'details' => ['summary' => 'John finding'],

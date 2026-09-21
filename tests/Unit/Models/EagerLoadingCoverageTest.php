@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
-use App\Models\EnhancedDiligenceRecord;
-use App\Models\FlaggedTransaction;
-use App\Models\ScreeningResult;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\ScreeningResult;
 use Tests\TestCase;
 
 class EagerLoadingCoverageTest extends TestCase

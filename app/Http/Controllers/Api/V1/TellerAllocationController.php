@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
@@ -84,10 +85,7 @@ class TellerAllocationController extends Controller
             return $this->notFoundResponse('Allocation not found');
         }
 
-        $authorization = $this->authorizeBranchResource($allocation, 'access', 'Unauthorized access to this allocation');
-        if ($authorization instanceof JsonResponse) {
-            return $authorization;
-        }
+        $this->authorizeBranchResource($allocation, 'access', 'Unauthorized access to this allocation');
 
         return $this->successResponse(new TellerAllocationResource($allocation));
     }
@@ -104,7 +102,7 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $this->allocationService->canManageAllocations($user)) {
-            return $this->errorResponse("Only managers and admins can {$actionName} allocations", [], 403);
+            throw new PermissionDeniedException("{$actionName} allocations");
         }
 
         $allocation = TellerAllocation::find($allocationId);
@@ -113,10 +111,7 @@ class TellerAllocationController extends Controller
             return $this->notFoundResponse('Allocation not found');
         }
 
-        $authorization = $this->authorizeBranchResource($allocation, 'manage', 'Unauthorized access to this allocation');
-        if ($authorization instanceof JsonResponse) {
-            return $authorization;
-        }
+        $this->authorizeBranchResource($allocation, 'manage', 'Unauthorized access to this allocation');
 
         if ($statusCheck && ! $allocation->{$statusCheck}()) {
             return $this->errorResponse('Allocation is not in the required status', [], 409);
@@ -234,7 +229,7 @@ class TellerAllocationController extends Controller
         $user = Auth::user();
 
         if (! $user->role->canPerform(Permission::RequestStock)) {
-            return $this->errorResponse('Only users with the Request Stock Allocations permission can request stock allocations', [], 403);
+            throw new PermissionDeniedException('request stock allocations');
         }
 
         $validated = $request->validated();
@@ -271,7 +266,7 @@ class TellerAllocationController extends Controller
         }
 
         if ($allocation->user_id !== Auth::id()) {
-            return $this->errorResponse('Only the assigned teller can accept this allocation', [], 403);
+            throw new PermissionDeniedException('Only the assigned teller can accept this allocation');
         }
 
         if (! $allocation->isApproved()) {
@@ -296,7 +291,7 @@ class TellerAllocationController extends Controller
         }
 
         if ($allocation->user_id !== Auth::id()) {
-            return $this->errorResponse('Only the assigned teller can return this allocation', [], 403);
+            throw new PermissionDeniedException('Only the assigned teller can return this allocation');
         }
 
         if (! $allocation->isActive()) {

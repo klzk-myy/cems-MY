@@ -103,8 +103,8 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
             'still_missing' => [],
         ];
 
-        Transaction::where('status', TransactionStatus::Completed)
-            ->where('cdd_level', CddLevel::Enhanced)
+        Transaction::where('status', TransactionStatus::Completed->value)
+            ->where('cdd_level', CddLevel::Enhanced->value)
             ->where(function ($query) {
                 $query->whereNull('journal_entry_id')
                     ->orWhere(function ($q) {
@@ -256,7 +256,7 @@ class ReconcileDeferredAccountingJob implements ShouldQueue
     protected function alertComplianceTeam(array $report): void
     {
         // Find compliance officers to notify
-        $complianceOfficers = User::where('role', UserRole::ComplianceOfficer)->get();
+        $complianceOfficers = User::where('role', UserRole::ComplianceOfficer->value)->get();
 
         if ($complianceOfficers->isEmpty()) {
             Log::warning('ReconcileDeferredAccountingJob: No compliance officers found for notification');

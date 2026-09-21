@@ -25,10 +25,10 @@ use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\System\RateLimitService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionConfirmationService;
+use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionReversalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -167,7 +167,7 @@ class ConcurrencyFixesTest extends TestCase
             'last_revalued_at' => null,
         ]);
 
-        $creationService = app(TransactionCreationServiceInterface::class);
+        $creationService = app(TransactionCreationService::class);
 
         // Verify preconditions
         $this->assertTrue($teller->isTeller(), 'Teller user must have Teller role');

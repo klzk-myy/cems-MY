@@ -44,7 +44,7 @@ class RegulatoryReportController extends Controller
         $date = $request->validated('date', now()->subDay()->toDateString());
 
         // Check existing report
-        $reportGenerated = ReportGenerated::where('report_type', ReportType::Msb2)
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Msb2->value)
             ->whereDate('period_start', Carbon::parse($date)->toDateString())
             ->first();
 
@@ -96,7 +96,7 @@ class RegulatoryReportController extends Controller
                 ? $this->mathService->divide($totalVolume, (string) $totalTransactions)
                 : '0',
             'pending_approval' => Transaction::query()
-                ->where('status', TransactionStatus::PendingApproval)
+                ->where('status', TransactionStatus::PendingApproval->value)
                 ->forDateRange($date, $date)
                 ->count(),
         ];
@@ -157,7 +157,7 @@ class RegulatoryReportController extends Controller
 
         $month = $request->validated('month', now()->format('Y-m'));
 
-        $reportGenerated = ReportGenerated::where('report_type', ReportType::Lmca)
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Lmca->value)
             ->whereDate('period_start', Carbon::parse($month)->startOfMonth())
             ->first();
 
@@ -241,7 +241,7 @@ class RegulatoryReportController extends Controller
         $quarter = $request->validated('quarter', now()->format('Y').'-Q'.(int) ceil((int) now()->format('n') / 3));
         $quarterVo = Quarter::fromString($quarter);
 
-        $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr)
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Qlvr->value)
             ->whereDate('period_start', $quarterVo->startDate())
             ->first();
 
@@ -284,7 +284,7 @@ class RegulatoryReportController extends Controller
     {
         $this->requirePermission(Permission::ViewReports);
 
-        $reportGenerated = ReportGenerated::where('report_type', ReportType::Plr)
+        $reportGenerated = ReportGenerated::where('report_type', ReportType::Plr->value)
             ->whereDate('period_start', now()->toDateString())
             ->first();
 

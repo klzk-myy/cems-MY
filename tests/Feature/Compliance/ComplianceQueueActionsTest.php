@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Compliance;
 
+use App\Enums\AlertStatus;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseStatus;
-use App\Enums\FlagStatus;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,7 +49,7 @@ class ComplianceQueueActionsTest extends TestCase
     #[Test]
     public function bulk_resolve_marks_selected_alerts_resolved(): void
     {
-        $alerts = Alert::factory()->count(2)->create(['case_id' => null, 'status' => FlagStatus::Open]);
+        $alerts = Alert::factory()->count(2)->create(['case_id' => null, 'status' => AlertStatus::Open]);
 
         $this->actingAs($this->officer)
             ->post(route('compliance.alerts.bulk-resolve'), [
@@ -61,7 +61,7 @@ class ComplianceQueueActionsTest extends TestCase
         foreach ($alerts as $alert) {
             $this->assertDatabaseHas('alerts', [
                 'id' => $alert->id,
-                'status' => FlagStatus::Resolved->value,
+                'status' => AlertStatus::Resolved->value,
             ]);
         }
     }

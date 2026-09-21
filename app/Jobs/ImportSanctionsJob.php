@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

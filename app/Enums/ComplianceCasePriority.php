@@ -9,10 +9,10 @@ namespace App\Enums;
  */
 enum ComplianceCasePriority: string
 {
-    case Low = 'Low';
-    case Medium = 'Medium';
-    case High = 'High';
-    case Critical = 'Critical';
+    case Low = 'low';
+    case Medium = 'medium';
+    case High = 'high';
+    case Critical = 'critical';
 
     /**
      * SLA hours for this priority. Mirrors AlertPriority::slaHours() so alert-

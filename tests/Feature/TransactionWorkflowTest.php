@@ -15,7 +15,7 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Transaction\TransactionApprovalService;
-use App\Services\Transaction\TransactionService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,7 +26,7 @@ class TransactionWorkflowTest extends TestCase
 {
     use DatabaseTransactions;
 
-    protected TransactionService $transactionService;
+    protected TransactionCreationService $transactionService;
 
     protected User $teller;
 
@@ -45,7 +45,7 @@ class TransactionWorkflowTest extends TestCase
         parent::setUp();
 
         // Resolve TransactionService from container
-        $this->transactionService = app(TransactionService::class);
+        $this->transactionService = app(TransactionCreationService::class);
 
         // Use seeded currencies instead of creating new ones
         $this->currency = Currency::where('code', 'USD')->firstOrFail();
@@ -74,7 +74,7 @@ class TransactionWorkflowTest extends TestCase
             'id_number_encrypted' => encrypt('123456789012'.uniqid()),
             'nationality' => 'MY',
             'date_of_birth' => '1990-01-15',
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'cdd_level' => 'Simplified',
             'is_active' => true,
         ]);
@@ -167,7 +167,7 @@ class TransactionWorkflowTest extends TestCase
     {
         // Use a PEP customer so the transaction is held for approval and reserves stock.
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => true,
         ]);
         $this->approvePepFor($customer);
@@ -220,7 +220,7 @@ class TransactionWorkflowTest extends TestCase
             'idempotency_key' => 'test-concurrent-sell-1',
         ];
 
-        $t1 = $this->transactionService->createTransaction($data1, $this->teller->id);
+        $t1 = $this->transactionService->prepareAndCreate($data1, $this->teller->id);
         $this->assertEquals(TransactionStatus::PendingApproval, $t1->status);
 
         // Transaction 2: Try to sell 800 USD - should fail because only 500 available (1000 reserved)
@@ -239,7 +239,7 @@ class TransactionWorkflowTest extends TestCase
 
         // This should throw InsufficientStockException
         $this->expectException(InsufficientStockException::class);
-        $this->transactionService->createTransaction($data2, $this->teller->id);
+        $this->transactionService->prepareAndCreate($data2, $this->teller->id);
     }
 
     #[Test]
@@ -247,7 +247,7 @@ class TransactionWorkflowTest extends TestCase
     {
         // Use a PEP customer so the transaction is held for approval.
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => true,
         ]);
         $this->approvePepFor($customer);
@@ -300,7 +300,7 @@ class TransactionWorkflowTest extends TestCase
             'idempotency_key' => 'test-approval-history-'.uniqid(),
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         // Verify initial status is PendingApproval
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
@@ -315,10 +315,10 @@ class TransactionWorkflowTest extends TestCase
             ->clearHold($transaction->fresh(), $compliance->id);
 
         // Approve the transaction (compliance-only approval)
-        $approvedTransaction = $this->transactionService->approveTransaction(
+        $approvedTransaction = app(TransactionApprovalService::class)->approve(
             $transaction->fresh(),
             $compliance->id
-        )['transaction'];
+        )->transaction;
 
         // Verify final status is Completed
         $this->assertEquals(TransactionStatus::Completed, $approvedTransaction->status);
@@ -357,7 +357,7 @@ class TransactionWorkflowTest extends TestCase
         // The thin facade no longer applies the auto-approve threshold; approval
         // is driven by pre-validation (e.g. Enhanced CDD for PEP customers).
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'pep_status' => true,
         ]);
         $this->approvePepFor($customer);
@@ -409,7 +409,7 @@ class TransactionWorkflowTest extends TestCase
             'idempotency_key' => 'test-enhanced-cdd-approval',
         ];
 
-        $transaction = $this->transactionService->createTransaction($data, $this->teller->id);
+        $transaction = $this->transactionService->prepareAndCreate($data, $this->teller->id);
 
         $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
     }

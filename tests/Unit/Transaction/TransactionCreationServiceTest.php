@@ -28,9 +28,6 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\Compliance\KycDocumentExpiryService;
-use App\Services\Contracts\RateManagementServiceInterface;
-use App\Services\Contracts\TransactionIdempotencyServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
@@ -38,9 +35,12 @@ use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\ExchangeCalculator;
 use App\Services\Transaction\InitialStatusResolver;
+use App\Services\Transaction\RateManagementService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionErrorHandler;
+use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionRecoveryService;
+use App\Services\Transaction\TransactionValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -66,13 +66,13 @@ class TransactionCreationServiceTest extends TestCase
         }
 
         return new TransactionCreationService(
-            $mocks['idempotency'] ?? Mockery::mock(TransactionIdempotencyServiceInterface::class),
+            $mocks['idempotency'] ?? Mockery::mock(TransactionIdempotencyService::class),
             $position,
             $mocks['accounting'] ?? Mockery::mock(TransactionAccountingService::class),
             $mocks['audit'] ?? Mockery::mock(AuditTrailHelper::class),
             $mocks['till'] ?? app(TillBalanceManager::class),
             $cache,
-            $mocks['validation'] ?? app(TransactionValidationInterface::class),
+            $mocks['validation'] ?? app(TransactionValidationService::class),
             $mocks['math'] ?? app(MathService::class),
             $mocks['threshold'] ?? app(ThresholdService::class),
             $mocks['tellerAllocation'] ?? app(TellerAllocationService::class),
@@ -84,7 +84,7 @@ class TransactionCreationServiceTest extends TestCase
                 $mock->shouldReceive('attemptRecovery')->zeroOrMoreTimes()->andReturn(false);
             }),
             $mocks['kycDocumentExpiry'] ?? app(KycDocumentExpiryService::class),
-            $mocks['rateManagement'] ?? app(RateManagementServiceInterface::class),
+            $mocks['rateManagement'] ?? app(RateManagementService::class),
             $mocks['statusResolver'] ?? app(InitialStatusResolver::class),
             $mocks['exchangeCalculator'] ?? app(ExchangeCalculator::class),
             $mocks['alertTriage'] ?? app(AlertTriageService::class),
@@ -94,7 +94,7 @@ class TransactionCreationServiceTest extends TestCase
     private function context(array $overrides = []): TransactionCreationContext
     {
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'occupation' => 'Engineer',
             'employer_name' => 'Acme Sdn Bhd',
         ]);
@@ -162,7 +162,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_successful_buy_transaction_creates_completed_record(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -204,7 +204,7 @@ class TransactionCreationServiceTest extends TestCase
             'phone' => null,
             'occupation' => null,
             'employer_name' => null,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         TillBalance::factory()->create([
@@ -254,7 +254,7 @@ class TransactionCreationServiceTest extends TestCase
             'phone' => '+60123456789',
             'occupation' => 'Engineer',
             'employer_name' => 'Acme Sdn Bhd',
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         TillBalance::factory()->create([
@@ -303,7 +303,7 @@ class TransactionCreationServiceTest extends TestCase
             'phone' => null,
             'occupation' => null,
             'employer_name' => null,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
         $counter = Counter::factory()->create(['status' => 'active']);
         TillBalance::factory()->create([
@@ -343,7 +343,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_drawer_less_buy_uses_user_branch_and_no_till(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -405,7 +405,7 @@ class TransactionCreationServiceTest extends TestCase
     {
         Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1000000]);
 
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
         $counter = Counter::factory()->create(['status' => 'active']);
         $tillBalance = TillBalance::factory()->create([
             'till_id' => $counter->code,
@@ -445,7 +445,7 @@ class TransactionCreationServiceTest extends TestCase
     {
         Currency::factory()->create(['code' => 'IDR', 'rate_unit' => 1, 'rate_inverse' => true]);
 
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
         $counter = Counter::factory()->create(['status' => 'active']);
         TillBalance::factory()->create([
             'till_id' => $counter->code,
@@ -486,7 +486,7 @@ class TransactionCreationServiceTest extends TestCase
      */
     private function completedBuyService(array $mocks = []): TransactionCreationService
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -595,7 +595,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_successful_sell_transaction_creates_completed_record(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -629,7 +629,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_with_hold_creates_pending_approval_transaction(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -658,7 +658,7 @@ class TransactionCreationServiceTest extends TestCase
     public function create_returns_existing_transaction_when_idempotency_key_matches(): void
     {
         $existing = Transaction::factory()->create();
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturn($existing);
 
         $position = Mockery::mock(CurrencyPositionService::class);
@@ -685,7 +685,7 @@ class TransactionCreationServiceTest extends TestCase
     public function create_throws_duplicate_transaction_exception_when_recent_duplicate_detected(): void
     {
         $recent = Transaction::factory()->create();
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturn($recent);
 
@@ -698,7 +698,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_throws_insufficient_stock_exception_when_sell_balance_low(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -720,7 +720,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_throws_till_balance_missing_exception_when_myr_balance_absent(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -754,7 +754,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_marks_transaction_failed_when_booking_throws(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -798,7 +798,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_reserves_stock_when_pending_approval_sell(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -831,7 +831,7 @@ class TransactionCreationServiceTest extends TestCase
         $counter = Counter::factory()->create(['status' => 'active']);
         $allocation = $this->tellerAllocation($user, $counter);
 
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -879,7 +879,7 @@ class TransactionCreationServiceTest extends TestCase
         $counter = Counter::factory()->create(['status' => 'active']);
         $allocation = $this->tellerAllocation($user, $counter);
 
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -925,7 +925,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_creates_accounting_entries_for_simplified_standard_cdd(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -955,7 +955,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_does_not_create_accounting_entries_for_enhanced_cdd_pending(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -987,7 +987,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_logs_audit_with_correct_context(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -1025,7 +1025,7 @@ class TransactionCreationServiceTest extends TestCase
     {
         Event::fake([TransactionCreated::class]);
 
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -1054,7 +1054,7 @@ class TransactionCreationServiceTest extends TestCase
     #[Test]
     public function create_invalidates_dashboard_cache_after_commit(): void
     {
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -1088,7 +1088,7 @@ class TransactionCreationServiceTest extends TestCase
     public function prepare_and_create_builds_context_and_delegates_to_create(): void
     {
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'occupation' => 'Engineer',
             'employer_name' => 'Acme Sdn Bhd',
         ]);
@@ -1110,14 +1110,14 @@ class TransactionCreationServiceTest extends TestCase
         $validationResult->setCDDLevel(CddLevel::Standard);
         $validationResult->setHoldRequired(false);
 
-        $validation = Mockery::mock(TransactionValidationInterface::class);
+        $validation = Mockery::mock(TransactionValidationService::class);
         $validation->shouldReceive('validateCurrency')->once();
         $validation->shouldReceive('validateIpAddress')->once();
         $validation->shouldReceive('validateTillBalance')->andReturn($tillBalance);
         $validation->shouldReceive('validatePepRequirements')->once();
         $validation->shouldReceive('preValidate')->andReturn($validationResult);
 
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -1163,7 +1163,7 @@ class TransactionCreationServiceTest extends TestCase
         // shared branch position, so it must block a Sell on ANOTHER till
         // that exceeds the remaining position.
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'occupation' => 'Engineer',
             'employer_name' => 'Acme Sdn Bhd',
         ]);
@@ -1199,7 +1199,7 @@ class TransactionCreationServiceTest extends TestCase
             'created_by' => $customer->id,
         ]);
 
-        $validation = Mockery::mock(TransactionValidationInterface::class);
+        $validation = Mockery::mock(TransactionValidationService::class);
         $validation->shouldReceive('validateCurrency')->zeroOrMoreTimes();
         $validation->shouldReceive('validateIpAddress')->zeroOrMoreTimes();
         $validation->shouldReceive('validateTillBalance')->zeroOrMoreTimes();
@@ -1209,7 +1209,7 @@ class TransactionCreationServiceTest extends TestCase
         $validationResult->setHoldRequired(false);
         $validation->shouldReceive('preValidate')->zeroOrMoreTimes()->andReturn($validationResult);
 
-        $idempotency = Mockery::mock(TransactionIdempotencyServiceInterface::class);
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturnNull();
         $idempotency->shouldReceive('checkRecentDuplicate')->andReturnNull();
 
@@ -1239,7 +1239,7 @@ class TransactionCreationServiceTest extends TestCase
             $errorHandler,
             $recoveryService,
             app(KycDocumentExpiryService::class),
-            app(RateManagementServiceInterface::class),
+            app(RateManagementService::class),
             app(InitialStatusResolver::class),
             app(ExchangeCalculator::class),
             app(AlertTriageService::class),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Compliance\ScreeningResult;
 use Database\Factories\AdverseMediaEntryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

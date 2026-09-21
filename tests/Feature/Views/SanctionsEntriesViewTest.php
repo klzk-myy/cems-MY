@@ -3,8 +3,8 @@
 namespace Tests\Feature\Views;
 
 use App\Enums\UserRole;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;

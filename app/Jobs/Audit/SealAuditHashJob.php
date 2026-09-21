@@ -4,7 +4,7 @@ namespace App\Jobs\Audit;
 
 use App\Exceptions\Domain\AuditIntegrityException;
 use App\Models\SystemLog;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
@@ -35,9 +35,9 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
         public int $logId
     ) {}
 
-    public function handle(AuditService $auditService): void
+    public function handle(AuditChainService $auditChainService): void
     {
-        DB::transaction(function () use ($auditService) {
+        DB::transaction(function () use ($auditChainService) {
             // A missing row means this job was picked up before the writing
             // transaction committed (a queue connector without after_commit)
             // or the row was hard-deleted. Throw so the backoff ladder retries —
@@ -72,7 +72,7 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
                     ->where('id', '<', $this->logId)
                     ->whereNull('entry_hash')
                     ->where(fn ($q) => $q->whereNull('seal_status')
-                        ->orWhere('seal_status', '!=', AuditService::SEAL_STATUS_QUARANTINED))
+                        ->orWhere('seal_status', '!=', AuditChainService::SEAL_STATUS_QUARANTINED))
                     ->exists();
 
                 if ($unsealedBetween) {
@@ -99,17 +99,17 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
             // into an explicit GAP:<id> marker.
             $quarantineBoundary = SystemLog::where('id', '>', $predecessorId ?? 0)
                 ->where('id', '<', $this->logId)
-                ->where('seal_status', AuditService::SEAL_STATUS_QUARANTINED)
+                ->where('seal_status', AuditChainService::SEAL_STATUS_QUARANTINED)
                 ->min('id');
 
             $previousHash = $quarantineBoundary !== null
-                ? AuditService::GAP_PREFIX.$quarantineBoundary
+                ? AuditChainService::GAP_PREFIX.$quarantineBoundary
                 : ($predecessor !== null ? $predecessor->entry_hash : null);
 
             // Compute this entry's hash. v2 payload: covers old_values,
             // new_values, severity and ip_address so post-seal payload edits
-            // no longer verify clean (matches AuditService::sealLogEntry).
-            $entryHash = $auditService->computeEntryHash(
+            // no longer verify clean (matches AuditChainService::sealLogEntry).
+            $entryHash = $auditChainService->computeEntryHash(
                 $log->created_at->toIso8601String(),
                 $log->user_id,
                 $log->action,
@@ -149,7 +149,7 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
 
         SystemLog::where('id', $blockingId)
             ->whereNull('entry_hash')
-            ->update(['seal_status' => AuditService::SEAL_STATUS_QUARANTINED]);
+            ->update(['seal_status' => AuditChainService::SEAL_STATUS_QUARANTINED]);
 
         Log::critical('Audit chain gap quarantined after seal retries exhausted', [
             'quarantined_log_id' => $blockingId,
@@ -181,7 +181,7 @@ class SealAuditHashJob implements ShouldQueue, ShouldQueueAfterCommit
             ->where('id', '<', $this->logId)
             ->whereNull('entry_hash')
             ->where(fn ($q) => $q->whereNull('seal_status')
-                ->orWhere('seal_status', '!=', AuditService::SEAL_STATUS_QUARANTINED))
+                ->orWhere('seal_status', '!=', AuditChainService::SEAL_STATUS_QUARANTINED))
             ->min('id');
     }
 }

@@ -43,9 +43,7 @@ class ReportController extends Controller
      */
     public function download(string $filename): BinaryFileResponse|StreamedResponse|JsonResponse
     {
-        if ($response = $this->requirePermissionResponse(Permission::ViewReports)) {
-            return $response;
-        }
+        $this->requirePermission(Permission::ViewReports);
 
         // Sanitize filename to prevent path traversal. basename() strips any
         // directory component, so a relative "../../etc/passwd" becomes

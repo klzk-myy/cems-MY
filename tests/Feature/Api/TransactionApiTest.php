@@ -3,14 +3,14 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Branch;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Contracts\TransactionCreationServiceInterface;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -47,7 +47,7 @@ class TransactionApiTest extends TestCase
             'branch_id' => $branch->id,
         ]);
 
-        $creationService = $this->mock(TransactionCreationServiceInterface::class);
+        $creationService = $this->mock(TransactionCreationService::class);
         $creationService->shouldReceive('prepareAndCreate')
             ->once()
             ->andReturn($transaction);

@@ -3,15 +3,15 @@
 namespace Tests\Feature\Audit;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCaseStatus;
-use App\Enums\FlagStatus;
 use App\Enums\UserRole;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Models\Customer;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
 use App\Models\User;
 use App\Services\Compliance\SanctionsOrchestrationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -156,12 +156,12 @@ class ComplianceControllersFixTest extends TestCase
         Alert::factory()->create([
             'customer_id' => $customer->id,
             'priority' => AlertPriority::Critical,
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
         ]);
         Alert::factory()->create([
             'customer_id' => $customer->id,
             'priority' => AlertPriority::Low,
-            'status' => FlagStatus::Resolved,
+            'status' => AlertStatus::Resolved,
         ]);
 
         $this->actingAs($this->officer);

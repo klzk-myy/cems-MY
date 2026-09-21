@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SystemLog;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +27,7 @@ class SealPendingAuditEntries extends Command
 
     protected $description = 'Seal committed audit log entries that never received their entry_hash';
 
-    public function handle(AuditService $auditService): int
+    public function handle(AuditChainService $auditChainService): int
     {
         // The age cutoff leaves in-flight SealAuditHashJob retries alone —
         // only entries old enough to have exhausted normal dispatch are swept.
@@ -37,7 +37,7 @@ class SealPendingAuditEntries extends Command
         $ids = SystemLog::whereNull('entry_hash')
             ->where('created_at', '<', $cutoff)
             ->where(fn ($q) => $q->whereNull('seal_status')
-                ->orWhere('seal_status', '!=', AuditService::SEAL_STATUS_QUARANTINED))
+                ->orWhere('seal_status', '!=', AuditChainService::SEAL_STATUS_QUARANTINED))
             ->orderBy('id')
             ->pluck('id');
 
@@ -52,7 +52,7 @@ class SealPendingAuditEntries extends Command
                 // order seals those predecessors first. A false return only
                 // means "still waiting on a gap" — the row itself is not
                 // failing, so it does not count toward quarantine.
-                if ($auditService->sealLogEntry((int) $id)) {
+                if ($auditChainService->sealLogEntry((int) $id)) {
                     $sealed++;
                 } else {
                     $deferred++;
@@ -71,7 +71,7 @@ class SealPendingAuditEntries extends Command
             SystemLog::whereKey($id)->update(['seal_attempts' => $attempts]);
 
             if ($attempts >= $maxAttempts) {
-                $auditService->quarantineEntry((int) $id);
+                $auditChainService->quarantineEntry((int) $id);
                 $quarantined++;
                 Log::critical('audit:seal-pending quarantined permanently unsealable entry', [
                     'log_id' => $id,

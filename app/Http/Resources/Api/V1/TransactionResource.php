@@ -5,7 +5,7 @@ namespace App\Http\Resources\Api\V1;
 use App\Enums\CddLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

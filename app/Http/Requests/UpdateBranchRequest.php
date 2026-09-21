@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Branch;
+use App\Enums\BranchType;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateBranchRequest extends AuthorizedFormRequest
 {
@@ -17,7 +18,7 @@ class UpdateBranchRequest extends AuthorizedFormRequest
         return [
             'code' => ['required', 'string', 'max:20', Rule::unique('branches')->ignore($this->route('branch'))],
             'name' => 'required|string|max:255',
-            'type' => ['required', Rule::in([Branch::TYPE_HEAD_OFFICE, Branch::TYPE_BRANCH, Branch::TYPE_SUB_BRANCH])],
+            'type' => ['required', new Enum(BranchType::class)],
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',

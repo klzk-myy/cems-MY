@@ -264,6 +264,22 @@ class SetupService
     {
         $this->ensureSchemaExists();
 
+        // Provisioning is all-or-nothing: a failure mid-sequence must not
+        // leave a half-seeded business (admin without currencies, stock
+        // without opening balances) that the setup gate then reports as
+        // complete. Schema creation above stays outside — DDL auto-commits.
+        DB::transaction(function () use ($setupData) {
+            $this->provision($setupData);
+        });
+    }
+
+    /**
+     * The all-or-nothing provisioning pipeline for executeSetup().
+     *
+     * @param  array<string, mixed>  $setupData
+     */
+    private function provision(array $setupData): void
+    {
         $hqBranch = null;
         if (isset($setupData['business'])) {
             $hqBranch = Branch::create([
@@ -419,7 +435,7 @@ class SetupService
     {
         $fiscalYear = FiscalYear::where('status', FiscalYearStatus::Open->value)->first();
         $period = AccountingPeriod::where('status', AccountingPeriodStatus::Open->value)->first();
-        $adminUser = User::where('role', 'admin')->first();
+        $adminUser = User::where('role', UserRole::Admin->value)->first();
 
         if (! $fiscalYear || ! $period || ! $adminUser) {
             return;

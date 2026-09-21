@@ -33,7 +33,7 @@ use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use App\Services\Transaction\TransactionService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -54,7 +54,7 @@ class TransactionAccountingVerificationTest extends TestCase
 
     protected LedgerService $ledgerService;
 
-    protected TransactionService $transactionService;
+    protected TransactionCreationService $transactionService;
 
     protected CurrencyPositionService $positionService;
 
@@ -83,7 +83,7 @@ class TransactionAccountingVerificationTest extends TestCase
         $this->ledgerService = new LedgerService($this->mathService, $this->accountingService);
         $this->positionService = new CurrencyPositionService($this->mathService, new CurrencyPositionLockService($this->mathService), new CacheInvalidationService, new ThresholdService);
 
-        $this->transactionService = resolve(TransactionService::class);
+        $this->transactionService = resolve(TransactionCreationService::class);
 
         $this->createFiscalYear();
     }
@@ -237,7 +237,7 @@ class TransactionAccountingVerificationTest extends TestCase
                     'id_number_encrypted' => encrypt('123456789012'.$config['code'].$c),
                     'nationality' => 'MY',
                     'date_of_birth' => '1990-01-15',
-                    'risk_rating' => 'Low',
+                    'risk_rating' => 'low',
                     'cdd_level' => 'Simplified',
                 ]);
                 $this->customers[$config['code']][] = $customer;
@@ -289,7 +289,7 @@ class TransactionAccountingVerificationTest extends TestCase
                         'idempotency_key' => "branch_{$branchCode}_txn_{$i}_".time(),
                     ];
 
-                    $transaction = $this->transactionService->createTransaction($data, $teller->id);
+                    $transaction = $this->transactionService->prepareAndCreate($data, $teller->id);
                     $branchTransactions[] = $transaction;
                     $this->transactions[$branchCode][] = $transaction;
                     $transactionCount++;

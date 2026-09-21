@@ -87,7 +87,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD');
 
@@ -113,7 +113,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD', '500000.0000');
 
@@ -136,7 +136,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $customer->forceFill(['sanction_hit' => true])->save();
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD');
@@ -156,7 +156,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD');
 
@@ -175,7 +175,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => true, 'pep_type' => PepType::Domestic->value]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD');
 
@@ -201,7 +201,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $counter = $this->setupStoreTest($teller, 'USD');
 
@@ -217,7 +217,7 @@ class TransactionControllerStoreTest extends TestCase
             'branch_id' => $branch->id,
         ]);
         $this->setupStoreTest($webTeller, 'USD');
-        $webCustomer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $webCustomer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $webPayload = $this->basePayload($webCustomer, $counter, $currency);
         $webPayload['branch_id'] = $counter->branch_id;
         $webPayload['counter_id'] = $counter->id;
@@ -259,7 +259,7 @@ class TransactionControllerStoreTest extends TestCase
             'role' => UserRole::Teller,
             'branch_id' => $branch->id,
         ]);
-        $customer = Customer::factory()->create(['risk_rating' => 'Low', 'pep_status' => false]);
+        $customer = Customer::factory()->create(['risk_rating' => 'low', 'pep_status' => false]);
         $currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);
         $sessionCounter = $this->setupStoreTest($teller, 'USD');
 

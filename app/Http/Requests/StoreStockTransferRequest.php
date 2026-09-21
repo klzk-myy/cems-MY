@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Models\StockTransfer;
-use Illuminate\Validation\Rule;
+use App\Enums\StockTransferType;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreStockTransferRequest extends AuthorizedFormRequest
 {
@@ -17,7 +17,7 @@ class StoreStockTransferRequest extends AuthorizedFormRequest
         return [
             'source_branch_name' => 'required|string',
             'destination_branch_name' => 'required|string|different:source_branch_name',
-            'type' => ['required', Rule::in([StockTransfer::TYPE_STANDARD, StockTransfer::TYPE_EMERGENCY, StockTransfer::TYPE_SCHEDULED, StockTransfer::TYPE_RETURN])],
+            'type' => ['required', new Enum(StockTransferType::class)],
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.currency_code' => 'required|string|exists:currencies,code',

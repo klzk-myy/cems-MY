@@ -4,9 +4,9 @@ namespace Tests\Unit;
 
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;

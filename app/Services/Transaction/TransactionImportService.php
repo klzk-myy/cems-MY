@@ -3,7 +3,6 @@
 namespace App\Services\Transaction;
 
 use App\Enums\TransactionImportStatus;
-use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\CurrencyNotFoundException;
 use App\Exceptions\Domain\CustomerNotFoundException;
@@ -18,23 +17,15 @@ use App\Models\TransactionImport;
 use App\Models\User;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\System\MathService;
-use App\Services\Traits\ExchangeCalculatorTrait;
 use App\Services\Transaction\DTOs\ImportContext;
 use App\Support\BcmathHelper;
-use App\ValueObjects\QuoteConvention;
-use Illuminate\Support\Facades\DB;
 
 class TransactionImportService
 {
-    use ExchangeCalculatorTrait;
-
     public function __construct(
         protected MathService $mathService,
-        protected TransactionMonitoringService $monitoringService,
         protected TillBalanceManager $tillBalanceManager,
         protected TransactionCreationService $transactionCreationService,
-        protected InitialStatusResolver $statusResolver,
-        protected ExchangeCalculator $exchangeCalculator,
     ) {}
 
     /**
@@ -152,52 +143,33 @@ class TransactionImportService
                 return;
             }
 
-            [$data, $customer, $convention] = $this->validateRowShape($context, $data);
+            $data = $this->validateRowShape($context, $data);
 
-            // One booking gate for every entry path: the row passes the
-            // same eligibility checks the web wizard and API enforce —
-            // branch trading status, till↔branch scoping, frozen/blocked/
-            // inactive customers, KYC expiry and the rate tolerance guard.
-            // The importing user is passed explicitly: this runs in a
-            // queue worker where ActorContext has no authenticated user.
-            [$tillBalance, $customer] = $this->transactionCreationService
-                ->assertBookingEligibility($context->importUser, $data);
-
-            [$data, $amountMyr, $normalizedRate] = $this->convertRowAmount($data, $convention);
-
-            // PEP requirements, sanctions screening, CDD level,
-            // historical risk and hold determination — identical to
-            // prepareAndCreate().
-            $validationResult = $this->transactionCreationService
-                ->runComplianceGates($customer, $data, $amountMyr);
-
-            $this->assertTillLiquidity($context, $data, $tillBalance, $amountMyr);
-
-            $initialStatus = $this->statusResolver->resolve(
-                $amountMyr,
-                $validationResult->isHoldRequired(),
-                $customer->risk_rating
+            // One booking pipeline for every entry path: eligibility gate,
+            // exchange normalization, compliance gates and initial status all
+            // run inside buildCreationContext() — the same orchestration the
+            // web form, wizard and API use, so a gate added there can never be
+            // bypassed by the import. Imports settle straight to the booked
+            // till and never consume a teller allocation.
+            $creationContext = $this->transactionCreationService->buildCreationContext(
+                $context->importUser,
+                $data,
+                withAllocation: false,
             );
 
-            // Create transaction using TransactionCreationService to avoid duplicate logic.
-            // The importing user is resolved once in process() and passed in.
-            $transaction = $this->transactionCreationService->createForImport(
-                data: $data,
-                customer: $customer,
-                tillBalance: $tillBalance,
-                cddLevel: $validationResult->getCDDLevel(),
-                status: $initialStatus->status,
-                amountMyr: $amountMyr,
-                user: $context->importUser,
-                holdReason: $validationResult->isHoldRequired() ? $initialStatus->holdReason : null,
-                normalizedRate: $normalizedRate,
+            $this->assertTillLiquidity($context, $data, $creationContext->tillBalance, $creationContext->amountMyr);
+
+            $this->transactionCreationService->create(
+                $creationContext,
+                $context->importUser->id,
             );
 
-            // Run compliance monitoring after the row commits — Completed
-            // rows get flagged inline for the triage queue.
-            if ($initialStatus->status === TransactionStatus::Completed) {
-                $this->monitoringService->monitorTransaction($transaction);
-            }
+            // Compliance monitoring is NOT run inline: create() dispatches
+            // TransactionCreated, whose queued listener monitors the row,
+            // recalculates the customer's risk score and stamps
+            // last_transaction_at — the same post-booking pipeline as every
+            // other creation path. An inline pass would only re-run the flag
+            // checks and emit duplicate-prevention audit noise.
 
             $context->recordSuccess();
         } catch (\Exception $e) {
@@ -254,11 +226,10 @@ class TransactionImportService
 
     /**
      * Validate required fields, customer, currency, transaction type, and
-     * numeric bounds. Returns the normalized data plus the resolved
-     * customer and the currency's quote convention.
+     * numeric bounds. Returns the normalized row data.
      *
      * @param  array<string, mixed>  $data
-     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: Customer, 2: QuoteConvention}
+     * @return array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}
      */
     private function validateRowShape(ImportContext $context, array $data): array
     {
@@ -270,13 +241,11 @@ class TransactionImportService
 
         $data['customer_id'] = (int) $data['customer_id'];
 
-        $customer = Customer::find($data['customer_id']);
-        if (! $customer) {
-            throw new CustomerNotFoundException((int) $data['customer_id']);
+        if (! Customer::whereKey($data['customer_id'])->exists()) {
+            throw new CustomerNotFoundException($data['customer_id']);
         }
 
-        $currency = $context->cachedCurrency($data['currency_code']);
-        if (! $currency) {
+        if ($context->cachedCurrency($data['currency_code']) === null) {
             throw new CurrencyNotFoundException($data['currency_code']);
         }
 
@@ -311,7 +280,7 @@ class TransactionImportService
         }
 
         /** @var array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string} $data */
-        return [$data, $customer, QuoteConvention::for($currency)];
+        return $data;
     }
 
     /**
@@ -332,34 +301,12 @@ class TransactionImportService
     }
 
     /**
-     * Calculate local amount (single source of truth for the conversion).
-     * CSV rates are unit-quoted per currencies.rate_unit; the stored
-     * transaction keeps the normalized per-unit rate.
-     *
-     * @param  array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}  $data
-     * @return array{0: array{type: string, currency_code: string, quantity: string, rate: string, purpose: string, source_of_funds: string, source_of_wealth?: string, idempotency_key?: string, customer_id: int, till_id: string}, 1: string, 2: string} row data (rate left as submitted), amount_myr, normalized per-unit rate
-     */
-    private function convertRowAmount(array $data, QuoteConvention $convention): array
-    {
-        $exchangeResult = $this->resolveExchangeCalculator()->calculate(
-            TransactionType::from((string) $data['type']),
-            $data['currency_code'],
-            (string) $data['quantity'],
-            (string) $data['rate'],
-            null,
-            $convention
-        );
-
-        // The submitted unit-quoted rate stays in $data untouched — the
-        // normalized per-unit rate travels separately to the context.
-        return [$data, $exchangeResult['amount_myr'], $exchangeResult['rate']];
-    }
-
-    /**
      * Validate the till has sufficient live balance for the transaction type.
      * Compares against getExpectedBalance() (opening + today's movements)
-     * under a row lock — not the morning's opening_balance — so rows later in
-     * the file see the deductions earlier rows committed.
+     * — not the morning's opening_balance — so rows later in the file see
+     * the deductions earlier rows committed. Advisory only: the rows run
+     * without an outer transaction, so the authoritative stock/till check
+     * happens inside create()'s locked booking transaction.
      *
      * @param  array<string, mixed>  $data
      */

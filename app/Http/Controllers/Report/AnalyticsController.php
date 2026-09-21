@@ -6,11 +6,11 @@ use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\CacheOptimizationService;
@@ -300,7 +300,7 @@ class AnalyticsController extends Controller
         // EDD required count
         $eddCount = $this->cacheOptimizationService->remember(
             "analytics.edd-count.{$startDate}.{$endDate}", 300, ['analytics', 'compliance'],
-            fn () => Transaction::where('cdd_level', CddLevel::Enhanced)
+            fn () => Transaction::where('cdd_level', CddLevel::Enhanced->value)
                 ->whereBetween('created_at', [$startAt, $endAt])
                 ->count()
         );
@@ -308,7 +308,7 @@ class AnalyticsController extends Controller
         // Suspicious activity
         $suspiciousCount = $this->cacheOptimizationService->remember(
             "analytics.suspicious.{$startDate}.{$endDate}", 300, ['analytics', 'compliance'],
-            fn () => FlaggedTransaction::whereIn('flag_type', [ComplianceFlagType::Structuring, ComplianceFlagType::SanctionMatch])
+            fn () => FlaggedTransaction::whereIn('flag_type', [ComplianceFlagType::Structuring->value, ComplianceFlagType::SanctionMatch->value])
                 ->whereBetween('created_at', [$startAt, $endAt])
                 ->count()
         );

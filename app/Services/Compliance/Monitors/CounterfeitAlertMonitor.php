@@ -6,7 +6,7 @@ use App\Enums\ComplianceFlagType;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingType;
 use App\Enums\FlagStatus;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\System\SystemAlertService;
@@ -41,7 +41,7 @@ class CounterfeitAlertMonitor extends BaseMonitor
         try {
             // Find flagged transactions with counterfeit currency flags
             $flaggedTransactions = FlaggedTransaction::where('created_at', '>=', $cutoffTime)
-                ->where('flag_type', ComplianceFlagType::CounterfeitCurrency)
+                ->where('flag_type', ComplianceFlagType::CounterfeitCurrency->value)
                 ->whereIn('status', [FlagStatus::Open->value, FlagStatus::UnderReview->value])
                 ->with(['customer', 'transaction'])
                 ->get();

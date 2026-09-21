@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EddTemplateType;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

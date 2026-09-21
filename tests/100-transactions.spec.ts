@@ -3,27 +3,30 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = 'http://local.host';
 
 // Only currencies with branch-pool stock and an active rate card can be
-// booked. AUD/CNY/JPY are inactive in `currencies` and have no pool.
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'SGD', 'THB'];
+// booked. THB has no pool/card; MYR is the base currency.
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'SGD', 'AUD'];
 
 // Teller bookings are limited to 0.5% deviation from the market card, so
 // submit the exact card rate for the transaction side (Buy -> rate_buy,
 // Sell -> rate_sell).
 const MARKET_RATES: Record<string, { buy: string; sell: string }> = {
-  USD: { buy: '4.7000', sell: '4.8300' },
+  USD: { buy: '4.7200', sell: '4.8100' },
   EUR: { buy: '5.0800', sell: '5.1800' },
   GBP: { buy: '6.0200', sell: '6.1300' },
   SGD: { buy: '3.5200', sell: '3.5800' },
-  THB: { buy: '0.1280', sell: '0.1320' },
+  AUD: { buy: '3.1200', sell: '3.1800' },
 };
 
-// Stock requested per currency — bounded by remaining pool availability.
-const STOCK_REQUEST: Record<string, string> = {
-  USD: '3000', EUR: '2500', GBP: '1500', SGD: '3000', THB: '3000',
+// Opening floats for the counter session — MYR funds Buy payouts while
+// foreign floats seed Sell payouts (Buys replenish foreign during the run).
+// MYR is bounded by branch-pool availability.
+const OPENING_FLOATS: Record<string, string> = {
+  MYR: '200000', USD: '5000', EUR: '5000', GBP: '3000', SGD: '5000', AUD: '5000',
 };
 
-// teller_allocations.daily_limit_myr is NOT NULL DEFAULT 0
-const DAILY_LIMIT_MYR = '500000';
+// Per-allocation MYR daily limits — set high so the volume run exercises
+// booking logic rather than tripping the cap.
+const DAILY_LIMIT_MYR = '50000000';
 
 // Per-run seed so customer emails/ICs/phones are unique across re-runs —
 // id_number_hash and phone_hash are unique blind indexes.
@@ -31,139 +34,38 @@ const RUN_SEED = Math.random().toString(36).slice(2, 10);
 const SEED_NUM = parseInt(RUN_SEED, 36) || 123456789;
 
 // ──────────────────────────────────────────────────────────────
-// Nationality distribution for 500 customers across 12 real countries — 12 real countries
+// Nationality distribution for 500 customers
 //   200 MY, 100 SG, 80 US, 75 GB, 45 OTHER
 // ──────────────────────────────────────────────────────────────
-// Nationality distribution for 500 customers across 12 real countries
-//   120 MY, 60 SG, 48 CN, 35 US, 32 TH, 32 ID, 32 JP, 24 IN, 18 GB, 16 AU, 16 VN, 16 KR
-// Total = 437 entries from blocks 1-8 (repeats to ~500)
 const NATIONALITY_CYCLE: string[] = [
-  // MY(10) SG(6) CN(6) US(4) TH(4) ID(4) JP(4) IN(3) GB(2) AU(2) VN(2) KR(2) = 49
-  'MY','MY','MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN','CN',
-  'US','US','US','US',
-  'TH','TH','TH','TH',
-  'ID','ID','ID','ID',
-  'JP','JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN','VN',
-  'KR','KR',
-  // Block 2: MY(8) SG(5) CN(5) US(3) TH(3) ID(3) JP(3) IN(3) GB(2) AU(2) VN(2) KR(2) = 41
-  'MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN',
-  'US','US','US',
-  'TH','TH','TH',
-  'ID','ID','ID',
-  'JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN','VN',
-  'KR','KR',
-  // Block 3: MY(8) SG(5) CN(5) US(3) TH(3) ID(3) JP(3) IN(3) GB(2) AU(2) VN(2) KR(2) = 41
-  'MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN',
-  'US','US','US',
-  'TH','TH','TH',
-  'ID','ID','ID',
-  'JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN','VN',
-  'KR','KR',
-  // Block 4: MY(8) SG(5) CN(5) US(3) TH(3) ID(3) JP(3) IN(3) GB(2) AU(2) VN(2) KR(2) = 41
-  'MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN',
-  'US','US','US',
-  'TH','TH','TH',
-  'ID','ID','ID',
-  'JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN','VN',
-  'KR','KR',
-  // Block 5: MY(10) SG(6) CN(6) US(4) TH(4) ID(4) JP(4) IN(3) GB(2) AU(2) VN(1) KR(2) = 48
-  'MY','MY','MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN','CN',
-  'US','US','US','US',
-  'TH','TH','TH','TH',
-  'ID','ID','ID','ID',
-  'JP','JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN',
-  'KR','KR',
-  // Block 6: MY(10) SG(6) CN(6) US(4) TH(4) ID(4) JP(4) IN(3) GB(2) AU(2) VN(1) KR(2) = 48
-  'MY','MY','MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN','CN',
-  'US','US','US','US',
-  'TH','TH','TH','TH',
-  'ID','ID','ID','ID',
-  'JP','JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN',
-  'KR','KR',
-  // Block 7: MY(8) SG(5) CN(5) US(3) TH(3) ID(3) JP(3) IN(3) GB(1) AU(1) VN(2) KR(2) = 39
-  'MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN',
-  'US','US','US',
-  'TH','TH','TH',
-  'ID','ID','ID',
-  'JP','JP','JP',
-  'IN','IN','IN',
-  'GB',
-  'AU',
-  'VN','VN',
-  'KR','KR',
-  // Block 8: MY(8) SG(5) CN(5) US(3) TH(3) ID(3) JP(3) IN(2) GB(2) AU(2) VN(1) KR(1) = 38
-  'MY','MY','MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG','SG',
-  'CN','CN','CN','CN','CN',
-  'US','US','US',
-  'TH','TH','TH',
-  'ID','ID','ID',
-  'JP','JP','JP',
-  'IN','IN','IN',
-  'GB','GB',
-  'AU','AU',
-  'VN',
-  'KR',
-  // Block 9: MY(6) SG(4) CN(4) US(2) TH(2) ID(2) JP(2) IN(2) GB(1) AU(1) VN(1) KR(1) = 28
-  'MY','MY','MY','MY','MY','MY',
-  'SG','SG','SG','SG',
-  'CN','CN','CN','CN',
-  'US','US',
-  'TH','TH',
-  'ID','ID',
-  'JP','JP',
-  'IN','IN',
-  'GB',
-  'AU',
-  'VN',
-  'KR',
-  // Block 10: MY(3) SG(1) CN(1) US(1) TH(1) ID(1) JP(1) IN(1) = 10
-  'MY','MY','MY',
-  'SG',
-  'CN',
-  'US',
-  'TH',
-  'ID',
-  'JP',
-  'IN',
+  'MY','MY','MY','MY',       // 4 MY
+  'SG','SG',                  // 2 SG
+  'US','US','US','US','US',  // 5 US
+  'GB','GB','GB','GB','GB',  // 5 GB
+  'MY','MY','MY','MY',       // 4 MY
+  'OTHER','OTHER',            // 2 OTHER
+  'MY','MY','MY','MY',       // 4 MY
+  'SG','SG',                  // 2 SG
+  'US','US','US','US','US',  // 5 US
+  'GB','GB','GB','GB','GB',  // 5 GB
+  'MY','MY','MY','MY',       // 4 MY
+  'OTHER','OTHER',            // 2 OTHER
+  'MY','MY','MY','MY',       // 4 MY
+  'SG','SG',                  // 2 SG
+  'US','US','US','US','US',  // 5 US
+  'GB','GB','GB','GB','GB',  // 5 GB
+  'MY','MY','MY','MY',       // 4 MY
+  'OTHER','OTHER',            // 2 OTHER
+  'MY','MY','MY','MY',       // 4 MY
+  'SG','SG',                  // 2 SG
+  'US','US','US','US','US',  // 5 US
+  'GB','GB','GB','GB','GB',  // 5 GB
+  'MY','MY','MY','MY',       // 4 MY
+  'OTHER','OTHER',            // 2 OTHER
+  'MY','MY','MY','MY',       // 4 MY
+  'SG','SG',                  // 2 SG
+  'US','US','US','US','US',  // 5 US
+  'GB','GB','GB','GB','GB',  // 5 GB
 ];
 
 // ──────────────────────────────────────────────────────────────
@@ -372,59 +274,6 @@ const indianNames = [
   'Pooja Saxena', 'Rajesh Verma', 'Anjali Choudhary', 'Suresh Bhat', 'Nandita Das',
   'Sanjay Thakur', 'Rohini Hegde', 'Manish Tiwari', 'Jyoti Bansal', 'Alok Mishra',
 ];
-
-// ──────────────────────────────────────────────────────────────
-// Real Thai names
-// ──────────────────────────────────────────────────────────────
-const thaiNames = [
-  'Somchai Kiatanan', 'Suda Jinda', 'Prasert Meesri', 'Kanya Thongchai', 'Wirat Chaiyo',
-  'Nattapong Srisai', 'Ploychai Ratanakorn', 'Manee Sanguan', 'Thanapong Boonma', 'Sawatdee Kaewmanee',
-  'Chaiwat Singhasaneh', 'Piyada Noppawan', 'Sakda Rattana', 'Anchana Prommin', 'Wanchai Suksai',
-  'Tawan Chindawong', 'Kulap Srisawat', 'Naree Boonmee', 'Surasak Thammavong', 'Jintana Kaewsai',
-];
-
-// ──────────────────────────────────────────────────────────────
-// Real Indonesian names
-// ──────────────────────────────────────────────────────────────
-const indonesianNames = [
-  'Budi Santoso', 'Siti Nurhaliza', 'Agus Setiawan', 'Dewi Lestari', 'Eko Prasetyo',
-  'Rina Wulandari', 'Hendra Gunawan', 'Ningsih Rahayu', 'Fajar Nugroho', 'Putri Handayani',
-  'Rizki Pratama', 'Maya Sari', 'Doni Firmansyah', 'Ayu Lestari', 'Bayu Aditya',
-  'Lina Marlina', 'Irfan Hakim', 'Dian Purnama', 'Yoga Saputra', 'Fitri Mulyani',
-];
-
-// ──────────────────────────────────────────────────────────────
-// Real Vietnamese names
-// ──────────────────────────────────────────────────────────────
-const vietnameseNames = [
-  'Nguyen Van An', 'Tran Thi Binh', 'Le Hong Cuong', 'Pham Quoc Dat', 'Hoang Minh Anh',
-  'Vo Thanh Hoa', 'Dang Thuy Trang', 'Bui Duc Phu', 'Ngô Thị Lan', 'Pro Van Hung',
-  'Thai Minh Dat', 'Duong Hong Nhung', 'Ma Thuy Yen', 'Uyen Thi Mai', 'Quoc Bao Long',
-  'Kim Thanh Tuyet', 'Sang Ngoc Hieu', 'Hien Viet Cuong', 'Mai Phuong Linh', 'Tuan Anh Tuan',
-];
-
-// ──────────────────────────────────────────────────────────────
-// Real Korean names
-// ──────────────────────────────────────────────────────────────
-const koreanNames = [
-  'Kim Min-Jun', 'Park Soo-Yeon', 'Lee Hyun-Woo', 'Choi Ji-Yoo', 'Jung Woo-Seok',
-  'Park Soo-Yeon', 'Lee Hyun-Woo', 'Choi Ji-Yoo', 'Jung Woo-Seok', 'Kang Hae-Rim',
-  'Han Se-Young', 'Yoon Ji-Wook', 'Ko Ye-Eun', 'Shin Dae-Hyun', 'Roh Tae-Sung',
-  'Ahn So-Hee', 'Yoo Byung-Ho', 'Sung Min-Ah', 'Jo Won-Gyu', 'Seo Hyo-Jin',
-  'Nam Tae-Pyung', 'Ha Eun-Soo', 'Jin Young-Ho', 'Sook Hee-Ran',
-];
-
-// ──────────────────────────────────────────────────────────────
-// Real Australian names
-// ──────────────────────────────────────────────────────────────
-const australianNames = [
-  'James Robert Williams', 'Emma Jane Thompson', 'Oliver Thomas Brown', 'Charlotte Grace Wilson',
-  'William Edward Taylor', 'Amelia Louise Moore', 'Benjamin James Jackson', 'Isabella Rose Martin',
-  'Lucas Henry Anderson', 'Mia Elizabeth Thomas', 'Henry Charles Walker', 'Grace Victoria Hall',
-  'Alexander John Young', 'Poppy Alice King', 'Jack Edward Wright', 'Lily Mae Scott',
-  'Sebastian James Green', 'Ruby Elizabeth Baker', 'Oscar Thomas Adams', 'Olivia Rose Nelson',
-];
-
 // ──────────────────────────────────────────────────────────────
 // Other nationality names (kept for fallback)
 // ──────────────────────────────────────────────────────────────
@@ -473,11 +322,7 @@ function getRealName(index: number, nationality: string): string {
     case 'CN':  return chineseNames[index % chineseNames.length];
     case 'JP':  return japaneseNames[index % japaneseNames.length];
     case 'IN':  return indianNames[index % indianNames.length];
-    case 'TH':  return thaiNames[index % thaiNames.length];
-    case 'ID':  return indonesianNames[index % indonesianNames.length];
-    case 'VN':  return vietnameseNames[index % vietnameseNames.length];
-    case 'KR':  return koreanNames[index % koreanNames.length];
-    case 'AU':  return australianNames[index % australianNames.length];
+    case 'OTHER': return otherNames[index % otherNames.length];
     default:    return malaysianNames[index % malaysianNames.length];
   }
 }
@@ -567,106 +412,6 @@ function getRealAddress(nationality: string, index: number): string {
       ];
       return streets[index % streets.length];
     }
-    case 'TH': {
-      const streets = [
-        '123 Sukhumvit Soi 21, Watthana, Bangkok 10110',
-        '456 Silom Road, Bangrak, Bangkok 10500',
-        '789 Ratchadamri Road, Pathumwan, Bangkok 10330',
-        '15 Phetchaburi Road, Ratchathewi, Bangkok 10400',
-        '200 Rama IV Road, Wang Mai, Pathumwan, Bangkok 10330',
-        '55 Wireless Road, Lumpini, Pathumwan, Bangkok 10330',
-        '88 Sathorn Road, Yannawa, Bangkok 10120',
-        '123 Vibhavadi Rangsit Road, Chatuchak, Bangkok 10900',
-        '255 Ladprao Road, Chatuchak, Bangkok 10900',
-        '77 Thonglor Road, Watthana, Bangkok 10110',
-        '300 Ekkamai Road, Khlong Tan Nuea, Bangkok 10110',
-        '99 Phahonyothin Road, Samsen Nok, Huay Kwang, Bangkok 10310',
-        '111 Chang Ek Road, Phra Nakhon, Bangkok 10200',
-        '222 Pradu Road, Pom Prap, Bangkok 10100',
-        '444 Phra Athit Road, Phra Borom Maha Ratchawang, Bangkok 10200',
-      ];
-      return streets[index % streets.length];
-    }
-    case 'ID': {
-      const streets = [
-        'Jl. Sudirman No. 123, Jakarta Pusat 10220',
-        'Jl. Gatot Subroto No. 456, Jakarta Selatan 12930',
-        'Jl. Thamrin No. 789, Jakarta Pusat 10310',
-        'Jl. Kemang Raya No. 321, Jakarta Selatan 12710',
-        'Jl. Senayan No. 654, Jakarta Selatan 10270',
-        'Jl. Kemang Timur No. 987, Jakarta Selatan 12740',
-        'Jl. Pondok Indah No. 147, Jakarta Selatan 12310',
-        'Jl. Kuningan No. 258, Jakarta Selatan 12920',
-        'Jl. Melawai No. 369, Jakarta Selatan 12160',
-        'Jl. Tanah Abang No. 741, Jakarta Pusat 10250',
-        'Jl. Cikini No. 852, Menteng, Jakarta Pusat 10330',
-        'Jl. Mangga Dua No. 963, Jakarta Pusat 10730',
-        'Jl. Ancol Raya No. 111, Jakarta Utara 14430',
-        'Jl. PIK Avenue No. 222, Jakarta Utara 14450',
-        'Jl. BSD Green Office Park No. 333, Tangerang 15345',
-      ];
-      return streets[index % streets.length];
-    }
-    case 'VN': {
-      const streets = [
-        '123 Le Hong Phong, District 10, Ho Chi Minh City 70000',
-        '456 Nguyen Hue, District 1, Ho Chi Minh City 70000',
-        '789 Nguyen Trai, District 1, Ho Chi Minh City 70000',
-        '321 Le Loi, District 1, Ho Chi Minh City 70000',
-        '654 Nguyen Van Troi, Da Nang 55000',
-        '987 Le Duan, Hoan Kiem, Hanoi 10000',
-        '147 Tran Hung Dao, Hoan Kiem, Hanoi 10000',
-        '258 Ly Thuong Kiet, Hoan Kiem, Hanoi 10000',
-        '369 Hai Ba Trung, Hai Ba Trung, Hanoi 10000',
-        '741 Hoan Kiem, Hoan Kiem, Hanoi 10000',
-        '852 Nguyen Dinh Chieu, Da Nang 55000',
-        '963 Vo Thi Sau, District 3, Ho Chi Minh City 70000',
-        '111 Tran Quang Diep, District 3, Ho Chi Minh City 70000',
-        '222 Cach Mang Thang 8, Binh Thanh, Ho Chi Minh City 70000',
-        '333 Dong Khoi, District 1, Ho Chi Minh City 70000',
-      ];
-      return streets[index % streets.length];
-    }
-    case 'KR': {
-      const streets = [
-        '123 Teheran-ro, Gangnam-gu, Seoul 06164',
-        '456 Jongno, Jongno-gu, Seoul 03000',
-        '789 Namdaemun-ro, Jung-gu, Seoul 04524',
-        '321 Gangbyeon-ro, Songpa-gu, Seoul 05507',
-        '654 Ilsan-ro, Deajeon 35223',
-        '987 Haeun-daero, Busan 48000',
-        '147 Dongnae-ro, Dongnae-gu, Busan 48000',
-        '258 Haeundae-ro, Haeundae-gu, Busan 48000',
-        '369 Seochon-ro, Seodaemun-gu, Seoul 03728',
-        '741 Mapo-gu, Seoul 04134',
-        '852 Jung-gu, Incheon 21999',
-        '963 Yeongdeungpo-gu, Seoul 07310',
-        '111 Gwangmyeong-si, Gyeonggi-do 14300',
-        '222 Sujeong-gu, Seongnam-si, Gyeonggi-do 13500',
-        '333 Jongno-gu, Seoul 03000',
-      ];
-      return streets[index % streets.length];
-    }
-    case 'AU': {
-      const streets = [
-        '123 George Street, Sydney NSW 2000',
-        '456 Collins Street, Melbourne VIC 3000',
-        '789 Queen Street, Brisbane QLD 4000',
-        '321 Murray Street, Perth WA 6000',
-        '654 King William Street, Adelaide SA 5000',
-        '987 Murray Street, Perth WA 6000',
-        '147 Kent Street, Sydney NSW 2000',
-        '258 Bourke Street, Melbourne VIC 3000',
-        '369 Ann Street, Brisbane QLD 4000',
-        '741 William Street, Perth WA 6000',
-        '852 North Terrace, Adelaide SA 5000',
-        '963 George Street, Sydney NSW 2000',
-        '111 Flinders Lane, Melbourne VIC 3000',
-        '222 Elizabeth Street, Brisbane QLD 4000',
-        '333 St Georges Terrace, Perth WA 6000',
-      ];
-      return streets[index % streets.length];
-    }
     case 'OTHER': {
       const streets = [
         '15 Le Hong Phong, District 10, Ho Chi Minh City',
@@ -731,32 +476,6 @@ function getIdTypeAndNumber(nationality: string, index: number): { idType: strin
       // Indian PAN Card
       return { idType: 'PAN Card', idNumber: `${['A','B','C','D','E','F','G','H','J','K'][index%10]}${['A','B','C','D','E','F','G','H','J','K'][index%10]}${String(SEED).padStart(5, '0')}${String(1000 + index * 17).padStart(4, '0')}` };
     }
-    case 'TH': {
-      // Thai National ID: X-XXXX-XXXXX-XX-X
-      const first = 1 + (index % 9);
-      const num = String(1000000000 + (SEED * 331 + index * 251) % 9000000000).padStart(10, '0');
-      return { idType: 'National ID Card', idNumber: `${first}-${num.slice(0,4)}-${num.slice(4,9)}-${num[9]}-${num.slice(10,11)}` };
-    }
-    case 'ID': {
-      // Indonesian KTP: 16 digits
-      const num = String(1000000000000000 + (SEED * 331 + index * 251) % 9000000000000000).padStart(16, '0');
-      return { idType: 'KTP (e-KTP)', idNumber: num };
-    }
-    case 'VN': {
-      // Vietnamese CCCD: 12 digits formatted XXX-XXX-XXX-XXX
-      const num = String(100000000000 + (SEED * 331 + index * 251) % 900000000000).padStart(12, '0');
-      return { idType: 'CCCD (Citizen ID)', idNumber: `${num.slice(0,3)}-${num.slice(3,6)}-${num.slice(6,9)}-${num.slice(9,12)}` };
-    }
-    case 'KR': {
-      // Korean RRN: YYMMDD-XXXXXXXX
-      const part1 = String(80 + (index % 20)).padStart(2, '0') + String(1 + (index % 12)).padStart(2, '0') + String(1 + (index % 28)).padStart(2, '0');
-      const part2 = String(1000000 + (SEED * 137 + index * 251) % 9000000).padStart(7, '0');
-      return { idType: 'Resident Registration Card', idNumber: `${part1}-${part2}` };
-    }
-    case 'AU': {
-      // Australian Passport: 9 alphanumeric
-      return { idType: 'Passport', idNumber: `${['A','B','C','D','E','F','G','H','J','K'][index % 10]}${String(SEED * 137 + index * 251) % 1000000000}` };
-    }
     case 'OTHER': {
       // Generic passport-style number
       return { idType: 'Passport', idNumber: `P${String(SEED % 1000).padStart(3, '0')}${String(1000 + index * 7).padStart(6, '0')}` };
@@ -771,7 +490,7 @@ function getIdTypeAndNumber(nationality: string, index: number): { idType: strin
 // Date of birth for the customer
 // ──────────────────────────────────────────────────────────────
 function getDob(nationality: string, index: number): string {
-  const baseYear = { MY: 1990, SG: 1985, US: 1975, GB: 1980, CN: 1990, JP: 1985, IN: 1992, TH: 1993, ID: 1991, VN: 1994, KR: 1988, AU: 1982 }[nationality] ?? 1990;
+  const baseYear = { MY: 1990, SG: 1985, US: 1975, GB: 1980, CN: 1990, JP: 1985, IN: 1992, OTHER: 1995 }[nationality] ?? 1990;
   const year = baseYear + (index % 25); // spread over 25 years
   const month = 1 + (index % 12);
   const day = 1 + (index % 28);
@@ -781,90 +500,13 @@ function getDob(nationality: string, index: number): string {
 // ──────────────────────────────────────────────────────────────
 // Phone: always Malaysian format (validation regex requires it)
 // ──────────────────────────────────────────────────────────────
-function phoneFor(nationality: string, index: number): string {
-  switch (nationality) {
-    case 'MY': {
-      const operators = ['12', '13', '14', '11', '16', '17', '18', '19', '10'];
-      const op = operators[index % operators.length];
-      const sub = 1000000 + (SEED_NUM * 104729 + index * 13789) % 9000000;
-      return `+60${op}${sub}`;
-    }
-    case 'SG': {
-      const prefixes = ['8', '9'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 111111 + index * 11111) % 9000000;
-      return `+65${prefix}${num}`;
-    }
-    case 'US': {
-      const areas = ['212', '310', '312', '415', '512', '617', '713', '901'];
-      const area = areas[index % areas.length];
-      const exchange = 100 + (SEED_NUM * 3333 + index * 333) % 900;
-      const sub = 1000 + (SEED_NUM * 1111 + index * 1111) % 9000;
-      return `+1${area}${exchange}${sub}`;
-    }
-    case 'GB': {
-      const prefixes = ['74', '75', '77', '78', '79', '20', '121', '131', '161', '113'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 100000 + (SEED_NUM * 22222 + index * 2222) % 900000;
-      return `+44${prefix}${num}`;
-    }
-    case 'CN': {
-      const areas = ['10', '21', '20', '27', '22', '23', '24', '25'];
-      const area = areas[index % areas.length];
-      const num = 10000000 + (SEED_NUM * 12345 + index * 1234) % 90000000;
-      return `+86${area}${num}`;
-    }
-    case 'JP': {
-      const areas = ['3', '6', '52', '72', '11', '92', '82', '75'];
-      const area = areas[index % areas.length];
-      const num = 1000000 + (SEED_NUM * 33333 + index * 3333) % 9000000;
-      return `+81${area}${num}`;
-    }
-    case 'IN': {
-      const circles = ['91', '98', '99', '88', '87'];
-      const circle = circles[index % circles.length];
-      const num = 100000 + (SEED_NUM * 44444 + index * 4444) % 900000;
-      return `+91${circle}${num}`;
-    }
-    case 'TH': {
-      const prefixes = ['6', '8', '9'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 55555 + index * 5555) % 9000000;
-      return `+66${prefix}${num}`;
-    }
-    case 'ID': {
-      const prefixes = ['81', '82', '83', '85', '87', '88', '89'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 66666 + index * 6666) % 9000000;
-      return `+62${prefix}${num}`;
-    }
-    case 'VN': {
-      const prefixes = ['3', '5', '7', '8', '9'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 77777 + index * 7777) % 9000000;
-      return `+84${prefix}${num}`;
-    }
-    case 'KR': {
-      const prefixes = ['10', '11'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 88888 + index * 8888) % 9000000;
-      return `+82${prefix}${num}`;
-    }
-    case 'AU': {
-      const prefixes = ['4'];
-      const prefix = prefixes[index % prefixes.length];
-      const num = 1000000 + (SEED_NUM * 99999 + index * 9999) % 9000000;
-      return `+61${prefix}${num}`;
-    }
-    default: {
-      const operators = ['12', '13', '14', '11', '16', '17', '18', '19', '10'];
-      const op = operators[index % operators.length];
-      const sub = 1000000 + (SEED_NUM * 104729 + index * 13789) % 9000000;
-      return `+60${op}${sub}`;
-    }
-  }
-
+function phoneFor(index: number): string {
+  const operators = ['12', '13', '14', '11', '16', '17', '18', '19', '10'];
+  const op = operators[index % operators.length];
+  const sub = 1000000 + (SEED_NUM * 104729 + index * 13789) % 9000000;
+  return `+60${op}${sub}`;
 }
+
 test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
 
   async function logout(page: any) {
@@ -886,6 +528,30 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
   const loginAsManager = (page: any) => loginAs(page, 'manager1');
   const loginAsCompliance = (page: any) => loginAs(page, 'compliance1');
 
+  // First-party API calls ride the web session (Sanctum stateful): the
+  // browser context's cookies authenticate, X-XSRF-TOKEN satisfies CSRF,
+  // and Referer marks the request as stateful.
+  async function apiCall(page: any, method: string, path: string, data?: object): Promise<{ status: number; body: any }> {
+    const cookies = await page.context().cookies(BASE_URL);
+    const xsrf = cookies.find((c: any) => c.name === 'XSRF-TOKEN')?.value ?? '';
+    const res = await page.context().request.fetch(BASE_URL + path, {
+      method,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': BASE_URL + '/',
+        'X-XSRF-TOKEN': decodeURIComponent(xsrf),
+      },
+      data,
+    });
+    let body: any = null;
+    try { body = await res.json(); } catch {}
+    return { status: res.status(), body };
+  }
+
+  const apiGet = (page: any, path: string) => apiCall(page, 'GET', path);
+  const apiPost = (page: any, path: string, data: object) => apiCall(page, 'POST', path, data);
+
   async function createCustomer(
     page: any,
     name: string,
@@ -904,13 +570,9 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
     const form = page.locator('form[action*="customers"]');
     await form.locator('input[name="full_name"]').fill(name);
     await form.locator('input[name="email"]').fill(email);
-    // Map generated idType to form options (MyKad, Passport, Others)
-    const formIdType = ["MyKad", "Passport"].includes(idType) ? idType : "Others";
-    await form.locator('select[name="id_type"]').selectOption(formIdType);
+    await form.locator('select[name="id_type"]').selectOption(idType);
     await form.locator('input[name="id_number"]').fill(idNumber);
-    // Map nationality to form options (MY, SG, US, GB, OTHER)
-    const formNat = ["MY", "SG", "US", "GB"].includes(nationality) ? nationality : "OTHER";
-    await form.locator('select[name="nationality"]').selectOption(formNat);
+    await form.locator('select[name="nationality"]').selectOption(nationality);
     await form.locator('input[name="phone"]').fill(phone);
     await form.locator('textarea[name="address"]').fill(address);
     await form.locator('input[name="date_of_birth"]').fill(dob);
@@ -960,19 +622,18 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
 
     const form = page.locator('form[action*="transactions"]');
 
-    // Customer section: fill the identity fields directly rather than
-    // relying on the typeahead dropdown — id_type/nationality selects only
-    // carry a subset of the generated values, and the server resolves the
-    // customer by id_number (register-on-submit or blind-index match).
+    // Customer section: customer_id is only set by the Alpine typeahead,
+    // so without a selection the submit must carry the full inline
+    // registration payload — id_type/id_number/nationality/dob are all
+    // required_without:customer_id. resolveForBooking then attaches the
+    // already-registered customer by id_number blind index.
     const nameInput = form.locator('input[name="full_name"]');
     try { await nameInput.fill(name); } catch {}
-
-    const formIdType = ['MyKad', 'Passport'].includes(cust.idType) ? cust.idType : 'Others';
-    const formNat = ['MY', 'SG', 'US', 'GB'].includes(cust.nationality) ? cust.nationality : 'OTHER';
-    await form.locator('select[name="id_type"]').selectOption(formIdType);
+    await form.locator('select[name="id_type"]').selectOption(cust.idType);
     await form.locator('input[name="id_number"]').fill(cust.idNumber);
+    await form.locator('select[name="nationality"]').selectOption(cust.nationality);
     await form.locator('input[name="date_of_birth"]').fill(cust.dob);
-    await form.locator('select[name="nationality"]').selectOption(formNat);
+    await form.locator('input[name="email"]').fill(cust.email);
 
     // CDD-tier profile fields (Specific needs address; Standard also needs
     // phone/occupation/employer). On a matched record these gap-fill without
@@ -994,12 +655,15 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
     await form.locator('button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
+    // Only a numeric id proves a booking — a validation failure lands back
+    // on /transactions/create and a bare \w+ match would swallow 'create'
+    // as a fake id.
     const url = page.url();
-    const match = url.match(/\/transactions\/(\w+)/);
+    const match = url.match(/\/transactions\/(\d+)/);
     if (!match) {
-      const errEl = page.locator('p.text-danger, [role="alert"]').first();
+      const errEl = page.locator('ul.list-disc li, [class*="alert"] .text-sm, p.text-danger').first();
       const errText = (await errEl.count()) ? ((await errEl.textContent()) ?? '') : '';
-      console.log(`   WARN: TX not booked (${txType} ${qty} ${currency}): ${errText.substring(0, 120)}`);
+      console.log(`   WARN: TX not booked (${txType} ${qty} ${currency}): ${errText.trim().substring(0, 160)}`);
     }
     return match ? match[1] : null;
   }
@@ -1022,120 +686,79 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
     return 'skipped';
   }
 
-  test('process 500 transactions across 12 real countries', async ({ page }) => {
+  test('process 500 transactions across 5 nationalities', async ({ page }) => {
     const startTime = Date.now();
     test.setTimeout(10800000);
     page.setDefaultNavigationTimeout(30000);
     page.setDefaultTimeout(30000);
 
     // ──────────────────────────────────────────────────────────────
-    // PHASE 1: TELLER — Request Stock (no counter/drawer needed)
+    // PHASE 1: TELLER — Counter opening request (allocation + session)
+    //
+    // Booking requires an open counter session with today's till_balances;
+    // the API opening workflow is the only path that creates them
+    // (request → manager approve → activate → session → till floats).
+    // Steps are best-effort: a same-day session already open (re-run) or a
+    // drained pool skips ahead to the existing session instead of failing.
     // ──────────────────────────────────────────────────────────────
-    console.log('━━━ Phase 1: Teller — Request Stock ━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('━━━ Phase 1: Teller — Counter Opening Request ━━━━━━━━━━━\n');
     await loginAsTeller(page);
     console.log('1. Logged in as teller1\n');
 
-    // Return stale allocations to pool first — old active rows (especially
-    // ones with daily_limit_myr = 0) would win getActiveAllocation's
-    // current_quantity ordering over the fresh request and block Buys.
-    await page.goto(BASE_URL + '/my-allocations');
-    await page.waitForLoadState('domcontentloaded');
-    for (let guard = 0; guard < 30; guard++) {
-      const returnForm = page.locator('form[action*="/return"]').first();
-      if (await returnForm.count() === 0) break;
-      await returnForm.locator('button[type="submit"]').click();
-      await page.waitForLoadState('domcontentloaded');
-    }
-    console.log('2. Stale allocations returned to pool\n');
+    const me = await apiGet(page, '/api/v1/user');
+    const tellerId: number = me.body?.data?.id ?? 0;
+    const branchId: number = me.body?.data?.branch_id ?? 0;
+    console.log(`   teller id=${tellerId} branch=${branchId}\n`);
 
-    // One request POST per currency — a pool shortage on one line can't
-    // sink the rest. The form renders a single line by default.
-    for (const [currency, qty] of Object.entries(STOCK_REQUEST)) {
-      await page.goto(BASE_URL + '/my-allocations/request');
-      await page.waitForLoadState('domcontentloaded');
-      
-      // Debug: check what's on the page
-      console.log(`   Current URL: ${page.url()}`);
-      const formCount = await page.locator('form').count();
-      console.log(`   Forms on page: ${formCount}`);
-      const formActions = await page.locator('form').evaluateAll(els => els.map(e => e.action));
-      console.log(`   Form actions: ${JSON.stringify(formActions.slice(0, 3))}`);
-      
-      if (formCount > 0) {
-        const selectCount = await page.locator('select[name^="lines"]').count();
-        console.log(`   Selects found: ${selectCount}`);
-        
-        if (selectCount > 0) {
-          await page.locator('select[name^="lines"]').first().selectOption(currency);
-          await page.locator('input[name^="lines"]').first().fill(qty);
-          await page.locator('button[type="submit"]').click();
-          await page.waitForLoadState('domcontentloaded');
-        }
-      }
+    const countersRes = await apiGet(page, `/api/v1/branches/${branchId}/counters`);
+    const counterId: number = countersRes.body?.data?.[0]?.id ?? 0;
+    console.log(`   counter id=${counterId}\n`);
 
-      if (page.url().includes('/request')) {
-        console.log(`   ⚠ Stock request for ${currency} ${qty} was rejected`);
-      }
+    // An open counter session leaves the teller's allocations 'active' — if
+    // one already exists for today the till floats are provisioned and the
+    // whole request→approve cycle can be skipped (same-day re-runs).
+    // approve-and-open requires PENDING allocations, so it must only run
+    // when the opening-request below actually created them.
+    const activeCheck = await apiGet(page, '/api/v1/allocations/my-active?currency_code=MYR');
+    const sessionReady = activeCheck.status === 200 && activeCheck.body?.data != null;
+    console.log(`2. Active allocation check: ${activeCheck.status} ${activeCheck.body?.message ?? ''}\n`);
+
+    let openingRequested = false;
+    if (sessionReady) {
+      console.log('   Session already provisioned — skipping open cycle\n');
+    } else {
+      const openReq = await apiPost(page, `/api/v1/counters/${counterId}/opening-request`, {
+        requested_floats: OPENING_FLOATS,
+      });
+      openingRequested = openReq.status === 200;
+      console.log(`3. Opening request: ${openReq.status} ${openReq.body?.message ?? ''}\n`);
     }
-    console.log('3. Stock allocation requested\n');
 
     await logout(page);
 
     // ──────────────────────────────────────────────────────────────
-    // PHASE 2: MANAGER — Approve Stock Allocation
+    // PHASE 2: MANAGER — Approve floats and open the counter session
     // ──────────────────────────────────────────────────────────────
-    console.log('━━━ Phase 2: Manager — Approve Stock ━━━━━━━━━━━━━━━━━━━━━\n');
-    await loginAsManager(page);
-    console.log('4. Logged in as manager1\n');
+    if (openingRequested) {
+      console.log('━━━ Phase 2: Manager — Approve & Open Counter ━━━━━━━━━━━\n');
+      await loginAsManager(page);
+      console.log('4. Logged in as manager1\n');
 
-    // The manager queue is /allocations (not teller-only /my-allocations);
-    // its index defaults to status=active, so filter to pending. Approval
-    // happens on the detail page's approve form.
-    await page.goto(BASE_URL + '/allocations?status=pending');
-    await page.waitForLoadState('domcontentloaded');
+      const dailyLimits = Object.fromEntries(
+        Object.keys(OPENING_FLOATS).map((c) => [c, DAILY_LIMIT_MYR])
+      );
+      const approveRes = await apiPost(page, `/api/v1/counters/${counterId}/approve-and-open`, {
+        teller_id: tellerId,
+        approved_floats: OPENING_FLOATS,
+        daily_limits: dailyLimits,
+      });
+      console.log(`5. Approve-and-open: ${approveRes.status} ${approveRes.body?.message ?? ''}\n`);
 
-    const detailLinks: string[] = await page.locator('table a[href*="/allocations/"]').evaluateAll(
-      (els: Element[]) => [...new Set(els.map((e) => (e as HTMLAnchorElement).href))]
-    );
-    console.log(`   Found ${detailLinks.length} pending allocations\n`);
-
-    let allocApproved = 0;
-    for (const href of detailLinks) {
-      await page.goto(href);
-      await page.waitForLoadState('domcontentloaded');
-
-      const approveForm = page.locator('form[action*="/approve"]');
-      if (await approveForm.count() === 0) continue;
-
-      // daily_limit_myr = 0 rejects every Buy — set a real limit.
-      await approveForm.locator('input[name="daily_limit_myr"]').fill(DAILY_LIMIT_MYR);
-      await approveForm.locator('button[type="submit"]').click();
-      await page.waitForLoadState('domcontentloaded');
-      allocApproved++;
+      await logout(page);
+      console.log('6. Logged out\n');
+    } else {
+      console.log('━━━ Phase 2: Manager — skipped (no pending request) ━━━━━━━━\n');
     }
-
-    console.log(`   Approved ${allocApproved} allocations\n`);
-
-    await logout(page);
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 2b: TELLER — Accept Allocations (activates custody)
-    // ──────────────────────────────────────────────────────────────
-    await loginAsTeller(page);
-    let allocAccepted = 0;
-    await page.goto(BASE_URL + '/my-allocations');
-    await page.waitForLoadState('domcontentloaded');
-    for (let guard = 0; guard < 30; guard++) {
-      const acceptForm = page.locator('form[action*="/accept"]').first();
-      if (await acceptForm.count() === 0) break;
-      await acceptForm.locator('button[type="submit"]').click();
-      await page.waitForLoadState('domcontentloaded');
-      allocAccepted++;
-    }
-    console.log(`5. Accepted ${allocAccepted} allocations\n`);
-
-    await logout(page);
-    console.log('6. Logged out\n');
 
     // ──────────────────────────────────────────────────────────────
     // PHASE 3: TELLER — Create 500 Customers + Transactions
@@ -1147,27 +770,27 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
     const purposes = ['Travel', 'Education', 'Medical', 'Business', 'Investment',
       'Family Support', 'Migration', 'Other'];
     const fundSources = ['Salary', 'Savings', 'Business Income', 'Investment Returns',
-      'Inheritance', 'Consulting Fees', 'Dividends', 'Property Sale',
-      'Rental Income', 'Royalty Payments', 'Government Pension',
-      'Freelance Work', 'Trust Distribution', 'Sale of Assets'];
+      'Inheritance', 'Consulting Fees', 'Dividends'];
     const wealthSources = ['Employment', 'Business Ownership', 'Professional Services',
-      'Real Estate', 'Financial Investments', 'Government Position', 'Agriculture',
-      'Technology Sector', 'Manufacturing', 'Healthcare', 'Education',
-      'Mining', 'Construction', 'Financial Services', 'Maritime Trade'];
+      'Real Estate', 'Financial Investments', 'Government Position', 'Agriculture'];
 
     // Returning customers (reuse fixed names, run-seeded emails/ICs)
     const returnedCustomers = [
       { name: 'Tun Abdullah bin Ahmad bin Haji Ibrahim', email: `ahmad.${RUN_SEED}@corp.my` },
-      { name: 'Somchai Jaidee', email: `somchai.${RUN_SEED}@bangkok.co.th` },
-      { name: 'Budi Santoso', email: `budi.${RUN_SEED}@jakarta.co.id` },
-      { name: 'Kim Min-Jun', email: `minjun.${RUN_SEED}@seoul.co.kr` },
-      { name: 'Nguyen Van An', email: `vanan.${RUN_SEED}@hanoi.vn` },
+      { name: 'Datin Sri Dr. Noraini binti Mohamed Ali', email: `noraini.${RUN_SEED}@bank.my` },
+      { name: 'Datuk Lee Wei Chen', email: `weichen.${RUN_SEED}@trading.my` },
     ];
 
     let txCreated = 0;
     const txIds: string[] = [];
 
     for (let i = 1; i <= 500; i++) {
+      // Total setup failure must not burn the whole loop producing warnings —
+      // covers both customer-rejection and booking-failure paths.
+      if (i > 10 && txCreated === 0) {
+        throw new Error('No transactions booked after 10 attempts — counter session or till floats are not provisioned');
+      }
+
       // Reuse customers at indices 1, 101, 201, 301, 401
       const isReturning = [0, 100, 200, 300, 400].includes(i - 1);
       const custIdx = isReturning ? Math.floor((i - 1) / 100) : 0;
@@ -1175,7 +798,7 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
 
       if (i % 100 === 0) {
         const nationality = NATIONALITY_CYCLE[(i - 1) % NATIONALITY_CYCLE.length];
-        console.log(`[TX ${i}/5000] ${isReturning ? 'Returning customer' : 'New customer'} — Nationality: ${nationality}`);
+        console.log(`[TX ${i}/500] ${isReturning ? 'Returning customer' : 'New customer'} — Nationality: ${nationality}`);
       }
 
       const nationality = NATIONALITY_CYCLE[(i - 1) % NATIONALITY_CYCLE.length];
@@ -1187,7 +810,7 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
 
       const created = await createCustomer(
         page, name, email, idType, idNumber, nationality,
-        phoneFor(nationality, i), address, dob
+        phoneFor(i), address, dob
       );
 
       if (!created) {
@@ -1201,12 +824,16 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
       const purpose = purposes[i % purposes.length];
       const funds = fundSources[i % fundSources.length];
       const wealth = wealthSources[i % wealthSources.length];
-      const qty = (1000 + i * 10).toFixed(2);
-      const txType = i % 3 === 0 ? 'Sell' : 'Buy';
+      // 1:1 Buy:Sell keeps MYR/foreign till liquidity roughly self-balancing:
+      // each Buy pays MYR out (refilled by the next Sell) and each Sell
+      // drains foreign (refilled by the previous Buy). Modest quantities
+      // keep the run inside the branch pool's capacity.
+      const qty = (200 + i).toFixed(2);
+      const txType = i % 2 === 0 ? 'Sell' : 'Buy';
       const rate = txType === 'Buy' ? MARKET_RATES[currency].buy : MARKET_RATES[currency].sell;
 
       const txId = await createTransaction(page, name, txType, currency, purpose, funds, wealth, qty, rate,
-        { idType, idNumber, nationality, phone: phoneFor(nationality, i), address, dob, email });
+        { idType, idNumber, nationality, phone: phoneFor(i), address, dob, email });
 
       if (txId) {
         txCreated++;
@@ -1277,5 +904,10 @@ test.describe('500 Transaction Flow: Teller → Manager → Compliance', () => {
     console.log(`\n========================================`);
     console.log(` DONE! ${txCreated} created, ${approvedCount} approved in ${elapsed}s`);
     console.log(`========================================`);
+
+    // A run that booked nothing is a failure, not a pass — the numeric-id
+    // capture means txCreated only counts real persisted transactions.
+    expect(txCreated).toBeGreaterThan(0);
+    expect(txIds.length).toBe(txCreated);
   });
 });

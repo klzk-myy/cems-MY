@@ -5,7 +5,6 @@ namespace App\Models\Compliance;
 use App\Enums\EddDocumentStatus;
 use App\Models\BaseModel;
 use App\Models\Customer;
-use App\Models\EnhancedDiligenceRecord;
 use App\Models\Traits\HasStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

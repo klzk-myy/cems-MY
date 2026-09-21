@@ -5,18 +5,17 @@ namespace App\Services\Transaction;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
-use App\Models\Alert;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
-use App\Services\Contracts\TransactionMonitoringServiceInterface;
 use App\Services\Transaction\Checks\TransactionCheckRegistry;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class TransactionMonitoringService implements TransactionMonitoringServiceInterface
+class TransactionMonitoringService
 {
     public function __construct(
         protected TransactionCheckRegistry $checkRegistry,
@@ -218,7 +217,7 @@ class TransactionMonitoringService implements TransactionMonitoringServiceInterf
 
     public function getOpenFlags(): array
     {
-        return FlaggedTransaction::where('status', FlagStatus::Open)
+        return FlaggedTransaction::where('status', FlagStatus::Open->value)
             ->with(['transaction.customer', 'assignedTo'])
             ->orderBy('created_at', 'asc')
             ->get()

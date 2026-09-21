@@ -18,13 +18,13 @@ use App\Models\Currency;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Customer\CustomerService;
 use App\Services\Reporting\TransactionExportService;
 use App\Services\ThresholdService;
 use App\Services\Transaction\ReceiptGenerationService;
 use App\Services\Transaction\TransactionCancellationService;
 use App\Services\Transaction\TransactionConfirmationService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +38,7 @@ class TransactionController extends Controller
     use BranchScopedQuery, HandlesControllerErrors, MapsTransactionExceptionsToFields;
 
     public function __construct(
-        protected TransactionCreationServiceInterface $creationService,
+        protected TransactionCreationService $creationService,
         protected TransactionCancellationService $cancellationService,
         protected ReceiptGenerationService $receiptService,
         protected TransactionExportService $transactionExportService,

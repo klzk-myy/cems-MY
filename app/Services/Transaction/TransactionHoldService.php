@@ -3,9 +3,8 @@
 namespace App\Services\Transaction;
 
 use App\Enums\CddLevel;
-use App\Services\Contracts\TransactionHoldServiceInterface;
 
-class TransactionHoldService implements TransactionHoldServiceInterface
+class TransactionHoldService
 {
     public const CRITICAL_SEVERITY = 'critical';
 

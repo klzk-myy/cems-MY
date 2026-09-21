@@ -6,7 +6,7 @@ use App\Exceptions\Domain\AuditIntegrityException;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
 use App\Models\User;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +20,7 @@ class SealAuditHashJobTest extends TestCase
     public function it_seals_an_unsealed_log_entry_with_hash_chain()
     {
         // Arrange: create users and log entries, first already sealed
-        $auditService = $this->mock(AuditService::class);
+        $auditService = $this->mock(AuditChainService::class);
         $auditService->shouldReceive('computeEntryHash')
             ->andReturnUsing(function ($createdAt, $userId, $action, $entityType, $entityId, $previousHash) {
                 return hash('sha256', $createdAt.$userId.$action.$entityType.$entityId.$previousHash);
@@ -63,7 +63,7 @@ class SealAuditHashJobTest extends TestCase
     #[Test]
     public function it_does_nothing_if_log_already_sealed()
     {
-        $auditService = $this->mock(AuditService::class);
+        $auditService = $this->mock(AuditChainService::class);
         $auditService->shouldNotReceive('computeEntryHash');
 
         $user = User::factory()->create();
@@ -90,7 +90,7 @@ class SealAuditHashJobTest extends TestCase
     #[Test]
     public function it_seals_first_log_without_predecessor()
     {
-        $auditService = $this->mock(AuditService::class);
+        $auditService = $this->mock(AuditChainService::class);
         $auditService->shouldReceive('computeEntryHash')
             ->andReturn('first_hash');
 
@@ -120,7 +120,7 @@ class SealAuditHashJobTest extends TestCase
         // A pickup ahead of the writing transaction's commit (a connector
         // without after_commit) must fail so the backoff ladder retries —
         // returning silently would leave the committed entry unsealed.
-        $auditService = $this->mock(AuditService::class);
+        $auditService = $this->mock(AuditChainService::class);
         $auditService->shouldNotReceive('computeEntryHash');
 
         $job = new SealAuditHashJob(999999);

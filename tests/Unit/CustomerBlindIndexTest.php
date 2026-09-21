@@ -3,9 +3,11 @@
 namespace Tests\Unit;
 
 use App\Models\Customer;
+use App\Models\User;
 use App\Services\Customer\CustomerService;
 use App\Services\System\EncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -46,7 +48,7 @@ class CustomerBlindIndexTest extends TestCase
             'pep_status' => false,
             'sanction_hit' => false,
             'risk_score' => 10,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'cdd_level' => 'Simplified',
             'is_active' => true,
         ]);
@@ -68,5 +70,62 @@ class CustomerBlindIndexTest extends TestCase
         $customerService = app(CustomerService::class);
         $found = $customerService->findByIdNumber('NONEXISTENT123');
         $this->assertNull($found);
+    }
+
+    #[Test]
+    public function update_recomputes_blind_index_on_id_number_change(): void
+    {
+        $user = User::factory()->create();
+        $service = app(CustomerService::class);
+
+        $customer = $service->createCustomer([
+            'full_name' => 'Blind Index Update',
+            'id_type' => 'MyKad',
+            'id_number' => 'OLDID123',
+            'nationality' => 'MY',
+            'date_of_birth' => '1990-01-01',
+        ], $user->id);
+
+        $service->updateCustomer($customer, ['id_number' => 'NEWID456'], $user->id);
+
+        $customer->refresh();
+        $this->assertSame(CustomerService::computeBlindIndex('NEWID456'), $customer->id_number_hash);
+        $this->assertNull($service->findByIdNumber('OLDID123'));
+        $this->assertSame($customer->id, $service->findByIdNumber('NEWID456')?->id);
+    }
+
+    #[Test]
+    public function update_rejects_id_number_owned_by_another_customer(): void
+    {
+        $user = User::factory()->create();
+        $service = app(CustomerService::class);
+
+        $first = $service->createCustomer([
+            'full_name' => 'First Holder',
+            'id_type' => 'MyKad',
+            'id_number' => 'SHARED111',
+            'nationality' => 'MY',
+            'date_of_birth' => '1990-01-01',
+        ], $user->id);
+
+        $second = $service->createCustomer([
+            'full_name' => 'Second Holder',
+            'id_type' => 'Passport',
+            'id_number' => 'OTHER222',
+            'nationality' => 'MY',
+            'date_of_birth' => '1985-05-05',
+        ], $user->id);
+
+        try {
+            $service->updateCustomer($second, ['id_number' => 'SHARED111'], $user->id);
+            $this->fail('Expected ValidationException for duplicate id_number');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('id_number', $e->errors());
+        }
+
+        // The collision must not have persisted either the value or its hash.
+        $second->refresh();
+        $this->assertSame(CustomerService::computeBlindIndex('OTHER222'), $second->id_number_hash);
+        $this->assertSame($first->id, $service->findByIdNumber('SHARED111')?->id);
     }
 }

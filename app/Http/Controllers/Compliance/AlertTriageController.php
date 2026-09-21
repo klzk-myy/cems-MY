@@ -9,7 +9,7 @@ use App\Http\Requests\BulkAssignAlertsRequest;
 use App\Http\Requests\BulkResolveAlertsRequest;
 use App\Http\Requests\DismissAlertRequest;
 use App\Http\Requests\ResolveAlertRequest;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Services\Compliance\AlertTriageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

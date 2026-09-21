@@ -3,16 +3,16 @@
 namespace App\Listeners;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceFlagType;
-use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Enums\UserRole;
 use App\Events\AlertCreated;
 use App\Events\CaseOpened;
 use App\Events\RiskScoreUpdated;
-use App\Models\Alert;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\RiskScoreSnapshot;
 use App\Models\User;
 use App\Notifications\TransactionFlaggedNotification;
@@ -134,8 +134,8 @@ class ComplianceEventListener
         // Dedup: rescreening fires RiskScoreUpdated for every high-score
         // snapshot; only surface one open escalation alert per customer.
         $existing = Alert::where('customer_id', $snapshot->customer_id)
-            ->where('type', ComplianceFlagType::RiskScoreEscalation)
-            ->where('status', FlagStatus::Open)
+            ->where('type', ComplianceFlagType::RiskScoreEscalation->value)
+            ->where('status', AlertStatus::Open->value)
             ->exists();
 
         if ($existing) {
@@ -150,7 +150,7 @@ class ComplianceEventListener
         Alert::create([
             'customer_id' => $snapshot->customer_id,
             'type' => ComplianceFlagType::RiskScoreEscalation,
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
             'priority' => $priority,
             'risk_score' => $snapshot->overall_score,
             'reason' => "Customer risk score escalated to {$level} (score: {$snapshot->overall_score})",

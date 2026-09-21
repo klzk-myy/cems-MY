@@ -3,12 +3,12 @@
 namespace App\Listeners;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
-use App\Enums\FlagStatus;
 use App\Events\RelatedPartyOwnershipConcern;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceFinding;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +37,7 @@ class RelatedPartyOwnershipConcernListener
                 'priority' => AlertPriority::Medium,
                 'type' => 'Related_Party_Ownership',
                 'reason' => 'Related party ownership concern detected: '.$event->relatedParty->full_name.' ('.round($event->ownershipInterest * 100, 1).'% ownership)',
-                'status' => FlagStatus::Open,
+                'status' => AlertStatus::Open,
                 'risk_score' => $this->calculateRiskScore($event->ownershipInterest),
             ]);
         });

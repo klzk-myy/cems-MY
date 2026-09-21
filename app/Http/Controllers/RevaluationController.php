@@ -58,7 +58,7 @@ class RevaluationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 
-        $fiscalYears = FiscalYear::where('status', FiscalYearStatus::Open)->orderBy('start_date', 'desc')->pluck('year_code', 'year_code');
+        $fiscalYears = FiscalYear::where('status', FiscalYearStatus::Open->value)->orderBy('start_date', 'desc')->pluck('year_code', 'year_code');
         $currencies = Currency::where('is_active', true)->orderBy('name')->pluck('name', 'code');
 
         return view('accounting.revaluation.history', compact('history', 'month', 'fiscalYears', 'currencies'));

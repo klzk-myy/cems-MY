@@ -4,10 +4,10 @@ namespace App\Enums;
 
 enum EddRiskLevel: string
 {
-    case Low = 'Low';
-    case Medium = 'Medium';
-    case High = 'High';
-    case Critical = 'Critical';
+    case Low = 'low';
+    case Medium = 'medium';
+    case High = 'high';
+    case Critical = 'critical';
 
     public function label(): string
     {

@@ -3,18 +3,16 @@
 namespace App\Models\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\CaseNoteType;
 use App\Enums\CaseResolution;
 use App\Enums\ComplianceCasePriority;
 use App\Enums\ComplianceCaseStatus;
 use App\Enums\ComplianceCaseType;
 use App\Enums\FindingSeverity;
-use App\Enums\FlagStatus;
 use App\Exceptions\Domain\CaseManagementException;
-use App\Models\Alert;
 use App\Models\Bases\ComplianceModel;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\User;
 use App\Services\ThresholdService;
 use Carbon\Carbon;
@@ -460,7 +458,7 @@ class ComplianceCase extends ComplianceModel
         // All linked alerts must be resolved or rejected (UnifiedAlertController
         // writes exactly these values when alerts are closed out).
         $unresolvedAlerts = $this->alerts()
-            ->whereNotIn('status', FlagStatus::terminalValues())
+            ->whereNotIn('status', AlertStatus::terminalValues())
             ->count();
 
         return $unresolvedAlerts === 0;

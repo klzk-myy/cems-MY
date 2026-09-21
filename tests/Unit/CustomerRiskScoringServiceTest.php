@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\RiskRating;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
@@ -14,12 +15,12 @@ use App\Services\Compliance\PepAssessmentService;
 use App\Services\Compliance\RiskCalculationService;
 use App\Services\Compliance\RiskScoreWriteBackService;
 use App\Services\Compliance\RoundTripDetector;
-use App\Services\CustomerScreeningService;
 use App\Services\Risk\AmountRiskService;
 use App\Services\Risk\GeographicRiskService;
 use App\Services\Risk\PatternRiskService;
 use App\Services\Risk\StructuringRiskService;
 use App\Services\Risk\VelocityRiskService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\System\CacheOptimizationService;
 use App\Services\System\EncryptionService;
 use App\Services\System\MathService;
@@ -325,8 +326,8 @@ class CustomerRiskScoringServiceTest extends TestCase
         $method = $reflection->getMethod('getRiskLevel');
         $method->setAccessible(true);
 
-        // Score 78 should return "High" from both CustomerRiskScoringService and CustomerRiskProfile
-        $scoringServiceResult = $method->invoke($this->service, 78);
+        // Score 78 should return "high" from both CustomerRiskScoringService and CustomerRiskProfile
+        $scoringServiceResult = $method->invoke($this->service, 78)?->value;
         $profileResult = CustomerRiskProfile::getTierForScore(78);
 
         $this->assertEquals($profileResult, $scoringServiceResult,
@@ -335,20 +336,20 @@ class CustomerRiskScoringServiceTest extends TestCase
 
         // Test boundary consistency across all tiers
         $testCases = [
-            ['score' => 85, 'expected' => 'Critical'],
-            ['score' => 80, 'expected' => 'Critical'],
-            ['score' => 79, 'expected' => 'High'],
-            ['score' => 65, 'expected' => 'High'],
-            ['score' => 60, 'expected' => 'High'],
-            ['score' => 59, 'expected' => 'Medium'],
-            ['score' => 35, 'expected' => 'Medium'],
-            ['score' => 30, 'expected' => 'Medium'],
-            ['score' => 29, 'expected' => 'Low'],
-            ['score' => 0, 'expected' => 'Low'],
+            ['score' => 85, 'expected' => RiskRating::Critical->value],
+            ['score' => 80, 'expected' => RiskRating::Critical->value],
+            ['score' => 79, 'expected' => RiskRating::High->value],
+            ['score' => 65, 'expected' => RiskRating::High->value],
+            ['score' => 60, 'expected' => RiskRating::High->value],
+            ['score' => 59, 'expected' => RiskRating::Medium->value],
+            ['score' => 35, 'expected' => RiskRating::Medium->value],
+            ['score' => 30, 'expected' => RiskRating::Medium->value],
+            ['score' => 29, 'expected' => RiskRating::Low->value],
+            ['score' => 0, 'expected' => RiskRating::Low->value],
         ];
 
         foreach ($testCases as $case) {
-            $scoringServiceTier = $method->invoke($this->service, $case['score']);
+            $scoringServiceTier = $method->invoke($this->service, $case['score'])?->value;
             $profileTier = CustomerRiskProfile::getTierForScore($case['score']);
 
             $this->assertEquals($case['expected'], $scoringServiceTier,

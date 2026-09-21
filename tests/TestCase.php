@@ -36,14 +36,13 @@ abstract class TestCase extends BaseTestCase
 
         config(['cems.mfa.enabled' => false]);
 
-        // Reset shared cache state between tests. StrictRateLimit uses
-        // Laravel's built-in RateLimiter, which stores hit counters in the
-        // DEFAULT cache store (not config('ratelimit.store')), so the
-        // RATE_LIMIT_CACHE_STORE=array env alone does NOT isolate it. The
-        // array store persists across tests within one PHPUnit process;
-        // without this flush the full suite 429s all API tests after ~60
-        // requests from the shared 127.0.0.1 test IP. Keep this flush even if
-        // the env vars look redundant.
+        // Reset shared cache state between tests. The named rate limiters in
+        // RouteServiceProvider store hit counters in the DEFAULT cache store
+        // (not config('ratelimit.store')), so the RATE_LIMIT_CACHE_STORE=array
+        // env alone does NOT isolate them. The array store persists across
+        // tests within one PHPUnit process; without this flush the full suite
+        // 429s all API tests after ~60 requests from the shared 127.0.0.1
+        // test IP. Keep this flush even if the env vars look redundant.
         Cache::flush();
     }
 
@@ -180,7 +179,7 @@ abstract class TestCase extends BaseTestCase
             'id_number_encrypted' => encrypt('123456789012'),
             'nationality' => 'MY',
             'date_of_birth' => '1990-01-01',
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'risk_score' => 10,
             'cdd_level' => 'Simplified',
             'sanction_hit' => false,
@@ -222,7 +221,7 @@ abstract class TestCase extends BaseTestCase
             'opened_by' => $user->id,
         ]);
 
-        // Also create MYR till balance (required by TransactionService::updateTillBalance)
+        // Also create MYR till balance (required by transaction creation)
         TillBalance::create([
             'till_id' => (string) $counter->code,
             'currency_code' => 'MYR',
@@ -232,7 +231,7 @@ abstract class TestCase extends BaseTestCase
             'opened_by' => $user->id,
         ]);
 
-        // Create active teller allocation (required by TransactionService for Buy transactions)
+        // Create active teller allocation (required for Buy transactions)
         TellerAllocation::create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,

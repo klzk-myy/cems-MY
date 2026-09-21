@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use App\Models\User;
 
 class EnhancedDiligenceRecordPolicy

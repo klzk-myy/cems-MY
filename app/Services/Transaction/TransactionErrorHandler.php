@@ -3,10 +3,8 @@
 namespace App\Services\Transaction;
 
 use App\Enums\ErrorType;
-use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Models\TransactionError;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -166,45 +164,6 @@ class TransactionErrorHandler
     }
 
     /**
-     * Mark an error as resolved.
-     *
-     * @param  Transaction  $transaction  The transaction with the error
-     * @param  int  $resolvedBy  User ID who resolved the error
-     * @param  string|null  $notes  Resolution notes
-     * @return bool True if resolution was successful
-     */
-    public function markErrorResolved(
-        Transaction $transaction,
-        int $resolvedBy,
-        ?string $notes = null
-    ): bool {
-        $latestError = $this->getLatestError($transaction);
-
-        if ($latestError === null) {
-            return false;
-        }
-
-        $latestError->resolved_at = now();
-        $latestError->resolved_by = $resolvedBy;
-        $latestError->resolution_notes = $notes;
-
-        return $latestError->save();
-    }
-
-    /**
-     * Get all errors for a transaction.
-     *
-     * @param  Transaction  $transaction  The transaction
-     * @return Collection Collection of TransactionError models
-     */
-    public function getTransactionErrors(Transaction $transaction): Collection
-    {
-        return $transaction->transactionErrors()
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
-
-    /**
      * Get the latest unresolved error for a transaction.
      *
      * Uses the eager-loaded collection when available to avoid extra queries,
@@ -275,19 +234,6 @@ class TransactionErrorHandler
     }
 
     /**
-     * Check if a transaction has any unresolved errors.
-     *
-     * @param  Transaction  $transaction  The transaction to check
-     * @return bool True if has unresolved errors
-     */
-    public function hasUnresolvedErrors(Transaction $transaction): bool
-    {
-        return $transaction->transactionErrors()
-            ->whereNull('resolved_at')
-            ->exists();
-    }
-
-    /**
      * Get the count of retry attempts for a transaction.
      *
      * @param  Transaction  $transaction  The transaction
@@ -298,22 +244,6 @@ class TransactionErrorHandler
         $latestError = $this->getLatestError($transaction);
 
         return $latestError->retry_count ?? 0;
-    }
-
-    /**
-     * Get all transactions with unresolved errors ready for retry.
-     *
-     * @return Collection Collection of transactions
-     */
-    public function getTransactionsReadyForRetry(): Collection
-    {
-        return Transaction::where('status', TransactionStatus::Failed)
-            ->whereHas('transactionErrors', function ($query) {
-                $query->whereNull('resolved_at')
-                    ->whereColumn('retry_count', '<', 'max_retries')
-                    ->where('next_retry_at', '<=', now());
-            })
-            ->get();
     }
 
     /**

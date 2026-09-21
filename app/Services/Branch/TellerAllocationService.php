@@ -19,13 +19,12 @@ use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\Contracts\TellerAllocationServiceInterface;
 use App\Services\DTOs\AllocationValidationResult;
 use App\Services\System\MathService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class TellerAllocationService implements TellerAllocationServiceInterface
+class TellerAllocationService
 {
     public function __construct(
         protected BranchPoolService $branchPoolService,

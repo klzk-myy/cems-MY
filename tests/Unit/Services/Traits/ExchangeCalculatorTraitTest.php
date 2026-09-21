@@ -3,10 +3,10 @@
 namespace Tests\Unit\Services\Traits;
 
 use App\Enums\TransactionType;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\System\MathService;
 use App\Services\Traits\ExchangeCalculatorTrait;
 use App\Services\Transaction\ExchangeCalculator;
+use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionImportService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -14,23 +14,31 @@ use Tests\TestCase;
 /**
  * Locks down the shared ExchangeCalculator resolution.
  *
- * TransactionCreationService and TransactionImportService previously each
- * carried a private resolveExchangeCalculator() copy. Both now compose
- * ExchangeCalculatorTrait, whose calculator is always constructor-injected —
- * there is no container fallback.
+ * TransactionCreationService composes ExchangeCalculatorTrait, whose
+ * calculator is always constructor-injected — there is no container
+ * fallback. TransactionImportService no longer converts amounts itself
+ * (it delegates to TransactionCreationService::buildCreationContext), so
+ * it must not carry a calculator or a resolver at all.
  */
 class ExchangeCalculatorTraitTest extends TestCase
 {
     #[Test]
     public function transaction_creation_service_composes_the_shared_resolver(): void
     {
-        $this->assertUsesSharedResolver(app(TransactionCreationServiceInterface::class));
+        $this->assertUsesSharedResolver(app(TransactionCreationService::class));
     }
 
     #[Test]
-    public function transaction_import_service_composes_the_shared_resolver(): void
+    public function transaction_import_service_carries_no_calculator(): void
     {
-        $this->assertUsesSharedResolver(app(TransactionImportService::class));
+        $service = app(TransactionImportService::class);
+
+        $this->assertNotContains(
+            ExchangeCalculatorTrait::class,
+            array_keys(class_uses_recursive($service))
+        );
+
+        $this->assertFalse(method_exists($service, 'resolveExchangeCalculator'));
     }
 
     #[Test]
@@ -62,8 +70,7 @@ class ExchangeCalculatorTraitTest extends TestCase
         $traitFile = (new \ReflectionClass(ExchangeCalculatorTrait::class))->getFileName();
 
         foreach ([
-            app(TransactionCreationServiceInterface::class),
-            app(TransactionImportService::class),
+            app(TransactionCreationService::class),
         ] as $service) {
             $method = new \ReflectionMethod($service, 'resolveExchangeCalculator');
 

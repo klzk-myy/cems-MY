@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Customer;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;

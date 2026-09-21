@@ -5,7 +5,7 @@ namespace Tests\Unit\Jobs;
 use App\Jobs\ComplianceScreeningJob;
 use App\Models\Customer;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

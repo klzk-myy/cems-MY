@@ -108,7 +108,6 @@ class SchemaSeeder extends Seeder
             'account_ledger',
             'account_mappings',
             'adverse_media_entries',
-            'adverse_media_import_logs',
             'compliance_findings',
             'customers',
             'currencies',
@@ -407,24 +406,6 @@ class SchemaSeeder extends Seeder
             $table->unique('record_hash', 'adverse_media_entries_record_hash_unique');
         });
 
-        Schema::create('adverse_media_import_logs', function (Blueprint $table) {
-            $table->id();
-            $table->string('imported_file')->nullable();
-            $table->timestamp('imported_at');
-            $table->integer('records_added')->default(0);
-            $table->integer('records_updated')->default(0);
-            $table->integer('records_deactivated')->default(0);
-            $table->integer('records_skipped')->default(0);
-            $table->enum('status', array_column(ImportStatus::cases(), 'value'))->default('success');
-            $table->text('error_message')->nullable();
-            $table->enum('triggered_by', array_column(ImportTrigger::cases(), 'value'))->default('manual');
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->timestamp('created_at')->nullable();
-            $table->timestamp('updated_at')->nullable();
-            $table->index('imported_at', 'adverse_media_import_logs_imported_at_index');
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
-        });
-
         Schema::create('compliance_findings', function (Blueprint $table) {
             $table->id();
             $table->string('finding_type', 64);
@@ -455,7 +436,7 @@ class SchemaSeeder extends Seeder
             $table->string('email')->nullable();
             $table->boolean('pep_status')->default(false);
             $table->integer('risk_score')->default(0);
-            $table->string('risk_rating', 64)->default('Low');
+            $table->string('risk_rating', 64)->default('low');
             $table->timestamp('risk_assessed_at')->nullable();
             $table->timestamp('last_transaction_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -1293,7 +1274,7 @@ class SchemaSeeder extends Seeder
             $table->unsignedBigInteger('customer_id');
             $table->string('edd_reference');
             $table->string('status', 64)->default('incomplete');
-            $table->string('risk_level')->default('Medium');
+            $table->string('risk_level')->default('medium');
             $table->text('source_of_funds')->nullable();
             $table->text('source_of_funds_description')->nullable();
             $table->text('source_of_funds_documents')->nullable();
@@ -1922,6 +1903,7 @@ class SchemaSeeder extends Seeder
             $table->text('trigger_reason');
             $table->string('status', 64)->default('draft');
             $table->string('bnm_reference')->nullable();
+            $table->unique('bnm_reference', 'str_reports_bnm_reference_unique');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('acknowledged_at')->nullable();
             $table->unsignedBigInteger('created_by');

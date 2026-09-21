@@ -48,7 +48,7 @@ class InitialStatusResolver
         if ($riskRating === null) {
             $reasons[] = 'Customer risk rating is unknown';
         } elseif ($riskRating === RiskRating::High) {
-            $reasons[] = 'Customer risk rating is '.$riskRating->value;
+            $reasons[] = 'Customer risk rating is '.ucfirst($riskRating->value);
         }
 
         if ($this->mathService->compare($amountMyr, $this->thresholdService->getAutoApproveThreshold()) >= 0) {

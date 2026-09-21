@@ -98,8 +98,8 @@ class AuditTrailHelperTest extends TestCase
             321,
             'customer_updated',
             [
-                'old' => ['risk_rating' => 'Low'],
-                'new' => ['risk_rating' => 'High'],
+                'old' => ['risk_rating' => 'low'],
+                'new' => ['risk_rating' => 'high'],
             ],
             $user,
             'ERROR'

@@ -136,13 +136,20 @@ class ExportService
 
         $export = new class($data) implements FromArray
         {
-            protected $data;
+            /** @var array<int, array<int, mixed>> */
+            protected array $data;
 
-            public function __construct($data)
+            /**
+             * @param  array<int, array<int, mixed>>  $data
+             */
+            public function __construct(array $data)
             {
                 $this->data = $data;
             }
 
+            /**
+             * @return array<int, array<int, mixed>>
+             */
             public function array(): array
             {
                 return $this->data;

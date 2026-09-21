@@ -3,15 +3,16 @@
 namespace App\Jobs;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\ThresholdService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
@@ -139,7 +140,7 @@ class ComplianceScreeningJob implements ShouldQueue
         });
 
         $skippedProcessing = Transaction::where('customer_id', $customer->id)
-            ->where('status', TransactionStatus::Processing)
+            ->where('status', TransactionStatus::Processing->value)
             ->count();
 
         if ($skippedProcessing > 0) {
@@ -169,8 +170,8 @@ class ComplianceScreeningJob implements ShouldQueue
         // SoftDeletes keeps soft-deleted rows out of the lookup.
         $flag = FlaggedTransaction::where('customer_id', $customer->id)
             ->where('transaction_id', $transaction->id)
-            ->where('flag_type', ComplianceFlagType::SanctionMatch)
-            ->where('status', FlagStatus::Open)
+            ->where('flag_type', ComplianceFlagType::SanctionMatch->value)
+            ->where('status', FlagStatus::Open->value)
             ->first();
 
         if ($flag === null) {
@@ -195,9 +196,9 @@ class ComplianceScreeningJob implements ShouldQueue
     protected function createComplianceAlert(Customer $customer, string $reason, AlertPriority $priority): void
     {
         $alert = Alert::where('customer_id', $customer->id)
-            ->where('type', ComplianceFlagType::SanctionMatch)
+            ->where('type', ComplianceFlagType::SanctionMatch->value)
             ->where('source', 'sanctions_rescreening')
-            ->where('status', FlagStatus::Open)
+            ->where('status', AlertStatus::Open->value)
             ->first();
 
         if ($alert === null) {
@@ -205,7 +206,7 @@ class ComplianceScreeningJob implements ShouldQueue
                 'customer_id' => $customer->id,
                 'type' => ComplianceFlagType::SanctionMatch,
                 'priority' => $priority,
-                'status' => FlagStatus::Open,
+                'status' => AlertStatus::Open,
                 'reason' => $reason,
                 'source' => 'sanctions_rescreening',
             ]);
@@ -220,8 +221,8 @@ class ComplianceScreeningJob implements ShouldQueue
 
         $flag = FlaggedTransaction::where('customer_id', $customer->id)
             ->whereNull('transaction_id')
-            ->where('flag_type', ComplianceFlagType::SanctionMatch)
-            ->where('status', FlagStatus::Open)
+            ->where('flag_type', ComplianceFlagType::SanctionMatch->value)
+            ->where('status', FlagStatus::Open->value)
             ->first();
 
         if ($flag === null) {

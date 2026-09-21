@@ -28,9 +28,7 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
 
-        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
-            return $unauthorized;
-        }
+        $this->authorizeBranchAccess($branchId);
 
         $user = Auth::user();
 
@@ -54,9 +52,7 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
 
-        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
-            return $unauthorized;
-        }
+        $this->authorizeBranchAccess($branchId);
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
@@ -77,9 +73,7 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
 
-        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
-            return $unauthorized;
-        }
+        $this->authorizeBranchAccess($branchId);
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 
@@ -104,9 +98,7 @@ class BranchClosingController extends Controller
     {
         $branch = Branch::findOrFail($branchId);
 
-        if ($unauthorized = $this->authorizeBranchAccess($branchId)) {
-            return $unauthorized;
-        }
+        $this->authorizeBranchAccess($branchId);
 
         $workflow = $this->branchClosingService->getActiveWorkflow($branch);
 

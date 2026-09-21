@@ -2,6 +2,7 @@
 
 namespace App\Services\Compliance;
 
+use App\Enums\SystemLogSeverity;
 use App\Enums\UserRole;
 use App\Models\SystemAlert;
 use App\Models\User;
@@ -239,7 +240,7 @@ class MonitoringEngine
             'failure_count' => $failureCount,
             'failed_monitors' => $monitorNames,
             'timestamp' => now()->toDateTimeString(),
-            'severity' => 'CRITICAL',
+            'severity' => SystemLogSeverity::Critical->value,
             'requires_action' => true,
         ]);
 

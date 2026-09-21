@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Enums\AccountingPeriodStatus;
 use App\Enums\AccountMappingKey;
+use App\Enums\AccountType;
 use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\ClosedPeriodException;
 use App\Exceptions\Domain\UnbalancedJournalEntriesException;
@@ -164,8 +165,8 @@ class PeriodCloseService
         $expenseSummaryAccount = $this->accountMappingService->code(AccountMappingKey::CloseExpenseSummary);
         $retainedEarningsAccount = $this->accountMappingService->code(AccountMappingKey::CloseRetainedEarnings);
 
-        $revenues = ChartOfAccount::where('account_type', 'Revenue')->get();
-        $expenses = ChartOfAccount::where('account_type', 'Expense')->get();
+        $revenues = ChartOfAccount::where('account_type', AccountType::Revenue->value)->get();
+        $expenses = ChartOfAccount::where('account_type', AccountType::Expense->value)->get();
 
         $revenueBalances = $this->getNetBalances($revenues->pluck('account_code')->toArray(), $asOfDate);
         $expenseBalances = $this->getNetBalances($expenses->pluck('account_code')->toArray(), $asOfDate);

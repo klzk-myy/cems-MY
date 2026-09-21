@@ -2,7 +2,7 @@
 
 namespace App\Services\Compliance;
 
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use App\Services\Concerns\ValidatesSanctionsUrl;
 use Illuminate\Support\Facades\Log;
 

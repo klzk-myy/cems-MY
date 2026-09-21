@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BranchType;
 use App\Models\Traits\HasCodeAndName;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,13 +42,14 @@ class Branch extends BaseModel
     use HasCodeAndName, HasFactory, SoftDeletes;
 
     /**
-     * Branch type constants
+     * Branch type constants — backed by the BranchType enum; kept as
+     * constants so existing call sites compile unchanged.
      */
-    public const TYPE_HEAD_OFFICE = 'head_office';
+    public const TYPE_HEAD_OFFICE = BranchType::HeadOffice->value;
 
-    public const TYPE_BRANCH = 'branch';
+    public const TYPE_BRANCH = BranchType::Branch->value;
 
-    public const TYPE_SUB_BRANCH = 'sub_branch';
+    public const TYPE_SUB_BRANCH = BranchType::SubBranch->value;
 
     /**
      * Width of the branches.code column - tombstoned codes must still fit.

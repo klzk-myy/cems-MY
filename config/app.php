@@ -198,7 +198,6 @@ return [
          */
         AppServiceProvider::class,
         AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
         EventServiceProvider::class,
         HorizonServiceProvider::class,
         RouteServiceProvider::class,

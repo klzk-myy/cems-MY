@@ -18,16 +18,14 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
-use App\Services\Contracts\TransactionHoldServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
-use App\Services\CustomerScreeningService;
 use App\Services\DTOs\PreValidationResult;
 use App\Services\DTOs\SanctionCheckResult;
+use App\Services\Screening\CustomerScreeningService;
 use App\Services\Security\IpValidationService;
 use App\Services\ThresholdService;
 use App\Support\ActorContext;
 
-class TransactionValidationService implements TransactionValidationInterface
+class TransactionValidationService
 {
     public function __construct(
         protected ComplianceService $complianceService,
@@ -37,7 +35,7 @@ class TransactionValidationService implements TransactionValidationInterface
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,
         protected AuditService $auditService,
-        protected TransactionHoldServiceInterface $holdService,
+        protected TransactionHoldService $holdService,
         protected TillBalanceManager $tillBalanceManager,
         protected IpValidationService $ipValidationService,
     ) {}

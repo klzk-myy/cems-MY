@@ -42,12 +42,12 @@ class TransactionCancellationController extends Controller
             $validated['reason']
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return $this->errorResponse($result->message, [], 422);
         }
 
-        return $this->successResponse(
-            ['transaction' => new TransactionResource($transaction->fresh())],
+        return $this->resourceResponse(
+            new TransactionResource($transaction->fresh()),
             $result->message
         );
     }
@@ -65,12 +65,12 @@ class TransactionCancellationController extends Controller
             $validated['reason'] ?? null
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return $this->errorResponse($result->message, [], 422);
         }
 
-        return $this->successResponse(
-            ['transaction' => new TransactionResource($transaction->fresh())],
+        return $this->resourceResponse(
+            new TransactionResource($transaction->fresh()),
             $result->message
         );
     }
@@ -88,14 +88,15 @@ class TransactionCancellationController extends Controller
             $validated['reason']
         );
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return $this->errorResponse($result->message, [], 422);
         }
 
-        return $this->successResponse([
-            'transaction' => new TransactionResource($transaction->fresh()),
-            'previous_status' => $result->context['previous_status'] ?? null,
-        ], $result->message);
+        return $this->resourceResponse(
+            (new TransactionResource($transaction->fresh()))
+                ->additional(['previous_status' => $result->context['previous_status'] ?? null]),
+            $result->message
+        );
     }
 
     /**
@@ -160,8 +161,8 @@ class TransactionCancellationController extends Controller
             return $this->errorResponse($result->message);
         }
 
-        return $this->successResponse(
-            ['transaction' => new TransactionResource($result->transaction ?? $transaction->fresh())],
+        return $this->resourceResponse(
+            new TransactionResource($result->transaction ?? $transaction->fresh()),
             $result->message
         );
     }

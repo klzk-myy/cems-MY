@@ -13,10 +13,8 @@ use App\Http\Middleware\QueryLogging;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SessionTimeout;
-use App\Http\Middleware\StrictRateLimit;
 use App\Http\Middleware\TestDashboard;
 use App\Http\Middleware\ThrottleRequests;
-use App\Http\Middleware\ValidateSignature;
 use App\Jobs\Accounting\ReconcileDeferredAccountingJob;
 use App\Jobs\Compliance\LowStockAlertJob;
 use App\Jobs\Compliance\RunComplianceMonitorJob;
@@ -50,7 +48,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Global middleware
@@ -85,7 +82,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'guest' => RedirectIfAuthenticated::class,
             'password.confirm' => RequirePassword::class,
             'precognitive' => HandlePrecognitiveRequests::class,
-            'signed' => ValidateSignature::class,
             'throttle' => ThrottleRequests::class,
             'verified' => EnsureEmailIsVerified::class,
             'role' => CheckRole::class,
@@ -94,7 +90,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'session.timeout' => SessionTimeout::class,
             'security.headers' => SecurityHeaders::class,
             'ip.blocker' => IpBlocker::class,
-            'strict.ratelimit' => StrictRateLimit::class,
             'setup.accessible' => EnsureSetupAccessible::class,
             'test.dashboard' => TestDashboard::class,
             'stateful' => EnsureFrontendRequestsAreStateful::class,

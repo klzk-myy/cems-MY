@@ -8,4 +8,9 @@ class UnauthorizedException extends DomainException
     {
         parent::__construct($message);
     }
+
+    public function getStatusCode(): int
+    {
+        return 401;
+    }
 }

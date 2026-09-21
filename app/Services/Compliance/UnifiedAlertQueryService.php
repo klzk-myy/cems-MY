@@ -3,12 +3,13 @@
 namespace App\Services\Compliance;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FindingSeverity;
 use App\Enums\FindingStatus;
 use App\Enums\FindingType;
-use App\Enums\FlagStatus;
-use App\Models\Alert;
+use App\Enums\UnifiedAlertStatus;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceFinding;
 use App\Models\Customer;
 use App\Models\User;
@@ -117,9 +118,9 @@ class UnifiedAlertQueryService
             $query->where("{$alerts}.priority", strtolower($filters->priority));
         }
         if ($filters->status) {
-            $mappedStatus = $this->mapUnifiedStatusToAlert($filters->status);
-            if ($mappedStatus) {
-                $query->where("{$alerts}.status", $mappedStatus);
+            $unified = UnifiedAlertStatus::tryFrom($filters->status);
+            if ($unified !== null) {
+                $query->where("{$alerts}.status", $this->mapUnifiedStatusToAlert($unified));
             }
         }
         if ($filters->type) {
@@ -153,9 +154,9 @@ class UnifiedAlertQueryService
             $query->where("{$findings}.severity", strtolower($filters->priority));
         }
         if ($filters->status) {
-            $mappedStatus = $this->mapUnifiedStatusToFinding($filters->status);
-            if ($mappedStatus) {
-                $query->where("{$findings}.status", $mappedStatus);
+            $unified = UnifiedAlertStatus::tryFrom($filters->status);
+            if ($unified !== null) {
+                $query->where("{$findings}.status", $this->mapUnifiedStatusToFinding($unified));
             }
         }
         if ($filters->type) {
@@ -298,7 +299,7 @@ class UnifiedAlertQueryService
         $normalized = Str::snake(str_replace('_', ' ', $status));
 
         $enum = $isAlert
-            ? FlagStatus::tryFrom($normalized)
+            ? AlertStatus::tryFrom($normalized)
             : FindingStatus::tryFrom($normalized);
 
         return $enum?->label() ?? $status;
@@ -319,8 +320,8 @@ class UnifiedAlertQueryService
             .'sum(case when status = ? and updated_at >= ? and updated_at <= ? then 1 else 0 end) as resolved_today',
             [
                 AlertPriority::Critical->value,
-                ...FlagStatus::terminalValues(),
-                FlagStatus::Resolved->value,
+                ...AlertStatus::terminalValues(),
+                AlertStatus::Resolved->value,
                 today()->startOfDay(),
                 today()->endOfDay(),
             ]
@@ -362,25 +363,23 @@ class UnifiedAlertQueryService
         ];
     }
 
-    protected function mapUnifiedStatusToAlert(string $unifiedStatus): ?string
+    protected function mapUnifiedStatusToAlert(UnifiedAlertStatus $status): string
     {
-        return match ($unifiedStatus) {
-            'open' => FlagStatus::Open->value,
-            'in_review' => FlagStatus::UnderReview->value,
-            'resolved' => FlagStatus::Resolved->value,
-            'dismissed' => FlagStatus::Rejected->value,
-            default => null,
+        return match ($status) {
+            UnifiedAlertStatus::Open => AlertStatus::Open->value,
+            UnifiedAlertStatus::InReview => AlertStatus::UnderReview->value,
+            UnifiedAlertStatus::Resolved => AlertStatus::Resolved->value,
+            UnifiedAlertStatus::Dismissed => AlertStatus::Rejected->value,
         };
     }
 
-    protected function mapUnifiedStatusToFinding(string $unifiedStatus): ?string
+    protected function mapUnifiedStatusToFinding(UnifiedAlertStatus $status): string
     {
-        return match ($unifiedStatus) {
-            'open' => FindingStatus::New->value,
-            'in_review' => FindingStatus::Reviewed->value,
-            'resolved' => FindingStatus::CaseCreated->value,
-            'dismissed' => FindingStatus::Dismissed->value,
-            default => null,
+        return match ($status) {
+            UnifiedAlertStatus::Open => FindingStatus::New->value,
+            UnifiedAlertStatus::InReview => FindingStatus::Reviewed->value,
+            UnifiedAlertStatus::Resolved => FindingStatus::CaseCreated->value,
+            UnifiedAlertStatus::Dismissed => FindingStatus::Dismissed->value,
         };
     }
 }

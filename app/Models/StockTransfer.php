@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StockTransferStatus;
+use App\Enums\StockTransferType;
 use App\Exceptions\Domain\TransactionCreationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -70,13 +71,17 @@ class StockTransfer extends BaseModel
         'total_value_myr' => 'decimal:2',
     ];
 
-    public const TYPE_STANDARD = 'Standard';
+    /**
+     * Transfer type constants — backed by the StockTransferType enum; kept
+     * as constants so existing call sites compile unchanged.
+     */
+    public const TYPE_STANDARD = StockTransferType::Standard->value;
 
-    public const TYPE_EMERGENCY = 'Emergency';
+    public const TYPE_EMERGENCY = StockTransferType::Emergency->value;
 
-    public const TYPE_SCHEDULED = 'Scheduled';
+    public const TYPE_SCHEDULED = StockTransferType::Scheduled->value;
 
-    public const TYPE_RETURN = 'Return';
+    public const TYPE_RETURN = StockTransferType::Return->value;
 
     /**
      * @return BelongsTo<Branch, $this>
@@ -131,17 +136,17 @@ class StockTransfer extends BaseModel
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', StockTransferStatus::Requested);
+        return $query->where('status', StockTransferStatus::Requested->value);
     }
 
     public function scopeInTransit(Builder $query): Builder
     {
-        return $query->where('status', StockTransferStatus::InTransit);
+        return $query->where('status', StockTransferStatus::InTransit->value);
     }
 
     public function scopeCompleted(Builder $query): Builder
     {
-        return $query->where('status', StockTransferStatus::Completed);
+        return $query->where('status', StockTransferStatus::Completed->value);
     }
 
     public function isPending(): bool

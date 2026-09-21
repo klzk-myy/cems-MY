@@ -85,7 +85,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function step1_returns_cdd_level_and_required_documents(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $response = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -171,7 +171,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function teller_can_override_to_collect_additional_details(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $response = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -236,7 +236,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function step2_returns_transaction_summary_for_simplified_cdd(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $step1 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -333,7 +333,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function step3_creates_transaction_and_clears_session(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $step1 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -400,7 +400,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function step3_rejects_customer_frozen_after_step1(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $step1 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -444,7 +444,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function full_wizard_happy_path_end_to_end(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         // Step 1: CDD assessment.
         $step1 = $this->actingAs($this->teller)
@@ -498,7 +498,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function session_counter_supplies_till_across_wizard(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $step1 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [
@@ -541,7 +541,7 @@ class TransactionWizardTest extends TestCase
     #[Test]
     public function step3_requires_confirm_details(): void
     {
-        $customer = Customer::factory()->create(['risk_rating' => 'Low']);
+        $customer = Customer::factory()->create(['risk_rating' => 'low']);
 
         $step1 = $this->actingAs($this->teller)
             ->postJson('/api/v1/wizard/transactions/step1', [

@@ -6,21 +6,22 @@ use App\Enums\SanctionStatus;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
+use App\Http\Controllers\Api\V1\Traits\LegacyApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SanctionList\IndexSanctionEntryRequest;
 use App\Http\Requests\Api\V1\SanctionList\StoreSanctionEntryRequest;
 use App\Http\Requests\Api\V1\SanctionList\UpdateSanctionEntryRequest;
-use App\Models\SanctionEntry;
-use App\Models\SanctionImportLog;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionImportLog;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
-use App\Support\LikeEscaper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class SanctionListController extends Controller
 {
     use ApiResponse;
+    use LegacyApiResponse;
     use SanctionEntryNormalizer;
 
     public function __construct(
@@ -49,23 +50,19 @@ class SanctionListController extends Controller
     {
         $validated = $request->validated();
 
-        $perPage = $validated['per_page'] ?? 50;
-        $status = $validated['status'] ?? 'active';
+        $perPage = $validated['per_page'] ?? 20;
+        $status = $validated['status'] ?? SanctionStatus::Active->value;
 
-        $query = SanctionEntry::with('sanctionList')
-            ->when($validated['list_id'] ?? null, fn ($q, $id) => $q->where('list_id', $id))
-            ->when($validated['search'] ?? null, function ($q, $search) {
-                $pattern = '%'.LikeEscaper::escape($search).'%';
-
-                return $q->whereRaw('entity_name LIKE ? ESCAPE ?', [$pattern, '\\']);
-            })
-            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
-            ->orderBy('entity_name');
+        $query = SanctionEntry::filtered(
+            $status,
+            isset($validated['list_id']) ? (int) $validated['list_id'] : null,
+            $validated['search'] ?? null
+        );
 
         $entries = $query->paginate($perPage);
 
         // Legacy non-standard envelope (data/meta); preserved to avoid breaking API consumers.
-        return response()->json([
+        return $this->legacyJsonResponse([
             'data' => $entries->map(fn ($entry) => collect($entry->toEntrySummaryArray())
                 ->except('list_source')
                 ->toArray()),

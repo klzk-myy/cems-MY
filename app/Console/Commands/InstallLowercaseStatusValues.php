@@ -51,6 +51,9 @@ class InstallLowercaseStatusValues extends Command
                 'Open' => 'open', 'Under_Review' => 'under_review', 'Resolved' => 'resolved',
                 'Escalated' => 'escalated', 'Rejected' => 'rejected',
             ],
+            'severity' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
         ],
         'alerts' => [
             'status' => [
@@ -63,11 +66,20 @@ class InstallLowercaseStatusValues extends Command
                 'Open' => 'open', 'UnderReview' => 'under_review', 'PendingApproval' => 'pending_approval',
                 'Closed' => 'closed', 'Escalated' => 'escalated',
             ],
+            'severity' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
+            'priority' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
         ],
         'compliance_findings' => [
             'status' => [
                 'New' => 'new', 'Reviewed' => 'reviewed', 'Dismissed' => 'dismissed',
                 'Case_Created' => 'case_created',
+            ],
+            'severity' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
             ],
         ],
         'fiscal_years' => [
@@ -86,6 +98,9 @@ class InstallLowercaseStatusValues extends Command
                 'Incomplete' => 'incomplete', 'Pending_Questionnaire' => 'pending_questionnaire',
                 'Questionnaire_Submitted' => 'questionnaire_submitted', 'Pending_Review' => 'pending_review',
                 'Approved' => 'approved', 'Rejected' => 'rejected', 'Expired' => 'expired',
+            ],
+            'risk_level' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
             ],
         ],
         'edd_document_requests' => [
@@ -117,6 +132,29 @@ class InstallLowercaseStatusValues extends Command
         'pool_remittances' => [
             'status' => [
                 'Pending' => 'pending', 'Acknowledged' => 'acknowledged', 'Cancelled' => 'cancelled',
+            ],
+        ],
+        'customers' => [
+            'risk_rating' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
+        ],
+        'customer_risk_history' => [
+            'old_rating' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
+            'new_rating' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
+        ],
+        'risk_score_snapshots' => [
+            'previous_rating' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
+            ],
+        ],
+        'customer_risk_profiles' => [
+            'risk_tier' => [
+                'Low' => 'low', 'Medium' => 'medium', 'High' => 'high', 'Critical' => 'critical',
             ],
         ],
     ];

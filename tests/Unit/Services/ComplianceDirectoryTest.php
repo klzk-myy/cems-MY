@@ -23,7 +23,6 @@ class ComplianceDirectoryTest extends TestCase
             'SanctionsDownloadService.php',
             'SanctionsImportService.php',
             'SanctionsOrchestrationService.php',
-            'NarrativeGenerator.php',
         ];
 
         foreach ($expectedFiles as $file) {

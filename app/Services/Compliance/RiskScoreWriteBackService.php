@@ -3,8 +3,8 @@
 namespace App\Services\Compliance;
 
 use App\Enums\RiskRating;
+use App\Models\Compliance\CustomerRiskHistory;
 use App\Models\Customer;
-use App\Models\CustomerRiskHistory;
 use App\Support\ActorContext;
 
 /**
@@ -74,7 +74,7 @@ class RiskScoreWriteBackService
             return $rating;
         }
 
-        return RiskRating::tryFrom((string) $rating) ?? RiskRating::Low;
+        return RiskRating::tryFrom(strtolower((string) $rating)) ?? RiskRating::Low;
     }
 
     /**

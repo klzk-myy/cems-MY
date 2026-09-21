@@ -11,9 +11,8 @@ use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\TillBalance;
 use App\Models\User;
-use App\Services\Contracts\RateManagementServiceInterface;
-use App\Services\Contracts\TransactionCreationServiceInterface;
 use App\Services\Transaction\RateManagementService;
+use App\Services\Transaction\TransactionCreationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -59,7 +58,7 @@ class ManualBookingRateValidationTest extends TestCase
         ]);
 
         $this->customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'cdd_level' => 'Simplified',
             'is_active' => true,
         ]);
@@ -94,7 +93,7 @@ class ManualBookingRateValidationTest extends TestCase
 
         $this->actingAs($this->teller);
 
-        $service = app(TransactionCreationServiceInterface::class);
+        $service = app(TransactionCreationService::class);
 
         try {
             $service->prepareAndCreate($this->bookingData('9.00'), $this->teller->id);
@@ -185,7 +184,7 @@ class ManualBookingRateValidationTest extends TestCase
 
         $this->actingAs($this->teller);
 
-        $service = app(TransactionCreationServiceInterface::class);
+        $service = app(TransactionCreationService::class);
 
         try {
             $service->prepareAndCreate($this->bookingData('4.53'), $this->teller->id);
@@ -220,7 +219,7 @@ class ManualBookingRateValidationTest extends TestCase
     public function bookings_pass_through_when_no_market_rate_is_configured(): void
     {
         // No ExchangeRate rows exist: the guard must skip, not block.
-        $mockedGate = \Mockery::mock(RateManagementServiceInterface::class);
+        $mockedGate = \Mockery::mock(RateManagementService::class);
         $mockedGate->shouldReceive('validateTransactionRate')
             ->once()
             ->andReturn([
@@ -229,9 +228,9 @@ class ManualBookingRateValidationTest extends TestCase
                 'deviation_percent' => null,
                 'max_allowed' => null,
             ]);
-        $this->app->instance(RateManagementServiceInterface::class, $mockedGate);
+        $this->app->instance(RateManagementService::class, $mockedGate);
 
-        $service = app(TransactionCreationServiceInterface::class);
+        $service = app(TransactionCreationService::class);
 
         try {
             $service->prepareAndCreate($this->bookingData('9.00'), $this->teller->id);

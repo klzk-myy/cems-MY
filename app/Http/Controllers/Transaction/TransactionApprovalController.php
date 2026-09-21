@@ -11,16 +11,8 @@ use App\Http\Controllers\Concerns\AuthorizesBranchResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmTransactionApprovalRequest;
 use App\Models\Transaction;
-use App\Services\Accounting\AccountingService;
-use App\Services\Accounting\CurrencyPositionService;
-use App\Services\AuditService;
-use App\Services\Compliance\ComplianceService;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
-use App\Services\Transaction\TransactionMonitoringService;
-use App\Services\Transaction\TransactionStateMachineFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -32,15 +24,7 @@ class TransactionApprovalController extends Controller
     public function __construct(
         protected ApproveTransactionAction $approveAction,
         protected TransactionApprovalService $approvalService,
-        protected CurrencyPositionService $positionService,
-        protected ComplianceService $complianceService,
-        protected TransactionMonitoringService $monitoringService,
-        protected MathService $mathService,
-        protected AccountingService $accountingService,
-        protected AuditService $auditService,
-        protected ThresholdService $thresholdService,
-        protected TransactionConfirmationService $confirmationService,
-        protected TransactionStateMachineFactory $stateMachineFactory
+        protected TransactionConfirmationService $confirmationService
     ) {}
 
     /**
@@ -57,7 +41,7 @@ class TransactionApprovalController extends Controller
 
         $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());
 
-        if (! $result->ok) {
+        if (! $result->success) {
             return back()->with('error', $result->message);
         }
 
@@ -149,7 +133,7 @@ class TransactionApprovalController extends Controller
     {
         $this->requirePermission(Permission::ApproveTransactions);
 
-        if (! $this->requiresConfirmation($transaction)) {
+        if (! $this->confirmationService->requiresConfirmation($transaction)) {
             return redirect()->route('transactions.show', $transaction)
                 ->with('error', 'This transaction does not require confirmation.');
         }
@@ -171,7 +155,7 @@ class TransactionApprovalController extends Controller
             $result = $this->confirmationService->confirm($confirmation, $validated, (int) auth()->id());
 
             return redirect()->route('transactions.show', $transaction)
-                ->with($result['success'] ? 'success' : 'error', $result['message']);
+                ->with($result->success ? 'success' : 'error', $result->message);
 
         } catch (\Throwable $e) {
             return $this->handleExceptionWeb($e, 'Transaction confirmation failed', 'Confirmation failed. Please try again.', [
@@ -179,17 +163,6 @@ class TransactionApprovalController extends Controller
                 'transaction_id' => $confirmation->transaction_id,
             ]);
         }
-    }
-
-    /**
-     * Determine whether the transaction requires manager confirmation.
-     *
-     * A transaction requires confirmation when its local-currency amount is
-     * greater than or equal to the configured threshold.
-     */
-    protected function requiresConfirmation(Transaction $transaction): bool
-    {
-        return $this->confirmationService->requiresConfirmation($transaction);
     }
 
     /**

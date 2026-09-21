@@ -6,7 +6,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Http\Middleware\VerifyCsrfToken;
-use App\Models\ScreeningResult;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

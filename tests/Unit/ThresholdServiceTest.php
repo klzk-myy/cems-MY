@@ -6,7 +6,6 @@ use App\Enums\UserRole;
 use App\Helpers\Thresholdable;
 use App\Models\ThresholdAudit;
 use App\Models\User;
-use App\Services\Contracts\ThresholdServiceInterface;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -381,12 +380,14 @@ class ThresholdServiceTest extends TestCase
     #[Test]
     public function thresholdable_trait_covers_every_service_getter(): void
     {
-        $interface = new \ReflectionClass(ThresholdServiceInterface::class);
+        $interface = new \ReflectionClass(ThresholdService::class);
         $trait = new \ReflectionClass(Thresholdable::class);
 
         foreach ($interface->getMethods() as $method) {
-            // 'get' is the low-level accessor; domain getters all use getX names.
-            if (! str_starts_with($method->getName(), 'get') || $method->getName() === 'get') {
+            // 'get' is the low-level accessor; domain getters all use getX
+            // names. Only public methods are delegated — protected internals
+            // (e.g. getPersistedValue) are not part of the trait's surface.
+            if (! $method->isPublic() || ! str_starts_with($method->getName(), 'get') || $method->getName() === 'get') {
                 continue;
             }
 

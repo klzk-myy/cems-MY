@@ -39,7 +39,7 @@ class CustomerApiTest extends TestCase
                 'id_number' => '900123-01-2345',
                 'date_of_birth' => '1990-01-01',
                 'nationality' => 'Malaysian',
-                'risk_rating' => 'Low',
+                'risk_rating' => 'low',
             ]);
 
         $response->assertStatus(201)
@@ -74,7 +74,7 @@ class CustomerApiTest extends TestCase
                 'id_number' => '900123-01-2345',
                 'date_of_birth' => '1990-01-01',
                 'nationality' => 'Malaysian',
-                'risk_rating' => 'Low',
+                'risk_rating' => 'low',
             ]);
 
         $response->assertStatus(200)
@@ -114,6 +114,41 @@ class CustomerApiTest extends TestCase
         $response->assertStatus(404)
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Customer not found.');
+    }
+
+    #[Test]
+    public function destroy_invalidates_cached_customer(): void
+    {
+        $customer = Customer::factory()->create();
+        $service = app(CustomerService::class);
+
+        // Warm the per-customer cache the way show-page consumers do.
+        $this->assertNotNull($service->getCustomer($customer->id));
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->deleteJson("/api/v1/customers/{$customer->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Customer deleted successfully.');
+
+        $this->assertSoftDeleted($customer);
+        $this->assertNull($service->getCustomer($customer->id));
+    }
+
+    #[Test]
+    public function destroy_rejects_customer_with_transactions(): void
+    {
+        $customer = Customer::factory()->create();
+        Transaction::factory()->create(['customer_id' => $customer->id]);
+
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->deleteJson("/api/v1/customers/{$customer->id}");
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false);
+
+        $this->assertNotSoftDeleted($customer);
     }
 
     #[Test]

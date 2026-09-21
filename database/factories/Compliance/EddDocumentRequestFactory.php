@@ -4,7 +4,7 @@ namespace Database\Factories\Compliance;
 
 use App\Enums\EddDocumentStatus;
 use App\Models\Compliance\EddDocumentRequest;
-use App\Models\EnhancedDiligenceRecord;
+use App\Models\Compliance\EnhancedDiligenceRecord;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

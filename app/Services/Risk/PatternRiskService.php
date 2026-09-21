@@ -62,8 +62,8 @@ class PatternRiskService
             ];
         }
 
-        $buyCount = $recentTransactions->where('type', TransactionType::Buy)->count();
-        $sellCount = $recentTransactions->where('type', TransactionType::Sell)->count();
+        $buyCount = $recentTransactions->where('type', TransactionType::Buy->value)->count();
+        $sellCount = $recentTransactions->where('type', TransactionType::Sell->value)->count();
         $patternReversal = false;
 
         if ($buyCount >= 7 && $sellCount >= 2) {

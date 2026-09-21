@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\ImportStatus;
+use App\Enums\SanctionStatus;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\SanctionEntryNormalizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSanctionEntryRequest;
 use App\Http\Requests\UpdateSanctionEntryRequest;
-use App\Models\SanctionEntry;
-use App\Models\SanctionImportLog;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionImportLog;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsOrchestrationService;
-use App\Support\LikeEscaper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -59,21 +60,13 @@ class SanctionListController extends Controller
     public function entriesIndex(Request $request): View
     {
         $perPage = min(100, max(1, (int) $request->get('per_page', 50)));
-        $status = $request->get('status', 'active');
+        $status = $request->get('status', SanctionStatus::Active->value);
 
-        $query = SanctionEntry::with('sanctionList')
-            ->when($request->list_id, fn ($q, $id) => $q->where('list_id', $id))
-            ->when($request->search, function ($q, $search) {
-                // Escape LIKE wildcards so literal % and _ in the query match
-                // literally. The escape char is bound as a parameter — a literal
-                // ESCAPE '\' broke MySQL because the backslash escaped the
-                // closing quote (SQL syntax error 1064).
-                $pattern = '%'.LikeEscaper::escape($search).'%';
-
-                return $q->whereRaw('entity_name LIKE ? ESCAPE ?', [$pattern, '\\']);
-            })
-            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
-            ->orderBy('entity_name');
+        $query = SanctionEntry::filtered(
+            is_string($status) ? $status : null,
+            $request->filled('list_id') ? (int) $request->list_id : null,
+            $request->filled('search') ? (string) $request->search : null
+        );
 
         $entriesPaginated = $query->paginate($perPage);
 
@@ -99,21 +92,6 @@ class SanctionListController extends Controller
             return redirect()->route('compliance.sanctions.entries.index')
                 ->with('error', 'Sanction entry not found');
         }
-
-        $entryData = [
-            'id' => $entry->id,
-            'entity_name' => $entry->entity_name,
-            'entity_type' => $entry->entity_type,
-            'list' => [
-                'id' => $entry->sanctionList?->id,
-                'name' => $entry->sanctionList?->name,
-            ],
-            'nationality' => $entry->nationality,
-            'date_of_birth' => $entry->date_of_birth?->format('Y-m-d'),
-            'reference_number' => $entry->reference_number,
-            'status' => $entry->status,
-            'listing_date' => $entry->listing_date?->format('Y-m-d'),
-        ];
 
         return view('compliance.sanctions.entries.show', ['sanctionEntry' => $entry]);
     }
@@ -167,7 +145,12 @@ class SanctionListController extends Controller
         $query = SanctionImportLog::with(['sanctionList', 'user']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+            // Whitelist against the enum — the status column only ever holds
+            // ImportStatus values.
+            $importStatus = ImportStatus::tryFrom((string) $request->input('status'));
+            if ($importStatus !== null) {
+                $query->where('status', $importStatus->value);
+            }
         }
 
         if ($request->filled('source')) {

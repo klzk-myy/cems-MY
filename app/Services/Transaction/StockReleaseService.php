@@ -21,7 +21,7 @@ class StockReleaseService
     public function releaseReservation(Transaction $transaction): void
     {
         $hasReservation = StockReservation::where('transaction_id', $transaction->id)
-            ->where('status', StockReservationStatus::Pending)
+            ->where('status', StockReservationStatus::Pending->value)
             ->exists();
 
         if ($hasReservation) {

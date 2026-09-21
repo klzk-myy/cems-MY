@@ -96,14 +96,14 @@ class BranchPoolController extends Controller
         $pendingInbound = PoolRemittance::with(['fromBranch', 'initiator'])
             ->where('to_branch_id', $branchPool->branch_id)
             ->where('currency_code', $branchPool->currency_code)
-            ->where('status', PoolRemittanceStatus::Pending)
+            ->where('status', PoolRemittanceStatus::Pending->value)
             ->orderByDesc('id')
             ->get();
 
         $pendingOutbound = PoolRemittance::with('toBranch')
             ->where('from_branch_id', $branchPool->branch_id)
             ->where('currency_code', $branchPool->currency_code)
-            ->where('status', PoolRemittanceStatus::Pending)
+            ->where('status', PoolRemittanceStatus::Pending->value)
             ->orderByDesc('id')
             ->get();
 
@@ -113,7 +113,7 @@ class BranchPoolController extends Controller
                     ->orWhere('to_branch_id', $branchPool->branch_id);
             })
             ->where('currency_code', $branchPool->currency_code)
-            ->where('status', '!=', PoolRemittanceStatus::Pending)
+            ->where('status', '!=', PoolRemittanceStatus::Pending->value)
             ->orderByDesc('id')
             ->limit(10)
             ->get();

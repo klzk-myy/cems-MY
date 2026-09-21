@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Enums\SanctionListType;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
 use App\Services\Compliance\SanctionsOrchestrationService;

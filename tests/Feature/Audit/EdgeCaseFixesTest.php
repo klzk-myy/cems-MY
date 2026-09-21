@@ -9,7 +9,7 @@ use App\Exceptions\Domain\MfaValidationException;
 use App\Jobs\Audit\SealAuditHashJob;
 use App\Models\SystemLog;
 use App\Services\Accounting\FiscalYearService;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use App\Services\Reporting\ExportService;
 use App\Services\Reporting\ReportingService;
 use App\Services\System\LogRotationService;
@@ -92,7 +92,7 @@ class EdgeCaseFixesTest extends TestCase
         });
 
         $this->expectException(\RuntimeException::class);
-        (new SealAuditHashJob($log->id))->handle(app(AuditService::class));
+        (new SealAuditHashJob($log->id))->handle(app(AuditChainService::class));
     }
 
     public function test_invalid_quarter_throws(): void

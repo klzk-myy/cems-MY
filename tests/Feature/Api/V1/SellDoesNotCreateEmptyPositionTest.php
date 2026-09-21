@@ -30,7 +30,7 @@ class SellDoesNotCreateEmptyPositionTest extends TestCase
         $teller->save();
 
         $customer = Customer::factory()->create([
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'sanction_hit' => false,
             'pep_status' => false,
         ]);

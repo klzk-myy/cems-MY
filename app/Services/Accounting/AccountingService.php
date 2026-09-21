@@ -13,7 +13,6 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Services\AuditService;
-use App\Services\Contracts\AccountingServiceInterface;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Support\ActorContext;
@@ -28,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Ensures double-entry bookkeeping integrity and maintains ledger consistency.
  */
-class AccountingService implements AccountingServiceInterface
+class AccountingService
 {
     /**
      * Math service for high-precision calculations.
@@ -441,7 +440,7 @@ class AccountingService implements AccountingServiceInterface
                 ->exists();
 
             if ($hasLaterRows) {
-                $this->rebuildRunningBalances($accountCode, $entry->branch_id);
+                $this->rebuildRunningBalances($accountCode, $entry->branch_id, $entry);
             }
         }
 
@@ -456,28 +455,72 @@ class AccountingService implements AccountingServiceInterface
     }
 
     /**
-     * Recompute running balances for every ledger row of an account+branch,
-     * in the same order getAccountBalance uses to find the latest row.
-     * Called when a backdated journal entry inserts a row that is not the
-     * chain tail, which would otherwise leave every later row's stored
-     * running_balance stale.
+     * Recompute running balances for ledger rows of an account+branch from
+     * the earliest row inserted by $entry forward, in the same order
+     * getAccountBalance uses to find the latest row. Called when a backdated
+     * journal entry inserts a row that is not the chain tail; rows before the
+     * insertion point are unaffected by the posting and keep their stored
+     * balances, so the seed comes from the inserted row's predecessor (or
+     * zero when it is the chain head).
      */
-    protected function rebuildRunningBalances(string $accountCode, ?int $branchId): void
+    protected function rebuildRunningBalances(string $accountCode, ?int $branchId, JournalEntry $entry): void
     {
         $isDebitNormal = $this->ledgerQueries->isDebitAccount($accountCode);
 
-        $rows = AccountLedger::where('account_code', $accountCode)
-            ->when(
-                $branchId === null,
-                fn ($q) => $q->whereNull('branch_id'),
-                fn ($q) => $q->where('branch_id', $branchId)
-            )
+        $branchScope = fn ($query) => $query->when(
+            $branchId === null,
+            fn ($q) => $q->whereNull('branch_id'),
+            fn ($q) => $q->where('branch_id', $branchId)
+        );
+
+        $firstInserted = $branchScope(
+            AccountLedger::where('account_code', $accountCode)
+                ->where('journal_entry_id', $entry->id)
+        )
+            ->orderBy('entry_date')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->first();
+
+        if ($firstInserted === null) {
+            return;
+        }
+
+        $insertedDate = $firstInserted->entry_date->toDateString();
+
+        $predecessor = $branchScope(
+            AccountLedger::where('account_code', $accountCode)
+                ->where(function ($q) use ($firstInserted, $insertedDate) {
+                    $q->whereDate('entry_date', '<', $insertedDate)
+                        ->orWhere(fn ($q2) => $q2->whereDate('entry_date', $insertedDate)
+                            ->where('created_at', '<', $firstInserted->created_at))
+                        ->orWhere(fn ($q2) => $q2->whereDate('entry_date', $insertedDate)
+                            ->where('created_at', $firstInserted->created_at)
+                            ->where('id', '<', $firstInserted->id));
+                })
+        )
+            ->orderBy('entry_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $rows = $branchScope(
+            AccountLedger::where('account_code', $accountCode)
+                ->where(function ($q) use ($firstInserted, $insertedDate) {
+                    $q->whereDate('entry_date', '>', $insertedDate)
+                        ->orWhere(fn ($q2) => $q2->whereDate('entry_date', $insertedDate)
+                            ->where('created_at', '>', $firstInserted->created_at))
+                        ->orWhere(fn ($q2) => $q2->whereDate('entry_date', $insertedDate)
+                            ->where('created_at', $firstInserted->created_at)
+                            ->where('id', '>=', $firstInserted->id));
+                })
+        )
             ->orderBy('entry_date')
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();
 
-        $balance = '0';
+        $balance = $predecessor !== null ? (string) $predecessor->running_balance : '0';
         foreach ($rows as $row) {
             $delta = $isDebitNormal
                 ? $this->mathService->subtract((string) $row->debit, (string) $row->credit)

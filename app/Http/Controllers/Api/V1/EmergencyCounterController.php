@@ -6,11 +6,13 @@ use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\EmergencyCloseCooldownException;
 use App\Exceptions\Domain\EmergencyCloseSessionTooNewException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\InitiateEmergencyCloseRequest;
 use App\Http\Resources\Api\V1\EmergencyClosureResource;
+use App\Models\Counter;
 use App\Models\EmergencyClosure;
 use App\Services\Branch\EmergencyCounterService;
 use Illuminate\Http\JsonResponse;
@@ -30,8 +32,8 @@ class EmergencyCounterController extends Controller
         $validated = $request->validated();
 
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $user = Auth::user();
@@ -60,8 +62,8 @@ class EmergencyCounterController extends Controller
     public function getVariance(int $counterId, int $closureId): JsonResponse
     {
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $closure = EmergencyClosure::find($closureId);
@@ -77,8 +79,8 @@ class EmergencyCounterController extends Controller
     public function acknowledge(int $counterId, int $closureId): JsonResponse
     {
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $closure = EmergencyClosure::find($closureId);
@@ -89,7 +91,7 @@ class EmergencyCounterController extends Controller
         $user = Auth::user();
 
         if (! $user->role->canPerform(Permission::ManageCounters)) {
-            return $this->errorResponse('Only users with the Manage Counters permission can acknowledge emergency closures', [], 403);
+            throw new PermissionDeniedException('acknowledge emergency closures', 'Only users with the Manage Counters permission can acknowledge emergency closures');
         }
 
         $closure = $this->emergencyService->acknowledge($closure, $user);

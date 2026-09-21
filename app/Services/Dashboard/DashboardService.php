@@ -4,8 +4,8 @@ namespace App\Services\Dashboard;
 
 use App\Enums\FlagStatus;
 use App\Enums\Permission;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Support\ActorContext;
 

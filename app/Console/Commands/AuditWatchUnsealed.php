@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SystemAlert;
-use App\Services\AuditService;
+use App\Services\Audit\AuditChainService;
 use App\Services\System\SystemAlertService;
 use Illuminate\Console\Command;
 
@@ -27,10 +27,10 @@ class AuditWatchUnsealed extends Command
 
     private const SOURCE = 'audit_chain';
 
-    public function handle(AuditService $auditService, SystemAlertService $alerts): int
+    public function handle(AuditChainService $auditChainService, SystemAlertService $alerts): int
     {
-        $unsealed = $auditService->getUnsealedCount();
-        $oldestAt = $auditService->getOldestUnsealedAt();
+        $unsealed = $auditChainService->getUnsealedCount();
+        $oldestAt = $auditChainService->getOldestUnsealedAt();
         $ageMinutes = $oldestAt?->diffInMinutes(now());
 
         $countExceeded = $unsealed > (int) $this->option('count');

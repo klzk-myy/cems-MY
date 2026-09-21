@@ -31,7 +31,7 @@
         @if(!empty($reportData['positions']))
             <x-stat-grid cols="4">
                 <x-stat-card label="Total Currencies" :value="number_format($reportData['summary']['total_currencies'] ?? count($reportData['positions']))" />
-                <x-stat-card label="Normal" :value="number_format(collect($reportData['positions'])->where('status', 'Normal')->count())" color="green" />
+                <x-stat-card label="Normal" :value="number_format(collect($reportData['positions'])->where('status', \App\Enums\PositionHealthStatus::Normal->value)->count())" color="green" />
                 <x-stat-card label="Warning (75%+)" :value="number_format($reportData['summary']['currencies_at_warning'] ?? 0)" color="yellow" />
                 <x-stat-card label="Critical (90%+)" :value="number_format($reportData['summary']['currencies_at_critical'] ?? 0)" color="red" />
             </x-stat-grid>
@@ -59,8 +59,8 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-center">
-                                    <x-badge :variant="$position['status'] === 'Critical' ? 'danger' : ($position['status'] === 'Warning' ? 'warning' : 'success')">
-                                        {{ $position['status'] }}
+                                    <x-badge :variant="$position['status'] === \App\Enums\PositionHealthStatus::Critical->value ? 'danger' : ($position['status'] === \App\Enums\PositionHealthStatus::Warning->value ? 'warning' : 'success')">
+                                        {{ ucfirst($position['status']) }}
                                     </x-badge>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-right text-ink-muted">{{ number_format((float) $position['exposure_myr'], 2) }}</td>

@@ -7,6 +7,7 @@ use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\TillBalanceMissingException;
 use App\Exceptions\Domain\TransactionAlreadyProcessedException;
 use App\Models\Counter;
@@ -25,7 +26,6 @@ use App\Services\System\MathService;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
 class TransactionReversalService
 {
@@ -38,7 +38,6 @@ class TransactionReversalService
         protected TellerAllocationService $tellerAllocationService,
         protected CurrencyPositionLockService $positionLockService,
         protected TillBalanceManager $tillBalanceManager,
-        protected ExchangeCalculator $exchangeCalculator,
     ) {}
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
@@ -58,25 +57,7 @@ class TransactionReversalService
             }
 
             // 2. Compensating side effects only run after the transition succeeds.
-            $refundTransaction = $this->createRefundTransaction($lockedTransaction, $requester->id);
-            $this->reversePositions($lockedTransaction);
-
-            // The till may have no open balance today (e.g. it was closed
-            // before an older transaction is reversed). Skip the till leg -
-            // its books were already sealed - but still complete the FX,
-            // journal and allocation reversal legs.
-            try {
-                $this->reverseTillBalance($lockedTransaction);
-            } catch (TillBalanceMissingException $e) {
-                Log::warning('Skipping till balance reversal - no open till balance', [
-                    'transaction_id' => $lockedTransaction->id,
-                    'till_id' => $lockedTransaction->till_id,
-                    'currency_code' => $lockedTransaction->currency_code,
-                ]);
-            }
-
-            $this->createReversingJournalEntries($lockedTransaction, $requester->id);
-            $this->reverseTellerAllocation($lockedTransaction);
+            $refundTransaction = $this->runCompensatingLegs($lockedTransaction, $requester->id);
 
             Log::info('Transaction reversal processed', [
                 'transaction_id' => $lockedTransaction->id,
@@ -134,12 +115,11 @@ class TransactionReversalService
             ? TransactionType::Sell
             : TransactionType::Buy;
 
-        $amountMyr = $this->exchangeCalculator->calculate(
-            $oppositeType,
-            $original->currency_code,
-            (string) $original->quantity,
-            (string) $original->rate
-        )['amount_myr'];
+        // Mirror the original's stored amount rather than recomputing: a
+        // reversal must offset exactly what was booked, and recomputing
+        // quantity × rate could drift on legacy rows whose amount predates
+        // the current rounding pipeline.
+        $amountMyr = (string) $original->amount_myr;
 
         $customer = Customer::findOrFail($original->customer_id);
         $holdCheck = $this->complianceService->requiresHold($amountMyr, $customer);
@@ -159,6 +139,10 @@ class TransactionReversalService
             'user_id' => $original->user_id,
             'branch_id' => $original->branch_id,
             'till_id' => $original->till_id,
+            // Same counter the original booked against — matches the
+            // createTransactionRecord() derivation so counter-scoped
+            // reporting never misses the refund leg.
+            'counter_id' => $original->counter_id,
             'type' => $oppositeType,
             'currency_code' => $original->currency_code,
             'quantity' => $original->quantity,
@@ -198,6 +182,41 @@ class TransactionReversalService
     }
 
     /**
+     * Run the full compensating-leg sequence for a transaction whose state
+     * transition has already succeeded: refund record, position reversal,
+     * till reversal (skipped when no open till balance exists), reversing
+     * journal entries and teller-allocation reversal. Shared by reverse()
+     * and the Completed path of TransactionCancellationService::
+     * approveCancellation() so both undo the books identically.
+     *
+     * Caller must invoke this inside a DB transaction.
+     */
+    public function runCompensatingLegs(Transaction $transaction, int $actorId): Transaction
+    {
+        $refundTransaction = $this->createRefundTransaction($transaction, $actorId);
+        $this->reversePositions($transaction);
+
+        // The till may have no open balance today (e.g. it was closed
+        // before an older transaction is reversed). Skip the till leg -
+        // its books were already sealed - but still complete the FX,
+        // journal and allocation reversal legs.
+        try {
+            $this->reverseTillBalance($transaction);
+        } catch (TillBalanceMissingException $e) {
+            Log::warning('Skipping till balance reversal - no open till balance', [
+                'transaction_id' => $transaction->id,
+                'till_id' => $transaction->till_id,
+                'currency_code' => $transaction->currency_code,
+            ]);
+        }
+
+        $this->createReversingJournalEntries($transaction, $actorId);
+        $this->reverseTellerAllocation($transaction);
+
+        return $refundTransaction;
+    }
+
+    /**
      * Reverse the currency-position impact of a transaction.
      *
      * Delegates to CurrencyPositionService::reversePositions(), the guard-free
@@ -215,7 +234,7 @@ class TransactionReversalService
         );
 
         if (! $position) {
-            throw new RuntimeException(sprintf(
+            throw new InvalidStateException(sprintf(
                 'No currency position found to reverse transaction %d (currency %s, branch %s)',
                 $transaction->id,
                 $transaction->currency_code,

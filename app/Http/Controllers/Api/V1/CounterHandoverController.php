@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Exceptions\Domain\InvalidStateException;
-use App\Exceptions\Domain\UnauthorizedException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Counter\AcknowledgeHandoverRequest;
+use App\Models\Counter;
 use App\Models\CounterHandover;
 use App\Services\Branch\CounterHandoverService;
 use Illuminate\Http\JsonResponse;
@@ -25,8 +26,8 @@ class CounterHandoverController extends Controller
     public function acknowledge(AcknowledgeHandoverRequest $request, int $counterId, int $handoverId): JsonResponse
     {
         $counter = $this->authorizeCounter($counterId);
-        if ($counter instanceof JsonResponse) {
-            return $counter;
+        if (! $counter instanceof Counter) {
+            return $this->notFoundResponse('Counter not found');
         }
 
         $handover = CounterHandover::with('counterSession')->find($handoverId);
@@ -45,8 +46,8 @@ class CounterHandoverController extends Controller
             );
 
             return $this->successResponse(null, 'Handover acknowledged successfully');
-        } catch (UnauthorizedException $e) {
-            return $this->errorResponse('You are not authorized to acknowledge this handover.', [], 403);
+        } catch (PermissionDeniedException $e) {
+            return $this->domainErrorResponse($e, 'You are not authorized to acknowledge this handover.');
         } catch (InvalidStateException $e) {
             return $this->errorResponse('The handover is no longer in a valid state for acknowledgment.', [], 422);
         }

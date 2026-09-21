@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\V1\Compliance\DashboardController;
 use App\Http\Controllers\Api\V1\Compliance\EddController;
 use App\Http\Controllers\Api\V1\Compliance\FindingController;
 use App\Http\Controllers\Api\V1\Compliance\RiskController;
-use App\Http\Controllers\Api\V1\CounterApiController;
+use App\Http\Controllers\Api\V1\CounterController;
 use App\Http\Controllers\Api\V1\CounterHandoverController;
 use App\Http\Controllers\Api\V1\CounterOpeningController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
@@ -422,7 +422,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Counter Opening Workflow API - Daily branch opening
         Route::prefix('counters')->group(function () {
-            Route::post('/', [CounterApiController::class, 'store'])
+            Route::post('/', [CounterController::class, 'store'])
                 ->middleware('role:manage_counters')
                 ->name('api.v1.counters.store');
             Route::get('/pending-requests', [CounterOpeningController::class, 'pendingRequests'])
@@ -453,7 +453,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.counters.handover.acknowledge');
 
             // Counter Close
-            Route::post('/{counterId}/close', [CounterApiController::class, 'close'])
+            Route::post('/{counterId}/close', [CounterController::class, 'close'])
                 ->middleware(['role:operate_counters', 'mfa.verified'])
                 ->name('api.v1.counters.close');
         });

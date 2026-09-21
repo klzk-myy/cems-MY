@@ -65,7 +65,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         $this->customer = Customer::factory()->create([
             'sanction_hit' => false,
             'pep_status' => false,
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
         ]);
         $this->counter = Counter::factory()->create();
         $this->currency = Currency::factory()->create(['code' => 'USD', 'is_active' => true]);

@@ -2,30 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
-use App\Services\Contracts\MathServiceInterface;
-use App\Services\Contracts\RateManagementServiceInterface;
-use App\Services\Contracts\ThresholdServiceInterface;
-use App\Services\Contracts\TransactionApprovalServiceInterface;
-use App\Services\Contracts\TransactionCreationServiceInterface;
-use App\Services\Contracts\TransactionHoldServiceInterface;
-use App\Services\Contracts\TransactionIdempotencyServiceInterface;
-use App\Services\Contracts\TransactionServiceInterface;
-use App\Services\Contracts\TransactionStatusServiceInterface;
-use App\Services\Contracts\TransactionValidationInterface;
 use App\Services\System\CacheInvalidationService;
-use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use App\Services\Transaction\RateManagementService;
-use App\Services\Transaction\TransactionApprovalService;
-use App\Services\Transaction\TransactionCreationService;
-use App\Services\Transaction\TransactionHoldService;
-use App\Services\Transaction\TransactionIdempotencyService;
-use App\Services\Transaction\TransactionService;
-use App\Services\Transaction\TransactionStatusService;
-use App\Services\Transaction\TransactionValidationService;
 use App\View\Composers\NotificationComposer;
 use App\View\Composers\UserComposer;
 use Carbon\Carbon;
@@ -37,7 +18,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,58 +28,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(
-            TransactionServiceInterface::class,
-            TransactionService::class
-        );
-
-        $this->app->bind(
-            TransactionHoldServiceInterface::class,
-            TransactionHoldService::class
-        );
-
-        $this->app->bind(
-            TransactionIdempotencyServiceInterface::class,
-            TransactionIdempotencyService::class
-        );
-
-        $this->app->bind(
-            TransactionStatusServiceInterface::class,
-            TransactionStatusService::class
-        );
-
-        $this->app->bind(
-            TransactionValidationInterface::class,
-            TransactionValidationService::class
-        );
-
-        $this->app->bind(
-            TransactionCreationServiceInterface::class,
-            TransactionCreationService::class
-        );
-
-        $this->app->bind(
-            TransactionApprovalServiceInterface::class,
-            TransactionApprovalService::class
-        );
-
-        $this->app->bind(
-            MathServiceInterface::class,
-            MathService::class
-        );
-
-        $this->app->bind(
-            RateManagementServiceInterface::class,
-            RateManagementService::class
-        );
-
         // Request/job-scoped: the persisted-override snapshot is loaded once
         // per lifecycle, so all consumers share one threshold_audits query.
-        $this->app->scoped(
-            ThresholdServiceInterface::class,
-            ThresholdService::class
-        );
-
         $this->app->scoped(ThresholdService::class);
     }
 
@@ -143,28 +73,6 @@ class AppServiceProvider extends ServiceProvider
         $this->registerCarbonMacros();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
-
-        // Name framework-provided routes after all service providers have booted.
-        $this->app->booted(function () {
-            $this->nameFrameworkRoutes();
-        });
-    }
-
-    /**
-     * Assign names to framework-provided routes that are registered without a name.
-     * This keeps the route table consistent with the application's naming convention.
-     */
-    protected function nameFrameworkRoutes(): void
-    {
-        $routeCollection = Route::getRoutes();
-
-        foreach ($routeCollection->getRoutes() as $route) {
-            if ($route->getName() === null && $route->uri() === 'broadcasting/auth') {
-                $route->name('broadcasting.auth');
-            }
-        }
-
-        $routeCollection->refreshNameLookups();
     }
 
     /**

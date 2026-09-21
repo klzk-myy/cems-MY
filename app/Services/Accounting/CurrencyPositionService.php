@@ -12,7 +12,6 @@ use App\Models\CurrencyPosition;
 use App\Models\StockReservation;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Contracts\CurrencyPositionServiceInterface;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
@@ -21,7 +20,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class CurrencyPositionService implements CurrencyPositionServiceInterface
+class CurrencyPositionService
 {
     /**
      * Math service instance for high-precision calculations.
@@ -232,7 +231,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
                 // pending Sell transactions on this branch.
                 $reserved = StockReservation::where('currency_code', $currencyCode)
                     ->where('branch_id', $branchId)
-                    ->where('status', StockReservationStatus::Pending)
+                    ->where('status', StockReservationStatus::Pending->value)
                     ->where('expires_at', '>', now())
                     ->lockForUpdate()
                     ->sum('quantity');
@@ -560,7 +559,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
         // Teller: sees only their open counter session
         $activeSession = CounterSession::where('user_id', $user->id)
-            ->where('status', CounterSessionStatus::Open)
+            ->where('status', CounterSessionStatus::Open->value)
             ->first();
 
         if ($activeSession) {
@@ -706,7 +705,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
 
             $reserved = StockReservation::where('currency_code', $currencyCode)
                 ->where('branch_id', $branchId)
-                ->where('status', StockReservationStatus::Pending)
+                ->where('status', StockReservationStatus::Pending->value)
                 ->where('expires_at', '>', now())
                 ->lockForUpdate()
                 ->sum('quantity');
@@ -759,7 +758,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         return DB::transaction(function () use ($transactionId) {
             $reservation = StockReservation::where('transaction_id', $transactionId)
-                ->where('status', StockReservationStatus::Pending)
+                ->where('status', StockReservationStatus::Pending->value)
                 ->lockForUpdate()
                 ->first();
 
@@ -789,7 +788,7 @@ class CurrencyPositionService implements CurrencyPositionServiceInterface
     {
         return DB::transaction(function () use ($transactionId) {
             $reservation = StockReservation::where('transaction_id', $transactionId)
-                ->where('status', StockReservationStatus::Pending)
+                ->where('status', StockReservationStatus::Pending->value)
                 ->lockForUpdate()
                 ->first();
 

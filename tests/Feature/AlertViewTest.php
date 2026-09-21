@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Enums\FlagStatus;
+use App\Enums\AlertStatus;
 use App\Enums\UserRole;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -61,7 +61,7 @@ class AlertViewTest extends TestCase
     {
         $alert = Alert::factory()->create([
             'reason' => 'Suspicious velocity detected',
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
         ]);
 
         $response = $this->actingAs($this->complianceOfficer)
@@ -146,7 +146,7 @@ class AlertViewTest extends TestCase
     #[Test]
     public function alert_resolution_redirects_to_index_with_success(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $response = $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.resolve', $alert), [
@@ -161,7 +161,7 @@ class AlertViewTest extends TestCase
     #[Test]
     public function alert_resolution_updates_status_to_resolved(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.resolve', $alert), [
@@ -171,14 +171,14 @@ class AlertViewTest extends TestCase
 
         $this->assertDatabaseHas('alerts', [
             'id' => $alert->id,
-            'status' => FlagStatus::Resolved,
+            'status' => AlertStatus::Resolved,
         ]);
     }
 
     #[Test]
     public function alert_resolution_accepts_optional_notes(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $response = $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.resolve', $alert), [
@@ -189,14 +189,14 @@ class AlertViewTest extends TestCase
         $response->assertRedirect(route('compliance.alerts.index'));
         $this->assertDatabaseHas('alerts', [
             'id' => $alert->id,
-            'status' => FlagStatus::Resolved,
+            'status' => AlertStatus::Resolved,
         ]);
     }
 
     #[Test]
     public function alert_dismissal_redirects_to_index_with_success(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $response = $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.dismiss', $alert));
@@ -208,21 +208,21 @@ class AlertViewTest extends TestCase
     #[Test]
     public function alert_dismissal_updates_status_to_rejected(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Open]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Open]);
 
         $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.dismiss', $alert));
 
         $this->assertDatabaseHas('alerts', [
             'id' => $alert->id,
-            'status' => FlagStatus::Rejected,
+            'status' => AlertStatus::Rejected,
         ]);
     }
 
     #[Test]
     public function resolved_alert_cannot_be_dismissed(): void
     {
-        $alert = Alert::factory()->create(['status' => FlagStatus::Resolved]);
+        $alert = Alert::factory()->create(['status' => AlertStatus::Resolved]);
 
         $response = $this->actingAs($this->complianceOfficer)
             ->post(route('compliance.alerts.dismiss', $alert));

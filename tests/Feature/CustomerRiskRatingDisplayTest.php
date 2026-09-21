@@ -48,7 +48,7 @@ class CustomerRiskRatingDisplayTest extends TestCase
         ]);
 
         $view->assertSee('name="risk_rating"', false);
-        $view->assertSee('value="High"', false); // selected value
+        $view->assertSee('value="high"', false); // selected value
         $view->assertSee('MyKad (Malaysian IC)', false);
         $view->assertSee('Passport', false);
         $view->assertSee('Other ID', false);

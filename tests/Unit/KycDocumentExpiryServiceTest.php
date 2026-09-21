@@ -78,7 +78,7 @@ class KycDocumentExpiryServiceTest extends TestCase
             'id_number_encrypted' => encrypt('123456789012'),
             'nationality' => 'MY',
             'date_of_birth' => '1990-01-15',
-            'risk_rating' => 'Low',
+            'risk_rating' => 'low',
             'cdd_level' => CddLevel::Simplified,
             'is_active' => true,
         ]);

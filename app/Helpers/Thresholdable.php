@@ -160,6 +160,14 @@ trait Thresholdable
     }
 
     /**
+     * Get structuring aggregate trigger (structuring.aggregate_trigger).
+     */
+    protected static function getStructuringAggregateTrigger(): string
+    {
+        return self::thresholdService()->getStructuringAggregateTrigger();
+    }
+
+    /**
      * Get structuring hourly window (structuring.hourly_window).
      */
     protected static function getStructuringHourlyWindow(): int
@@ -335,5 +343,21 @@ trait Thresholdable
     protected static function getPositionLimits(): array
     {
         return self::thresholdService()->getPositionLimits();
+    }
+
+    /**
+     * Position utilization percentage that marks a currency position as warning.
+     */
+    protected static function getPositionUtilizationWarning(): string
+    {
+        return self::thresholdService()->getPositionUtilizationWarning();
+    }
+
+    /**
+     * Position utilization percentage that marks a currency position as critical.
+     */
+    protected static function getPositionUtilizationCritical(): string
+    {
+        return self::thresholdService()->getPositionUtilizationCritical();
     }
 }

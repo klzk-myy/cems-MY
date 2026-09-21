@@ -28,7 +28,7 @@ class ExpireStockReservations extends Command
         $released = 0;
         $failed = 0;
 
-        StockReservation::where('status', StockReservationStatus::Pending)
+        StockReservation::where('status', StockReservationStatus::Pending->value)
             ->where('expires_at', '<', now())
             ->chunkById(200, function ($reservations) use (&$released, &$failed) {
                 foreach ($reservations as $reservation) {

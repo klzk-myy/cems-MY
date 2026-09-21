@@ -16,11 +16,11 @@
             'low' => 'gray',
         ];
         $statusVariants = [
-            \App\Enums\FlagStatus::Open->value => 'warning',
-            \App\Enums\FlagStatus::UnderReview->value => 'info',
-            \App\Enums\FlagStatus::Escalated->value => 'error',
-            \App\Enums\FlagStatus::Resolved->value => 'success',
-            \App\Enums\FlagStatus::Rejected->value => 'gray',
+            \App\Enums\AlertStatus::Open->value => 'warning',
+            \App\Enums\AlertStatus::UnderReview->value => 'info',
+            \App\Enums\AlertStatus::Escalated->value => 'error',
+            \App\Enums\AlertStatus::Resolved->value => 'success',
+            \App\Enums\AlertStatus::Rejected->value => 'gray',
         ];
     @endphp
 
@@ -59,7 +59,7 @@
                         @foreach ($alerts as $alert)
                             <tr class="hover:bg-canvas-subtle">
                                 <td class="px-4 py-3">
-                                    @if ($alert->case_id === null && $alert->status !== \App\Enums\FlagStatus::Resolved)
+                                    @if ($alert->case_id === null && $alert->status !== \App\Enums\AlertStatus::Resolved)
                                         <input type="checkbox" name="alert_ids[]" value="{{ $alert->id }}" data-alert-check aria-label="Select alert {{ $alert->id }}">
                                     @endif
                                 </td>

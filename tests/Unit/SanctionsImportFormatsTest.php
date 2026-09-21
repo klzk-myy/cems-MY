@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Enums\SanctionStatus;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

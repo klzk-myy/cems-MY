@@ -2,17 +2,17 @@
 
 namespace Tests\Feature\Compliance;
 
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Compliance\ComplianceCaseDocument;
 use App\Models\Compliance\ComplianceCaseLink;
 use App\Models\Compliance\ComplianceCaseNote;
 use App\Models\Compliance\ComplianceFinding;
-use App\Models\FlaggedTransaction;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\SanctionEntry;
+use App\Models\Compliance\SanctionList;
+use App\Models\Compliance\ScreeningResult;
 use App\Models\RiskScoreSnapshot;
-use App\Models\SanctionEntry;
-use App\Models\SanctionList;
-use App\Models\ScreeningResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;

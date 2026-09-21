@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Screening\BatchScreenRequest;
 use App\Http\Requests\Api\V1\ScreeningRequest;
 use App\Models\Customer;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Http\JsonResponse;
 
 class ScreeningController extends Controller

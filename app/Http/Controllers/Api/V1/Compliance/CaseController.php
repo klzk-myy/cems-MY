@@ -97,7 +97,7 @@ class CaseController extends Controller
                 caseType: ComplianceCaseType::from($validated['case_type']),
                 customerId: $validated['customer_id'],
                 assignedTo: $validated['assigned_to'],
-                severity: FindingSeverity::from($validated['severity'] ?? 'Medium'),
+                severity: FindingSeverity::from($validated['severity'] ?? FindingSeverity::Medium->value),
                 summary: $validated['summary'] ?? null
             );
         }

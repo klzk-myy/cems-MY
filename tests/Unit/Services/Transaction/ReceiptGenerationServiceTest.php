@@ -75,6 +75,25 @@ class ReceiptGenerationServiceTest extends TestCase
         $this->assertInstanceOf(Response::class, $response);
     }
 
+    #[Test]
+    public function receipt_view_renders_transaction_details(): void
+    {
+        $transaction = Transaction::factory()->completed()->create()
+            ->load(['customer', 'user', 'approver']);
+
+        $html = view('transactions.receipt', [
+            'transaction' => $transaction,
+            'barcodeImage' => null,
+            'qrCodeImage' => null,
+            'barcodeText' => str_pad((string) $transaction->id, 10, '0', STR_PAD_LEFT),
+        ])->render();
+
+        $this->assertStringContainsString($transaction->reference, $html);
+        $this->assertStringContainsString($transaction->currency_code, $html);
+        $this->assertStringContainsString('RM', $html);
+        $this->assertStringContainsString('Transaction Receipt', $html);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

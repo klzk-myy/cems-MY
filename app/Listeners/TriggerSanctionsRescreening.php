@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Enums\AlertPriority;
+use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
@@ -10,12 +11,12 @@ use App\Enums\TransactionStatus;
 use App\Events\CustomerRecordUpdated;
 use App\Events\SanctionsListUpdated;
 use App\Jobs\ComplianceScreeningJob;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
-use App\Models\FlaggedTransaction;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\CustomerScreeningService;
+use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Bus;
@@ -69,9 +70,9 @@ class TriggerSanctionsRescreening
         return Customer::where(function ($query) {
             $query->whereHas('transactions', function ($txQuery) {
                 $txQuery->whereIn('status', [
-                    TransactionStatus::PendingApproval,
-                    TransactionStatus::Approved,
-                    TransactionStatus::Processing,
+                    TransactionStatus::PendingApproval->value,
+                    TransactionStatus::Approved->value,
+                    TransactionStatus::Processing->value,
                 ]);
             })
                 ->orWhere(function ($recentQuery) {
@@ -163,7 +164,7 @@ class TriggerSanctionsRescreening
             'customer_id' => $customer->id,
             'type' => ComplianceFlagType::SanctionMatch,
             'priority' => $priority,
-            'status' => FlagStatus::Open,
+            'status' => AlertStatus::Open,
             'reason' => $reason,
             'source' => 'sanctions_rescreening',
         ]);

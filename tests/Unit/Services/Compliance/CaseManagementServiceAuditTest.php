@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\Compliance;
 
 use App\Enums\ComplianceCaseStatus;
-use App\Models\Alert;
+use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceCase;
 use App\Models\Customer;
 use App\Models\SystemLog;

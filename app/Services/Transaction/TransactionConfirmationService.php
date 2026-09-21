@@ -4,6 +4,7 @@ namespace App\Services\Transaction;
 
 use App\Enums\TransactionConfirmationStatus;
 use App\Enums\TransactionStatus;
+use App\Exceptions\Domain\InvalidStateException;
 use App\Models\Transaction;
 use App\Models\TransactionConfirmation;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Notifications\ConfirmationRequiredNotification;
 use App\Notifications\LargeTransactionNotification;
 use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
+use App\Services\DTOs\ConfirmationResult;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Support\ActorContext;
@@ -131,17 +133,13 @@ class TransactionConfirmationService
      * Confirm or reject a transaction confirmation.
      *
      * @param  array  $validated  Must contain 'confirmation_action' => 'confirm'|'reject' and optional 'notes'
-     * @return array{success: bool, message: string}
      */
-    public function confirm(TransactionConfirmation $confirmation, array $validated, int $userId): array
+    public function confirm(TransactionConfirmation $confirmation, array $validated, int $userId): ConfirmationResult
     {
         if ($confirmation->isExpired()) {
             $confirmation->markExpired();
 
-            return [
-                'success' => false,
-                'message' => 'Confirmation has expired. Please request a new confirmation.',
-            ];
+            return new ConfirmationResult(false, 'Confirmation has expired. Please request a new confirmation.');
         }
 
         $action = $validated['confirmation_action'];
@@ -176,17 +174,11 @@ class TransactionConfirmationService
                 if ($lockedConfirmation && $lockedConfirmation->isExpired()) {
                     $lockedConfirmation->markExpired();
 
-                    return [
-                        'success' => false,
-                        'message' => 'Confirmation has expired. Please request a new confirmation.',
-                    ];
+                    return new ConfirmationResult(false, 'Confirmation has expired. Please request a new confirmation.');
                 }
 
                 if (! $lockedConfirmation || ! $lockedConfirmation->isPending()) {
-                    return [
-                        'success' => false,
-                        'message' => 'Confirmation has already been processed or is no longer pending.',
-                    ];
+                    return new ConfirmationResult(false, 'Confirmation has already been processed or is no longer pending.');
                 }
 
                 if ($action === 'confirm') {
@@ -211,10 +203,7 @@ class TransactionConfirmationService
     /**
      * Handle confirmation action.
      */
-    /**
-     * @return array{success: bool, message: string}
-     */
-    protected function handleConfirm(TransactionConfirmation $confirmation, int $userId, ?string $notes): array
+    protected function handleConfirm(TransactionConfirmation $confirmation, int $userId, ?string $notes): ConfirmationResult
     {
         $confirmation->markConfirmed($userId, $notes);
 
@@ -231,19 +220,13 @@ class TransactionConfirmationService
             ],
         ], 'INFO');
 
-        return [
-            'success' => true,
-            'message' => 'Transaction confirmed and pending final approval.',
-        ];
+        return new ConfirmationResult(true, 'Transaction confirmed and pending final approval.');
     }
 
     /**
      * Handle rejection action.
      */
-    /**
-     * @return array{success: bool, message: string}
-     */
-    protected function handleReject(TransactionConfirmation $confirmation, int $userId, ?string $notes): array
+    protected function handleReject(TransactionConfirmation $confirmation, int $userId, ?string $notes): ConfirmationResult
     {
         // Lock the parent transaction row: the state machine requires it, and
         // it prevents a concurrent approval/completion from interleaving with
@@ -271,10 +254,7 @@ class TransactionConfirmationService
 
             $this->rejectConfirmation($confirmation, $userId, $notes);
 
-            return [
-                'success' => true,
-                'message' => 'Confirmation rejected. The transaction was already completed and remains unchanged.',
-            ];
+            return new ConfirmationResult(true, 'Confirmation rejected. The transaction was already completed and remains unchanged.');
         }
 
         $stateMachine = new TransactionStateMachine($transaction);
@@ -284,7 +264,7 @@ class TransactionConfirmationService
             'user_id' => $userId,
             'reason' => $reason,
         ])) {
-            throw new \RuntimeException(
+            throw new InvalidStateException(
                 "Cannot reject transaction #{$transaction->id}: status '{$transaction->status->value}' does not allow cancellation."
             );
         }
@@ -302,10 +282,7 @@ class TransactionConfirmationService
             ],
         ], 'WARNING');
 
-        return [
-            'success' => true,
-            'message' => 'Transaction has been rejected.',
-        ];
+        return new ConfirmationResult(true, 'Transaction has been rejected.');
     }
 
     /**
@@ -375,18 +352,16 @@ class TransactionConfirmationService
      */
     public function expireStale(int $hours = 24): int
     {
-        $cutoff = now()->subHours($hours);
-
-        $stale = TransactionConfirmation::where('status', TransactionConfirmationStatus::Pending->value)
-            ->where('created_at', '<=', $cutoff)
-            ->get();
-
-        $count = 0;
-        foreach ($stale as $confirmation) {
-            $confirmation->update(['status' => TransactionConfirmationStatus::Expired->value]);
-            $count++;
-        }
-
-        return $count;
+        // Single UPDATE: markExpired() only flips status, so per-row model
+        // updates would just be N identical writes. Sweep by expires_at too —
+        // confirmations lapse at expires_at (30 min), so a created_at-only
+        // cutoff would leave effectively-expired rows marked Pending for the
+        // full backstop window.
+        return TransactionConfirmation::where('status', TransactionConfirmationStatus::Pending->value)
+            ->where(function ($q) use ($hours) {
+                $q->where('created_at', '<=', now()->subHours($hours))
+                    ->orWhere('expires_at', '<=', now());
+            })
+            ->update(['status' => TransactionConfirmationStatus::Expired->value]);
     }
 }
