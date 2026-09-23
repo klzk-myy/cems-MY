@@ -182,6 +182,47 @@ class TransactionValidationServiceTest extends TestCase
     }
 
     #[Test]
+    public function sanctions_screening_result_is_cached_within_ttl(): void
+    {
+        $customer = Customer::factory()->create();
+
+        // The screening service should be called at most once for two
+        // pre-validation runs against the same customer — the second call
+        // serves the sanctions result from cache.
+        $screeningMock = $this->createMock(CustomerScreeningService::class);
+        $screeningMock->expects($this->once())
+            ->method('screenCustomer')
+            ->willReturn(new ScreeningResponse(
+                action: 'clear',
+                confidenceScore: 0.0,
+                matches: collect(),
+                screenedAt: now(),
+            ));
+
+        $complianceMock = $this->createMock(ComplianceService::class);
+        $complianceMock->method('determineCDDLevel')
+            ->willReturn(CddLevel::Simplified);
+
+        $service = new TransactionValidationService(
+            $complianceMock,
+            new ThresholdService,
+            $this->createMock(TellerAllocationService::class),
+            $this->createMock(PepApprovalService::class),
+            $screeningMock,
+            $this->createMock(HistoricalRiskAnalysisService::class),
+            $this->createMock(AuditService::class),
+            $this->createMock(TransactionHoldService::class),
+            app(TillBalanceManager::class),
+            app(IpValidationService::class),
+        );
+
+        $service->preValidate($customer, '1000', 'USD');
+
+        // Second call — screening must NOT be invoked again.
+        $service->preValidate($customer, '2000', 'EUR');
+    }
+
+    #[Test]
     public function pre_validate_marks_sanctions_flag_as_critical_risk_flag(): void
     {
         $customer = Customer::factory()->create();
