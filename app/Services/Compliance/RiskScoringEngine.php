@@ -15,6 +15,7 @@ use App\Models\Customer;
 use App\Models\HighRiskCountry;
 use App\Models\Transaction;
 use App\Services\System\MathService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -37,6 +38,16 @@ class RiskScoringEngine
     protected RiskCalculationService $riskCalculation;
 
     protected RiskScoreWriteBackService $writeBack;
+
+    /**
+     * Event-driven recalculations (per-transaction) are debounced per
+     * customer for this many seconds. A customer making rapid sequential
+     * transactions would otherwise trigger a full recalculation on every
+     * single one — each running 8+ factor queries — for no new information.
+     * The recalculation is idempotent, so skipping within the window is safe;
+     * the next scheduled/periodic recalc catches any deferred change.
+     */
+    private const RECALCULATION_DEBOUNCE_SECONDS = 30;
 
     /**
      * Base score for all customers.
@@ -134,6 +145,20 @@ class RiskScoringEngine
 
     public function recalculate(int $customerId, RecalculationTrigger $trigger = RecalculationTrigger::EventDriven): ?CustomerRiskProfile
     {
+        // Debounce event-driven recalculations per customer. The queued
+        // TransactionCreatedListener fires on every transaction; without
+        // debouncing, a burst of transactions for one customer runs the
+        // full 8-factor recalculation repeatedly for identical inputs.
+        if ($trigger === RecalculationTrigger::EventDriven) {
+            $debounceKey = "risk_recalc:customer:{$customerId}";
+
+            if (Cache::has($debounceKey)) {
+                return null;
+            }
+
+            Cache::put($debounceKey, true, self::RECALCULATION_DEBOUNCE_SECONDS);
+        }
+
         return DB::transaction(function () use ($customerId, $trigger) {
             $customer = Customer::find($customerId);
             $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)->first();

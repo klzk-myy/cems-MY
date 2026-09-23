@@ -24,9 +24,18 @@ use App\Services\Screening\CustomerScreeningService;
 use App\Services\Security\IpValidationService;
 use App\Services\ThresholdService;
 use App\Support\ActorContext;
+use Illuminate\Support\Facades\Cache;
 
 class TransactionValidationService
 {
+    /**
+     * Sanctions screening results are cached per customer for this many
+     * seconds. The sanctions list changes only via the import/sync jobs,
+     * so a short TTL keeps repeat-customer bookings fast without risking
+     * meaningful staleness.
+     */
+    private const SANCTION_CHECK_TTL = 60;
+
     public function __construct(
         protected ComplianceService $complianceService,
         protected ThresholdService $thresholdService,
@@ -198,8 +207,31 @@ class TransactionValidationService
 
     /**
      * Check sanctions status for a customer.
+     *
+     * Results are cached per customer for a short window — the screening
+     * operation is expensive (token prefilter + in-memory ranking against
+     * the sanctions corpus) and runs inside the main transaction, so
+     * caching repeat-customer results cuts transaction time dramatically.
      */
     private function checkSanctions(Customer $customer): SanctionCheckResult
+    {
+        $cacheKey = "sanction_check:customer:{$customer->id}";
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $result = $this->performSanctionsCheck($customer);
+
+        Cache::put($cacheKey, $result, self::SANCTION_CHECK_TTL);
+
+        return $result;
+    }
+
+    /**
+     * Run the actual sanctions screening against the customer.
+     */
+    private function performSanctionsCheck(Customer $customer): SanctionCheckResult
     {
         $response = $this->screeningService->screenCustomer($customer);
 
