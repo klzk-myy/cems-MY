@@ -262,6 +262,38 @@ class TransactionCancellationServiceTest extends TestCase
     }
 
     #[Test]
+    public function cancellation_rejection_restores_pending_approval_status(): void
+    {
+        // A pending-approval deal can have its cancellation requested and
+        // then rejected — the rejection must restore PendingApproval, not
+        // hard-fail. (Regression: pending_cancellation previously only
+        // allowed restoring to Completed, so rejecting a cancellation on a
+        // pending-approval transaction failed with "history may be
+        // corrupted". Found by the Playwright lifecycle suite.)
+        $teller = User::factory()->create(['role' => UserRole::Teller]);
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+
+        $transaction = Transaction::factory()->create([
+            'user_id' => $teller->id,
+            'type' => TransactionType::Buy,
+            'currency_code' => 'USD',
+            'quantity' => '500.00',
+            'rate' => '4.50',
+            'status' => TransactionStatus::PendingApproval,
+            'created_at' => now(),
+        ]);
+
+        $result = $this->cancellationService->requestCancellation($transaction, $teller, 'Wrong currency pair booked');
+        $this->assertTrue($result);
+        $this->assertEquals(TransactionStatus::PendingCancellation, $transaction->status);
+
+        $result = $this->cancellationService->rejectCancellation($transaction, $manager, 'Settlement already agreed');
+
+        $this->assertTrue($result, 'Rejecting a cancellation on a pending-approval transaction must succeed');
+        $this->assertEquals(TransactionStatus::PendingApproval, $transaction->status);
+    }
+
+    #[Test]
     public function approve_cancellation_flushes_dashboard_ledger_and_report_caches(): void
     {
         $requester = User::factory()->create(['role' => UserRole::Manager]);

@@ -53,6 +53,8 @@ boost.json
 .phpunit.xml
 playwright.config.js
 /test-results/
+# Playwright MFA spec state (TOTP secret captured at enrollment — local only)
+tests/support/.mfa-state.json
 tailwind.config.js
 vite.config.js
 *.log

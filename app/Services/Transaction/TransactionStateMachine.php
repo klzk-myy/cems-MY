@@ -73,6 +73,16 @@ class TransactionStateMachine
         'pending_cancellation' => [
             'cancelled',
             'completed',
+            // Rejecting a cancellation request restores the pre-request
+            // status (TransactionCancellationService::rejectCancellation).
+            // Every status that may transition INTO pending_cancellation
+            // must be restorable, otherwise the rejection hard-fails with
+            // "Transaction history may be corrupted".
+            'draft',
+            'pending_approval',
+            'approved',
+            'processing',
+            'failed',
         ],
     ];
 
