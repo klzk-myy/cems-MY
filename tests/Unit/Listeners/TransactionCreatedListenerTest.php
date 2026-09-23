@@ -7,6 +7,7 @@ use App\Events\TransactionCreated;
 use App\Listeners\TransactionCreatedListener;
 use App\Models\Transaction;
 use App\Services\Compliance\RiskScoringEngine;
+use App\Services\System\CacheInvalidationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -23,13 +24,17 @@ class TransactionCreatedListenerTest extends TestCase
             ->method('monitorTransaction')
             ->with($transaction);
 
+        $cache = $this->createMock(CacheInvalidationService::class);
+        $cache->expects($this->once())
+            ->method('forgetReportData');
+
         $engine = $this->createMock(RiskScoringEngine::class);
         $engine->expects($this->once())
             ->method('recalculate')
             ->with(42, RecalculationTrigger::EventDriven);
         $engine->expects($this->never())->method('calculateScore');
 
-        (new TransactionCreatedListener($monitoring, $engine))
+        (new TransactionCreatedListener($monitoring, $engine, $cache))
             ->handle(new TransactionCreated($transaction));
     }
 }
