@@ -10,6 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property ReportType $report_type
+ * @property string $cron_expression
+ * @property array<string, mixed>|null $parameters
+ * @property bool $is_active
+ * @property Carbon|null $next_run_at
+ * @property Carbon|null $last_run_at
+ * @property array<int, string>|null $notification_recipients
+ * @property int $created_by
  * @property-read User|null $createdBy
  */
 class ReportSchedule extends BaseModel

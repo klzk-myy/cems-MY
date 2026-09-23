@@ -9,6 +9,9 @@ use App\Models\Compliance\EnhancedDiligenceRecord;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<EnhancedDiligenceRecord>
+ */
 class EnhancedDiligenceRecordFactory extends Factory
 {
     protected $model = EnhancedDiligenceRecord::class;

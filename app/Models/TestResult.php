@@ -6,7 +6,23 @@ use App\Enums\TestResultStatus;
 use App\Models\Bases\SystemModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $run_id
+ * @property string $test_suite
+ * @property int $total_tests
+ * @property int $passed
+ * @property int $failed
+ * @property int $skipped
+ * @property int $assertions
+ * @property float $duration
+ * @property TestResultStatus $status
+ * @property string|null $output
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class TestResult extends SystemModel
 {
     use HasFactory;

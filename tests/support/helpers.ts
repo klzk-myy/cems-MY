@@ -684,54 +684,55 @@ export interface CounterContext {
 }
 
 /**
- * Top up the manager's branch pool when past runs have drained it. Funding
- * is the documented manager action for pool replenishment (audit-logged as
- * branch_pool_replenished); the suite only tops up the shortfall it needs
- * for OPENING_FLOATS, so this is idempotent. The caller must be logged in
- * as a manager (manage_stock).
+ * Ensure the manager's branch pool for a currency has at least `needed`
+ * available, funding the shortfall via the manager UI (the documented
+ * replenishment action, audit-logged as branch_pool_replenished). The
+ * caller must be logged in as a manager (manage_stock).
  */
-async function ensurePoolBalances(page: Page): Promise<void> {
+export async function ensurePoolAvailable(page: Page, currency: string, needed: number): Promise<void> {
   await page.goto(`${BASE_URL}/branch-pools`);
   await page.waitForLoadState('domcontentloaded');
-  if (!(await page.locator('table').count())) {
+
+  // Row layout: Branch | Currency | Available | Allocated | Total | Actions
+  const row = page.locator('table tbody tr').filter({ hasText: currency }).first();
+  if (!(await row.count())) {
+    console.log(`   ⚠ no branch-pool row for ${currency} — cannot top up`);
+    return;
+  }
+  const availText = ((await row.locator('td').nth(2).textContent()) ?? '0').trim();
+  const available = parseFloat(availText.replace(/,/g, '')) || 0;
+  if (available >= needed) {
     return;
   }
 
+  const manageHref = await row.locator('a[href*="/branch-pools/"]').first().getAttribute('href');
+  const poolId = manageHref?.match(/\/branch-pools\/(\d+)/)?.[1];
+  if (!poolId) {
+    return;
+  }
+
+  await page.goto(`${BASE_URL}/branch-pools/${poolId}`);
+  await page.waitForLoadState('domcontentloaded');
+  const fundForm = page.locator('form[action$="/fund"]');
+  if (!(await fundForm.count())) {
+    return;
+  }
+  const topUp = (needed - available).toFixed(2);
+  await fundForm.locator('input[name="quantity"]').fill(topUp);
+  await fundForm.locator('button[type="submit"]').click();
+  await page.waitForLoadState('domcontentloaded');
+  console.log(`   funded ${currency} branch pool #${poolId} with ${topUp} (had ${available})`);
+}
+
+/**
+ * Top up the manager's branch pool when past runs have drained it. Funding
+ * is the documented manager action for pool replenishment; the suite only
+ * tops up the shortfall it needs for OPENING_FLOATS, so this is idempotent.
+ * The caller must be logged in as a manager (manage_stock).
+ */
+async function ensurePoolBalances(page: Page): Promise<void> {
   for (const [currency, neededStr] of Object.entries(OPENING_FLOATS)) {
-    // Row layout: Branch | Currency | Available | Allocated | Total | Actions
-    const row = page.locator('table tbody tr').filter({ hasText: currency }).first();
-    if (!(await row.count())) {
-      console.log(`   ⚠ no branch-pool row for ${currency} — skipping top-up`);
-      continue;
-    }
-    const availText = ((await row.locator('td').nth(2).textContent()) ?? '0').trim();
-    const available = parseFloat(availText.replace(/,/g, '')) || 0;
-    const needed = parseFloat(neededStr) || 0;
-    if (available >= needed) {
-      continue;
-    }
-
-    const manageHref = await row.locator('a[href*="/branch-pools/"]').first().getAttribute('href');
-    const poolId = manageHref?.match(/\/branch-pools\/(\d+)/)?.[1];
-    if (!poolId) {
-      continue;
-    }
-
-    await page.goto(`${BASE_URL}/branch-pools/${poolId}`);
-    await page.waitForLoadState('domcontentloaded');
-    const fundForm = page.locator('form[action$="/fund"]');
-    if (!(await fundForm.count())) {
-      continue;
-    }
-    const topUp = (needed - available).toFixed(2);
-    await fundForm.locator('input[name="quantity"]').fill(topUp);
-    await fundForm.locator('button[type="submit"]').click();
-    await page.waitForLoadState('domcontentloaded');
-    console.log(`   funded ${currency} branch pool #${poolId} with ${topUp} (had ${available})`);
-
-    // Back to the index for the next currency.
-    await page.goto(`${BASE_URL}/branch-pools`);
-    await page.waitForLoadState('domcontentloaded');
+    await ensurePoolAvailable(page, currency, parseFloat(neededStr) || 0);
   }
 }
 

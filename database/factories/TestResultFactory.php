@@ -6,6 +6,9 @@ use App\Enums\TestResultStatus;
 use App\Models\TestResult;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<TestResult>
+ */
 class TestResultFactory extends Factory
 {
     protected $model = TestResult::class;

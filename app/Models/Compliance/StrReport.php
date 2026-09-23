@@ -57,6 +57,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $created_by
  * @property int|null $reviewed_by
  * @property int|null $approved_by
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property \Illuminate\Support\Carbon|null $acknowledged_at
  * @property \Illuminate\Support\Carbon|null $suspicion_date
  * @property \Illuminate\Support\Carbon|null $filing_deadline
  * @property int $retry_count

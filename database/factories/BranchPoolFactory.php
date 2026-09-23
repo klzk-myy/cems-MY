@@ -5,6 +5,9 @@ namespace Database\Factories;
 use App\Models\BranchPool;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<BranchPool>
+ */
 class BranchPoolFactory extends Factory
 {
     protected $model = BranchPool::class;

@@ -7,6 +7,9 @@ use App\Models\ChartOfAccount;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Budget>
+ */
 class BudgetFactory extends Factory
 {
     protected $model = Budget::class;
