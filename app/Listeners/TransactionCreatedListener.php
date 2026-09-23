@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Enums\RecalculationTrigger;
 use App\Events\TransactionCreated;
 use App\Services\Compliance\RiskScoringEngine;
+use App\Services\System\CacheInvalidationService;
 use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -17,12 +18,16 @@ class TransactionCreatedListener implements ShouldQueue
 
     protected RiskScoringEngine $riskScoringService;
 
+    protected CacheInvalidationService $cacheInvalidationService;
+
     public function __construct(
         TransactionMonitoringService $monitoringService,
-        RiskScoringEngine $riskScoringService
+        RiskScoringEngine $riskScoringService,
+        CacheInvalidationService $cacheInvalidationService
     ) {
         $this->monitoringService = $monitoringService;
         $this->riskScoringService = $riskScoringService;
+        $this->cacheInvalidationService = $cacheInvalidationService;
     }
 
     public function handle(TransactionCreated $event)
@@ -32,6 +37,10 @@ class TransactionCreatedListener implements ShouldQueue
                 'last_transaction_at' => $event->transaction->created_at,
             ]);
         }
+
+        // Invalidate cached report datasets — they aggregate over the
+        // transaction and position tables that this write changed.
+        $this->cacheInvalidationService->forgetReportData();
 
         $this->monitoringService->monitorTransaction($event->transaction);
         // recalculate() (not calculateScore(), which discards the result):

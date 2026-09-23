@@ -70,6 +70,17 @@ class CacheInvalidationService
         Cache::forget(CacheKeys::wizardSession($sessionId));
     }
 
+    /**
+     * Invalidate all cached report datasets. Called after a transaction
+     * writes, since report aggregations (MSB2, LMCA, QLVR, position
+     * limit) are derived from transaction and position state. Uses the
+     * 'reports' tag so every report cache entry is flushed at once.
+     */
+    public function forgetReportData(): void
+    {
+        $this->invalidate('reports');
+    }
+
     public function forget(string $key): void
     {
         Cache::forget($key);
