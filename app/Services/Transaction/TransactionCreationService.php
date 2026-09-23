@@ -79,6 +79,16 @@ class TransactionCreationService
         protected AlertTriageService $alertTriageService,
     ) {}
 
+    protected function auditTrailHelper(): AuditTrailHelper
+    {
+        return $this->auditTrailHelper;
+    }
+
+    protected function transactionAccountingService(): TransactionAccountingService
+    {
+        return $this->transactionAccountingService;
+    }
+
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
         $userId ??= ActorContext::capture()->userId;
