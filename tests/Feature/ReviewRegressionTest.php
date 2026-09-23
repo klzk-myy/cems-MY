@@ -25,6 +25,7 @@ use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\PepApprovalRequest;
+use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Models\StockReservation;
 use App\Models\SystemHealthCheck;
@@ -191,9 +192,12 @@ class ReviewRegressionTest extends TestCase
         $response = $this->actingAs($manager)->get('/reports/monthly-trends');
 
         $response->assertOk();
-        $monthlyData = collect($response->viewData('monthlyData'));
+        $monthlyData = $response->viewData('monthlyData');
 
-        $totalVolume = (float) $monthlyData->sum('volume');
+        $totalVolume = 0.0;
+        foreach ($monthlyData as $row) {
+            $totalVolume += (float) $row['volume'];
+        }
 
         $this->assertEqualsWithDelta(500.0, $totalVolume, 0.0001, 'Manager must only see own-branch volume');
     }
@@ -241,11 +245,12 @@ class ReviewRegressionTest extends TestCase
         foreach (ReportType::cases() as $type) {
             $run = $service->generateReport($type, [], $user->id);
 
-            $this->assertSame(
-                ReportRunStatus::Completed->value,
-                $run->status->value,
-                "Report type {$type->value} must complete without UnmatchError"
-            );
+            $completed = ReportRun::query()
+                ->whereKey($run->id)
+                ->where('status', ReportRunStatus::Completed->value)
+                ->exists();
+
+            $this->assertTrue($completed, "Report type {$type->value} must complete without UnmatchError");
         }
     }
 

@@ -12,6 +12,7 @@ use App\Services\AuditService;
 use App\Services\Compliance\AlertTriageService;
 use App\Services\System\MathService;
 use App\Services\ThresholdService;
+use App\Services\Transaction\StockReleaseService;
 use App\Services\Transaction\TransactionConfirmationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -31,17 +32,21 @@ class TransactionConfirmationServiceTest extends TestCase
 
     private MathService&MockInterface $mathService;
 
+    private StockReleaseService&MockInterface $stockReleaseService;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->auditService = $this->mock(AuditService::class);
         $this->thresholdService = $this->mock(ThresholdService::class);
         $this->mathService = $this->mock(MathService::class);
+        $this->stockReleaseService = $this->mock(StockReleaseService::class);
         $this->service = new TransactionConfirmationService(
             $this->auditService,
             $this->thresholdService,
             $this->mathService,
-            app(AlertTriageService::class)
+            app(AlertTriageService::class),
+            $this->stockReleaseService
         );
     }
 
