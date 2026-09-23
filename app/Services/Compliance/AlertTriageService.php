@@ -6,6 +6,7 @@ use App\Enums\AlertPriority;
 use App\Enums\AlertStatus;
 use App\Enums\ComplianceFlagType;
 use App\Enums\FlagStatus;
+use App\Enums\Permission;
 use App\Enums\RiskRating;
 use App\Enums\UserRole;
 use App\Events\AlertCreated;
@@ -29,6 +30,7 @@ class AlertTriageService
         protected ThresholdService $thresholdService,
         protected MathService $mathService,
         protected AuditService $auditService,
+        protected RiskScoringEngine $riskScoringEngine,
     ) {}
 
     /**
@@ -68,17 +70,30 @@ class AlertTriageService
 
     /**
      * Calculate risk score for an alert.
+     *
+     * The score is anchored on the customer's multi-factor score from the
+     * canonical RiskScoringEngine (geographic risk, PEP status, transaction
+     * deviation, velocity, structuring, EDD history) so every score in the
+     * system traces to one computation — previously alert.risk_score and
+     * customer.risk_score were two unrelated numbers for the same customer.
+     * Transaction amount, customer attributes, flag type and repeat-offender
+     * history layer on top as deltas, clamped to 100.
      */
     public function calculateRiskScore(
         FlaggedTransaction $flaggedTransaction,
         ?Customer $customer = null,
         ?Transaction $transaction = null
     ): int {
-        $score = 0;
-
         $customer = $customer ?? $flaggedTransaction->customer;
         $transaction = $transaction ?? $flaggedTransaction->transaction;
 
+        $baseScore = $customer !== null
+            ? $this->riskScoringEngine->calculateScore($customer->id)
+            : 0;
+
+        // Amount delta: the specific transaction size that triggered the
+        // flag, layered on top of the customer base.
+        $amountDelta = 0;
         if ($transaction) {
             $amountMyr = (string) $transaction->amount_myr;
             $criticalThreshold = $this->thresholdService->getAlertCriticalThreshold();
@@ -86,59 +101,61 @@ class AlertTriageService
             $mediumThreshold = $this->thresholdService->getAlertMediumThreshold();
 
             if ($this->mathService->compare($amountMyr, $criticalThreshold) >= 0) {
-                $score += 30;
+                $amountDelta = 30;
             } elseif ($this->mathService->compare($amountMyr, $highThreshold) >= 0) {
-                $score += 20;
+                $amountDelta = 20;
             } elseif ($this->mathService->compare($amountMyr, $mediumThreshold) >= 0) {
-                $score += 10;
+                $amountDelta = 10;
             }
         }
 
+        // Customer attribute deltas: risk rating, PEP status, sanctions hit.
+        $attributeDelta = 0;
         if ($customer) {
             $riskRating = $customer->risk_rating;
             if ($riskRating instanceof RiskRating) {
                 if ($riskRating === RiskRating::High || $riskRating === RiskRating::Medium) {
-                    $score += $riskRating === RiskRating::High ? 20 : 10;
+                    $attributeDelta += $riskRating === RiskRating::High ? 20 : 10;
                 }
             } elseif (is_string($riskRating)) {
                 if (in_array($riskRating, ['high', 'critical'])) {
-                    $score += 20;
+                    $attributeDelta += 20;
                 } elseif ($riskRating === 'medium') {
-                    $score += 10;
+                    $attributeDelta += 10;
                 }
             }
 
             if ($customer->pep_status) {
-                $score += 10;
+                $attributeDelta += 10;
             }
 
             if ($customer->sanction_hit) {
-                $score += 30;
+                $attributeDelta += 30;
             }
         }
 
+        // Flag-type delta: the nature of the flag itself.
         $flagType = $flaggedTransaction->flag_type;
-        if ($flagType === ComplianceFlagType::Velocity) {
-            $score += 5;
-        } elseif ($flagType === ComplianceFlagType::Structuring) {
-            $score += 10;
-        }
+        $flagDelta = match ($flagType) {
+            ComplianceFlagType::Velocity => 5,
+            ComplianceFlagType::Structuring => 10,
+            ComplianceFlagType::HighRiskCountry => 10,
+            default => 0,
+        };
 
+        // Repeat-offender delta: three or more alerts in the past week means
+        // the customer's behaviour is not improving.
         $recentAlerts = Alert::where('customer_id', $flaggedTransaction->customer_id)
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
 
-        if ($recentAlerts >= 3) {
-            $score += 15;
-        } elseif ($recentAlerts >= 1) {
-            $score += 5;
-        }
+        $repeatDelta = match (true) {
+            $recentAlerts >= 3 => 15,
+            $recentAlerts >= 1 => 5,
+            default => 0,
+        };
 
-        if ($flaggedTransaction->flag_type === ComplianceFlagType::HighRiskCountry) {
-            $score += 10;
-        }
-
-        return min($score, 100);
+        return min($baseScore + $amountDelta + $attributeDelta + $flagDelta + $repeatDelta, 100);
     }
 
     /**
@@ -436,6 +453,20 @@ class AlertTriageService
     public function bulkAssign(array $alertIds, int $userId): array
     {
         $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+
+        // Re-verify the assignee still holds the compliance permission: the
+        // request only validates the user exists, so without this check a
+        // demoted user could still be assigned cases via this endpoint.
+        $assignee = User::find($userId);
+        if (! $assignee instanceof User || ! $assignee->role->canPerform(Permission::AccessCompliance)) {
+            foreach ($alertIds as $alertId) {
+                $results['failed']++;
+                $results['errors'][] = "User {$userId} is not authorized to receive alert assignments";
+            }
+
+            return $results;
+        }
+
         /** @var Collection<int, Alert> $alerts */
         $alerts = Alert::whereIn('id', $alertIds)->get()->keyBy('id');
 

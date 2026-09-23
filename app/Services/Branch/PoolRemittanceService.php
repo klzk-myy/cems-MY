@@ -5,6 +5,7 @@ namespace App\Services\Branch;
 use App\Enums\AccountMappingKey;
 use App\Enums\PoolRemittanceStatus;
 use App\Enums\RemittanceGlLeg;
+use App\Exceptions\Domain\TransactionCreationException;
 use App\Exceptions\Domain\TransactionValidationException;
 use App\Models\Branch;
 use App\Models\BranchPool;
@@ -120,8 +121,17 @@ class PoolRemittanceService
                     return $remittance;
                 });
             } catch (UniqueConstraintViolationException $e) {
-                if ($attempt >= 2 || ! str_contains($e->getMessage(), 'remittance_number')) {
+                // Only remittance_number collisions are retryable — any other
+                // unique violation is a data/programming error and must surface
+                // unchanged rather than being masked as a retry.
+                if (! str_contains($e->getMessage(), 'remittance_number')) {
                     throw $e;
+                }
+
+                if ($attempt >= 2) {
+                    throw new TransactionCreationException(
+                        'Unable to allocate a unique remittance number after 3 attempts. Please retry.'
+                    );
                 }
             }
         }

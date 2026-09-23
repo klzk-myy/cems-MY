@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Routing\Middleware\ThrottleRequests as BaseThrottleRequests;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Rate limiting middleware honoring security.rate_limits.enabled.
@@ -21,7 +22,18 @@ class ThrottleRequests extends BaseThrottleRequests
     public function handle($request, Closure $next, $maxAttempts = 60, $decayMinutes = 1, $prefix = '')
     {
         if (! config('security.rate_limits.enabled', true)) {
-            return $next($request);
+            // Kill-switch honoured only in local: a stale env value must never
+            // silently remove rate limiting (including throttle:login and
+            // throttle:sensitive) from a live deployment. Outside local the
+            // switch is ignored with a loud alert — fail closed.
+            if (app()->isLocal()) {
+                return $next($request);
+            }
+
+            Log::alert('SECURITY_RATE_LIMITING_ENABLED=false outside local — ignoring kill-switch, rate limiting remains active', [
+                'url' => $request->url(),
+                'ip' => $request->ip(),
+            ]);
         }
 
         // Named-limiter detection must happen here: parent::handle() checks

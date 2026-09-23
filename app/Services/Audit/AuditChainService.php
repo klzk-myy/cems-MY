@@ -337,6 +337,49 @@ class AuditChainService
      * (still auditable evidence) but are excluded from gap detection so the
      * chain resumes past them via a GAP:<id> previous_hash marker.
      */
+    /**
+     * Reseal an entry across an audited deletion boundary.
+     *
+     * Log rotation archives and deletes rows; a surviving entry whose stored
+     * previous_hash points at a deleted row would otherwise fail the chain
+     * link check and read as tampering. Stamping the same GAP:<id> boundary
+     * the quarantine mechanism uses makes the discontinuity explicit: the
+     * verifier skips the link check at a GAP boundary, and the entry's own
+     * hash still verifies because the marker is part of its payload.
+     */
+    public function resealWithGapBoundary(int $logId, int $deletedPredecessorId): bool
+    {
+        return DB::transaction(function () use ($logId, $deletedPredecessorId) {
+            $log = SystemLog::whereKey($logId)->lockForUpdate()->first();
+
+            if (! $log) {
+                return false;
+            }
+
+            $previousHash = self::GAP_PREFIX.$deletedPredecessorId;
+
+            $entryHash = $this->computeEntryHash(
+                $log->created_at->toIso8601String(),
+                $log->user_id,
+                $log->action,
+                $log->entity_type,
+                $log->entity_id,
+                $previousHash,
+                $log->old_values,
+                $log->new_values,
+                $log->severity,
+                $log->ip_address
+            );
+
+            $log->update([
+                'previous_hash' => $previousHash,
+                'entry_hash' => $entryHash,
+            ]);
+
+            return true;
+        });
+    }
+
     public function quarantineEntry(int $logId): void
     {
         SystemLog::where('id', $logId)

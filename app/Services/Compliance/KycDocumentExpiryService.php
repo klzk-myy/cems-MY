@@ -27,6 +27,16 @@ class KycDocumentExpiryService
      * as before; only customers with documents whose identity documents
      * have all lapsed are blocked.
      */
+    /**
+     * The booking gate (TransactionCreationService). Scope: only customers
+     * whose identity documents have ALL lapsed past the grace period.
+     * Document-less customers deliberately keep transacting — absence of
+     * documents is a CDD data-collection gap, not a block.
+     *
+     * Must NOT be confused with mustBlockDueToExpiredDocuments(), which is a
+     * stricter superset (no docs / missing CDD-level docs / any expired doc)
+     * used for enforcement surfaces outside booking.
+     */
     public function hasAllIdentityDocumentsExpired(Customer $customer): bool
     {
         // Preserve legacy behaviour: no documents at all -> do not block.
@@ -67,6 +77,13 @@ class KycDocumentExpiryService
         return Carbon::now()->subDays($this->thresholdService->getKycGracePeriodDays());
     }
 
+    /**
+     * Stricter enforcement superset: blocks when the customer has no
+     * documents at all, is missing CDD-level required documents, or has any
+     * verified document expired past the grace period. Not used by the
+     * booking gate — see hasAllIdentityDocumentsExpired() for the booking
+     * scope and why the two differ.
+     */
     public function mustBlockDueToExpiredDocuments(Customer $customer): bool
     {
         // Block if customer has no documents at all

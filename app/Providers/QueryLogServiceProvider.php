@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\SystemLog;
+use App\Services\AuditService;
 use App\Services\System\QueryLoggingService;
 use App\Services\System\QueryOptimizerService;
 use Illuminate\Database\Events\QueryExecuted;
@@ -263,14 +264,17 @@ class QueryLogServiceProvider extends ServiceProvider
             && $this->shouldLogToDatabase()
         ) {
             try {
-                SystemLog::create([
-                    'user_id' => $requestData['user_id'] ?? null,
-                    'action' => 'query_summary',
+                // Route through AuditService — the canonical tamper-evident
+                // write path — so the row is hash-sealed by SealAuditHashJob
+                // like every other system log. Writing SystemLog directly
+                // would bypass sealing entirely. The summary belongs in
+                // new_values (a JSON column); there is no `details` column.
+                app(AuditService::class)->logWithSeverity('query_summary', [
                     'entity_type' => 'request',
                     'entity_id' => null,
-                    'details' => $summary,
+                    'new_values' => $summary,
+                    'user_id' => $requestData['user_id'] ?? null,
                     'ip_address' => $requestData['ip'] ?? null,
-                    'user_agent' => $requestData['user_agent'] ?? null,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to log query summary to database: '.$e->getMessage());

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\ApprovalStatus;
+use App\Enums\Permission;
 use App\Exceptions\Domain\PepApprovalRequiredException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApprovePepApprovalRequest;
@@ -35,6 +36,8 @@ class PepApprovalController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $pending = PepApprovalRequest::with(['customer'])
             ->where('status', ApprovalStatus::Pending->value)
             ->orderByDesc('created_at')
@@ -48,6 +51,8 @@ class PepApprovalController extends Controller
      */
     public function approve(ApprovePepApprovalRequest $request, PepApprovalRequest $pepApproval): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         try {
             $this->pepApprovalService->approve($pepApproval, $request->user());
         } catch (PepApprovalRequiredException $e) {
@@ -62,6 +67,8 @@ class PepApprovalController extends Controller
      */
     public function reject(RejectPepApprovalRequest $request, PepApprovalRequest $pepApproval): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         try {
             $this->pepApprovalService->reject($pepApproval, $request->user(), $request->validated('reason'));
         } catch (PepApprovalRequiredException $e) {

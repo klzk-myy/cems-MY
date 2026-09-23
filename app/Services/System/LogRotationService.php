@@ -4,6 +4,7 @@ namespace App\Services\System;
 
 use App\Exceptions\Domain\LogArchiveException;
 use App\Models\SystemLog;
+use App\Services\Audit\AuditChainService;
 use App\Services\AuditService;
 use Carbon\Carbon;
 
@@ -11,9 +12,12 @@ class LogRotationService
 {
     protected AuditService $auditService;
 
-    public function __construct(AuditService $auditService)
+    protected AuditChainService $auditChainService;
+
+    public function __construct(AuditService $auditService, AuditChainService $auditChainService)
     {
         $this->auditService = $auditService;
+        $this->auditChainService = $auditChainService;
     }
 
     /**
@@ -85,13 +89,23 @@ class LogRotationService
         }
 
         // Pass 2: delete the archived rows in bounded chunks. A second lazyById
-        // pass keeps memory bounded without holding the full id list.
+        // pass keeps memory bounded without holding the full id list. The end
+        // of each contiguous deleted id run is tracked — the entry
+        // immediately after a run is the chain boundary that must be resealed
+        // (see resealDeletionBoundaries).
         $archivedCount = 0;
         $batch = [];
+        $deletedRunEnds = [];
+        $previousDeletedId = null;
         SystemLog::where('created_at', '<', $cutoffDate)
             ->orderBy('id')
             ->lazyById(500)
-            ->each(function ($log) use (&$batch, &$archivedCount) {
+            ->each(function ($log) use (&$batch, &$archivedCount, &$deletedRunEnds, &$previousDeletedId) {
+                if ($previousDeletedId !== null && $log->id !== $previousDeletedId + 1) {
+                    $deletedRunEnds[] = $previousDeletedId;
+                }
+
+                $previousDeletedId = $log->id;
                 $batch[] = $log->id;
 
                 if (count($batch) >= 500) {
@@ -103,6 +117,12 @@ class LogRotationService
         if ($batch !== []) {
             $archivedCount += SystemLog::whereIn('id', $batch)->delete();
         }
+
+        if ($previousDeletedId !== null) {
+            $deletedRunEnds[] = $previousDeletedId;
+        }
+
+        $this->resealDeletionBoundaries($deletedRunEnds);
 
         $this->auditService->log(
             'logs_archived',
@@ -124,6 +144,35 @@ class LogRotationService
             'path' => $archivePath,
             'message' => "Archived {$archivedCount} logs to {$archiveFilename}",
         ];
+    }
+
+    /**
+     * Reseal surviving entries whose immediate predecessor was archived.
+     *
+     * Rotation deletes by created_at, so a backdated entry can leave a hole
+     * in the middle of the id chain: the surviving entry after the hole
+     * keeps a previous_hash pointing at a deleted row, which the chain
+     * verifier would read as tampering. Each such boundary entry is resealed
+     * with a GAP:<deletedId> marker — the same explicit boundary the
+     * quarantine mechanism uses — so verifyChainIntegrity skips the link
+     * check there while the entry's own hash still verifies.
+     *
+     * @param  array<int, int>  $deletedRunEnds  Last id of each contiguous deleted run
+     */
+    protected function resealDeletionBoundaries(array $deletedRunEnds): void
+    {
+        foreach ($deletedRunEnds as $deletedRunEnd) {
+            $entryId = $deletedRunEnd + 1;
+
+            // The candidate only needs resealing when it actually survived —
+            // when the next run started at this id it was deleted too, and
+            // the run's own end is a separate candidate.
+            $entry = SystemLog::find($entryId);
+
+            if ($entry !== null) {
+                $this->auditChainService->resealWithGapBoundary($entryId, $deletedRunEnd);
+            }
+        }
     }
 
     /**

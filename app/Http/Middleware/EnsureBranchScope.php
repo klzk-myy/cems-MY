@@ -28,8 +28,7 @@ class EnsureBranchScope
 
             $requestedBranch = $request->route('branch')
                 ?? $request->route('branchId')
-                ?? $request->route('branch_id')
-                ?? $request->input('branch_id');
+                ?? $request->route('branch_id');
 
             // Web routes model-bind {branch} to a Branch instance; API
             // routes carry the raw id. Normalise both to an int.

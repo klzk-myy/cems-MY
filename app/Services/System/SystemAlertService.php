@@ -98,7 +98,7 @@ class SystemAlertService
             $metadata['email_recipients'] = $recipients;
             $alert->update(['metadata' => $metadata]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Failed to send alert email: '.$e->getMessage());
 
             // Update metadata with failure

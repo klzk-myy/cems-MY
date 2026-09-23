@@ -15,12 +15,26 @@ class AccountingEntriesTraitTest extends TestCase
 {
     use AccountingEntriesTrait;
 
+    protected AuditTrailHelper $auditTrailHelper;
+
+    protected TransactionAccountingService $transactionAccountingService;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->auditTrailHelper = $this->createMock(AuditTrailHelper::class);
         $this->transactionAccountingService = $this->createMock(TransactionAccountingService::class);
+    }
+
+    protected function auditTrailHelper(): AuditTrailHelper
+    {
+        return $this->auditTrailHelper;
+    }
+
+    protected function transactionAccountingService(): TransactionAccountingService
+    {
+        return $this->transactionAccountingService;
     }
 
     public function test_create_accounting_entries_defers_enhanced_cdd_with_logging(): void

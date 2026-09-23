@@ -16,12 +16,18 @@ use Illuminate\Support\Facades\Log;
  * Removes duplicate createAccountingEntries() methods across:
  * - TransactionCreationService
  * - TransactionApprovalService
+ *
+ * Consumers MUST provide auditTrailHelper() and
+ * transactionAccountingService() accessors (typically backed by
+ * constructor-promoted properties). The abstract declarations make the
+ * wiring contract explicit — a consumer that forgets it fails at class
+ * load, not at first deferred call with an uninitialized property.
  */
 trait AccountingEntriesTrait
 {
-    protected AuditTrailHelper $auditTrailHelper;
+    abstract protected function auditTrailHelper(): AuditTrailHelper;
 
-    protected TransactionAccountingService $transactionAccountingService;
+    abstract protected function transactionAccountingService(): TransactionAccountingService;
 
     /**
      * Create accounting entries, deferring for Enhanced CDD pending approval.
@@ -46,7 +52,7 @@ trait AccountingEntriesTrait
             return;
         }
 
-        $this->transactionAccountingService->createImmediateAccountingEntries($transaction);
+        $this->transactionAccountingService()->createImmediateAccountingEntries($transaction);
     }
 
     /**
@@ -60,7 +66,7 @@ trait AccountingEntriesTrait
             'cdd_level' => $transaction->cdd_level->value,
         ]);
 
-        $this->auditTrailHelper->recordTransaction($transaction->id, 'journal_entries_deferred', [
+        $this->auditTrailHelper()->recordTransaction($transaction->id, 'journal_entries_deferred', [
             'cdd_level' => $transaction->cdd_level->value,
             'status' => $transaction->status->value,
             'reason' => 'Enhanced CDD requires approval before bookkeeping',

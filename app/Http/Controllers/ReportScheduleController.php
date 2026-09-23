@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\ReportType;
 use App\Http\Requests\CreateReportScheduleRequest;
 use App\Http\Requests\UpdateReportScheduleRequest;
@@ -22,6 +23,8 @@ class ReportScheduleController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $query = ReportSchedule::query()->orderByDesc('created_at');
 
         $type = $request->string('type')->toString();
@@ -52,6 +55,8 @@ class ReportScheduleController extends Controller
      */
     public function create(): View
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $reportTypes = ReportType::cases();
         $schedule = null;
 
@@ -63,6 +68,8 @@ class ReportScheduleController extends Controller
      */
     public function store(CreateReportScheduleRequest $request): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $this->reportSchedulingService->createSchedule($request->validated());
 
         return redirect()->route('reports.schedules.index')->with('success', 'Report schedule created successfully.');
@@ -73,6 +80,8 @@ class ReportScheduleController extends Controller
      */
     public function show(ReportSchedule $schedule): View
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $recentRuns = $schedule->reportRuns()
             ->latest()
             ->limit(10)
@@ -86,6 +95,8 @@ class ReportScheduleController extends Controller
      */
     public function pause(ReportSchedule $schedule): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $schedule->update(['is_active' => false]);
 
         return redirect()->route('reports.schedules.show', $schedule)->with('success', 'Report schedule paused.');
@@ -96,6 +107,8 @@ class ReportScheduleController extends Controller
      */
     public function resume(ReportSchedule $schedule): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $schedule->update(['is_active' => true]);
         $schedule->updateNextRun();
 
@@ -107,6 +120,8 @@ class ReportScheduleController extends Controller
      */
     public function edit(ReportSchedule $schedule): View
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $reportTypes = ReportType::cases();
 
         return view('reports.schedules.edit', compact('schedule', 'reportTypes'));
@@ -117,6 +132,8 @@ class ReportScheduleController extends Controller
      */
     public function update(UpdateReportScheduleRequest $request, ReportSchedule $schedule): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $this->reportSchedulingService->updateSchedule($schedule, $request->validated());
 
         return redirect()->route('reports.schedules.show', $schedule)->with('success', 'Report schedule updated successfully.');
@@ -127,6 +144,8 @@ class ReportScheduleController extends Controller
      */
     public function destroy(ReportSchedule $schedule): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageReportSchedules);
+
         $schedule->delete();
 
         return redirect()->route('reports.schedules.index')->with('success', 'Report schedule deleted successfully.');

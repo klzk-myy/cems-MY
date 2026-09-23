@@ -25,7 +25,8 @@ class TransactionConfirmationService
         protected AuditService $auditService,
         protected ThresholdService $thresholdService,
         protected MathService $mathService,
-        protected AlertTriageService $alertTriageService
+        protected AlertTriageService $alertTriageService,
+        protected StockReleaseService $stockReleaseService
     ) {}
 
     /**
@@ -269,9 +270,17 @@ class TransactionConfirmationService
             );
         }
 
+        // Rejecting the confirmation is a full cancellation of the booking:
+        // release any pending stock reservation so the currency returns to
+        // available stock immediately rather than waiting for the expiry
+        // sweep — the same compensating leg TransactionCancellationService
+        // runs. This path is hit only by large transactions, i.e. the
+        // biggest Sell reservations.
+        $this->stockReleaseService->releaseReservation($transaction);
+
         $this->rejectConfirmation($confirmation, $userId, $notes);
 
-        $this->auditService->logWithSeveritySealed('transaction_rejected', [
+        $this->auditService->logWithSeveritySealed('transaction_cancelled_via_confirmation', [
             'user_id' => $userId,
             'entity_type' => 'Transaction',
             'entity_id' => $confirmation->transaction_id,

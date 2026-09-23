@@ -272,6 +272,11 @@ class ReportSchedulingService
 
     /**
      * Execute the actual report generation.
+     *
+     * Every ReportType must have an arm here — an incomplete match throws
+     * UnmatchError at runtime. The four ledger-backed reports delegate to
+     * the canonical ReportingService dispatcher, which owns their period
+     * semantics.
      */
     protected function executeReport(ReportType $type, array $params): string
     {
@@ -280,6 +285,10 @@ class ReportSchedulingService
             ReportType::Lmca => $this->reportingService->generateFormLMCACsv($params['month'] ?? now()->format('Y-m')),
             ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueCsv($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
             ReportType::Plr => $this->reportingService->generatePositionLimitCsv(),
+            ReportType::TrialBalance => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
+            ReportType::MonthEnd => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
+            ReportType::ProfitLoss => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
+            ReportType::BalanceSheet => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
         };
     }
 

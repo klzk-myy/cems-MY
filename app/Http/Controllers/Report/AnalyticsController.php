@@ -43,6 +43,10 @@ class AnalyticsController extends Controller
             ->whereYear('created_at', $year)
             ->completed();
 
+        // Branch isolation: a branch-scoped viewer (e.g. a manager, who
+        // holds ViewReports) must only ever see their own branch's volume.
+        $query->when($this->viewerBranchId(), fn ($q, $branchId) => $q->where('branch_id', $branchId));
+
         if ($currency !== 'all') {
             $query->where('currency_code', $currency);
         }
@@ -108,15 +112,18 @@ class AnalyticsController extends Controller
     {
         $this->requirePermission(Permission::ViewReports);
 
-        $startDate = $request->input('start_date', now()->subMonth()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->subMonth()->endOfMonth()->toDateString());
+        [$startDate, $endDate] = $this->resolveDateRange($request, now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString());
 
         // MYR is the settlement currency — it is not an FX position and has no
         // exchange rate, so including it would report a meaningless P&L of
         // (0 - 1.0) * balance.
+        // Branch-scoped viewers only see their own branch's positions.
+        $positionQuery = CurrencyPosition::query()
+            ->when($this->viewerBranchId(), fn ($q, $branchId) => $q->where('branch_id', $branchId));
+
         $positionModels = $this->cacheOptimizationService->remember(
             'analytics.positions.all', 300, ['analytics', 'positions'],
-            fn () => CurrencyPosition::with('currency')->where('currency_code', '!=', Currency::baseCurrency())->get()
+            fn () => $positionQuery->with('currency')->where('currency_code', '!=', Currency::baseCurrency())->get()
         );
         $currencyCodes = $positionModels->pluck('currency_code')->unique()->values()->toArray();
         $rates = $this->getCurrentRates($currencyCodes);
@@ -272,15 +279,21 @@ class AnalyticsController extends Controller
     {
         $this->requirePermission(Permission::ViewReports);
 
-        $startDate = $request->input('start_date', today()->subMonth()->toDateString());
-        $endDate = $request->input('end_date', today()->toDateString());
+        [$startDate, $endDate] = $this->resolveDateRange($request, today()->subMonth()->toDateString(), today()->toDateString());
         $startAt = Carbon::parse($startDate)->startOfDay();
         $endAt = Carbon::parse($endDate)->endOfDay();
+
+        // Branch isolation: flagged-transaction and EDD counts are
+        // branch-scoped data — a branch-scoped viewer must not see other
+        // branches' compliance activity.
+        $branchId = $this->viewerBranchId();
 
         // Flagged transactions
         $flaggedStatsRaw = $this->cacheOptimizationService->remember(
             "analytics.flagged.{$startDate}.{$endDate}", 300, ['analytics', 'compliance'],
-            fn () => FlaggedTransaction::whereBetween('created_at', [$startAt, $endAt])
+            fn () => FlaggedTransaction::query()
+                ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+                ->whereBetween('created_at', [$startAt, $endAt])
                 ->select('flag_type', DB::raw('COUNT(*) as count'))
                 ->groupBy('flag_type')
                 ->get()
@@ -300,7 +313,9 @@ class AnalyticsController extends Controller
         // EDD required count
         $eddCount = $this->cacheOptimizationService->remember(
             "analytics.edd-count.{$startDate}.{$endDate}", 300, ['analytics', 'compliance'],
-            fn () => Transaction::where('cdd_level', CddLevel::Enhanced->value)
+            fn () => Transaction::query()
+                ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+                ->where('cdd_level', CddLevel::Enhanced->value)
                 ->whereBetween('created_at', [$startAt, $endAt])
                 ->count()
         );
@@ -308,7 +323,9 @@ class AnalyticsController extends Controller
         // Suspicious activity
         $suspiciousCount = $this->cacheOptimizationService->remember(
             "analytics.suspicious.{$startDate}.{$endDate}", 300, ['analytics', 'compliance'],
-            fn () => FlaggedTransaction::whereIn('flag_type', [ComplianceFlagType::Structuring->value, ComplianceFlagType::SanctionMatch->value])
+            fn () => FlaggedTransaction::query()
+                ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+                ->whereIn('flag_type', [ComplianceFlagType::Structuring->value, ComplianceFlagType::SanctionMatch->value])
                 ->whereBetween('created_at', [$startAt, $endAt])
                 ->count()
         );
@@ -320,6 +337,60 @@ class AnalyticsController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    /**
+     * The viewer's branch for branch-isolated analytics, or null when the
+     * viewer may see every branch (admin/compliance/accountant with
+     * canManageAllBranch).
+     */
+    protected function viewerBranchId(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user === null || $user->role->canManageAllBranches()) {
+            return null;
+        }
+
+        return $user->branch_id;
+    }
+
+    /**
+     * Normalize a [start, end] date range from the request.
+     *
+     * Unparseable input falls back to the defaults, and a reversed range
+     * (start after end) is swapped — a whereBetween with inverted bounds
+     * silently returns nothing, which reads as "no activity" rather than
+     * a bad request.
+     *
+     * @return array{0: string, 1: string}
+     */
+    protected function resolveDateRange(Request $request, string $defaultStart, string $defaultEnd): array
+    {
+        $startDate = $this->parseDateInput($request->input('start_date')) ?? $defaultStart;
+        $endDate = $this->parseDateInput($request->input('end_date')) ?? $defaultEnd;
+
+        if (Carbon::parse($startDate)->greaterThan(Carbon::parse($endDate))) {
+            return [$endDate, $startDate];
+        }
+
+        return [$startDate, $endDate];
+    }
+
+    /**
+     * Parse a date input, returning null when it is unparseable.
+     */
+    protected function parseDateInput(mixed $input): ?string
+    {
+        if (! is_string($input) || $input === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($input)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

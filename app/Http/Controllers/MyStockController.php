@@ -7,6 +7,7 @@ use App\Enums\TransactionType;
 use App\Models\ExchangeRate;
 use App\Models\TellerAllocation;
 use App\Models\Transaction;
+use App\Services\System\MathService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -14,6 +15,10 @@ use Illuminate\View\View;
 
 class MyStockController extends Controller
 {
+    public function __construct(
+        protected MathService $math,
+    ) {}
+
     /**
      * Show the teller's stock and cash position for a business date.
      *
@@ -23,6 +28,10 @@ class MyStockController extends Controller
      * Reversed transactions and refund records are excluded — the reversal
      * already compensated their legs, so counting them would double-count
      * the movement.
+     *
+     * All quantity arithmetic runs through MathService (BCMath) — PHP floats
+     * drift on repeated decimal operations and this sheet is the teller's
+     * position of record.
      */
     public function index(Request $request): View
     {
@@ -72,7 +81,7 @@ class MyStockController extends Controller
                 $r->id,
             ])->first());
 
-        $stock = 0.0;
+        $stock = '0.0000';
         $unvalued = [];
 
         foreach ($currencyRows as $row) {
@@ -84,13 +93,18 @@ class MyStockController extends Controller
                 continue;
             }
 
-            $stock += $row['current'] * (float) $rate->perUnitRate((string) $rate->rate_sell);
+            // BCMath: quantity × rate in decimal space — no float drift on
+            // the teller's position of record.
+            $stock = $this->math->add($stock, $this->math->multiply(
+                (string) $row['current'],
+                (string) $rate->perUnitRate((string) $rate->rate_sell)
+            ));
         }
 
         return [
             'cash_myr' => $cashMyr,
-            'stock_myr' => $stock,
-            'total_myr' => $cashMyr + $stock,
+            'stock_myr' => (float) $stock,
+            'total_myr' => (float) $this->math->add((string) $cashMyr, $stock),
             'unvalued' => $unvalued,
         ];
     }
@@ -139,7 +153,11 @@ class MyStockController extends Controller
                     'buy_myr' => $movement['buy_myr'],
                     'sell_quantity' => $movement['sell_quantity'],
                     'sell_myr' => $movement['sell_myr'],
-                    'current' => $opening + $movement['buy_quantity'] - $movement['sell_quantity'],
+                    // BCMath: opening + buys - sells in decimal space.
+                    'current' => (float) $this->math->subtract(
+                        $this->math->add((string) $opening, (string) $movement['buy_quantity']),
+                        (string) $movement['sell_quantity']
+                    ),
                 ];
             })
             ->all());
@@ -162,15 +180,19 @@ class MyStockController extends Controller
 
         $myr = $this->dailyMovements($userId, $date)
             ->reduce(fn (array $carry, array $m) => [
-                'buy_myr' => $carry['buy_myr'] + $m['buy_myr'],
-                'sell_myr' => $carry['sell_myr'] + $m['sell_myr'],
+                'buy_myr' => (float) $this->math->add((string) $carry['buy_myr'], (string) $m['buy_myr']),
+                'sell_myr' => (float) $this->math->add((string) $carry['sell_myr'], (string) $m['sell_myr']),
             ], ['buy_myr' => 0.0, 'sell_myr' => 0.0]);
 
         return [
             'opening' => $opening,
             'buy_myr' => $myr['buy_myr'],
             'sell_myr' => $myr['sell_myr'],
-            'current' => $opening - $myr['buy_myr'] + $myr['sell_myr'],
+            // BCMath: opening - MYR paid out + MYR received.
+            'current' => (float) $this->math->add(
+                $this->math->subtract((string) $opening, (string) $myr['buy_myr']),
+                (string) $myr['sell_myr']
+            ),
         ];
     }
 

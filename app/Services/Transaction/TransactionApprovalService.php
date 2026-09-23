@@ -64,6 +64,16 @@ class TransactionApprovalService
         protected AmlRuleEvaluator $amlRuleEvaluator,
     ) {}
 
+    protected function auditTrailHelper(): AuditTrailHelper
+    {
+        return $this->auditTrailHelper;
+    }
+
+    protected function transactionAccountingService(): TransactionAccountingService
+    {
+        return $this->transactionAccountingService;
+    }
+
     public function validateApprovalEligibility(Transaction $transaction, int $approverId): void
     {
         if (! $transaction->status->isPending()) {
@@ -255,7 +265,13 @@ class TransactionApprovalService
         } catch (\RuntimeException $e) {
             return new ApprovalResult(success: false, message: $e->getMessage());
         } catch (\Exception $e) {
-            return new ApprovalResult(success: false, message: 'Transaction approval failed: '.$e->getMessage());
+            Log::error('Transaction approval failed', [
+                'transaction_id' => $transaction->id,
+                'approver_id' => $approverId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return new ApprovalResult(success: false, message: 'Transaction approval failed. Please try again.');
         }
     }
 
@@ -674,7 +690,12 @@ class TransactionApprovalService
         } catch (\RuntimeException $e) {
             return new ApprovalResult(success: false, message: $e->getMessage());
         } catch (\Exception $e) {
-            return new ApprovalResult(success: false, message: 'Transaction reprocessing failed: '.$e->getMessage());
+            Log::error('Transaction reprocessing failed', [
+                'transaction_id' => $transaction->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return new ApprovalResult(success: false, message: 'Transaction reprocessing failed. Please try again.');
         }
     }
 

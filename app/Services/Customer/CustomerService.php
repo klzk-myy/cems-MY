@@ -26,6 +26,7 @@ use App\Services\System\CacheKeys;
 use App\Services\System\EncryptionService;
 use App\Support\ActorContext;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -441,10 +442,14 @@ class CustomerService
 
             try {
                 $customer = $this->createCustomer($customerData, $userId);
-            } catch (ValidationException $e) {
+            } catch (ValidationException|QueryException $e) {
                 // Duplicate ID number = returning customer whose record the
                 // teller could not see; load it rather than erroring — same
-                // contract as the quick-create endpoint.
+                // contract as the quick-create endpoint. QueryException also
+                // covers the duplicate-identity race: the unique blind-index
+                // constraint can reject a concurrent insert even though the
+                // pre-check inside createCustomer passed (the transaction is
+                // rolled back by the time the exception reaches this catch).
                 $customer = $this->findActiveByIdNumber($data['id_number'] ?? '');
                 if (! $customer) {
                     throw $e;

@@ -297,11 +297,15 @@ class CounterService
             }
 
             // Closing counts the drawer back into branch holdings, so the
-            // session teller's remaining allocation custody — including any
-            // stock still loaded into this till — returns to the pool here.
+            // session teller's remaining allocation custody for THIS counter —
+            // including any stock still loaded into this till — returns to the
+            // pool here. Scoped by counter_id: drawer-less allocations
+            // (counter_id null) are allocation-level custody, not till stock,
+            // and must survive the counter close.
             // Without this the loaded portion would stay earmarked to a
             // teller who no longer holds it.
             TellerAllocation::where('user_id', $session->user_id)
+                ->where('counter_id', $session->counter_id)
                 ->where('status', TellerAllocationStatus::Active->value)
                 ->get()
                 ->each(fn (TellerAllocation $allocation) => $this->tellerAllocationService->returnToPool($allocation));

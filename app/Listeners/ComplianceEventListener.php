@@ -84,8 +84,11 @@ class ComplianceEventListener
         // alert-derived cases stored raw AlertPriority (lowercase) values in
         // the case priority column.
         if ($case->priority && in_array($case->priority, [ComplianceCasePriority::Critical, ComplianceCasePriority::High], true)) {
+            $firstAlert = $case->alerts->first();
             $this->eddTemplateService->getRecommendedTemplate([
-                'transaction_amount' => $case->alerts->first()?->risk_score * 1000,
+                // A case may have no alerts yet — a null risk_score means 0,
+                // not a silent null propagating into the EDD template amount.
+                'transaction_amount' => ($firstAlert !== null ? $firstAlert->risk_score : 0) * 1000,
                 'high_risk_country' => $case->alerts->contains(fn ($a) => $a->type === ComplianceFlagType::HighRiskCountry),
             ]);
         }

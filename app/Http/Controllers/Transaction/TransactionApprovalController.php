@@ -37,6 +37,9 @@ class TransactionApprovalController extends Controller
      */
     public function approve(Request $request, Transaction $transaction): RedirectResponse
     {
+        // Controller-level matrix check in addition to the route middleware
+        // and the policy — a permission stays enforced if routes regroup.
+        $this->requirePermission(Permission::ApproveTransactions);
         $this->authorize('approve', $transaction);
 
         $result = $this->approveAction->execute($transaction, (int) auth()->id(), $request->ip());

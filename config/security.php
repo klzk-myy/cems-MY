@@ -167,6 +167,11 @@ return [
         'secure' => env('SESSION_SECURE_COOKIE', true),
         'http_only' => true,
         'same_site' => 'strict',
+        // Minutes an MFA verification stays valid for sensitive operations.
+        // EnsureMfaVerified reads security.mfa_session_max_age — without
+        // this key it silently defaults to 900, so env-driven session
+        // verification timeouts appeared to be ignored.
+        'mfa_session_max_age' => (int) env('SECURITY_MFA_SESSION_MAX_AGE', 900),
     ],
 
     /*

@@ -11,6 +11,7 @@ use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\System\MathService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class EddService
@@ -27,33 +28,45 @@ class EddService
 
     public function createEddRecord(FlaggedTransaction $flag, array $data = []): EnhancedDiligenceRecord
     {
-        return DB::transaction(function () use ($flag, $data) {
-            $eddReference = $this->generateEddReference();
+        // Bounded retry: two concurrent EDD creations can read the same last
+        // reference and compute the same next number — the unique index on
+        // edd_reference rejects the loser, so regenerate the reference and
+        // retry the whole transaction rather than surfacing a 500.
+        $maxRetries = 3;
 
-            $riskLevel = $data['risk_level'] ?? EddRiskLevel::Medium;
-            $riskLevelEnum = $riskLevel instanceof EddRiskLevel
-                ? $riskLevel
-                : EddRiskLevel::tryFrom(strtolower((string) $riskLevel));
-            if (! $riskLevelEnum) {
-                throw new \InvalidArgumentException("Invalid EDD risk level: {$riskLevel}");
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return DB::transaction(function () use ($flag, $data) {
+                    $eddReference = $this->generateEddReference();
+
+                    $riskLevel = $data['risk_level'] ?? EddRiskLevel::Medium;
+                    $riskLevelEnum = $riskLevel instanceof EddRiskLevel
+                        ? $riskLevel
+                        : EddRiskLevel::tryFrom(strtolower((string) $riskLevel));
+                    if (! $riskLevelEnum) {
+                        throw new \InvalidArgumentException("Invalid EDD risk level: {$riskLevel}");
+                    }
+
+                    $recordData = [
+                        'customer_id' => $flag->customer_id ?? $flag->getAttribute('customer_id'),
+                        'edd_reference' => $eddReference,
+                        'status' => EddStatus::Incomplete,
+                        'risk_level' => $riskLevelEnum->value,
+                    ];
+
+                    // Only set flagged_transaction_id if the flag has an ID (is saved)
+                    if ($flag->id) {
+                        $recordData['flagged_transaction_id'] = $flag->id;
+                    }
+
+                    return EnhancedDiligenceRecord::create($recordData);
+                });
+            } catch (UniqueConstraintViolationException $e) {
+                if ($attempt >= $maxRetries || ! str_contains($e->getMessage(), 'edd_reference')) {
+                    throw $e;
+                }
             }
-
-            $recordData = [
-                'customer_id' => $flag->customer_id ?? $flag->getAttribute('customer_id'),
-                'edd_reference' => $eddReference,
-                'status' => EddStatus::Incomplete,
-                'risk_level' => $riskLevelEnum->value,
-            ];
-
-            // Only set flagged_transaction_id if the flag has an ID (is saved)
-            if ($flag->id) {
-                $recordData['flagged_transaction_id'] = $flag->id;
-            }
-
-            $record = EnhancedDiligenceRecord::create($recordData);
-
-            return $record;
-        });
+        }
     }
 
     public function updateEddRecord(EnhancedDiligenceRecord $record, array $data): EnhancedDiligenceRecord

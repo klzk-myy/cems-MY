@@ -10,6 +10,17 @@ use Illuminate\Database\Eloquent\Collection;
 
 class PatternRiskService
 {
+    /**
+     * Reversal-pattern thresholds: a customer must show at least this many
+     * Buys and Sells inside the lookback window for the "previously buying,
+     * now selling" reversal pattern to fire. Named constants (not inline
+     * magic numbers) so the rule is auditable in one place; the lookback
+     * window itself is bounded by the take(10) query below.
+     */
+    private const REVERSAL_MIN_BUYS = 7;
+
+    private const REVERSAL_MIN_SELLS = 2;
+
     public function __construct(
         protected MathService $mathService,
         protected RoundTripDetector $roundTripDetector
@@ -66,7 +77,7 @@ class PatternRiskService
         $sellCount = $recentTransactions->where('type', TransactionType::Sell->value)->count();
         $patternReversal = false;
 
-        if ($buyCount >= 7 && $sellCount >= 2) {
+        if ($buyCount >= self::REVERSAL_MIN_BUYS && $sellCount >= self::REVERSAL_MIN_SELLS) {
             $lastType = $recentTransactions->first()->type;
             $prevType = $recentTransactions->skip(1)->first()->type;
 

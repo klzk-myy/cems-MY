@@ -17,7 +17,6 @@ use Illuminate\Support\Carbon;
  * @property int|null $branch_id
  * @property bool $is_active
  * @property bool $mfa_enabled
- * @property Carbon|null $mfa_verified_at
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -34,7 +33,6 @@ class UserResource extends JsonResource
             'branch_id' => $this->branch_id,
             'is_active' => $this->is_active,
             'mfa_enabled' => $this->mfa_enabled,
-            'mfa_verified_at' => $this->mfa_verified_at?->toIso8601String(),
             'last_login_at' => $this->last_login_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

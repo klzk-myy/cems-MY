@@ -22,6 +22,7 @@ use App\Services\Audit\AuditTrailHelper;
 use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
+use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +39,7 @@ class TransactionReversalService
         protected TellerAllocationService $tellerAllocationService,
         protected CurrencyPositionLockService $positionLockService,
         protected TillBalanceManager $tillBalanceManager,
+        protected CacheInvalidationService $cacheInvalidationService,
     ) {}
 
     public function reverse(Transaction $transaction, User $requester, string $reason): bool
@@ -70,6 +72,31 @@ class TransactionReversalService
         });
 
         $transaction->refresh();
+
+        // The reversal is the most financially significant transition in the
+        // system — it must leave a sealed audit record (it reverses positions,
+        // till, journals and allocation and creates a refund row) and the
+        // books it changes must not linger in dashboard/ledger caches.
+        $this->auditTrailHelper->recordTransactionSealed(
+            $transaction->id,
+            'transaction_reversed',
+            [
+                'old' => ['status' => TransactionStatus::Completed->value],
+                'new' => [
+                    'status' => TransactionStatus::Reversed->value,
+                    'reason' => $reason,
+                    'reversed_by' => $requester->id,
+                ],
+                'severity' => 'CRITICAL',
+            ],
+            $requester
+        );
+
+        DB::afterCommit(function (): void {
+            $this->cacheInvalidationService->invalidate('dashboard');
+            $this->cacheInvalidationService->invalidate('ledger');
+            $this->cacheInvalidationService->invalidate('reports');
+        });
 
         return $result;
     }

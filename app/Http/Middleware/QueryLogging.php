@@ -34,7 +34,10 @@ class QueryLogging
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $next($request);
+            // Never re-dispatch: re-running the downstream pipeline would
+            // duplicate side effects (transactions, journals, stock decrements)
+            // on exactly the error paths where state is most sensitive.
+            throw $e;
         }
     }
 }

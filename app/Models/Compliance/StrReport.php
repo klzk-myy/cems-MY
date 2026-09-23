@@ -26,7 +26,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $trigger_amount_myr MYR aggregate (decimal(18,4) as string)
  * @property string $trigger_reason
  * @property StrReportStatus $status
- * @property string $trigger_amount_myr
  * @property string|null $bnm_reference
  * @property Carbon|null $submitted_at
  * @property Carbon|null $acknowledged_at
@@ -34,38 +33,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
- */
-/**
- * @property int $id
- * @property string $str_no
- * @property int|null $branch_id
- * @property int $customer_id
- * @property int|null $alert_id
- * @property int|null $case_id
- * @property array|null $alert_ids
- * @property array $transaction_ids
- * @property string $reason
- * @property string|null $narrative
- * @property string|null $suspected_activity
- * @property int|null $confidence_score
- * @property int|null $converted_from_draft_id
- * @property array|null $supporting_documents
- * @property StrReportStatus $status
- * @property \Illuminate\Support\Carbon|null $submitted_at
- * @property string $trigger_amount_myr
- * @property string|null $bnm_reference
- * @property int $created_by
- * @property int|null $reviewed_by
- * @property int|null $approved_by
- * @property \Illuminate\Support\Carbon|null $submitted_at
- * @property \Illuminate\Support\Carbon|null $acknowledged_at
- * @property \Illuminate\Support\Carbon|null $suspicion_date
- * @property \Illuminate\Support\Carbon|null $filing_deadline
- * @property int $retry_count
- * @property string|null $last_error
- * @property \Illuminate\Support\Carbon|null $last_retry_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class StrReport extends BaseModel
 {

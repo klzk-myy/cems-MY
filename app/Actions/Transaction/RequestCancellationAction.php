@@ -2,6 +2,7 @@
 
 namespace App\Actions\Transaction;
 
+use App\Exceptions\Domain\DomainException;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Transaction\TransactionCancellationService;
@@ -21,6 +22,11 @@ class RequestCancellationAction
 
         try {
             $result = $this->cancellationService->requestCancellation($transaction, $requester, $reason);
+        } catch (DomainException $e) {
+            // Domain exceptions carry operator-facing messages (SoD,
+            // cancellation window, state machine) — preserve them instead of
+            // flattening everything into a generic failure.
+            return CancellationActionResult::error($e->getMessage());
         } catch (\Exception $e) {
             Log::error('Cancellation request failed', [
                 'transaction_id' => $transaction->id,

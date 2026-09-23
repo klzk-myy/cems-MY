@@ -41,7 +41,16 @@ class RateLimitService
     public function isIpBlocked(string $ip): bool
     {
         if (! config('security.ip_blocking.enabled', true)) {
-            return false;
+            // Kill-switch honoured only in local: a stale env value must never
+            // silently disable IP blocking on a live deployment. Outside
+            // local the switch is ignored with a loud alert — fail closed.
+            if (app()->isLocal()) {
+                return false;
+            }
+
+            Log::alert('SECURITY_IP_BLOCKING_ENABLED=false outside local — ignoring kill-switch, IP blocking remains active', [
+                'ip' => $ip,
+            ]);
         }
 
         // Check whitelist (supports both exact IP and CIDR notation)

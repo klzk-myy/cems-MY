@@ -44,6 +44,12 @@ class CustomerRepository
         $escapedQuery = LikeEscaper::escape($query);
         $pattern = '%'.$escapedQuery.'%';
 
+        // Identity search can only be an exact match: id_number_hash stores an
+        // HMAC digest, so a plaintext LIKE against it can never hit. Matching
+        // the hash of the raw query keeps "type an IC, find the customer"
+        // working in the same search box as the name branch.
+        $idHash = CustomerService::computeBlindIndex($query);
+
         // Explicit ESCAPE clause: SQLite has no default escape character, MySQL uses
         // backslash by default, so without this the escaped wildcards are meaningless
         // on some drivers.
@@ -52,9 +58,9 @@ class CustomerRepository
         // branches cannot escape the mandatory is_active filter, and any branch
         // scoping is its own grouped AND clause rather than a trailing orWhere
         // that would return customers matching neither name nor ID hash.
-        $q = Customer::where(function ($query) use ($pattern) {
-            $query->whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
-                ->orWhereRaw('id_number_hash LIKE ? ESCAPE ?', [$pattern, '\\']);
+        $q = Customer::where(function ($builder) use ($pattern, $idHash) {
+            $builder->whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
+                ->orWhere('id_number_hash', $idHash);
         })
             ->where('is_active', true);
 

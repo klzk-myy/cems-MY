@@ -480,26 +480,18 @@ class ComplianceCase extends ComplianceModel
             return ComplianceCasePriority::Medium;
         }
 
-        // Map by backing value: AlertPriority uses lowercase values while
-        // ComplianceCasePriority uses TitleCase, and enum instances cannot be
-        // used as array keys (TypeError).
-        $priorityOrder = [
-            AlertPriority::Critical->value => 1,
-            AlertPriority::High->value => 2,
-            AlertPriority::Medium->value => 3,
-            AlertPriority::Low->value => 4,
-        ];
-
-        /** @var AlertPriority $highest */
+        // Highest alert priority wins. The AlertPriority → case-priority
+        // mapping lives on AlertPriority::toCasePriority() so a new alert
+        // level cannot silently sort a case to the wrong priority.
         $highest = $alertPriorities
-            ->sortBy(fn (AlertPriority $priority) => $priorityOrder[$priority->value])
+            ->sortBy(fn (AlertPriority $priority) => match ($priority) {
+                AlertPriority::Critical => 1,
+                AlertPriority::High => 2,
+                AlertPriority::Medium => 3,
+                AlertPriority::Low => 4,
+            })
             ->first();
 
-        return match ($highest) {
-            AlertPriority::Critical => ComplianceCasePriority::Critical,
-            AlertPriority::High => ComplianceCasePriority::High,
-            AlertPriority::Medium => ComplianceCasePriority::Medium,
-            AlertPriority::Low => ComplianceCasePriority::Low,
-        };
+        return $highest?->toCasePriority() ?? ComplianceCasePriority::Medium;
     }
 }

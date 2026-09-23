@@ -249,18 +249,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if MFA is verified for this session.
-     */
-    public function isMfaVerified(): bool
-    {
-        if (! $this->mfa_enabled) {
-            return true; // MFA not enabled, consider verified
-        }
-
-        return $this->mfa_verified_at !== null;
-    }
-
-    /**
      * Get recovery codes for this user.
      */
     public function mfaRecoveryCodes(): HasMany

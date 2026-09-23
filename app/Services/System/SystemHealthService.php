@@ -433,7 +433,9 @@ class SystemHealthService
             if ($check === null) {
                 $checkCount['unknown']++;
             } else {
-                $checkCount[$check->status]++;
+                // $check->status is a backed enum instance — it cannot be used as
+                // an array offset on PHP 8.3 (TypeError). Use its scalar value.
+                $checkCount[$check->status->value]++;
             }
         }
 

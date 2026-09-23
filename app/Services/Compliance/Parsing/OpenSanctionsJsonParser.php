@@ -11,6 +11,13 @@ namespace App\Services\Compliance\Parsing;
 class OpenSanctionsJsonParser implements SanctionsFeedParser
 {
     /**
+     * Malformed JSONL lines skipped during the last parse. Exposed for
+     * import monitoring so a partially corrupt feed is visible without
+     * aborting the whole import.
+     */
+    private int $malformedLines = 0;
+
+    /**
      * @return iterable<array-key, array<string, mixed>>
      */
     public function parse(string $filepath): iterable
@@ -41,7 +48,11 @@ class OpenSanctionsJsonParser implements SanctionsFeedParser
                 }
                 $item = json_decode($line, true);
                 if (! is_array($item)) {
-                    return;
+                    // One malformed line must not discard the rest of the
+                    // feed — skip it and keep parsing.
+                    $this->malformedLines++;
+
+                    continue;
                 }
                 yield $this->flattenNestedEntity($item);
             }

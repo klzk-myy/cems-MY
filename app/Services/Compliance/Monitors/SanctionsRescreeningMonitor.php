@@ -95,12 +95,18 @@ class SanctionsRescreeningMonitor extends BaseMonitor
 
     protected function getCustomersNeedingRescreening(string $latestUpdate)
     {
-        return Customer::where('is_active', true)
+        // Chunked: the rescreen set can be the entire active customer base —
+        // loading it all into memory at once risks OOM on a large book.
+        // lazyById keys the cursor on the primary key so each chunk is a
+        // bounded keyset page, not an OFFSET that degrades as it advances.
+        $customers = Customer::where('is_active', true)
             ->where(function ($query) use ($latestUpdate) {
                 $query->whereNull('sanctions_screened_at')
                     ->orWhere('sanctions_screened_at', '<', $latestUpdate);
             })
-            ->get();
+            ->lazyById(500);
+
+        return $customers;
     }
 
     protected function checkCustomerSanctions(Customer $customer): ?array

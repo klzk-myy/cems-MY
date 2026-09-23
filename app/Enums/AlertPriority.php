@@ -19,6 +19,22 @@ enum AlertPriority: string
         };
     }
 
+    /**
+     * Map to the equivalent case priority. Centralized on the enum where
+     * both values are visible — a renamed or added case fails here at
+     * development time instead of silently sorting a case to the wrong
+     * priority via a positional lookup table.
+     */
+    public function toCasePriority(): ComplianceCasePriority
+    {
+        return match ($this) {
+            self::Critical => ComplianceCasePriority::Critical,
+            self::High => ComplianceCasePriority::High,
+            self::Medium => ComplianceCasePriority::Medium,
+            self::Low => ComplianceCasePriority::Low,
+        };
+    }
+
     public function color(): string
     {
         return match ($this) {

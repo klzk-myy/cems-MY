@@ -5,6 +5,161 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-09-24] - Architecture review remediation: cross-cluster fixes + regression suite
+
+### Files Changed
+- `app/Services/System/SystemHealthService.php` - `getStatusSummary()` uses
+  `$check->status->value` — a backed enum cannot be an array offset on PHP 8.3
+  (TypeError crashed `monitor:status` and `alert:daily-summary`).
+- `app/Http/Controllers/ReportScheduleController.php` - every action now
+  enforces `requirePermission(Permission::ManageReportSchedules)` (was zero
+  controller-level authorization).
+- `app/Http/Middleware/QueryLogging.php` - the error path rethrows instead of
+  re-dispatching `$next($request)`, re-running the pipeline's side effects.
+- `app/Http/Middleware/ThrottleRequests.php`,
+  `app/Services/System/RateLimitService.php` - the `SECURITY_*_ENABLED`
+  kill-switches are honoured only in local; otherwise ignored with a
+  `Log::alert` (fail closed — a stale env value can no longer silently
+  disable login rate limiting or IP blocking).
+- `app/Http/Middleware/EnsureBranchScope.php` - dropped the client-supplied
+  `branch_id` input fallback (trust-by-comparison only).
+- `app/Models/User.php` - deleted the dead, semantically wrong `isMfaVerified()`
+  (enrollment timestamp is not session verification).
+- `app/Http/Resources/Api/V1/UserResource.php` - dropped `mfa_verified_at` (it
+  leaks the enrollment timestamp, not proof of verification).
+- `app/Http/Requests/LmcaReportRequest.php`,
+  `app/Http/Requests/StoreMsb2ReportRequest.php` - `authorize()` now checks the
+  `ViewReports` matrix permission instead of `return true`.
+- `config/security.php` - added the missing `session.mfa_session_max_age` key
+  (EnsureMfaVerified referenced it; env-driven timeouts silently defaulted).
+- `app/Http/Controllers/Customer/CustomerSearchController.php`,
+  `app/Services/Customer/CustomerService.php` - the duplicate-identity race
+  (unique blind-index violation on concurrent quick-create) is caught as
+  `QueryException` too and resolves to the returning customer instead of a 500.
+- `app/Repositories/CustomerRepository.php` - `searchActive()` ID branch now
+  matches the HMAC blind index exactly; the plaintext `LIKE` against
+  `id_number_hash` could never hit.
+
+- `app/Services/Compliance/EddService.php` - `createEddRecord()` retries with
+  a regenerated reference on an `edd_reference` unique violation (bounded, 3
+  attempts) instead of surfacing a 500.
+- `app/Services/Compliance/AlertTriageService.php` - `calculateRiskScore()`
+  is anchored on the canonical `RiskScoringEngine` customer score with
+  amount/attribute/flag/repeat deltas (previously two unrelated scoring
+  implementations); `bulkAssign()` re-verifies the assignee holds
+  `access_compliance` (a demoted user could still be assigned cases).
+- `app/Enums/AlertPriority.php`,
+  `app/Models/Compliance/ComplianceCase.php` - added
+  `AlertPriority::toCasePriority()` and simplified `derivePriorityFromAlerts()`
+  onto it (the positional lookup table silently mis-sorted if an enum value
+  changed).
+- `app/Models/Compliance/StrReport.php` - deleted the stale second
+  `@property` block describing a pre-refactor schema.
+- `app/Services/Compliance/Parsing/OpenSanctionsJsonParser.php` - a malformed
+  JSONL line is skipped with a `malformedLines` counter instead of aborting
+  the whole feed parse.
+- `app/Services/Risk/PatternRiskService.php` - reversal thresholds extracted
+  to named `REVERSAL_MIN_BUYS`/`REVERSAL_MIN_SELLS` constants.
+- `app/Services/Compliance/KycDocumentExpiryService.php` - documented the
+  intentional divergence between the booking gate
+  (`hasAllIdentityDocumentsExpired`) and the stricter enforcement superset
+  (`mustBlockDueToExpiredDocuments`).
+- `app/Services/Compliance/Monitors/SanctionsRescreeningMonitor.php` -
+  rescreen set is fetched with `lazyById(500)` instead of loading the whole
+  active customer base into memory.
+- `app/Http/Controllers/Compliance/PepApprovalController.php` - all actions
+  enforce `requirePermission(Permission::AccessCompliance)`.
+- `app/Services/Accounting/BudgetService.php` - `variance_pct` stays a
+  decimal string end-to-end (no `(float)` cast on money).
+- `app/Services/Traits/AccountingEntriesTrait.php` +
+  `app/Services/Transaction/TransactionCreationService.php` +
+  `app/Services/Transaction/TransactionApprovalService.php` +
+  `tests/Unit/Services/Traits/AccountingEntriesTraitTest.php` - the trait's
+  implicit property contract is now explicit abstract accessors
+  (`auditTrailHelper()`, `transactionAccountingService()`); a consumer that
+  forgets the wiring fails at class load instead of first use.
+- `app/Http/Controllers/Report/AnalyticsController.php` - `monthlyTrends`,
+  `profitability` and `complianceSummary` scope Transaction/Position/
+  Flag queries to the viewer's branch via `viewerBranchId()`; date ranges are
+  normalised through `resolveDateRange()` (reversed ranges are swapped, not
+  silently empty).
+
+- `app/Services/Transaction/TransactionConfirmationService.php` - rejecting a
+  confirmation now releases the pending stock reservation (the compensating
+  leg cancellation runs) and the audit action is correctly named
+  `transaction_cancelled_via_confirmation`.
+- `app/Services/Transaction/TransactionReversalService.php` - a reversal now
+  writes a sealed `transaction_reversed` audit record and invalidates the
+  dashboard/ledger/report caches after commit (it previously had none).
+- `app/Services/Transaction/TransactionApprovalService.php` - generic
+  catch-alls return operator-safe messages and log internals (raw exception
+  messages no longer reach web/API consumers).
+- `app/Actions/Transaction/RequestCancellationAction.php` - `DomainException`
+  messages (SoD, cancellation window) are preserved instead of being
+  flattened into a generic failure.
+- `app/Http/Controllers/Transaction/TransactionApprovalController.php` - web
+  `approve` enforces `requirePermission(Permission::ApproveTransactions)` in
+  addition to route middleware and policy.
+- `app/Http/Controllers/MyStockController.php` - all quantity/cash arithmetic
+  routes through `MathService` (BCMath); float drift on the teller's position
+  of record is gone.
+- `app/Services/Branch/CounterService.php` - closing a counter session returns
+  only that counter's allocations to the pool (scoped by `counter_id`);
+  drawer-less custody is no longer destroyed by a counter close.
+- `app/Services/Branch/PoolRemittanceService.php` - remittance-number retry
+  exhaustion throws a clean `TransactionCreationException` instead of a raw
+  `QueryException` (HTTP 500).
+- `app/Services/Reporting/ReportSchedulingService.php` - `executeReport()`
+  covers all eight `ReportType`s (the match previously threw `UnmatchError`
+  on the four ledger-backed reports).
+- `app/Services/System/LogRotationService.php` +
+  `app/Services/Audit/AuditChainService.php` - rotation now reseals surviving
+  boundary entries with the existing `GAP:<id>` marker
+  (`resealWithGapBoundary()`), so `audit:verify` no longer reports a false
+  permanent tamper failure after a backdated entry is archived.
+- `app/Providers/QueryLogServiceProvider.php` - query summaries persist via
+  `AuditService` into `new_values` (the non-existent `details` column silently
+  dropped the payload and bypassed hash sealing).
+- `app/Listeners/ComplianceEventListener.php` - null alert risk_score
+  no longer propagates into the EDD template amount.
+- `app/Services/System/SystemAlertService.php` - `sendEmail()` catches
+  `\Throwable` (a `TypeError` while building the mail rolled back the alert
+  row).
+- `tests/Feature/ReviewRegressionTest.php` - NEW: 18 regression tests, one
+  per reviewed defect.
+
+### Purpose
+Full remediation of the functional-cluster architecture review: cross-layer
+contract fixes, boundary-leak closures (branch isolation, authorization),
+SRP clarifications, and feature-specific vulnerability fixes (stock stranding
+on confirmation-reject, reversal audit gap, float-on-money, chain-verify
+break after rotation).
+
+### Changes Made
+- 40+ fixes across 8 functional clusters (see per-file notes above).
+- PEP gate policy deliberately unchanged: the tested behaviour encodes that
+  domestic low-risk PEPs are exempt from head-office approval
+  (`PepApprovalServiceTest`, `web_store_creates_pep_transaction_with_source_of_wealth`).
+- `forceStatus` kept — it is exercised by `TransactionStateMachineTest` and
+  is a legitimate admin recovery tool with audit logging.
+
+### Testing
+- `tests/Feature/ReviewRegressionTest.php`: 18/18 passing.
+- Targeted suites all green: Transaction (16), Compliance (124), Accounting
+  (68), Reports (34), Audit (124), Branch/Counter/Budget/Monitors (56),
+  Auth (1 pre-existing `SessionConfigTest` failure also present on the clean
+  tree), MyStock/QueryLogging/RateLimit/SystemHealth (21).
+- `vendor/bin/pint` applied to all changed files; `vendor/bin/phpstan` clean
+  on every edited path.
+
+### Impact Analysis
+- No HIGH/CRITICAL GitNexus risk symbols were modified; changes are confined
+  to the reviewed services/controllers plus the new test file. The
+  `TransactionConfirmationService`/`TransactionReversalService` constructor
+  changes are internally consistent (DI container resolves the new deps).
+
+---
+
 ## [2026-09-23] - Performance optimization pass: reporting + transaction hot paths
 
 ### Files Changed

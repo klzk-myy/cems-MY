@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Services\Customer\CustomerService;
 use App\Services\System\CacheKeys;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
@@ -74,11 +75,14 @@ class CustomerSearchController extends Controller
         $existing = false;
         try {
             $customer = $this->customerService->createCustomer($validated, (int) auth()->id());
-        } catch (ValidationException $e) {
+        } catch (ValidationException|QueryException $e) {
             // Whatever the validation failure was, if the submitted ID number
             // already belongs to an active customer this is a returning
             // customer — load that record instead of erroring. Anything else
             // (duplicate phone, soft-deleted ID) rethrows the original error.
+            // QueryException covers the duplicate-identity race: the unique
+            // blind-index constraint can reject a concurrent insert even
+            // though the pre-check inside createCustomer passed.
             $customer = $this->customerService->findActiveByIdNumber($validated['id_number'] ?? '');
             if (! $customer) {
                 throw $e;
