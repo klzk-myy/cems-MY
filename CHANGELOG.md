@@ -1118,3 +1118,39 @@ logs and position transactions made rows unreachable).
 - `tests/Feature/MyStockPageTest.php` - valuation assertions
 
 ---
+
+---
+
+## [2026-10-03] - Continuous audit: 18-module deep-scan complete (1C/9H/17M/19L)
+
+### Files Changed
+- `COMPREHENSIVE-AUDIT.md` - created; 625-line audit document covering entire codebase
+- `app/Services/Transaction/` — idempotency replay re-applies booking side effects (critical)
+- `app/Models/Customer.php` — `id_number` re-derives 100k PBKDF2 per access, no singleton binding (high)
+- `app/Services/Compliance/` — STR pipeline silent drops; `last_transaction_at` written backwards by queued listener (high/medium)
+- `app/Http/Middleware/` — MFA trusted-device `expires_at=NULL` grants permanent trust, no test coverage (medium/low)
+- `app/Console/Commands/` — 17 installer DDL commands mirror SchemaSeeder with zero test enforcement (high)
+- `bootstrap/app.php` — `RuntimeException` → 409 leaks raw messages to API consumers (medium)
+- `tests/Http/Simulation/` — idempotency test asserts only row count, not derived state; branch-closure freeze race untested (high/medium)
+
+### Purpose
+Complete the continuous audit loop mandated by AGENTS.md. Deep-scanned all 18 modules (app/, config/, routes/, bootstrap/, database/, resources/views/, tests/) against four axes: correctness/logic gaps, technical debt, architecture flaws, security. Each finding cites file:line evidence and is checkable by inspection.
+
+### Changes Made
+- M1 critical: Idempotency replay double-applies position, journal, allocation, till side effects on Completed transactions
+- M18 high: Wave B step B5 asserts only `COUNT(*)` on transactions table; does not snapshot journal_entries, currency_positions, teller_allocations
+- M10 high: 17 hand-written installer commands with no test verifying parity with SchemaSeeder; already caused production outages
+- M11 medium: TransactionCreatedListener writes `last_transaction_at` without GREATEST() guard; queued out-of-order execution can regress timestamp
+- M8 high: Customer::id_number decryptor runs 100k-iteration PBKDF2 on every access; EncryptionService not singleton-bound
+- M7/M18: MFA trusted_device whereNull('expires_at') silently grants permanent bypass; no unit test covers expiry semantics
+- M12 medium: catch-all renderer maps RuntimeException (incl. LogicException, InvalidArgumentException) → 409 with raw message
+
+### Testing
+- `vendor/bin/pint --format agent` — passes
+- `php artisan test --compact --filter="Transaction"` — 471 tests, 1485 assertions pass
+- CI run #37154538320: Lint (1m9s) ✅, Security (26s) ✅, Tests (3m30s) ✅
+
+### Impact Analysis
+- Blast radius: idempotency fix touches TransactionCreationService, TransactionIdempotencyService, TransactionApprovalService, Wave B simulation steps
+- SchemaSeeder/installer parity: requires either test enforcement or consolidation to single source of truth
+- PBKDF2 per-access: affects every customer listing screen; singleton EncryptionService binding is the remediation
