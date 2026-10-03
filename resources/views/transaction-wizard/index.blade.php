@@ -57,6 +57,12 @@
                 <div x-if="errorMessage" class="mb-6">
                     <x-alert type="error" title="We couldn't complete this step" role="alert">
                         <span x-text="errorMessage"></span>
+                        <div x-show="networkError" x-cloak class="mt-2">
+                            <button type="button" @click="submitStep()" :disabled="loading"
+                                    class="inline-flex items-center rounded-md border border-danger-border px-2.5 py-1.5 text-xs font-medium text-danger-text transition-colors hover:bg-danger-subtle disabled:cursor-not-allowed disabled:opacity-50">
+                                Try again
+                            </button>
+                        </div>
                     </x-alert>
                 </div>
 
@@ -68,50 +74,81 @@
                     </p>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <x-input :inline="true" name="customer_id" label="Customer ID"
-                                 type="number" min="1" required
-                                 help="The customer record ID — not the national ID number."
-                                 x-model="formData.customer_id" />
+                        <div>
+                            <x-input :inline="true" name="customer_id" label="Customer ID"
+                                     type="number" min="1" required
+                                     help="The customer record ID — not the national ID number."
+                                     x-model="formData.customer_id"
+                                     @input="clearFieldError('customer_id')" />
+                            <p x-show="fieldError('customer_id')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('customer_id')"></p>
+                        </div>
 
-                        <x-select :inline="true" name="type" label="Transaction Type"
-                                  :options="['Buy' => 'Buy', 'Sell' => 'Sell']"
-                                  placeholder="Select type" required
-                                  x-model="formData.type" />
+                        <div>
+                            <x-select :inline="true" name="type" label="Transaction Type"
+                                      :options="['Buy' => 'Buy', 'Sell' => 'Sell']"
+                                      placeholder="Select type" required
+                                      x-model="formData.type"
+                                      @input="clearFieldError('type')" />
+                            <p x-show="fieldError('type')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('type')"></p>
+                        </div>
 
-                        <x-select :inline="true" name="currency_code" label="Currency"
-                                  :options="$currencies ?? []"
-                                  placeholder="Select currency" required
-                                  x-model="formData.currency_code" />
+                        <div>
+                            <x-select :inline="true" name="currency_code" label="Currency"
+                                      :options="$currencies ?? []"
+                                      placeholder="Select currency" required
+                                      x-model="formData.currency_code"
+                                      @input="clearFieldError('currency_code')" />
+                            <p x-show="fieldError('currency_code')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('currency_code')"></p>
+                        </div>
 
-                        <x-input :inline="true" name="quantity" label="Foreign Amount"
-                                 type="number" step="0.01" min="0.01" required
-                                 x-model="formData.quantity" />
+                        <div>
+                            <x-input :inline="true" name="quantity" label="Foreign Amount"
+                                     type="number" step="0.01" min="0.01" max="9999999999.9999" required
+                                     x-model="formData.quantity"
+                                     @input="clearFieldError('quantity')" />
+                            <p x-show="fieldError('quantity')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('quantity')"></p>
+                        </div>
 
                         <div>
                             <x-input :inline="true" name="rate" label="Exchange Rate"
-                                     type="number" step="0.0001" min="0.0001" required
-                                     x-model="formData.rate" />
+                                     type="number" step="0.0001" min="0.0001" max="999999" required
+                                     x-model="formData.rate"
+                                     @input="clearFieldError('rate')" />
                             <p x-show="currencyInverse()" x-cloak class="mt-1 text-xs text-ink-muted">
                                 <span x-text="formData.currency_code"></span> per RM <span x-text="currencyUnit()"></span>
                             </p>
                             <p x-show="!currencyInverse() && currencyUnit() > 1" x-cloak class="mt-1 text-xs text-ink-muted">
                                 in MYR per <span x-text="currencyUnit()"></span> <span x-text="formData.currency_code"></span>
                             </p>
+                            <p x-show="fieldError('rate')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('rate')"></p>
                         </div>
 
                         <x-input :inline="true" name="amount_myr" label="Local Amount (MYR)"
                                  readonly class="font-semibold"
                                  x-model="amountMyr" />
 
-                        <x-select :inline="true" name="purpose" label="Purpose"
-                                  :options="$purposes"
-                                  placeholder="Select purpose" required
-                                  x-model="formData.purpose" />
+                        <div>
+                            <x-select :inline="true" name="purpose" label="Purpose"
+                                      :options="$purposes"
+                                      placeholder="Select purpose" required
+                                      x-model="formData.purpose"
+                                      @input="clearFieldError('purpose')" />
+                            <p x-show="fieldError('purpose')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('purpose')"></p>
+                        </div>
 
                         <div class="md:col-span-2">
                             <x-input :inline="true" name="source_of_funds" label="Source of Funds"
-                                     placeholder="e.g. Salary, Savings, Business Income" required
-                                     x-model="formData.source_of_funds" />
+                                     placeholder="e.g. Salary, Savings, Business Income" required maxlength="255"
+                                     x-model="formData.source_of_funds"
+                                     @input="clearFieldError('source_of_funds')" />
+                            <p x-show="fieldError('source_of_funds')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('source_of_funds')"></p>
                         </div>
                     </div>
 
@@ -145,37 +182,72 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <x-input :inline="true" name="occupation" label="Occupation"
-                                 required x-model="formData.occupation" />
+                        <div>
+                            <x-input :inline="true" name="occupation" label="Occupation"
+                                     required maxlength="255"
+                                     x-model="formData.occupation"
+                                     @input="clearFieldError('occupation')" />
+                            <p x-show="fieldError('occupation')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('occupation')"></p>
+                        </div>
 
-                        <x-input :inline="true" name="employer_name" label="Employer Name"
-                                 x-model="formData.employer_name" />
+                        <div>
+                            <x-input :inline="true" name="employer_name" label="Employer Name"
+                                     maxlength="255"
+                                     x-model="formData.employer_name"
+                                     @input="clearFieldError('employer_name')" />
+                            <p x-show="fieldError('employer_name')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('employer_name')"></p>
+                        </div>
 
                         <div class="md:col-span-2">
                             <x-input :inline="true" name="employer_address" label="Employer Address"
-                                     x-model="formData.employer_address" />
+                                     maxlength="1000"
+                                     x-model="formData.employer_address"
+                                     @input="clearFieldError('employer_address')" />
+                            <p x-show="fieldError('employer_address')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('employer_address')"></p>
                         </div>
 
-                        <x-input :inline="true" name="annual_volume_myr"
-                                 label="Estimated Annual Volume"
-                                 type="number" step="0.01" min="0"
-                                 x-model="formData.annual_volume_myr" />
+                        <div>
+                            <x-input :inline="true" name="annual_volume_myr"
+                                     label="Estimated Annual Volume"
+                                     type="number" step="0.01" min="0"
+                                     x-model="formData.annual_volume_myr"
+                                     @input="clearFieldError('annual_volume_myr')" />
+                            <p x-show="fieldError('annual_volume_myr')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                               x-text="fieldError('annual_volume_myr')"></p>
+                        </div>
 
                         <!-- Enhanced CDD only -->
                         <template x-if="requireEnhanced">
                             <div class="grid grid-cols-1 gap-4 border-t border-border pt-4 md:col-span-2 md:grid-cols-2">
-                                <x-input :inline="true" name="beneficial_owner" label="Beneficial Owner"
-                                         required x-model="formData.beneficial_owner" />
+                                <div>
+                                    <x-input :inline="true" name="beneficial_owner" label="Beneficial Owner"
+                                             required maxlength="255"
+                                             x-model="formData.beneficial_owner"
+                                             @input="clearFieldError('beneficial_owner')" />
+                                    <p x-show="fieldError('beneficial_owner')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                                       x-text="fieldError('beneficial_owner')"></p>
+                                </div>
 
-                                <x-select :inline="true" name="expected_frequency" label="Expected Frequency"
-                                          :options="$frequencies"
-                                          placeholder="Select frequency" required
-                                          x-model="formData.expected_frequency" />
+                                <div>
+                                    <x-select :inline="true" name="expected_frequency" label="Expected Frequency"
+                                              :options="$frequencies"
+                                              placeholder="Select frequency" required
+                                              x-model="formData.expected_frequency"
+                                              @input="clearFieldError('expected_frequency')" />
+                                    <p x-show="fieldError('expected_frequency')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                                       x-text="fieldError('expected_frequency')"></p>
+                                </div>
 
                                 <div class="md:col-span-2">
                                     <x-textarea :inline="true" name="source_of_wealth" label="Source of Wealth"
-                                                rows="2" required
-                                                x-model="formData.source_of_wealth" />
+                                                rows="2" required maxlength="500"
+                                                x-model="formData.source_of_wealth"
+                                                @input="clearFieldError('source_of_wealth')" />
+                                    <p x-show="fieldError('source_of_wealth')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                                       x-text="fieldError('source_of_wealth')"></p>
                                 </div>
                             </div>
                         </template>
@@ -201,14 +273,22 @@
                                 <x-input :inline="true" name="proof_of_address" type="file"
                                          required accept=".pdf,.jpg,.jpeg,.png"
                                          label="Proof of Address"
-                                         @change="files.proof_of_address = $event.target.files[0]" />
+                                         @change="pickFile('proof_of_address', $event)" />
+                                <p x-show="fieldError('proof_of_address')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                                   x-text="fieldError('proof_of_address')"></p>
+                                <p x-show="fileName('proof_of_address')" x-cloak class="mt-1 text-xs text-ink-muted"
+                                   x-text="fileName('proof_of_address')"></p>
                             </div>
 
                             <div x-show="requirePassport" x-cloak>
                                 <x-input :inline="true" name="passport" type="file"
                                          required accept=".pdf,.jpg,.jpeg,.png"
                                          label="Passport"
-                                         @change="files.passport = $event.target.files[0]" />
+                                         @change="pickFile('passport', $event)" />
+                                <p x-show="fieldError('passport')" x-cloak class="mt-1 text-xs text-danger-text" role="alert"
+                                   x-text="fieldError('passport')"></p>
+                                <p x-show="fileName('passport')" x-cloak class="mt-1 text-xs text-ink-muted"
+                                   x-text="fileName('passport')"></p>
                             </div>
                         </div>
                     </div>
@@ -220,45 +300,45 @@
 
                     <dl class="text-sm">
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Customer</dt>
-                            <dd class="text-ink" x-text="summary.customer_name || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Customer</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.customer_name || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Type</dt>
-                            <dd class="text-ink" x-text="summary.type || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Type</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.type || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Currency</dt>
-                            <dd class="text-ink" x-text="summary.currency || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Currency</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.currency || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Foreign Amount</dt>
-                            <dd class="text-ink" x-text="(summary.currency || '') + ' ' + (summary.quantity || '—')"></dd>
+                            <dt class="shrink-0 text-ink-muted">Foreign Amount</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="(summary.currency || '') + ' ' + (summary.quantity || '—')"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Rate</dt>
-                            <dd class="text-ink" x-text="summary.rate || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Rate</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.rate || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="font-medium text-ink">Local Amount (MYR)</dt>
-                            <dd class="text-base font-semibold text-ink" x-text="summary.amount_myr || '—'"></dd>
+                            <dt class="shrink-0 font-medium text-ink">Local Amount (MYR)</dt>
+                            <dd class="min-w-0 break-words text-right text-base font-semibold text-ink" x-text="summary.amount_myr || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Purpose</dt>
-                            <dd class="text-ink" x-text="summary.purpose || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Purpose</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.purpose || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">Source of Funds</dt>
-                            <dd class="text-ink" x-text="summary.source_of_funds || '—'"></dd>
+                            <dt class="shrink-0 text-ink-muted">Source of Funds</dt>
+                            <dd class="min-w-0 break-words text-right text-ink" x-text="summary.source_of_funds || '—'"></dd>
                         </div>
                         <div class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-ink-muted">CDD Level</dt>
-                            <dd class="text-ink"
+                            <dt class="shrink-0 text-ink-muted">CDD Level</dt>
+                            <dd class="min-w-0 break-words text-right text-ink"
                                 x-text="(summary.cdd_level || '—').charAt(0).toUpperCase() + (summary.cdd_level || '').slice(1)"></dd>
                         </div>
                         <div x-show="summary.hold_required" x-cloak
                              class="flex justify-between gap-4 border-b border-border py-2.5">
-                            <dt class="text-warning-text">Status</dt>
+                            <dt class="shrink-0 text-warning-text">Status</dt>
                             <dd class="inline-flex items-center rounded border border-warning-border bg-warning-subtle px-2.5 py-0.5 text-xs font-medium text-warning-text">
                                 Pending Compliance Approval
                             </dd>
@@ -283,6 +363,10 @@
                               x-text="(result.status || '—').toUpperCase()"></span>
                     </p>
 
+                    <p x-show="!(result.status || '').length" x-cloak
+                       class="mb-4 text-sm text-ink-muted">
+                        This transaction has been recorded.
+                    </p>
                     <p x-show="(result.status || '').toUpperCase() === 'PENDINGAPPROVAL'" x-cloak
                        class="mb-4 text-sm text-warning-text">
                         This transaction is pending. A compliance officer must review it before it can complete.
@@ -293,7 +377,7 @@
                     </p>
 
                     <div class="flex flex-wrap justify-center gap-3">
-                        <a :href="'/transactions/' + result.id"
+                        <a x-show="result.id" x-cloak :href="'/transactions/' + result.id"
                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                             View Transaction
                         </a>

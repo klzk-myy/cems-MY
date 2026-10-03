@@ -463,6 +463,8 @@ export function registerComponents(Alpine) {
         totalSteps: 3,
         loading: false,
         errorMessage: '',
+        networkError: false,
+        fieldErrors: {},
         formData: {
             customer_id: '',
             type: '',
@@ -526,10 +528,13 @@ export function registerComponents(Alpine) {
             }
             // Direct: local = foreign / unit * rate (rate = MYR per unit
             // foreign). Inverse: rate = foreign per unit MYR, so
-            // local = foreign / rate * unit.
-            return this.currencyInverse()
-                ? (f / r * this.currencyUnit()).toFixed(2)
-                : (f / this.currencyUnit() * r).toFixed(2);
+            // local = foreign / rate * unit. Anything outside Number's range
+            // is shown as unknown rather than as Infinity or a silently
+            // rounded-off figure on a money field.
+            const result = this.currencyInverse()
+                ? (f / r * this.currencyUnit())
+                : (f / this.currencyUnit() * r);
+            return Number.isFinite(result) ? result.toFixed(2) : '—';
         },
         get quantityFormatted() {
             const f = parseFloat(this.formData.quantity);
@@ -591,11 +596,94 @@ export function registerComponents(Alpine) {
             return missing;
         },
         validStep3() { return true; },
-        // Field errors ride in data.errors (Laravel 422 shape) — show the
-        // first one so e.g. the no-open-session message reaches the teller.
-        firstError(data) {
-            const first = data.errors ? Object.values(data.errors)[0] : null;
-            return (Array.isArray(first) ? first[0] : first) || data.message || 'Request failed';
+        // Laravel returns { errors: { field: [message, ...] } }. Step 1 keys
+        // are flat; step 2 nests them under customer.* and transaction.*, so
+        // a field is looked up under all three spellings. Every error is kept
+        // and shown on its own field — reporting only the first sent the
+        // teller back through the same step once per mistake.
+        setFieldErrors(data) {
+            const flat = {};
+            for (const [key, value] of Object.entries(data.errors ?? {})) {
+                flat[key] = Array.isArray(value) ? value[0] : value;
+            }
+            this.fieldErrors = flat;
+        },
+        fieldError(name) {
+            return this.fieldErrors[name] || this.fieldErrors['customer.' + name] || this.fieldErrors['transaction.' + name] || '';
+        },
+        clearFieldError(name) {
+            delete this.fieldErrors[name];
+            delete this.fieldErrors['customer.' + name];
+            delete this.fieldErrors['transaction.' + name];
+        },
+        clearFieldErrors() {
+            this.fieldErrors = {};
+        },
+        // Server rules are mimes:pdf,jpg,jpeg,png with max:10240 KB. Checking
+        // on pick spares the teller a full upload to learn the file was wrong.
+        acceptsFile(file) {
+            if (!file) return true;
+            if (file.size > 10 * 1024 * 1024) return false;
+            return ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type) || /\.(pdf|jpe?g|png)$/i.test(file.name);
+        },
+        pickFile(field, event) {
+            const file = event.target.files[0];
+            if (!file || !this.acceptsFile(file)) {
+                this.files[field] = null;
+                event.target.value = '';
+                if (file) this.fieldErrors['customer.' + field] = 'Upload a PDF, JPEG or PNG under 10 MB.';
+                return;
+            }
+            this.clearFieldError(field);
+            this.files[field] = file;
+        },
+        fileName(field) {
+            return this.files[field] ? this.files[field].name : '';
+        },
+        // Keys backed by a control the teller can fix. Anything else is
+        // system state — no open session, a stale wizard session, an expired
+        // rate card — that no field edit can resolve, so those stay in the
+        // banner where they cannot be mistaken for a typing mistake.
+        formFieldKeys() {
+            return ['customer_id', 'type', 'currency_code', 'quantity', 'rate', 'purpose', 'source_of_funds',
+                    'occupation', 'employer_name', 'employer_address', 'annual_volume_myr', 'proof_of_address', 'passport',
+                    'beneficial_owner', 'source_of_wealth', 'expected_frequency'];
+        },
+        applyErrors(data, status) {
+            if (!(data.errors && Object.keys(data.errors).length)) {
+                this.errorMessage = data.message || 'Request failed';
+                // Anything above 4xx is a failure that a retry can plausibly
+                // clear. A 4xx with no field errors is a state the form cannot
+                // fix, so offering a retry there would just burn attempts.
+                this.networkError = status >= 500;
+                return;
+            }
+            this.fieldErrors = {};
+            const editable = this.formFieldKeys();
+            const system = [];
+            for (const [key, message] of Object.entries(data.errors)) {
+                const flat = Array.isArray(message) ? message[0] : message;
+                // Step 2 sends customer[occupation] and similar, so the key
+                // arrives prefixed. Judge the leaf name, not the whole key,
+                // or every nested field error would leak into the banner.
+                const leaf = key.split('.').pop();
+                if (editable.includes(leaf)) {
+                    this.fieldErrors[key] = flat;
+                } else {
+                    system.push(flat);
+                }
+            }
+            this.errorMessage = system[0] || '';
+        },
+        beginStep() {
+            this.loading = true;
+            this.errorMessage = '';
+            this.networkError = false;
+            this.clearFieldErrors();
+        },
+        failStep(message) {
+            this.errorMessage = message;
+            this.networkError = true;
         },
         submitStep() {
             if (this.step === 1 && this.validStep1()) return this.callStep1();
@@ -606,8 +694,7 @@ export function registerComponents(Alpine) {
             return fetch(url, { credentials: 'same-origin', ...opts, headers: { 'X-CSRF-TOKEN': this.csrf, Accept: 'application/json', ...(opts.headers ?? {}) } });
         },
         async callStep1() {
-            this.loading = true;
-            this.errorMessage = '';
+            this.beginStep();
             this.wizard.blockedMessage = '';
             try {
                 const res = await this.fetch(this.apiBase + '/wizard/transactions/step1', {
@@ -620,21 +707,21 @@ export function registerComponents(Alpine) {
                     this.wizard.blockedMessage = data.message;
                     return;
                 }
-                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
-                this.wizard.session_id = data.data.wizard_session_id;
-                this.wizard.cdd_level = data.data.cdd_level;
-                this.wizard.cdd_description = data.data.cdd_description;
-                this.wizard.hold_required = data.data.hold_required;
-                this.wizard.risk_flags = data.data.risk_flags ?? [];
-                this.wizard.required_documents = data.data.required_documents ?? [];
+                if (!res.ok) { this.applyErrors(data, res.status); return; }
+                const body = data.data ?? {};
+                this.wizard.session_id = body.wizard_session_id || '';
+                this.wizard.cdd_level = body.cdd_level || '';
+                this.wizard.cdd_description = body.cdd_description || '';
+                this.wizard.hold_required = !!body.hold_required;
+                this.wizard.risk_flags = body.risk_flags ?? [];
+                this.wizard.required_documents = body.required_documents ?? [];
                 this.step = 2;
             } catch (e) {
-                this.errorMessage = 'Network error — please retry.';
+                this.failStep('Something went wrong — please retry.');
             } finally { this.loading = false; }
         },
         async callStep2() {
-            this.loading = true;
-            this.errorMessage = '';
+            this.beginStep();
             try {
                 const fd = new FormData();
                 fd.append('wizard_session_id', this.wizard.session_id);
@@ -652,16 +739,15 @@ export function registerComponents(Alpine) {
                 if (this.files.passport) fd.append('customer[passport]', this.files.passport);
                 const res = await this.fetch(this.apiBase + '/wizard/transactions/step2', { method: 'POST', body: fd });
                 const data = await res.json();
-                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
-                this.summary = data.data.transaction_summary;
+                if (!res.ok) { this.applyErrors(data, res.status); return; }
+                this.summary = data.data?.transaction_summary ?? {};
                 this.step = 3;
             } catch (e) {
-                this.errorMessage = 'Network error — please retry.';
+                this.failStep('Something went wrong — please retry.');
             } finally { this.loading = false; }
         },
         async callStep3() {
-            this.loading = true;
-            this.errorMessage = '';
+            this.beginStep();
             try {
                 const res = await this.fetch(this.apiBase + '/wizard/transactions/step3', {
                     method: 'POST',
@@ -673,16 +759,19 @@ export function registerComponents(Alpine) {
                     }),
                 });
                 const data = await res.json();
-                if (!res.ok) { this.errorMessage = this.firstError(data); return; }
-                this.result = { id: data.data.transaction_id, number: data.data.transaction_number, status: data.data.transaction_status };
+                if (!res.ok) { this.applyErrors(data, res.status); return; }
+                const body = data.data ?? {};
+                this.result = { id: body.transaction_id ?? '', number: body.transaction_number ?? '', status: body.transaction_status ?? '' };
                 this.step = 4;
             } catch (e) {
-                this.errorMessage = 'Network error — please retry.';
+                this.failStep('Something went wrong — please retry.');
             } finally { this.loading = false; }
         },
         reset() {
             this.step = 1;
             this.errorMessage = '';
+            this.networkError = false;
+            this.fieldErrors = {};
             this.wizard = { session_id: '', cdd_level: '', cdd_description: '', hold_required: false, risk_flags: [], required_documents: [], blockedMessage: '' };
             this.summary = {};
             this.result = { id: '', number: '', status: '' };

@@ -5,6 +5,77 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-10-03] - Transaction wizard: harden against server errors, bad uploads and number overflow
+
+### Files Changed
+- `resources/js/components.js` - 422 errors are kept per field instead of being
+  collapsed to the first message; uploads are validated against the server's own
+  shape and size before transfer; the MYR figure guards against number overflow;
+  every successful response body is checked for presence.
+- `resources/views/transaction-wizard/index.blade.php` - each field renders its
+  own error line; picked documents are previewed and re-validated on change; a
+  retryable failure offers "Try again"; review rows and input ceilings no longer
+  overflow.
+
+### Purpose
+The server speaks the form's language in three ways the client did not listen
+to. A 422 can carry up to ten field errors at once and only the first was shown,
+so fixing one mistake still sent the teller back through the step to meet the
+next. A document upload could be a 100 MB .exe and would only be rejected after
+the whole transfer. A quantity of 1e308 produced an `Infinity` in the Local
+Amount box. Each produced a misleading message or a silently wrong figure rather
+than a fixable problem.
+
+### Changes Made
+- `applyErrors(data, status)` splits a 422 by leaf key name: keys the teller can
+  edit land in `fieldErrors` and render under their own field, while state the
+  form cannot fix - no open counter session, an expired wizard session, an
+  unknown CDD level - goes to the banner. Validation and state errors can arrive
+  together and both now survive.
+- `fieldError(name)` resolves the flat, `customer.`-prefixed and
+  `transaction.`-prefixed spellings, because step 1 submits flat keys while
+  step 2 submits `customer[...]` and `transaction[...]`.
+- Editing a field clears only that field's error, so fixing one of six mistakes
+  does not erase the other five.
+- A `networkError` flag distinguishes a retryable failure (5xx or a thrown
+  request) from a 4xx the form cannot fix. Only the former shows "Try again".
+- `pickFile()` checks the file against the server's own rules - PDF, JPEG or PNG
+  under 10 MB, matching `mimes:pdf,jpg,jpeg,png` and `max:10240` - and rejects it
+  at the picker instead of after a full upload. The chosen name is shown under
+  the field so a teller can confirm which file is going out.
+- Text and number fields carry the server's own ceilings (`maxlength` 255 / 500 /
+  1000, `max` 9999999999.9999 on quantity, `max` 999999 on rate).
+- `amountMyr` returns `—` instead of `Infinity` when the arithmetic leaves
+  Number's range.
+- Every successful response body is read through `?? {}` and each field is
+  defaulted, so a 200 with a missing or partial body cannot throw inside the
+  success path and be reported as a network error.
+- Review rows use `shrink-0` labels and `min-w-0 break-words text-right` values,
+  so a long source of funds wraps inside the column instead of pushing the row
+  out of the card.
+- A 200 with no status says the transaction was recorded rather than rendering an
+  empty success screen, and "View Transaction" is hidden without an id.
+
+### Testing
+- `node /tmp/verify-wizard-harden.mjs` - 60 passed, 0 failed. Covers error
+  splitting including prefixed keys, retry classification across 5xx and 4xx,
+  file shape and the 10 MB boundary, overflow, and a 2400-random-state agreement
+  check between the validators and the "still needed" hint.
+- `php artisan test --compact tests/Feature/TransactionWizardTest.php` -
+  14 passed (54 assertions)
+- `npm run build` - clean; every new class confirmed present in the built CSS
+- `vendor/bin/pint --dirty --format agent` - passed
+
+### Impact Analysis
+- `node .gitnexus/run.cjs detect-changes --scope all --repo .` - 0 affected
+  processes, risk low
+- `firstError()` was replaced by `applyErrors()` with no remaining call sites; no
+  other existing Alpine public member was renamed or removed.
+- The server-facing contract is unchanged: no property name, payload key or
+  endpoint shape was altered.
+
+---
+
 ## [2026-10-03] - Transaction wizard: clarify step intent and name the next actor
 
 ### Files Changed
