@@ -5,6 +5,65 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-10-03] - Transaction wizard rebuilt on the shared component system
+
+### Files Changed
+- `resources/views/transaction-wizard/index.blade.php` - every form field and
+  alert now renders through the shared `x-input` / `x-select` / `x-textarea` /
+  `x-alert` components on the `app.css` `@theme` token palette; the hand-rolled
+  markup and hardcoded hex colours are gone.
+
+### Purpose
+A critique of the teller's highest-volume surface found the wizard was the one
+view in the app that ignored the app's own component library: 0 shared form
+components against 16 in the sibling `transactions/create.blade.php`,
+hardcoded `bg-[#0a0a0a]` literals, and default Tailwind grays mixed with the
+project's `text-ink-muted` / `border-border` tokens in the same file. The
+result was a clean but category-interchangeable page with a single visual
+emphasis across 245 lines, and not one `for`/`id` association to tell a screen
+reader a field apart from any other.
+
+### Changes Made
+- Step 1-2 inputs, selects and the source-of-wealth textarea now render
+  through `x-input` / `x-select` / `x-textarea` with `name` + `label`, which
+  gives every control a real `id`, a `for`-associated `<label>`, and correct
+  `required` / `aria-required` semantics (previously zero pairs).
+- Number fields gained `min` guards: `customer_id` min 1, `quantity` min 0.01,
+  `rate` min 0.0001, `annual_volume_myr` min 0.
+- The request error, the blocked-transaction banner and the risk-flags block
+  now use `<x-alert>` on the project's `danger-*` / `warning-*` tokens with
+  `role="alert"`, replacing hand-rolled `bg-red-50 border-red-200 text-red-700`
+  and `bg-amber-100`.
+- Banners switched from `x-show` to `x-if` so they enter the accessibility
+  tree when they appear; `x-cloak` now covers all 22 `x-show` elements
+  (previously 2), removing the pre-hydration flash of unstyled content.
+- The step indicator gained step names plus `aria-current="step"`, and the
+  redundant "Step N:" prefix dropped from the headings.
+- Navigation buttons rebuilt on the `bg-primary` / `text-on-primary` token
+  classes with `disabled:cursor-not-allowed`, and the placeholder spacer
+  `<div>` replaced with a conditional `justify-end`.
+- The PendingApproval status and the Local Amount row (the figure that sets
+  the CDD tier) now carry visual weight.
+
+### Testing
+- `php artisan test --compact tests/Feature/TransactionWizardTest.php` -
+  14 passed (54 assertions)
+- `npm run build` - vite build clean
+- `vendor/bin/pint --dirty --format agent` - passed
+- Source sweep: `bg-[#0a0a0a]`, `hover:bg-[#262626]`, `text-gray-500`,
+  `bg-red-50`, `border-gray-300`, `bg-gray-100`, `text-red-600`, `bg-amber-100`
+  all confirmed absent
+- `node .gitnexus/run.cjs detect-changes --scope all` - 0 affected processes,
+  risk low, no changed symbols attributed to this view
+
+### Impact Analysis
+View-only change: no controller, service, model or route symbol touched.
+The `transactionWizard` Alpine contract is preserved exactly (`x-data`, all
+`data-*` attributes, every `formData` key, `validStep1`/`validStep2`,
+`submitStep`, `reset`), so no JavaScript change was required.
+
+---
+
 ## [2026-09-24] - Architecture review remediation: cross-cluster fixes + regression suite
 
 ### Files Changed
