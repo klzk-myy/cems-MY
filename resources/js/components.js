@@ -552,7 +552,7 @@ export function registerComponents(Alpine) {
         },
         validStep1() {
             const p = this.payload();
-            return p.customer_id && p.type && p.currency_code && p.quantity > 0 && p.rate > 0 && p.purpose && p.source_of_funds;
+            return !!(p.customer_id && p.type && p.currency_code && p.quantity > 0 && p.rate > 0 && p.purpose && p.source_of_funds);
         },
         validStep2() {
             if (!this.formData.occupation) return false;
@@ -562,6 +562,33 @@ export function registerComponents(Alpine) {
                 if (!this.formData.beneficial_owner || !this.formData.source_of_wealth || !this.formData.expected_frequency) return false;
             }
             return true;
+        },
+        // Labels mirror the visible field labels so the "still needed" hint
+        // names exactly what the teller is looking at.
+        missingStep1() {
+            const f = this.formData;
+            const missing = [];
+            if (!f.customer_id) missing.push('Customer ID');
+            if (!f.type) missing.push('Transaction Type');
+            if (!f.currency_code) missing.push('Currency');
+            if (!(parseFloat(f.quantity) > 0)) missing.push('Foreign Amount');
+            if (!(parseFloat(f.rate) > 0)) missing.push('Exchange Rate');
+            if (!f.purpose) missing.push('Purpose');
+            if (!f.source_of_funds) missing.push('Source of Funds');
+            return missing;
+        },
+        missingStep2() {
+            const f = this.formData;
+            const missing = [];
+            if (!f.occupation) missing.push('Occupation');
+            if (this.requireProofOfAddress && !this.files.proof_of_address) missing.push('Proof of Address');
+            if (this.requirePassport && !this.files.passport) missing.push('Passport');
+            if (this.requireEnhanced) {
+                if (!f.beneficial_owner) missing.push('Beneficial Owner');
+                if (!f.source_of_wealth) missing.push('Source of Wealth');
+                if (!f.expected_frequency) missing.push('Expected Frequency');
+            }
+            return missing;
         },
         validStep3() { return true; },
         // Field errors ride in data.errors (Laravel 422 shape) — show the

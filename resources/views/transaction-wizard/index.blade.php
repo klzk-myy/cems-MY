@@ -62,11 +62,15 @@
 
                 <!-- Step 1: Transaction Details -->
                 <div x-show="step === 1" x-cloak class="rounded-xl border border-border bg-surface p-6">
-                    <h2 class="mb-5 text-lg font-semibold text-ink">Transaction Details</h2>
+                    <h2 class="mb-1 text-lg font-semibold text-ink">Transaction Details</h2>
+                    <p class="mb-5 text-sm text-ink-muted">
+                        The local amount sets the customer's due-diligence tier. Standard and Enhanced tiers ask for more documents.
+                    </p>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <x-input :inline="true" name="customer_id" label="Customer ID"
                                  type="number" min="1" required
+                                 help="The customer record ID — not the national ID number."
                                  x-model="formData.customer_id" />
 
                         <x-select :inline="true" name="type" label="Transaction Type"
@@ -278,6 +282,16 @@
                                   : 'border-warning-border bg-warning-subtle text-warning-text'"
                               x-text="(result.status || '—').toUpperCase()"></span>
                     </p>
+
+                    <p x-show="(result.status || '').toUpperCase() === 'PENDINGAPPROVAL'" x-cloak
+                       class="mb-4 text-sm text-warning-text">
+                        This transaction is pending. A compliance officer must review it before it can complete.
+                    </p>
+                    <p x-show="(result.status || '').toUpperCase() === 'COMPLETED'" x-cloak
+                       class="mb-4 text-sm text-ink-muted">
+                        This transaction is complete.
+                    </p>
+
                     <div class="flex flex-wrap justify-center gap-3">
                         <a :href="'/transactions/' + result.id"
                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
@@ -291,6 +305,12 @@
                 </div>
 
                 <!-- Navigation -->
+                <p x-show="(step === 1 && !validStep1()) || (step === 2 && !validStep2())" x-cloak
+                   class="mb-2 text-right text-xs text-ink-muted">
+                    To continue:
+                    <span x-text="(step === 1 ? missingStep1() : missingStep2()).join(', ')"></span>
+                </p>
+
                 <div class="mt-6 flex items-center"
                      :class="step === 1 || step === 4 ? 'justify-end' : 'justify-between'">
                     <button type="button" x-show="step > 1 && step < 4" x-cloak

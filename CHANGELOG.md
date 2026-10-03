@@ -5,6 +5,61 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-10-03] - Transaction wizard: clarify step intent and name the next actor
+
+### Files Changed
+- `resources/views/transaction-wizard/index.blade.php` - step 1 gained a tier
+  explanation and a `customer_id` disambiguation; the advance button now names
+  the fields still missing; the success screen states what happens next and who
+  acts on it.
+- `resources/js/components.js` - `missingStep1()` / `missingStep2()` added to
+  the `transactionWizard` Alpine data; `validStep1()` now returns a strict
+  boolean.
+
+### Purpose
+The critique scored Recognition Rather Than Recall 1/5: `*` marked 3 of ~10
+required fields, validation was JavaScript-only so a disabled submit button was
+the only signal that anything was wrong, and a compliance-hold booking landed on
+the same success screen as a completed one with nothing to say about what comes
+next.
+
+### Changes Made
+- The step 1 heading gained one line explaining that the local amount sets the
+  customer's due-diligence tier - the reason the next step may ask for
+  documents.
+- The Customer ID field gained helper text: the customer record ID, not the
+  national ID number.
+- Whenever the advance button is disabled, a right-aligned line beside it names
+  the fields still needed ("To continue: Customer ID, Currency, Exchange Rate").
+  It disappears the moment the step is valid, so a disabled button is no longer
+  the only signal.
+- `missingStep1()` / `missingStep2()` compute that list from the same CDD-tier
+  gates as `validStep1()` / `validStep2()`, and their labels mirror the visible
+  field labels.
+- The success screen now states the next consequence: a pending booking says a
+  compliance officer must review it before it can complete; a completed one says
+  the transaction is complete.
+- `validStep1()` returned the last operand of its `&&` chain (`null`, or a
+  string) rather than a boolean, unlike `validStep2()` / `validStep3()`. A
+  truthiness-preserving `!!` was added so the hint and the button cannot
+  disagree.
+
+### Testing
+- Node check of the `transactionWizard` Alpine data - 19 assertions passed,
+  including an invariant over 2400 random states x 4 CDD tiers that
+  `missingStepN()` is empty if and only if `validStepN()` is true
+- `php artisan test --compact tests/Feature/TransactionWizardTest.php` -
+  14 passed (54 assertions)
+- `npm run build` - clean; every new utility confirmed present in the built CSS
+- `vendor/bin/pint --dirty --format agent` - passed
+
+### Impact Analysis
+View + Alpine-data change only; no controller, service, model or route symbol
+touched. `validStep1()` truthiness is unchanged at every existing call site
+(`:disabled`, `x-show`), so the boolean fix is behaviour-preserving.
+
+---
+
 ## [2026-10-03] - Transaction wizard rebuilt on the shared component system
 
 ### Files Changed
