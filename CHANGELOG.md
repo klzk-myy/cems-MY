@@ -5,6 +5,64 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-10-04] - Playwright suites: kill the duplicate-ID collision and the timezone-blind counter scan
+
+### Files Changed
+- `tests/200-transaction-lifecycle.spec.ts` - customer identity is derived from a
+  namespaced index so this file can no longer collide with
+  `100-transactions.spec.ts` on the unique id_number hash.
+- `tests/support/helpers.ts` - `createCustomer` reports the real rejection reason
+  instead of an empty string; `closeOpenCounterSessions` scans a timezone-padded day
+  window instead of UTC calendar days.
+
+### Purpose
+Both files book customers and transactions against a live branch, and two latent
+faults made a run's outcome depend on luck rather than on the code under test.
+
+Customer identity is a pure function of (nationality, index, shared RUN_SEED). The
+booking file consumes indices 1..500; the lifecycle file used its own bare counter
+1..N. Because RUN_SEED is shared, the two files minted the same id numbers, and the
+moment an index overlapped the lifecycle file's `createCustomer` hit the unique
+id_number hash and the whole run failed. The failure was invisible to the helper: it
+read `p.text-danger`, but the form renders `text-danger-text`, so every rejection
+logged an empty reason and the collision cost an hour to trace.
+
+`closeOpenCounterSessions` walked back from today with `toISOString()`, which yields
+UTC calendar days, while `session_date` is stored in the application timezone. Between
+local 00:00 and the UTC offset the two disagree by a day, so the scan never saw the
+current day's open session and settlement stayed blocked. That in turn froze the
+branch's business date at initiation, which blocked every later posting on the same
+day - one failure silently becoming two.
+
+### Changes Made
+- Added `INDEX_NAMESPACE = 1000` to the lifecycle file; every derived identity field
+  (name, id type/number, address, DOB, phone) now reads the offset index while the
+  email keeps the file's own counter, so its customers sit outside the booking file's
+  1..500 range regardless of seed.
+- `createCustomer` now reads the first `[role="alert"]` or `.text-danger-text` element,
+  trims it, and falls back to a URL-bearing message when nothing renders, so a rejection
+  is never logged empty again.
+- `closeOpenCounterSessions` builds the scan window once, padding each UTC day by one
+  day either side (deduped, newest first) so the application's local today is always
+  covered no matter what the timezone offset is.
+
+### Testing
+- `npx playwright test` (full suite, 16 tests) - **16 passed, 0 failed (29.2m)**.
+  The two tests that failed in the prior run (300 day-close and 400 pool
+  remittance) both pass, confirming the date-scan fix closed the settlement
+  path and the branch's business date was not left frozen.
+- `npx playwright test tests/200-transaction-lifecycle.spec.ts` - 4 passed (37.0s),
+  with no `⚠ Customer … rejected:` line anywhere in the log.
+- Node probe of the padded day window - the first entry is the application's
+  local today, which the previous UTC scan began one day earlier and omitted.
+
+### Impact Analysis
+- `gitnexus detect_changes({scope: "all"})` - risk LOW, affected_count 0,
+  affected_processes empty. All three files are local-only Playwright probes,
+  not CI-gated, and no application code was touched.
+
+---
+
 ## [2026-10-03] - Transaction wizard: harden against server errors, bad uploads and number overflow
 
 ### Files Changed

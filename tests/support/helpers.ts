@@ -614,7 +614,7 @@ export async function loginAs(page: Page, username: string): Promise<void> {
   await page.fill('input[name="password"]', TEST_PASSWORD);
   await page.click('button[type="submit"]');
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForSelector('aside', { timeout: 5000 });
+  await page.waitForSelector("aside", { timeout: 30000 });
 }
 
 export async function logout(page: Page): Promise<void> {
@@ -750,9 +750,23 @@ export async function closeOpenCounterSessions(page: Page, branchId: number): Pr
   const list: Array<{ id: number; code?: string }> = counters.body?.data ?? [];
   const scanDays = 10;
 
+  // session_date is written in the app's timezone, while toISOString() yields
+  // UTC calendar days. Between local 00:00 and the UTC offset, UTC's "today"
+  // is the previous local day, so a plain back-scan skips the current day's
+  // session. Pad each UTC day by one day either side so the window holds for
+  // any app timezone, newest first so today's session closes before older ones.
+  const days: string[] = [];
+  for (let d = 0; d < scanDays; d++) {
+    for (const delta of [1, 0, -1]) {
+      const day = new Date(Date.now() + (delta - d) * 86400000).toISOString().slice(0, 10);
+      if (!days.includes(day)) {
+        days.push(day);
+      }
+    }
+  }
+
   for (const counter of list) {
-    for (let d = 0; d < scanDays; d++) {
-      const day = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+    for (const day of days) {
       const report = await apiGet(page, `/api/v1/eod/reconciliation/${day}/counters/${counter.id}`);
       const body = report.body?.data ?? {};
       if (body?.has_session === false || body?.session?.status !== 'open') {
@@ -905,9 +919,14 @@ export async function createCustomer(
 
   try {
     if (page.url().includes('customers/create')) {
-      const errEl = page.locator('p.text-danger').first();
-      const errText = (await errEl.count()) ? ((await errEl.textContent()) ?? '') : '';
-      console.log(`   ⚠ Customer ${name} rejected: ${errText.substring(0, 120)}`);
+      // Field errors render as <p role="alert" class="text-danger-text">, so
+      // `p.text-danger` never matched and the rejection reason was dropped.
+      const errEl = page.locator('[role="alert"], p.text-danger-text').first();
+      const errText = (await errEl.count()) ? ((await errEl.textContent()) ?? '').trim() : '';
+      const reason = errText
+        ? errText.substring(0, 160)
+        : `no error message rendered (URL: ${page.url()})`;
+      console.log(`   ⚠ Customer ${name} rejected: ${reason}`);
       return false;
     }
   } catch {

@@ -42,6 +42,12 @@ const SMALL_QTY = '100.00';
 
 let bookingCounter = 0;
 
+// 100-transactions draws indices 1..500 from the same RUN_SEED. Id numbers are
+// a pure function of (nationality, index, seed), so a bare index collides on the
+// unique id_number hash whenever both files happen to share a seed. 1000 pushes
+// this file's customers outside that range entirely.
+const INDEX_NAMESPACE = 1000;
+
 /** Create a unique customer and book one USD transaction for them. */
 async function bookTransaction(
   page: Page,
@@ -49,22 +55,23 @@ async function bookTransaction(
   type: 'Buy' | 'Sell' = 'Buy'
 ): Promise<string> {
   const i = ++bookingCounter;
+  const idx = i + INDEX_NAMESPACE;
   const nationality = NATIONALITY_CYCLE[(i - 1) % NATIONALITY_CYCLE.length];
-  const name = getRealName(i, nationality);
+  const name = getRealName(idx, nationality);
   const email = `${RUN_SEED}lc${i}@test.com`;
-  const { idType, idNumber } = getIdTypeAndNumber(nationality, i);
-  const address = getRealAddress(nationality, i);
-  const dob = getDob(nationality, i);
+  const { idType, idNumber } = getIdTypeAndNumber(nationality, idx);
+  const address = getRealAddress(nationality, idx);
+  const dob = getDob(nationality, idx);
 
   const created = await createCustomer(
-    page, name, email, idType, idNumber, nationality, phoneFor(i), address, dob
+    page, name, email, idType, idNumber, nationality, phoneFor(idx), address, dob
   );
   expect(created, `customer ${name} must be created`).toBe(true);
 
   const rate = type === 'Buy' ? MARKET_RATES.USD.buy : MARKET_RATES.USD.sell;
   const txId = await createTransaction(
     page, name, type, 'USD', 'Travel', 'Salary', 'Employment', qty, rate,
-    { idType, idNumber, nationality, phone: phoneFor(i), address, dob, email }
+    { idType, idNumber, nationality, phone: phoneFor(idx), address, dob, email }
   );
   expect(txId, `transaction (${type} ${qty} USD) must be booked`).not.toBeNull();
   return txId as string;
