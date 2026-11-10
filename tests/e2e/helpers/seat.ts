@@ -1,6 +1,6 @@
 import { expect, type BrowserContext, type Page } from '@playwright/test';
 import { resolveMfa } from './auth';
-import type { E2eUser } from './env';
+import { baseUrl, type E2eUser } from './env';
 
 // Resolved per-run from the acting user's /user payload — the seed's
 // branch ids differ between environments (staging has drifted past the
@@ -16,15 +16,32 @@ const LIMITS = { MYR: '50000000', USD: '50000000' };
 
 // Stateful Sanctum auth keys off Referer/Origin matching APP_URL; without
 // them the session cookie is ignored (401). Stateful requests also traverse
-// the web pipeline, so CSRF applies (419 without the token).
-export async function api(ctx: BrowserContext, page: Page, method: 'get' | 'post', path: string, data?: unknown) {
-    const base = new URL(page.url()).origin;
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+// the web pipeline, so CSRF applies (419 without the token). The token comes
+// from the XSRF-TOKEN cookie — never the page meta: the acting page can be a
+// bare JSON/error response (e.g. back() landing on a recorded /api/v1 URL),
+// which carries no <head> at all and hangs a locator read for the full
+// timeout.
+export async function api(ctx: BrowserContext, _page: Page, method: 'get' | 'post', path: string, data?: unknown) {
+    const base = baseUrl();
+    const xsrf = (await ctx.cookies(base)).find((c) => c.name === 'XSRF-TOKEN')?.value;
     return ctx.request.fetch(`${base}/api/v1${path}`, {
         method,
         data,
-        headers: { referer: `${base}/`, origin: base, 'x-csrf-token': csrf! },
+        headers: { referer: `${base}/`, origin: base, 'x-xsrf-token': decodeURIComponent(xsrf ?? '') },
     });
+}
+
+// Raw session token for classic form posts (_token field). Reads the page
+// meta when the current URL is a real document; recovers by loading the
+// dashboard when the page is a meta-less JSON or error response.
+export async function csrf(page: Page): Promise<string> {
+    const meta = page.locator('meta[name="csrf-token"]');
+    const token = await meta.getAttribute('content', { timeout: 3_000 }).catch(() => null);
+    if (token) {
+        return token;
+    }
+    await page.goto('/dashboard');
+    return (await page.locator('meta[name="csrf-token"]').getAttribute('content'))!;
 }
 
 export async function primeMfa(page: Page, user: E2eUser) {
@@ -154,8 +171,8 @@ export async function ensureSeated(
 export async function rejectPendingAllocations(
     ctx: BrowserContext, page: Page,
 ): Promise<void> {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
+    const token = await csrf(page);
+    const base = baseUrl();
     // Rejections shift pagination — always re-read page 1 until it is clear.
     for (let pass = 0; pass < 6; pass++) {
         await page.goto('/allocations?status=pending');
@@ -165,7 +182,7 @@ export async function rejectPendingAllocations(
         );
         if (ids.length === 0) { break; }
         for (const id of ids) {
-            await ctx.request.post(`${base}/allocations/${id}/reject`, { form: { _token: csrf! } });
+            await ctx.request.post(`${base}/allocations/${id}/reject`, { form: { _token: token } });
         }
     }
 }
@@ -176,8 +193,8 @@ export async function rejectPendingAllocations(
 export async function returnActiveAllocations(
     ctx: BrowserContext, page: Page,
 ): Promise<void> {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
+    const token = await csrf(page);
+    const base = baseUrl();
     for (let pass = 0; pass < 6; pass++) {
         await page.goto('/allocations?status=active');
         await page.waitForLoadState('load');
@@ -186,7 +203,7 @@ export async function returnActiveAllocations(
         );
         if (ids.length === 0) { break; }
         for (const id of ids) {
-            await ctx.request.post(`${base}/allocations/${id}/return-to-pool`, { form: { _token: csrf! } });
+            await ctx.request.post(`${base}/allocations/${id}/return-to-pool`, { form: { _token: token } });
         }
     }
 }
@@ -194,11 +211,11 @@ export async function returnActiveAllocations(
 // stock-cash/open creates the day's till row; a same-day row (open or closed)
 // rejects with "already open", which also covers the ambient-seat case.
 export async function openTill(ctx: BrowserContext, page: Page, till: string, currency: string) {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
+    const token = await csrf(page);
+    const base = baseUrl();
     const res = await ctx.request.post(`${base}/stock-cash/open`, {
         form: {
-            _token: csrf!,
+            _token: token,
             till_id: till,
             currency_code: currency,
             opening_balance: '100000',

@@ -213,7 +213,7 @@ jobs:
           php artisan key:generate --force
           touch database/e2e.sqlite
           mkdir -p storage/framework/{sessions,cache,views} storage/logs bootstrap/cache
-          cat >> .env <<'EOF'
+          cat >> .env <<EOF
           APP_ENV=testing
           APP_URL=http://127.0.0.1:8080
           DB_CONNECTION=sqlite
@@ -227,6 +227,7 @@ jobs:
           SECURITY_IP_BLOCKING_ENABLED=false
           BCRYPT_ROUNDS=4
           BNM_LICENSE_NUMBER=TEST-LICENSE-001
+          APP_ENCRYPTION_SALT=$(openssl rand -hex 32)
           EOF
           sed -i "s|DB_DATABASE=/database/e2e.sqlite|DB_DATABASE=$PWD/database/e2e.sqlite|" .env
 

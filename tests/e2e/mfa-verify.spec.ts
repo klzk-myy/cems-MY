@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ensureEnrolled, loginAndVerify } from './helpers/auth';
 import { savedTotpSecret, USERS } from './helpers/env';
 import { totp } from './helpers/totp';
 
@@ -14,6 +15,16 @@ test.use({ storageState: { cookies: [], origins: [] } });
 
 test('a wrong code is rejected and a valid TOTP clears the gate', async ({ page }) => {
   const user = USERS.teller;
+
+  // A fresh-install user is unenrolled — enrol first so a verify gate exists
+  // at all (the 30-day enrolment grace otherwise lets them pass unchecked).
+  // Then wipe every cookie: enrollment/verification leaves a trusted-device
+  // cookie that would otherwise bypass the gate for 30 days, and the next
+  // login must be a genuinely untrusted, unverified session.
+  await loginAndVerify(page, user);
+  await ensureEnrolled(page, user);
+  await page.context().clearCookies();
+
   const secret = user.totp ?? savedTotpSecret(user.username);
   test.skip(!secret, 'no TOTP secret available for teller');
 

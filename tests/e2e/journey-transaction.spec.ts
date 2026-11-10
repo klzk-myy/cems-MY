@@ -1,7 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
-import { authFile, USERS } from './helpers/env';
-import { api, ensureSeated, openTill, primeMfa } from './helpers/seat';
+import { authFile, baseUrl, USERS } from './helpers/env';
+import { api, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
 import { resolveOpenFlags } from './helpers/compliance';
 import { totp } from './helpers/totp';
 
@@ -12,11 +12,10 @@ const RATE = 4.7;
 // Manager-initiated allocations are requested and approved in one call, so a
 // single POST lands an Active allocation funded from the branch pool.
 async function createAllocation(ctx: BrowserContext, page: Page, tellerId: number, currency: string, quantity: string) {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
-    const res = await ctx.request.post(`${base}/allocations`, {
+    const token = await csrf(page);
+    const res = await ctx.request.post(`${baseUrl()}/allocations`, {
         form: {
-            _token: csrf!,
+            _token: token,
             user_id: String(tellerId),
             'lines[0][currency_code]': currency,
             'lines[0][quantity]': quantity,

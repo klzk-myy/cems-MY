@@ -1,18 +1,17 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
-import { authFile, USERS } from './helpers/env';
-import { api, ensureSeated, openTill, primeMfa } from './helpers/seat';
+import { authFile, baseUrl, USERS } from './helpers/env';
+import { api, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
 import { resolveOpenFlags } from './helpers/compliance';
 
 const CUSTOMER_NAME = 'Tun Abdullah bin Ahmad bin Haji Ibrahim';
 const RATE = 4.7;
 
 async function createAllocation(ctx: BrowserContext, page: Page, tellerId: number, currency: string, quantity: string) {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
-    await ctx.request.post(`${base}/allocations`, {
+    const token = await csrf(page);
+    await ctx.request.post(`${baseUrl()}/allocations`, {
         form: {
-            _token: csrf!, user_id: String(tellerId),
+            _token: token, user_id: String(tellerId),
             'lines[0][currency_code]': currency, 'lines[0][quantity]': quantity,
             daily_limit_myr: '50000000',
         },

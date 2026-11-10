@@ -1,6 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { gotoVerified, resolveMfa } from './helpers/auth';
-import { authFile, USERS, type E2eUser } from './helpers/env';
+import { authFile, baseUrl, USERS, type E2eUser } from './helpers/env';
+import { csrf } from './helpers/seat';
 
 async function primeMfa(page: Page, user: E2eUser) {
     await page.goto('/mfa/verify');
@@ -8,9 +9,8 @@ async function primeMfa(page: Page, user: E2eUser) {
 }
 
 async function postForm(ctx: BrowserContext, page: Page, path: string, fields: Record<string, string>) {
-    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
-    const base = new URL(page.url()).origin;
-    return ctx.request.post(`${base}${path}`, { form: { _token: csrf!, ...fields } });
+    const token = await csrf(page);
+    return ctx.request.post(`${baseUrl()}${path}`, { form: { _token: token, ...fields } });
 }
 
 test.describe('allocation request journey', () => {

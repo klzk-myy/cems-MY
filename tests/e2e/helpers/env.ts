@@ -102,3 +102,8 @@ export function saveTotpSecret(username: string, secret: string): void {
   data[username] = secret;
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
+
+/** The app's origin — mirrors playwright.config.ts baseURL resolution. */
+export function baseUrl(): string {
+  return process.env.E2E_BASE_URL ?? process.env.APP_URL ?? 'http://local.host';
+}

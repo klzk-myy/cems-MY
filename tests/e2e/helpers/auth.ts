@@ -45,6 +45,16 @@ export async function gotoVerified(page: Page, path: string, user: E2eUser): Pro
   }
 }
 
+/**
+ * Guarantee the user is TOTP-enrolled. /mfa/setup renders the secret for
+ * unenrolled users (enrollInPage captures it into .auth/secrets.json) and
+ * redirects enrolled users to /mfa/verify, which resolveMfa then answers.
+ */
+export async function ensureEnrolled(page: Page, user: E2eUser): Promise<void> {
+  await page.goto('/mfa/setup');
+  await resolveMfa(page, user);
+}
+
 /** Complete whatever MFA step the current URL demands (no-op otherwise). */
 export async function resolveMfa(page: Page, user: E2eUser): Promise<void> {
   const url = page.url();
@@ -74,6 +84,13 @@ async function submitVerification(page: Page, user: E2eUser): Promise<void> {
   }
 
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      // verifyUserCode enforces strictly-increasing timesteps — a code from
+      // the same 30s window as the last accepted verification is rejected
+      // as a replay, so wait out the boundary before retrying.
+      const msToNextWindow = 30_000 - (Date.now() % 30_000);
+      await page.waitForTimeout(msToNextWindow + 1_000);
+    }
     const form = page.locator('form[action*="mfa/verify"], form[action*="mfa.verify"]');
     await form.locator('input[name="code"]').fill(totp(secret));
     await form.evaluate((el) => {

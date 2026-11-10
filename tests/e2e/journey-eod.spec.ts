@@ -3,16 +3,14 @@ import { gotoVerified } from './helpers/auth';
 import { authFile, USERS } from './helpers/env';
 import { api, primeMfa, branchCounters, closeCounterSession, rejectPendingAllocations, returnActiveAllocations } from './helpers/seat';
 
-const BRANCH = 5;
-
 // Admin reopens the finalized day — reopen is restricted to cross-branch
 // users (canManageAllBranches), and it un-freezes the business date so the
 // other journeys can still post today.
-async function adminReopen(browser: import('@playwright/test').Browser) {
+async function adminReopen(browser: import('@playwright/test').Browser, branchId: number) {
     const ctx = await browser.newContext({ storageState: authFile('admin') });
     const page = await ctx.newPage();
     await primeMfa(page, USERS.admin);
-    await gotoVerified(page, `/branches/${BRANCH}/closing`, USERS.admin);
+    await gotoVerified(page, `/branches/${branchId}/closing`, USERS.admin);
     const reopen = page.locator('form[action*="/reopen"] button');
     if (await reopen.isVisible()) {
         await reopen.click();
@@ -32,6 +30,9 @@ test.describe('branch closing journey', () => {
         await primeMfa(mgrPage, USERS.manager);
         const counters = await branchCounters(mgrCtx, mgrPage);
         const me = await (await api(mgrCtx, mgrPage, 'get', '/user')).json();
+        // The manager's own branch — the seed's branch ids differ between
+        // environments (staging drifted past the fresh-install set).
+        const branchId: number = me.data.branch_id;
 
         // Close every open counter session at the branch — CounterService is
         // API-only, so the close runs under the teller's real session with
@@ -58,7 +59,7 @@ test.describe('branch closing journey', () => {
         // A prior run may have finalized today's business date before dying —
         // reopen it so the workflow resumes at Settled.
         if (await mgrPage.locator('body').textContent().then(t => t?.includes('Business Date Closed'))) {
-            await adminReopen(browser);
+            await adminReopen(browser, branchId);
             await mgrPage.reload();
         }
 
@@ -75,7 +76,7 @@ test.describe('branch closing journey', () => {
         // after a reopen can't be re-settled either — return them to pool.
         await rejectPendingAllocations(mgrCtx, mgrPage);
         await returnActiveAllocations(mgrCtx, mgrPage);
-        await gotoVerified(mgrPage, `/branches/${BRANCH}/closing`, USERS.manager);
+        await gotoVerified(mgrPage, `/branches/${branchId}/closing`, USERS.manager);
         await expect(mgrPage.locator('body')).toContainText('Checklist');
 
         // Checklist reflects the closeable state the journey created.
@@ -100,7 +101,7 @@ test.describe('branch closing journey', () => {
 
         // Admin-only reopen returns the workflow to Settled — verified below
         // by the checklist reappearing for the manager.
-        await adminReopen(browser);
+        await adminReopen(browser, branchId);
         await mgrPage.reload();
         await expect(mgrPage.locator('body')).toContainText('Checklist');
 

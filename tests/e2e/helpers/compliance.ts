@@ -1,6 +1,6 @@
 import { type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { authFile, USERS } from './env';
-import { primeMfa } from './seat';
+import { csrf, primeMfa } from './seat';
 
 // High-priority AML flags (Structuring/Velocity) accumulate with repeated
 // same-day bookings and hard-block approval. The compliance flagged list
@@ -13,7 +13,7 @@ export async function resolveOpenFlags(
     const cmpCtx: BrowserContext = await browser.newContext({ storageState: authFile('compliance') });
     const cmpPage: Page = await cmpCtx.newPage();
     await primeMfa(cmpPage, USERS.compliance);
-    const csrf = await cmpPage.locator('meta[name="csrf-token"]').getAttribute('content');
+    const token = await csrf(cmpPage);
 
     // Flags persist via queued monitoring — some land seconds after the
     // approve response. Keep sweeping until a full pass finds nothing new.
@@ -31,7 +31,7 @@ export async function resolveOpenFlags(
                 if (rowText.includes(txnId)) {
                     matched = true;
                     const action = (await form.getAttribute('action'))!;
-                    await cmpCtx.request.post(action, { form: { _token: csrf!, _method: 'PATCH' } });
+                    await cmpCtx.request.post(action, { form: { _token: token, _method: 'PATCH' } });
                 }
             }
             if (count === 0) { break; }
