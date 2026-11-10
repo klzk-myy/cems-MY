@@ -18,6 +18,7 @@ test.describe('STR filing journey', () => {
     let comPage: Page;
     let caseUrl = '';
     let customerName = '';
+    let customerId = 0;
 
     test.beforeAll(async ({ browser }) => {
         tlrCtx = await browser.newContext({ storageState: authFile('teller') });
@@ -58,16 +59,19 @@ test.describe('STR filing journey', () => {
 
         const customer = await createCustomer(tlrCtx, tlrPage, undefined, USERS.teller);
         customerName = customer.full_name;
+        customerId = customer.id;
 
         // One ~RM50k booking trips the velocity check on its own amount —
         // the flag lands on this transaction and feeds the case's STR
         // trigger sum. It stays PendingApproval (hold is fine — approval
-        // is not part of this journey).
+        // is not part of this journey). The quantity carries a jitter:
+        // checkRecentDuplicate rejects an identical user+qty+currency+type
+        // resubmit within 30s, which a retried attempt would otherwise hit.
         const bookRes = await api(tlrCtx, tlrPage, 'post', '/transactions', {
             customer_id: customer.id,
             type: 'Buy',
             currency_code: 'USD',
-            quantity: 10700,
+            quantity: 10700 + Math.floor(Math.random() * 100),
             rate: RATE,
             purpose: 'Travel',
             source_of_funds: 'Salary savings',
@@ -87,7 +91,10 @@ test.describe('STR filing journey', () => {
 
         // Alerts for the new customer land via the queued monitoring
         // listener. The triage index paginates by priority (50/page), so
-        // find the ids through the API instead of hunting pages.
+        // find the ids through the API instead of hunting pages. Matching
+        // is on the alert's customer_id — a name match could pull an
+        // unrelated alert into the case, and createFromAlerts rejects a
+        // multi-customer set outright.
         let alertIds: string[] = [];
         for (let attempt = 0; attempt < 15 && alertIds.length === 0; attempt++) {
             // per_page is capped at 100 — page through the queue until the
@@ -99,7 +106,7 @@ test.describe('STR filing journey', () => {
                 const rows: any[] = body?.data?.data ?? body?.data ?? [];
                 if (!Array.isArray(rows) || rows.length === 0) break;
                 alertIds = rows
-                    .filter((a) => (a.customer?.full_name ?? a.customer_name ?? '') === customerName)
+                    .filter((a) => Number(a.customer_id ?? a.customer?.id) === customerId)
                     .map((a) => String(a.id));
             }
             if (alertIds.length === 0) {
@@ -109,7 +116,9 @@ test.describe('STR filing journey', () => {
         expect(alertIds.length, `no triage alert for ${customerName}`).toBeGreaterThan(0);
 
         // Create a case from those alerts (the index form posts the same
-        // contract — alerts-bulk.spec.ts covers the checkbox UI itself).
+        // contract — alerts-bulk.spec.ts covers the checkbox UI itself). A
+        // validation/CaseManagementException bounce lands back on the
+        // referer — surface the flashed error instead of just the URL.
         const params = new URLSearchParams();
         params.append('_token', await csrf(comPage));
         for (const id of alertIds) params.append('alert_ids[]', id);
@@ -119,7 +128,10 @@ test.describe('STR filing journey', () => {
             data: params.toString(),
         });
         caseUrl = caseRes.url();
-        expect(caseUrl, `case store landed on ${caseUrl}`).toMatch(/\/compliance\/cases\/\d+/);
+        if (!/\/compliance\/cases\/\d+/.test(caseUrl)) {
+            const flash = (await caseRes.text()).match(/<div[^>]*class="[^"]*(?:alert|error|flash)[^"]*"[^>]*>([\s\S]{0,300}?)<\/div>/i)?.[1]?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            throw new Error(`case store bounced to ${caseUrl} (alerts=${alertIds.join(',')}): ${flash ?? 'no flash captured'}`);
+        }
 
         // Close requires every linked alert terminal. Dismiss (reject) is
         // used rather than resolve: resolveAlert clears alerts.case_id,

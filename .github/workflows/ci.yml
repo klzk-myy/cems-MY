@@ -218,7 +218,7 @@ jobs:
           APP_URL=http://127.0.0.1:8080
           DB_CONNECTION=sqlite
           DB_DATABASE=/database/e2e.sqlite
-          CACHE_DRIVER=array
+          CACHE_DRIVER=file
           RATE_LIMIT_CACHE_STORE=array
           SESSION_DRIVER=file
           QUEUE_CONNECTION=sync
