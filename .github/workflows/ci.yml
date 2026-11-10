@@ -153,3 +153,99 @@ jobs:
           path: storage/test-results/
           retention-days: 7
           if-no-files-found: ignore
+
+  e2e:
+    name: Browser E2E (Playwright)
+    runs-on: ubuntu-22.04
+    needs: [lint, security]
+    env:
+      E2E_CHANNEL: chromium
+      E2E_BASE_URL: http://127.0.0.1:8080
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, mbstring, xml, tokenizer, sqlite3, gd, zip
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/e2e.sqlite
+          cat >> .env <<'EOF'
+          APP_ENV=testing
+          APP_URL=http://127.0.0.1:8080
+          DB_CONNECTION=sqlite
+          DB_DATABASE=/database/e2e.sqlite
+          CACHE_DRIVER=array
+          RATE_LIMIT_CACHE_STORE=array
+          SESSION_DRIVER=file
+          QUEUE_CONNECTION=sync
+          MAIL_MAILER=array
+          MFA_ENABLED=false
+          SECURITY_IP_BLOCKING_ENABLED=false
+          BCRYPT_ROUNDS=4
+          BNM_LICENSE_NUMBER=TEST-LICENSE-001
+          EOF
+          sed -i "s|DB_DATABASE=/database/e2e.sqlite|DB_DATABASE=$PWD/database/e2e.sqlite|" .env
+
+      - name: Seed database (schema + reference data + demo users)
+        run: php artisan db:seed --force
+
+      - name: Start application server
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8080 --no-reload > storage/logs/e2e-serve.log 2>&1 &
+          for i in {1..30}; do
+            if curl -sf http://127.0.0.1:8080/login -o /dev/null; then
+              echo "Server is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"; cat storage/logs/e2e-serve.log; exit 1
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser e2e tests
+        run: npm run test:e2e
+
+      - name: Upload e2e artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results
+          path: |
+            playwright-report/
+            test-results/e2e/
+            storage/logs/e2e-serve.log
+          retention-days: 7
+          if-no-files-found: ignore
