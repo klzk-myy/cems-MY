@@ -59,6 +59,11 @@
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
         <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false" force="true"/>
         <env name="SECURITY_IP_BLOCKING_ENABLED" value="false" force="true"/>
+        <!-- .env disables throttle middleware for dev convenience; the suite
+             asserts 429 behavior, so force it on (tests that need it off set
+             security.rate_limits.enabled=false per-test). TestCase flushes
+             the limiter cache in setUp() so buckets stay hermetic. -->
+        <env name="SECURITY_RATE_LIMITING_ENABLED" value="true" force="true"/>
         <env name="MFA_ENABLED" value="false" force="true"/>
         <env name="XDEBUG_MODE" value="off" force="true"/>
         <env name="BNM_LICENSE_NUMBER" value="TEST-LICENSE-001" force="true"/>
