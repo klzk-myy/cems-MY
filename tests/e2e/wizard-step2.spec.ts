@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
 import { authFile, USERS } from './helpers/env';
-import { api, ensureSeated, openTill, primeMfa } from './helpers/seat';
+import { api, createCustomer, ensureSeated, openTill, primeMfa } from './helpers/seat';
 
 // The wizard SPA advances to step 2 only on a real step1 API success — which
 // needs a live session + till + valid customer, unlike the client-side
@@ -22,6 +22,8 @@ test('valid step-1 input advances the wizard to customer details', async ({ brow
     await gotoVerified(admPage, '/stock-cash', USERS.admin);
     await openTill(admCtx, admPage, till!, 'USD');
     await openTill(admCtx, admPage, till!, 'MYR');
+    // The fresh CI seed ships no customers — step1 needs a real id to pass.
+    const customerId = (await createCustomer(tlrCtx, tlrPage)).id;
     await admCtx.close();
     await mgrCtx.close();
 
@@ -31,7 +33,7 @@ test('valid step-1 input advances the wizard to customer details', async ({ brow
         return !!(el && ((el as any)._x_dataStack?.length || (el as any).__x));
     });
 
-    await tlrPage.locator('input[x-model="formData.customer_id"]').fill('2');
+    await tlrPage.locator('input[x-model="formData.customer_id"]').fill(String(customerId));
     await tlrPage.locator('select[x-model="formData.type"]').selectOption('Buy');
     await tlrPage.locator('select[x-model="formData.currency_code"]').selectOption('USD');
     await tlrPage.locator('input[x-model="formData.quantity"]').fill('100');
@@ -40,6 +42,6 @@ test('valid step-1 input advances the wizard to customer details', async ({ brow
     await tlrPage.locator('input[x-model="formData.source_of_funds"]').fill('Salary savings');
     await tlrPage.locator('button[type="submit"]', { hasText: /Continue|Checking/ }).click();
 
-    await expect(tlrPage.locator('h2', { hasText: 'Step 2' })).toBeVisible({ timeout: 15_000 });
+    await expect(tlrPage.locator('h2', { hasText: 'Customer Details' })).toBeVisible({ timeout: 15_000 });
     await tlrCtx.close();
 });

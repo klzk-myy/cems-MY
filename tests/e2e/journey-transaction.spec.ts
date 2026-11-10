@@ -1,11 +1,9 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
 import { authFile, baseUrl, USERS } from './helpers/env';
-import { api, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
+import { api, createCustomer, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
 import { resolveOpenFlags } from './helpers/compliance';
 import { totp } from './helpers/totp';
-
-const CUSTOMER_NAME = 'Audit Test';
 // Branch 5 USD board buy rate — tellers may deviate at most 0.5%.
 const RATE = 4.7;
 
@@ -29,7 +27,7 @@ async function createAllocation(ctx: BrowserContext, page: Page, tellerId: numbe
     expect([200, 302, 303, 422]).toContain(res.status());
 }
 
-async function createViaForm(page: Page): Promise<{ id: string; myr: string }> {
+async function createViaForm(page: Page, customerName: string): Promise<{ id: string; myr: string }> {
     // Teller accepts any approved float allocation — required before booking.
     await gotoVerified(page, '/my-allocations', USERS.teller);
     const acceptBtn = page.locator('form[action*="accept"] button[type="submit"]');
@@ -43,8 +41,8 @@ async function createViaForm(page: Page): Promise<{ id: string; myr: string }> {
 
     const nameInput = page.locator('input[name="full_name"]');
     await nameInput.click();
-    await nameInput.pressSequentially(CUSTOMER_NAME, { delay: 30 });
-    await page.locator('ul li', { hasText: CUSTOMER_NAME }).first().click();
+    await nameInput.pressSequentially(customerName, { delay: 30 });
+    await page.locator('ul li', { hasText: customerName }).first().click();
     await expect(page.locator('text=Existing customer loaded')).toBeVisible();
 
     // pick(c) fills identity fields from the matched record; anything still
@@ -121,6 +119,7 @@ test.describe('money-path journey', () => {
 
     let admCtx: BrowserContext;
     let completedTxnId = '';
+    let customerName = '';
     let tlrCtx: BrowserContext;
     let admPage: Page;
     let tlrPage: Page;
@@ -146,8 +145,14 @@ test.describe('money-path journey', () => {
         await gotoVerified(admPage, '/stock-cash', USERS.admin);
         await openTill(admCtx, admPage, till!, 'USD');
         await openTill(admCtx, admPage, till!, 'MYR');
-        // teller1 = user id 5 — needs a same-day active USD allocation.
-        await createAllocation(admCtx, admPage, 5, 'USD', '5000');
+        // The teller's id resolves from their own session — seed user ids
+        // differ between environments. Same-day active USD allocation
+        // required to book.
+        const teller = await (await api(tlrCtx, tlrPage, 'get', '/user')).json();
+        await createAllocation(admCtx, admPage, teller.data.id, 'USD', '5000');
+        // The fresh CI seed ships no customers — register one for the
+        // typeahead to match (names must be unique to stay deterministic).
+        customerName = (await createCustomer(tlrCtx, tlrPage)).full_name;
         await mgrCtx.close();
     });
 
@@ -157,7 +162,7 @@ test.describe('money-path journey', () => {
     });
 
     test('teller creates → manager approves → teller prints receipt', async () => {
-        const txn = await createViaForm(tlrPage);
+        const txn = await createViaForm(tlrPage, customerName);
         await expect(tlrPage.locator('body')).toContainText(/Pending/i, { timeout: 10_000 });
         completedTxnId = txn.id;
 
@@ -228,13 +233,13 @@ test.describe('money-path journey', () => {
 
         // Show page renders the booked figures for the creating teller.
         await gotoVerified(tlrPage, `/transactions/${txn.id}`, USERS.teller);
-        await expect(tlrPage.locator('body')).toContainText(CUSTOMER_NAME);
+        await expect(tlrPage.locator('body')).toContainText(customerName);
         await expect(tlrPage.locator('body')).toContainText(txn.myr);
         await expect(tlrPage.locator('body')).toContainText(/Completed|Approved/i);
     });
 
     test('admin rejects a large transaction', async () => {
-        const txn = await createViaForm(tlrPage);
+        const txn = await createViaForm(tlrPage, customerName);
 
         await primeMfa(admPage, USERS.admin);
         await gotoVerified(admPage, `/transactions/${txn.id}`, USERS.admin);

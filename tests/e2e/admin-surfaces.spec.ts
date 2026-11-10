@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
 import { authFile, USERS } from './helpers/env';
-import { primeMfa } from './helpers/seat';
+import { createCustomer, primeMfa } from './helpers/seat';
 
 // Zero-coverage admin/compliance surfaces — index-level render checks.
 // /users sits behind mfa.verified on GET, so the session is primed first.
@@ -21,7 +21,6 @@ for (const url of [
     '/compliance/screening-matches',
     '/compliance/edd-review',
     '/notifications/preferences',
-    '/customers/2',
 ]) {
     test(`surface ${url} renders`, async ({ page }) => {
         await primeMfa(page, USERS.admin);
@@ -29,3 +28,12 @@ for (const url of [
         await rendersOk(page, url);
     });
 }
+
+// The customer show page needs a real id — the fresh CI seed ships none.
+test('surface /customers/{id} renders', async ({ page, context }) => {
+    await primeMfa(page, USERS.admin);
+    const { id } = await createCustomer(context, page);
+    const url = `/customers/${id}`;
+    await gotoVerified(page, url, USERS.admin);
+    await rendersOk(page, url);
+});

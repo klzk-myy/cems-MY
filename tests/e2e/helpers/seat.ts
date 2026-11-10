@@ -23,12 +23,49 @@ const LIMITS = { MYR: '50000000', USD: '50000000' };
 // timeout.
 export async function api(ctx: BrowserContext, _page: Page, method: 'get' | 'post', path: string, data?: unknown) {
     const base = baseUrl();
-    const xsrf = (await ctx.cookies(base)).find((c) => c.name === 'XSRF-TOKEN')?.value;
     return ctx.request.fetch(`${base}/api/v1${path}`, {
         method,
         data,
-        headers: { referer: `${base}/`, origin: base, 'x-xsrf-token': decodeURIComponent(xsrf ?? '') },
+        headers: { referer: `${base}/`, origin: base, 'x-xsrf-token': await xsrf(ctx, base) },
     });
+}
+
+async function xsrf(ctx: BrowserContext, base: string): Promise<string> {
+    const value = (await ctx.cookies(base)).find((c) => c.name === 'XSRF-TOKEN')?.value;
+    return decodeURIComponent(value ?? '');
+}
+
+// A booking needs a real customer row — the fresh CI seed ships none, so
+// journeys register their own through the full create form. Every CDD
+// profile field is populated: assertCustomerCddRequirements reads them off
+// the record (not the transaction payload), and a bare quick-create leaves
+// them null, which 302s any Standard-tier booking back to the form. Name,
+// ID and phone are unique per call — id_number_hash/phone_hash are unique
+// indexes, and an exact name keeps the typeahead match deterministic.
+export async function createCustomer(
+    ctx: BrowserContext, page: Page, name?: string,
+): Promise<{ id: number; full_name: string }> {
+    const base = baseUrl();
+    const suffix = `${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 3).toString(36)}`;
+    const fullName = name ?? `E2E Journey ${suffix}`;
+    const res = await ctx.request.post(`${base}/customers`, {
+        form: {
+            _token: await csrf(page),
+            full_name: fullName,
+            id_type: 'Passport',
+            id_number: `E2E${suffix.toUpperCase()}`,
+            date_of_birth: '1990-01-01',
+            nationality: 'MY',
+            address: '1 Jalan Testing, Kuala Lumpur',
+            phone: `+601${suffix.replace(/[^0-9]/g, '2').slice(-8).padStart(8, '2')}`,
+            occupation: 'Engineer',
+            employer_name: 'Test Corp',
+        },
+        headers: { referer: `${base}/`, origin: base, 'x-xsrf-token': await xsrf(ctx, base) },
+    });
+    const id = Number(res.url().match(/\/customers\/(\d+)/)?.[1]);
+    expect(id, `customer store did not land on /customers/{id} (url=${res.url()})`).toBeGreaterThan(0);
+    return { id, full_name: fullName };
 }
 
 // Raw session token for classic form posts (_token field). Reads the page

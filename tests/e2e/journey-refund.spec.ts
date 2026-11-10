@@ -1,10 +1,9 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { gotoVerified } from './helpers/auth';
 import { authFile, baseUrl, USERS } from './helpers/env';
-import { api, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
+import { api, createCustomer, csrf, ensureSeated, openTill, primeMfa } from './helpers/seat';
 import { resolveOpenFlags } from './helpers/compliance';
 
-const CUSTOMER_NAME = 'Tun Abdullah bin Ahmad bin Haji Ibrahim';
 const RATE = 4.7;
 
 async function createAllocation(ctx: BrowserContext, page: Page, tellerId: number, currency: string, quantity: string) {
@@ -37,7 +36,11 @@ test.describe('refund journey', () => {
         await gotoVerified(admPage, '/stock-cash', USERS.admin);
         await openTill(admCtx, admPage, till!, 'USD');
         await openTill(admCtx, admPage, till!, 'MYR');
-        await createAllocation(admCtx, admPage, 5, 'USD', '5000');
+        // Teller id + customer resolve live — seed ids differ across
+        // environments and the fresh CI seed ships no customers at all.
+        const teller = await (await api(tlrCtx, tlrPage, 'get', '/user')).json();
+        await createAllocation(admCtx, admPage, teller.data.id, 'USD', '5000');
+        const customerName = (await createCustomer(tlrCtx, tlrPage)).full_name;
         await mgrCtx.close();
 
         // Teller books a small Buy through the classic form.
@@ -50,8 +53,8 @@ test.describe('refund journey', () => {
         await gotoVerified(tlrPage, '/transactions/create', USERS.teller);
         await tlrPage.waitForFunction(() => (window as any).Alpine !== undefined);
         await tlrPage.locator('input[name="full_name"]').click();
-        await tlrPage.locator('input[name="full_name"]').pressSequentially(CUSTOMER_NAME, { delay: 30 });
-        await tlrPage.locator('ul li', { hasText: CUSTOMER_NAME }).first().click();
+        await tlrPage.locator('input[name="full_name"]').pressSequentially(customerName, { delay: 30 });
+        await tlrPage.locator('ul li', { hasText: customerName }).first().click();
         await tlrPage.selectOption('select[name="type"]', 'Buy');
         await tlrPage.selectOption('select[name="currency_code"]', 'USD');
         await tlrPage.fill('input[name="quantity"]', (150 + Math.random()).toFixed(2));
