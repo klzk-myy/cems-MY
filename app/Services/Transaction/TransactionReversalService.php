@@ -23,7 +23,6 @@ use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\System\CacheInvalidationService;
-use App\Services\System\MathService;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +30,6 @@ use Illuminate\Support\Facades\Log;
 class TransactionReversalService
 {
     public function __construct(
-        protected MathService $mathService,
         protected AccountingService $accountingService,
         protected AuditTrailHelper $auditTrailHelper,
         protected ComplianceService $complianceService,

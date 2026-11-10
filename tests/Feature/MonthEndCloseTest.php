@@ -10,8 +10,8 @@ use App\Models\AccountingPeriod;
 use App\Models\AccountMapping;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
-use App\Models\CurrencyPosition;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\Accounting\MonthEndCloseService;
 use Carbon\Carbon;
@@ -77,15 +77,15 @@ class MonthEndCloseTest extends TestCase
         $parsed = Carbon::parse($date);
         $fiscalYear = FiscalYear::factory()->create([
             'year_code' => (string) $parsed->year,
-            'start_date' => $parsed->startOfYear()->toDateString(),
-            'end_date' => $parsed->endOfYear()->toDateString(),
+            'start_date' => $parsed->copy()->startOfYear()->toDateString(),
+            'end_date' => $parsed->copy()->endOfYear()->toDateString(),
             'status' => 'open',
         ]);
 
         return AccountingPeriod::factory()->create([
             'period_code' => $parsed->format('Y-m'),
-            'start_date' => $parsed->startOfMonth()->toDateString(),
-            'end_date' => $parsed->endOfMonth()->toDateString(),
+            'start_date' => $parsed->copy()->startOfMonth()->toDateString(),
+            'end_date' => $parsed->copy()->endOfMonth()->toDateString(),
             'period_type' => 'month',
             'status' => 'open',
             'fiscal_year_id' => $fiscalYear->id,
@@ -146,11 +146,9 @@ class MonthEndCloseTest extends TestCase
         $date = Carbon::parse('2026-03-31');
         $period = $this->createFiscalYearAndPeriod($date->toDateString());
 
-        CurrencyPosition::factory()->create([
-            'currency_code' => 'USD',
-            'branch_id' => $this->createTestBranch()->id,
-            'balance' => '1000.00',
-        ]);
+        // A Draft entry in the period is what blocks the close — the check
+        // counts JournalEntry rows with Draft/Pending status, not positions.
+        JournalEntry::factory()->create(['period_id' => $period->id]);
 
         $result = $this->service->preFlightChecks($date);
 

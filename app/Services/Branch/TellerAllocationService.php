@@ -110,13 +110,24 @@ class TellerAllocationService
 
     public function activateAllocation(TellerAllocation $allocation): TellerAllocation
     {
-        if (! $allocation->isApproved()) {
-            throw new InvalidAllocationStateException(TellerAllocationStatus::Approved->value);
-        }
+        return DB::transaction(function () use ($allocation) {
+            // Re-read under a pessimistic lock so the status check and
+            // transition are atomic — a racing cancellation must not be
+            // overwritten by a stale Approved read on this instance.
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $allocation->activate();
+            if (! $locked->isApproved()) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Approved->value);
+            }
 
-        return $allocation;
+            $locked->activate();
+
+            $allocation->refresh();
+
+            return $allocation;
+        });
     }
 
     /**
@@ -266,17 +277,25 @@ class TellerAllocationService
 
     public function rejectAllocation(TellerAllocation $allocation, User $rejector, ?string $reason = null): TellerAllocation
     {
-        if (! $allocation->isPending()) {
-            throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
-        }
-
         return DB::transaction(function () use ($allocation, $rejector, $reason) {
             // A PENDING allocation never drew funds: the branch pool is only
             // debited in approveAllocation(). Deallocating here would credit
             // the pool with phantom funds taken off other tellers' floats.
             // Funded reversals are handled by returnToPool() (ACTIVE) and
-            // modifyAllocation() (APPROVED/ACTIVE) instead.
-            $allocation->reject($rejector, $reason);
+            // modifyAllocation() (APPROVED/ACTIVE) instead. The state check
+            // runs on a locked re-read so a concurrent approval that already
+            // drew funds into the earmark cannot be silently flipped back.
+            $locked = TellerAllocation::where('id', $allocation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $locked->isPending()) {
+                throw new InvalidAllocationStateException(TellerAllocationStatus::Pending->value);
+            }
+
+            $locked->reject($rejector, $reason);
+
+            $allocation->refresh();
 
             return $allocation;
         });

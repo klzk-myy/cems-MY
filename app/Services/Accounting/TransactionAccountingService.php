@@ -106,14 +106,6 @@ class TransactionAccountingService
     }
 
     /**
-     * Create accounting entries for imported transactions.
-     */
-    public function createImportAccountingEntries(Transaction $transaction): void
-    {
-        $this->createImmediateAccountingEntries($transaction);
-    }
-
-    /**
      * Build journal entries for a transaction.
      *
      * @return array<int, array{account_code: string, debit: mixed, credit: mixed, description: string}>

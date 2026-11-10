@@ -26,11 +26,6 @@ class SanctionsRescreeningMonitor extends BaseMonitor
         $this->screeningService = $screeningService;
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::SanctionMatch;
-    }
-
     public function run(): array
     {
         $findings = [];

@@ -5,10 +5,6 @@ namespace App\Services\Reporting;
 use App\Enums\ReportGeneratedStatus;
 use App\Exceptions\Domain\ReportValidationException;
 use App\Models\ReportGenerated;
-use App\Models\User;
-use App\Notifications\ReportEmailNotification;
-use App\Services\System\NotificationDispatcher;
-use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExportService
@@ -108,70 +104,6 @@ class ExportService
 
             return $value;
         }, $row);
-    }
-
-    public function toPDF(array $data, string $template, string $filename): string
-    {
-        $filename = $this->sanitizeFilename($filename);
-        $path = $this->basePath.'/'.$filename;
-
-        if (! file_exists($this->basePath)) {
-            mkdir($this->basePath, 0755, true);
-        }
-
-        $pdf = \PDF::loadView($template, ['data' => $data]);
-        $pdf->save($path);
-
-        return $path;
-    }
-
-    public function toExcel(array $data, string $filename): string
-    {
-        $filename = $this->sanitizeFilename($filename);
-        $path = $this->basePath.'/'.$filename;
-
-        if (! file_exists($this->basePath)) {
-            mkdir($this->basePath, 0755, true);
-        }
-
-        $export = new class($data) implements FromArray
-        {
-            /** @var array<int, array<int, mixed>> */
-            protected array $data;
-
-            /**
-             * @param  array<int, array<int, mixed>>  $data
-             */
-            public function __construct(array $data)
-            {
-                $this->data = $data;
-            }
-
-            /**
-             * @return array<int, array<int, mixed>>
-             */
-            public function array(): array
-            {
-                return $this->data;
-            }
-        };
-
-        // Store directly to the reports subdirectory using the full path
-        Excel::store($export, 'reports/'.$filename, 'local');
-
-        return $path;
-    }
-
-    public function emailReport(string $to, string $subject, string $filePath, string $reportType = ''): bool
-    {
-        $user = User::where('email', $to)->first();
-        NotificationDispatcher::dispatchSafe(
-            $user ?? $to,
-            new ReportEmailNotification($subject, $filePath),
-            ['mail']
-        );
-
-        return true;
     }
 
     protected function sanitizeFilename(string $filename): string

@@ -101,18 +101,6 @@ class VelocityRiskService
     }
 
     /**
-     * Get 24-hour transaction amount for a customer.
-     */
-    public function get24hAmount(int $customerId): string
-    {
-        return Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', now()->subHours($this->thresholdService->getVelocityAmountWindowHours()))
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->selectRaw('CAST(SUM(amount_myr) AS CHAR) as total')
-            ->value('total') ?? '0';
-    }
-
-    /**
      * Get 24-hour transaction count for a customer.
      */
     public function get24hCount(int $customerId): int

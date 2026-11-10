@@ -2,13 +2,10 @@
 
 namespace App\Services\Reporting;
 
-use App\Enums\EddStatus;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use App\Events\ReportGenerated;
-use App\Models\Compliance\EnhancedDiligenceRecord;
-use App\Models\Compliance\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Services\AuditService;
@@ -395,55 +392,6 @@ class ReportSchedulingService
         $schedule->updateNextRun();
 
         return $schedule;
-    }
-
-    /**
-     * Get preview data for a report type.
-     */
-    public function getPreviewData(ReportType $type, array $params): array
-    {
-        return match ($type) {
-            ReportType::Msb2 => $this->reportingService->generateMSB2Data($params['date'] ?? now()->toDateString()),
-            ReportType::Lmca => $this->reportingService->generateFormLMCA($params['month'] ?? now()->format('Y-m')),
-            ReportType::Qlvr => $this->reportingService->generateQuarterlyLargeValueReport($params['quarter'] ?? now()->format('Y').'-Q'.ceil(now()->month / 3)),
-            ReportType::Plr => $this->reportingService->generatePositionLimitReport(),
-        };
-    }
-
-    /**
-     * Get deadline calendar for reports.
-     */
-    public function getDeadlineCalendar(): array
-    {
-        $scheduledReports = ReportSchedule::active()
-            ->whereNotNull('next_run_at')
-            ->get()
-            ->map(fn ($schedule) => [
-                'name' => $schedule->report_type,
-                'due_date' => $schedule->next_run_at,
-                'status' => $schedule->next_run_at->isPast() ? 'overdue' : 'upcoming',
-            ]);
-
-        return $scheduledReports
-            ->sortBy('due_date')
-            ->values()
-            ->toArray();
-    }
-
-    /**
-     * Get KPI metrics.
-     */
-    public function getKpiMetrics(): array
-    {
-        $flagResolutionTime = $this->calculateAvgFlagResolutionTime();
-        $eddCompletionRate = $this->calculateEddCompletionRate();
-        $reportsOnSchedule = $this->calculateReportsOnSchedule();
-
-        return [
-            ['value' => round($flagResolutionTime, 1).'h', 'label' => 'Avg Flag Resolution'],
-            ['value' => round($eddCompletionRate, 1).'%', 'label' => 'EDD Completion Rate'],
-            ['value' => round($reportsOnSchedule, 1).'%', 'label' => 'Reports On Schedule'],
-        ];
     }
 
     protected function getFileMeta(string $filePath): array

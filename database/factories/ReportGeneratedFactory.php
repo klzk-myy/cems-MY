@@ -8,6 +8,9 @@ use App\Models\ReportGenerated;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<ReportGenerated>
+ */
 class ReportGeneratedFactory extends Factory
 {
     protected $model = ReportGenerated::class;

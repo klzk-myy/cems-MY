@@ -348,4 +348,36 @@ class KycDocumentExpiryEnforcementTest extends TestCase
 
         $response->assertNotFound();
     }
+
+    #[Test]
+    public function second_disposition_returns_conflict_and_keeps_the_first_outcome(): void
+    {
+        $compliance = User::factory()->create([
+            'role' => UserRole::ComplianceOfficer,
+            'branch_id' => null,
+        ]);
+        $customer = $this->createTestCustomer();
+        $document = CustomerDocument::factory()->create([
+            'customer_id' => $customer->id,
+            'uploaded_by' => $compliance->id,
+        ]);
+
+        // Path A commits first.
+        $this->actingAs($compliance)
+            ->post("/kyc-documents/{$document->id}/verify")
+            ->assertOk();
+
+        // Path B arrives after A — the locked pending re-check must reject it.
+        $this->actingAs($compliance)
+            ->postJson("/kyc-documents/{$document->id}/reject", [
+                'reason' => 'Late reject attempt',
+            ])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('customer_documents', [
+            'id' => $document->id,
+            'status' => 'verified',
+            'rejection_reason' => null,
+        ]);
+    }
 }

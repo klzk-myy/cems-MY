@@ -72,14 +72,6 @@ class BankReconciliation extends BaseModel
     }
 
     /**
-     * @return BelongsTo<JournalEntry, $this>
-     */
-    public function matchedEntry(): BelongsTo
-    {
-        return $this->belongsTo(JournalEntry::class, 'matched_to_journal_entry_id');
-    }
-
-    /**
      * @return BelongsTo<User, $this>
      */
     public function creator(): BelongsTo
@@ -101,79 +93,6 @@ class BankReconciliation extends BaseModel
     {
 
         return BcmathHelper::subtract((string) $this->debit, (string) $this->credit);
-    }
-
-    /**
-     * Check if this is an outstanding check (issued but not yet presented)
-     */
-    public function isOutstandingCheck(): bool
-    {
-        return $this->check_number !== null
-            && $this->check_status !== null
-            && in_array($this->check_status, [CheckStatus::Issued, CheckStatus::Presented]);
-    }
-
-    /**
-     * Check if this check has cleared
-     */
-    public function isClearedCheck(): bool
-    {
-        return $this->check_status === CheckStatus::Cleared;
-    }
-
-    /**
-     * Scope for outstanding checks
-     */
-    public function scopeOutstandingChecks($query)
-    {
-        return $query->whereNotNull('check_number')
-            ->whereIn('check_status', [CheckStatus::Issued->value, CheckStatus::Presented->value]);
-    }
-
-    /**
-     * Scope for cleared checks
-     */
-    public function scopeClearedChecks($query)
-    {
-        return $query->where('check_status', CheckStatus::Cleared->value);
-    }
-
-    /**
-     * Mark check as presented
-     */
-    public function markPresented(): void
-    {
-        $this->update(['check_status' => CheckStatus::Presented->value]);
-    }
-
-    /**
-     * Mark check as cleared
-     */
-    public function markCleared(): void
-    {
-        $this->update(['check_status' => CheckStatus::Cleared->value]);
-    }
-
-    /**
-     * Mark check as returned
-     */
-    public function markReturned(?string $reason = null): void
-    {
-        $this->update([
-            'check_status' => CheckStatus::Returned->value,
-            'notes' => $this->notes ? $this->notes.'; '.$reason : $reason,
-        ]);
-    }
-
-    /**
-     * Mark check as stopped
-     */
-    public function markStopped(?string $reason = null): void
-    {
-        $this->update([
-            'check_status' => CheckStatus::Stopped->value,
-            'notes' => $this->notes ? $this->notes.'; '.$reason : $reason,
-        ]);
     }
 
     /**

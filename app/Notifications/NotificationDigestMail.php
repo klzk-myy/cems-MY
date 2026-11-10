@@ -46,13 +46,4 @@ class NotificationDigestMail extends Mailable
 
         return $this;
     }
-
-    protected function buildRecipients($message)
-    {
-        foreach ($this->to as $email => $name) {
-            $message->to($email, $name);
-        }
-
-        return $this;
-    }
 }

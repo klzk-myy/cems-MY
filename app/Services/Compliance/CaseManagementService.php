@@ -333,15 +333,29 @@ class CaseManagementService
         }
 
         return DB::transaction(function () use ($alert, $case) {
-            $alert->update(['case_id' => $case->id]);
-            $this->recalculateCasePriority($case);
-            $this->recalculateCaseSla($case);
+            // The case row lock serializes linking against a concurrent
+            // close: assertAllAlertsResolved() in transitionTo() holds the
+            // same lock, so a link can never slip an unresolved alert past
+            // a close in flight.
+            $locked = ComplianceCase::where('id', $case->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $locked->status->isActive()) {
+                throw new CaseManagementException(
+                    "Cannot link alert to case {$locked->id}: case is {$locked->status->value}"
+                );
+            }
+
+            $alert->update(['case_id' => $locked->id]);
+            $this->recalculateCasePriority($locked);
+            $this->recalculateCaseSla($locked);
 
             $this->auditService->logWithSeverity(
                 'compliance_case_alerts_linked',
                 [
-                    'description' => "Alert #{$alert->id} linked to compliance case {$case->case_number}",
-                    'case_id' => $case->id,
+                    'description' => "Alert #{$alert->id} linked to compliance case {$locked->case_number}",
+                    'case_id' => $locked->id,
                     'alert_ids' => [$alert->id],
                 ],
                 'INFO'
@@ -381,22 +395,30 @@ class CaseManagementService
      */
     public function assignToOfficer(ComplianceCase $case, int $userId): ComplianceCase
     {
-        $previousAssignee = $case->assigned_to;
+        return DB::transaction(function () use ($case, $userId) {
+            // Read assignee and status off the locked row — a stale
+            // $previousAssignee would corrupt the audit trail, and an
+            // Open→UnderReview bump on a stale status could resurrect a
+            // case closed meanwhile.
+            $locked = ComplianceCase::where('id', $case->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return DB::transaction(function () use ($case, $userId, $previousAssignee) {
-            $case->update(['assigned_to' => $userId]);
+            $previousAssignee = $locked->assigned_to;
 
-            if ($case->status === ComplianceCaseStatus::Open) {
-                $case->update(['status' => ComplianceCaseStatus::UnderReview]);
+            $locked->update(['assigned_to' => $userId]);
+
+            if ($locked->status === ComplianceCaseStatus::Open) {
+                $locked->update(['status' => ComplianceCaseStatus::UnderReview]);
             }
 
             if ($previousAssignee !== $userId) {
-                $this->notifyAssignee($case, $userId);
+                $this->notifyAssignee($locked, $userId);
             }
 
-            $this->auditCaseAssigned($case, $previousAssignee, $userId);
+            $this->auditCaseAssigned($locked, $previousAssignee, $userId);
 
-            return $case->fresh();
+            return $locked->fresh();
         });
     }
 
@@ -444,22 +466,42 @@ class CaseManagementService
             return $case;
         }
 
+        // Cheap reject outside the transaction; the authoritative checks
+        // run again on the row-locked copy inside it.
         if (! $current->canMoveTo($status)) {
             throw new CaseManagementException(
                 "Cannot move case from {$current->value} to {$status->value}"
             );
         }
 
-        if ($status === ComplianceCaseStatus::Closed) {
-            $this->assertAllAlertsResolved($case);
-        }
+        $case = DB::transaction(function () use ($case, $status, $mutate, $audit) {
+            // Lock the case row so concurrent transitions, alert links, and
+            // assignments serialize: the status read below cannot be stale.
+            $locked = ComplianceCase::where('id', $case->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        DB::transaction(function () use ($case, $status, $mutate, $audit) {
-            $case->update(['status' => $status]);
-            $mutate($case);
+            $current = $locked->status;
 
-            if ($status === ComplianceCaseStatus::Closed && $case->resolved_at === null) {
-                $case->update(['resolved_at' => now()]);
+            if ($status === $current) {
+                return $locked;
+            }
+
+            if (! $current->canMoveTo($status)) {
+                throw new CaseManagementException(
+                    "Cannot move case from {$current->value} to {$status->value}"
+                );
+            }
+
+            if ($status === ComplianceCaseStatus::Closed) {
+                $this->assertAllAlertsResolved($locked);
+            }
+
+            $locked->update(['status' => $status]);
+            $mutate($locked);
+
+            if ($status === ComplianceCaseStatus::Closed && $locked->resolved_at === null) {
+                $locked->update(['resolved_at' => now()]);
             }
 
             $this->auditService->logWithSeverity(
@@ -467,6 +509,8 @@ class CaseManagementService
                 $audit['data'],
                 $audit['severity'] ?? 'INFO'
             );
+
+            return $locked;
         });
 
         if ($status === ComplianceCaseStatus::Closed) {
@@ -604,22 +648,6 @@ class CaseManagementService
                 ->where('sla_deadline', '<', now())->count(),
             'pending_review' => ComplianceCase::where('status', ComplianceCaseStatus::PendingApproval->value)->count(),
         ];
-    }
-
-    /**
-     * Find potential duplicate cases for a customer.
-     */
-    public function findPotentialDuplicates(int $customerId, ?int $excludeCaseId = null): Collection
-    {
-        $query = ComplianceCase::where('customer_id', $customerId)
-            ->open()
-            ->where('created_at', '>=', now()->subDays(7));
-
-        if ($excludeCaseId) {
-            $query->where('id', '!=', $excludeCaseId);
-        }
-
-        return $query->get();
     }
 
     /**

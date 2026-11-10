@@ -30,25 +30,31 @@ class ScreeningEnforcementService
     public function handleConfirmedMatch(Customer $customer, string $listType): array
     {
         DB::transaction(function () use ($customer, $listType) {
+            // Lock the customer row: every flag write and the is_active /
+            // freeze checks below must see canonical state, and the lock
+            // serializes enforcement against a concurrent dismiss-restore
+            // on another result for the same customer.
+            $locked = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
+
             // Freeze customer's funds and properties per pd-00.md 27.6.1(a)
-            $customer->freeze("confirmed_{$listType}_match");
+            $locked->freeze("confirmed_{$listType}_match");
 
             // Mark the standing sanction-hit flag so risk scoring and future
             // screenings treat the customer as a confirmed match.
-            $customer->sanction_hit = true;
-            $customer->risk_rating = RiskRating::High;
-            $customer->save();
+            $locked->sanction_hit = true;
+            $locked->risk_rating = RiskRating::High;
+            $locked->save();
 
             // Block transactions to prevent dissipation per pd-00.md 27.6.1(b)
-            $this->blockCustomerTransactions($customer);
+            $this->blockCustomerTransactions($locked);
 
             // Reject potential customer per pd-00.md 27.6.2 (if not yet active)
-            if (! $customer->is_active) {
-                $this->rejectCustomer($customer, "positive_{$listType}_match");
+            if (! $locked->is_active) {
+                $this->rejectCustomer($locked, "positive_{$listType}_match");
             }
 
             // pd-00.md 27.7.1 - Report positive name match to BNM FIU and IGP
-            $this->reportToBnmFiu($customer, $listType);
+            $this->reportToBnmFiu($locked, $listType);
         });
 
         return [

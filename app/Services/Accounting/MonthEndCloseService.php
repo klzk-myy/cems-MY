@@ -26,7 +26,6 @@ class MonthEndCloseService
 {
     public function __construct(
         protected RevaluationService $revaluationService,
-        protected AccountingService $accountingService,
         protected AuditService $auditService,
         protected ReportingService $reportingService,
         protected PeriodCloseService $periodCloseService,

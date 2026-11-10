@@ -10,7 +10,6 @@ use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Models\User;
-use App\Services\AuditService;
 use App\Services\Compliance\KycDocumentExpiryService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,8 +38,7 @@ class KycDocumentExpiryServiceTest extends TestCase
 
         $this->thresholdService = new ThresholdService;
         $this->service = new KycDocumentExpiryService(
-            $this->thresholdService,
-            app(AuditService::class)
+            $this->thresholdService
         );
 
         $this->setupTestData();

@@ -6,6 +6,9 @@ use App\Models\Customer;
 use App\Models\CustomerRelation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<CustomerRelation>
+ */
 class CustomerRelationFactory extends Factory
 {
     protected $model = CustomerRelation::class;

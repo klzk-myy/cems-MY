@@ -5,6 +5,7 @@ namespace App\Services\Transaction;
 use App\Enums\ErrorType;
 use App\Models\Transaction;
 use App\Models\TransactionError;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -99,9 +100,20 @@ class TransactionErrorHandler
             $delay = $this->getDelayForRetryCount($error->retry_count);
             $error->incrementRetry($delay);
 
-            // Transition transaction to Failed status
-            $stateMachine = new TransactionStateMachine($transaction);
-            $stateMachine->fail($message);
+            // Transition transaction to Failed status. The state machine is
+            // run on a locked re-read inside a transaction — the caller's
+            // instance may be stale relative to a racing transition, and a
+            // stale write would clobber both the status and the appended
+            // transition_history entries.
+            DB::transaction(function () use ($transaction, $message) {
+                $locked = Transaction::where('id', $transaction->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($locked) {
+                    (new TransactionStateMachine($locked))->fail($message);
+                }
+            });
 
             return true;
         }

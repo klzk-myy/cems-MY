@@ -216,32 +216,6 @@ class TransactionStateMachine
     }
 
     /**
-     * Get available transitions from the current state.
-     *
-     * @return array Array of valid TransactionStatus values
-     */
-    public function getAvailableTransitions(): array
-    {
-        $currentValue = $this->transaction->status->value;
-        $validTransitions = self::TRANSITIONS[$currentValue] ?? [];
-
-        return array_map(
-            fn (string $value) => TransactionStatus::from($value),
-            $validTransitions
-        );
-    }
-
-    /**
-     * Get the transition history for this transaction.
-     *
-     * @return array Array of transition records
-     */
-    public function getTransitionHistory(): array
-    {
-        return $this->history;
-    }
-
-    /**
      * Submit a draft transaction for approval.
      * Draft -> PendingApproval
      *

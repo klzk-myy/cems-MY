@@ -4,17 +4,13 @@ namespace App\Services\Compliance;
 
 use App\Models\Customer;
 use App\Services\AuditService;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\ValueObjects\RiskAnalysisResult;
 use Illuminate\Support\Facades\Log;
 
 class HistoricalRiskAnalysisService
 {
     public function __construct(
-        protected MathService $mathService,
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService,
         protected RiskCalculationService $riskCalculationService
     ) {}
 

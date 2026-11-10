@@ -34,27 +34,6 @@ class BranchPoolService
         });
     }
 
-    public function getPoolBalance(Branch $branch, string $currencyCode): array
-    {
-        $pool = BranchPool::where('branch_id', $branch->id)
-            ->where('currency_code', $currencyCode)
-            ->first();
-
-        if (! $pool) {
-            return [
-                'available' => '0.0000',
-                'allocated' => '0.0000',
-                'total' => '0.0000',
-            ];
-        }
-
-        return [
-            'available' => $pool->available_balance,
-            'allocated' => $pool->allocated_balance,
-            'total' => $this->mathService->add($pool->available_balance, $pool->allocated_balance),
-        ];
-    }
-
     public function allocateToTeller(Branch $branch, string $currencyCode, float|string $quantity): bool
     {
         $quantity = (string) $quantity;
@@ -327,12 +306,5 @@ class BranchPoolService
     public function getAllPoolsForBranch(Branch $branch): Collection
     {
         return BranchPool::where('branch_id', $branch->id)->with('branch')->get();
-    }
-
-    public function getAvailablePoolsForBranch(Branch $branch): Collection
-    {
-        return BranchPool::where('branch_id', $branch->id)
-            ->where('available_balance', '>', 0)
-            ->get();
     }
 }

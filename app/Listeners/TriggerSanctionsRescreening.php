@@ -15,8 +15,6 @@ use App\Models\Compliance\Alert;
 use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Services\AuditService;
-use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Bus;
@@ -25,11 +23,6 @@ use Illuminate\Support\Facades\Log;
 
 class TriggerSanctionsRescreening
 {
-    public function __construct(
-        protected CustomerScreeningService $sanctionScreeningService,
-        protected AuditService $auditService
-    ) {}
-
     public function handleCustomerUpdate(CustomerRecordUpdated $event): void
     {
         ComplianceScreeningJob::dispatch($event->customer->id)->onQueue('compliance');
@@ -84,43 +77,6 @@ class TriggerSanctionsRescreening
             ->get();
     }
 
-    protected function rescreenCustomerWithTransactionHold(Customer $customer, SanctionsListUpdated $event): void
-    {
-        $previousSanctionHit = $customer->sanction_hit;
-
-        $result = $this->sanctionScreeningService->screenCustomer($customer);
-        $firstMatch = $result->matches->first();
-
-        $isNewMatch = $result->isBlocked() && ! $previousSanctionHit;
-
-        if ($isNewMatch) {
-            $this->placePendingTransactionsForComplianceReview($customer, "New sanctions match detected after list update: {$firstMatch?->entityName}");
-
-            $this->createComplianceAlert(
-                $customer,
-                "CRITICAL: New sanctions match detected after {$event->source} list update (v{$event->previousVersion} -> v{$event->newVersion}). Customer: {$customer->full_name}. Matched: {$firstMatch?->entityName} ({$firstMatch?->matchScore}% similar).",
-                AlertPriority::Critical
-            );
-
-            Log::critical('New sanctions match detected during batch rescreening', [
-                'customer_id' => $customer->id,
-                'customer_name' => $customer->full_name,
-                'matched_entity' => $firstMatch?->entityName,
-                'list_source' => $event->source,
-                'list_version_change' => "{$event->previousVersion} -> {$event->newVersion}",
-            ]);
-        }
-
-        $this->auditService->logSanctionEvent('batch_sanctions_rescreening', $customer->id, [
-            'entity_type' => 'Customer',
-            'triggered_by' => 'SanctionsListUpdated',
-            'list_source' => $event->source,
-            'list_version' => $event->newVersion,
-            'screening_result' => $result->isBlocked() ? 'blocked' : 'passed',
-            'is_new_match' => $isNewMatch,
-        ]);
-    }
-
     protected function placePendingTransactionsForComplianceReview(Customer $customer, string $reason): void
     {
         $pendingStatuses = [
@@ -133,14 +89,25 @@ class TriggerSanctionsRescreening
             ->whereIn('status', $pendingStatuses)
             ->get();
 
-        DB::transaction(function () use ($transactions, $customer, $reason) {
+        DB::transaction(function () use ($transactions, $customer, $reason, $pendingStatuses) {
             foreach ($transactions as $transaction) {
-                $transaction->status = TransactionStatus::PendingApproval;
-                $transaction->save();
+                // Lock each row and re-check the holdable set: a transaction
+                // that transitioned since the unlocked read must not be
+                // resurrected into PendingApproval.
+                $locked = Transaction::whereKey($transaction->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (! in_array($locked->status, $pendingStatuses, true)) {
+                    continue;
+                }
+
+                $locked->status = TransactionStatus::PendingApproval;
+                $locked->save();
 
                 FlaggedTransaction::create([
                     'customer_id' => $customer->id,
-                    'transaction_id' => $transaction->id,
+                    'transaction_id' => $locked->id,
                     'flag_type' => ComplianceFlagType::SanctionMatch,
                     'flag_reason' => $reason,
                     'status' => FlagStatus::Open,

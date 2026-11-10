@@ -5,7 +5,6 @@ namespace App\Services\Risk;
 use App\Enums\TransactionType;
 use App\Models\Transaction;
 use App\Services\Compliance\RoundTripDetector;
-use App\Services\System\MathService;
 use Illuminate\Database\Eloquent\Collection;
 
 class PatternRiskService
@@ -22,7 +21,6 @@ class PatternRiskService
     private const REVERSAL_MIN_SELLS = 2;
 
     public function __construct(
-        protected MathService $mathService,
         protected RoundTripDetector $roundTripDetector
     ) {}
 
@@ -98,34 +96,6 @@ class PatternRiskService
             'pattern_reversal' => $patternReversal,
             'currency_switch' => $currencySwitch,
             'details' => $details,
-        ];
-    }
-
-    /**
-     * Check for currency round-tripping pattern.
-     *
-     * @param  int  $timeWindowHours  Time window in hours
-     * @param  string  $threshold  Round-trip amount threshold
-     */
-    public function checkRoundTripping(int $customerId, int $timeWindowHours = 72, string $threshold = '5000'): array
-    {
-        $cutoffTime = now()->subHours($timeWindowHours);
-
-        $recentTransactions = Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', $cutoffTime)
-            ->notCancelled()
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        if ($recentTransactions->count() < 2) {
-            return ['has_round_trip' => false, 'patterns' => []];
-        }
-
-        $patterns = $this->detectRoundTrips($recentTransactions, $timeWindowHours, $threshold);
-
-        return [
-            'has_round_trip' => ! empty($patterns),
-            'patterns' => $patterns,
         ];
     }
 

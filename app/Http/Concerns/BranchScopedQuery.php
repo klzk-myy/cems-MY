@@ -4,7 +4,6 @@ namespace App\Http\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Enumerable;
 
 /**
  * Single source of branch-scoped access control.
@@ -58,32 +57,6 @@ trait BranchScopedQuery
         }
 
         return $query;
-    }
-
-    /**
-     * Apply branch scoping to a Collection / Enumerable.
-     *
-     * @template TKey of array-key
-     * @template TValue
-     *
-     * @param  Enumerable<TKey, TValue>  $collection
-     * @return Enumerable<TKey, TValue>
-     */
-    protected function filterByBranch(Enumerable $collection, ?int $branchId = null): Enumerable
-    {
-        $branchId = $branchId ?? $this->currentUserBranchId();
-
-        if ($branchId !== null) {
-            return $collection->filter(function (mixed $item) use ($branchId): bool {
-                $value = $item instanceof Model
-                    ? $item->getAttribute('branch_id')
-                    : (is_array($item) ? ($item['branch_id'] ?? null) : null);
-
-                return (int) $value === (int) $branchId;
-            });
-        }
-
-        return $collection;
     }
 
     /**

@@ -512,26 +512,6 @@ class MfaService
     }
 
     /**
-     * Generate a device fingerprint based on request data.
-     *
-     * SECURITY NOTE: This uses multiple factors to make spoofing more difficult.
-     * The fingerprint includes stable client identifiers (user agent + IP).
-     * Session ID is intentionally excluded as it changes per session.
-     */
-    public function generateDeviceFingerprint(): string
-    {
-        $userAgent = ActorContext::capture()->userAgent ?? 'unknown';
-        $ip = ActorContext::capture()->ipAddress ?? '0.0.0.0';
-
-        $data = implode('|', [
-            hash('sha256', $userAgent),
-            hash('sha256', $ip),
-        ]);
-
-        return hash('sha256', $data);
-    }
-
-    /**
      * Base32 encode data.
      */
     private function base32Encode(string $data): string

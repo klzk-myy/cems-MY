@@ -9,6 +9,9 @@ use App\Models\TellerAllocation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<TellerAllocation>
+ */
 class TellerAllocationFactory extends Factory
 {
     protected $model = TellerAllocation::class;

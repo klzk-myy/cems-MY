@@ -76,11 +76,6 @@ class MonitoringEngine
         }
     }
 
-    public function getRegisteredMonitors(): array
-    {
-        return $this->monitors;
-    }
-
     public function getMonitor(string $monitorClass): BaseMonitor
     {
         // Resolve via the container so each monitor receives its own declared
@@ -97,80 +92,10 @@ class MonitoringEngine
         return $monitor;
     }
 
-    protected function isCircuitBroken(): bool
-    {
-        $failures = (int) Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0);
-
-        if ($failures < self::CIRCUIT_BREAKER_THRESHOLD) {
-            return false;
-        }
-
-        // The broken-at key carries a TTL equal to the cooldown — once it
-        // lapses the circuit resets itself.
-        if (Cache::get(self::CACHE_PREFIX.'circuit_broken_at') === null) {
-            Cache::forget(self::CACHE_PREFIX.'consecutive_failures');
-            Log::info('MonitoringEngine circuit breaker reset after cooldown');
-
-            return false;
-        }
-
-        return true;
-    }
-
-    protected function recordFailure(): void
-    {
-        $failures = (int) Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0) + 1;
-        Cache::put(self::CACHE_PREFIX.'consecutive_failures', $failures, now()->addHour());
-
-        if ($failures >= self::CIRCUIT_BREAKER_THRESHOLD) {
-            Cache::put(
-                self::CACHE_PREFIX.'circuit_broken_at',
-                time(),
-                self::CIRCUIT_BREAKER_RESET_AFTER
-            );
-            Log::critical('MonitoringEngine circuit breaker triggered - too many consecutive monitor failures');
-        }
-    }
-
     protected function recordSuccess(): void
     {
         Cache::forget(self::CACHE_PREFIX.'consecutive_failures');
         Cache::forget(self::CACHE_PREFIX.'circuit_broken_at');
-    }
-
-    public function runAll(): Collection
-    {
-        $results = collect();
-        $this->failureLog = [];
-
-        // Check circuit breaker before running monitors
-        if ($this->isCircuitBroken()) {
-            Log::warning('MonitoringEngine circuit breaker is open, skipping all monitors', [
-                'consecutive_failures' => Cache::get(self::CACHE_PREFIX.'consecutive_failures', 0),
-                'broken_at' => Cache::get(self::CACHE_PREFIX.'circuit_broken_at'),
-            ]);
-
-            return $results;
-        }
-
-        foreach ($this->monitors as $monitorClass) {
-            $monitor = $this->getMonitor($monitorClass);
-            try {
-                $findings = $monitor->execute();
-                $this->recordSuccess();
-                Log::info("Monitor {$monitorClass} generated ".count($findings).' findings');
-                $results = $results->merge($findings);
-            } catch (\Throwable $e) {
-                $this->recordFailure();
-                $this->handleMonitorFailure($monitorClass, $e);
-            }
-        }
-
-        if (! empty($this->failureLog)) {
-            $this->alertOnMonitorFailures();
-        }
-
-        return $results;
     }
 
     public function runMonitor(string $monitorClass): Collection
@@ -323,11 +248,6 @@ class MonitoringEngine
         } catch (\Throwable $e) {
             Log::error('Failed to resolve officers for monitor failure notification: '.$e->getMessage());
         }
-    }
-
-    public function getFailureLog(): array
-    {
-        return $this->failureLog;
     }
 
     public function clearFailureLog(): void

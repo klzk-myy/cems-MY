@@ -4,13 +4,11 @@ namespace App\Services\Reporting;
 
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\System\MathService;
 use Carbon\Carbon;
 
 class TransactionExportService
 {
     public function __construct(
-        protected MathService $mathService,
         protected CsvReportWriter $csvWriter,
     ) {}
 

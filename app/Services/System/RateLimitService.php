@@ -29,9 +29,6 @@ class RateLimitService
     /** @var string Cache prefix for rate limit hits */
     private const RATE_LIMIT_HITS_PREFIX = 'rate_limit_hits:';
 
-    /** @var string Cache prefix for burst tracking */
-    private const BURST_PREFIX = 'burst:';
-
     /** @var string Cache key for blocked IPs index (list of all blocked IPs) */
     private const BLOCKED_IPS_INDEX = 'ip_block:all';
 
@@ -371,47 +368,6 @@ class RateLimitService
             'blocked_ips_count' => count($blockedIps),
             'blocked_ips' => $blockedIps,
         ];
-    }
-
-    /**
-     * Check burst allowance for a request.
-     * Returns true if request is within burst allowance.
-     */
-    public function checkBurst(Request $request, string $limiterName, int $burstAllowance): bool
-    {
-        $ip = $request->ip();
-        $userId = $request->user()?->id;
-        $key = $userId ? "{$limiterName}:user:{$userId}" : "{$limiterName}:ip:{$ip}";
-        $cacheKey = self::BURST_PREFIX.$key;
-
-        $burst = Cache::store(config('ratelimit.store'))->get($cacheKey, []);
-        $now = now();
-
-        // Remove old entries outside the burst window (1 second)
-        $burst = array_filter($burst, function ($timestamp) use ($now) {
-            return $now->diffInSeconds($timestamp) < 1;
-        });
-
-        // Check if burst allowance is exceeded
-        if (count($burst) >= $burstAllowance) {
-            return false;
-        }
-
-        // Add current request to burst
-        $burst[] = $now;
-        Cache::store(config('ratelimit.store'))->put($cacheKey, $burst, now()->addSeconds(1));
-
-        return true;
-    }
-
-    /**
-     * Get the rate limit key for a request.
-     */
-    public function getRateLimitKey(Request $request, string $limiterName): string
-    {
-        $userId = $request->user()?->id;
-
-        return $userId ? "{$limiterName}:user:{$userId}" : "{$limiterName}:ip:{$request->ip()}";
     }
 
     /**

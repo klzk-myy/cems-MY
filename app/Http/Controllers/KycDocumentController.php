@@ -10,6 +10,7 @@ use App\Services\AuditService;
 use App\Services\System\DocumentStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KycDocumentController extends Controller
 {
@@ -27,22 +28,38 @@ class KycDocumentController extends Controller
     {
         $this->authorize('verify', $customerDocument);
 
-        $customerDocument->update([
-            'status' => CustomerDocumentStatus::Verified->value,
-            'verified_by' => $request->user()->id,
-            'verified_at' => now(),
-            'rejection_reason' => null,
-        ]);
+        // Lock the row and re-check pending so verify/reject can't both
+        // disposition the same document or double-write audit entries.
+        $dispositioned = DB::transaction(function () use ($request, $customerDocument): bool {
+            $locked = CustomerDocument::whereKey($customerDocument->id)->lockForUpdate()->firstOrFail();
 
-        $this->auditService->logWithSeverity(
-            'kyc_document_verified',
-            [
-                'description' => "KYC document #{$customerDocument->id} verified",
-                'document_id' => $customerDocument->id,
-                'customer_id' => $customerDocument->customer_id,
-            ],
-            'INFO'
-        );
+            if ($locked->status !== CustomerDocumentStatus::Pending) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => CustomerDocumentStatus::Verified->value,
+                'verified_by' => $request->user()->id,
+                'verified_at' => now(),
+                'rejection_reason' => null,
+            ]);
+
+            $this->auditService->logWithSeverity(
+                'kyc_document_verified',
+                [
+                    'description' => "KYC document #{$customerDocument->id} verified",
+                    'document_id' => $customerDocument->id,
+                    'customer_id' => $customerDocument->customer_id,
+                ],
+                'INFO'
+            );
+
+            return true;
+        });
+
+        if (! $dispositioned) {
+            return $this->errorResponse('Document has already been dispositioned', [], 409);
+        }
 
         return $this->successResponse(null, 'Document verified');
     }
@@ -56,23 +73,37 @@ class KycDocumentController extends Controller
 
         $validated = $request->validated();
 
-        $customerDocument->update([
-            'status' => CustomerDocumentStatus::Rejected->value,
-            'verified_by' => $request->user()->id,
-            'verified_at' => now(),
-            'rejection_reason' => $validated['reason'],
-        ]);
+        $dispositioned = DB::transaction(function () use ($request, $customerDocument, $validated): bool {
+            $locked = CustomerDocument::whereKey($customerDocument->id)->lockForUpdate()->firstOrFail();
 
-        $this->auditService->logWithSeverity(
-            'kyc_document_rejected',
-            [
-                'description' => "KYC document #{$customerDocument->id} rejected",
-                'document_id' => $customerDocument->id,
-                'customer_id' => $customerDocument->customer_id,
-                'reason' => $validated['reason'],
-            ],
-            'WARNING'
-        );
+            if ($locked->status !== CustomerDocumentStatus::Pending) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => CustomerDocumentStatus::Rejected->value,
+                'verified_by' => $request->user()->id,
+                'verified_at' => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
+
+            $this->auditService->logWithSeverity(
+                'kyc_document_rejected',
+                [
+                    'description' => "KYC document #{$customerDocument->id} rejected",
+                    'document_id' => $customerDocument->id,
+                    'customer_id' => $customerDocument->customer_id,
+                    'reason' => $validated['reason'],
+                ],
+                'WARNING'
+            );
+
+            return true;
+        });
+
+        if (! $dispositioned) {
+            return $this->errorResponse('Document has already been dispositioned', [], 409);
+        }
 
         return $this->successResponse(null, 'Document rejected');
     }

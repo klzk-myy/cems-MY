@@ -71,12 +71,18 @@ class PepCessationReviewCommand extends Command
                     // longer carries PEP-driven holds, then write back the
                     // recalculated score through the shared hook so a
                     // CustomerRiskHistory row is recorded when it changes.
-                    $customer->forceFill(['pep_status' => false])->saveQuietly();
+                    // The iterated instance may be stale: mutate the locked
+                    // canonical row so a concurrent scoring/enforcement write
+                    // serialises instead of being clobbered.
+                    $lockedCustomer = Customer::whereKey($customer->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+                    $lockedCustomer->forceFill(['pep_status' => false])->saveQuietly();
 
-                    $scores = $scoring->calculateRiskScores($customer);
+                    $scores = $scoring->calculateRiskScores($lockedCustomer);
 
                     return $writeBack->apply(
-                        $customer,
+                        $lockedCustomer,
                         $scores['overall'],
                         'pep_cessation_review'
                     );

@@ -64,11 +64,6 @@ class CustomerRelation extends BaseModel
         return $this->belongsTo(Customer::class, 'related_customer_id');
     }
 
-    public function isPepRelation(): bool
-    {
-        return $this->is_pep;
-    }
-
     public function assessEngagement(string $level, ?string $notes = null): void
     {
         $this->update([

@@ -6,6 +6,7 @@ use App\Enums\RiskRating;
 use App\Models\Compliance\CustomerRiskHistory;
 use App\Models\Customer;
 use App\Support\ActorContext;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Risk Score Write-Back Service
@@ -25,44 +26,54 @@ class RiskScoreWriteBackService
     /**
      * Apply a freshly computed risk score to the customer.
      *
+     * The method owns the `customers` row lock: callers may hand in a stale
+     * instance (computed before their transaction), so the guard fields are
+     * re-read from the locked canonical row. Concurrent write-backs
+     * serialise here — last-computation-wins is still the semantic, but the
+     * history row's old/new pair always matches the committed transition.
+     *
      * Returns true when the score or rating changed (and therefore a
      * history row was written), false when nothing changed.
      */
     public function apply(Customer $customer, int $newScore, string $trigger, ?int $assessedBy = null): bool
     {
-        $previousScore = (int) ($customer->risk_score ?? 0);
-        $previousRating = $this->normalizeRating($customer->risk_rating);
-        $newRating = $this->ratingForScore($newScore);
+        return DB::transaction(function () use ($customer, $newScore, $trigger, $assessedBy): bool {
+            $locked = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
 
-        // A sanction hit pins the rating at High regardless of the numeric
-        // score — without this, a sanctioned Malaysian customer scoring 50
-        // would be written back as Medium, silently downgrading the rating
-        // set by screening.
-        if ($customer->sanction_hit) {
-            $newRating = RiskRating::High;
-        }
+            $previousScore = (int) ($locked->risk_score ?? 0);
+            $previousRating = $this->normalizeRating($locked->risk_rating);
+            $newRating = $this->ratingForScore($newScore);
 
-        if ($previousScore === $newScore && $previousRating === $newRating) {
-            return false;
-        }
+            // A sanction hit pins the rating at High regardless of the numeric
+            // score — without this, a sanctioned Malaysian customer scoring 50
+            // would be written back as Medium, silently downgrading the rating
+            // set by screening.
+            if ($locked->sanction_hit) {
+                $newRating = RiskRating::High;
+            }
 
-        $customer->forceFill([
-            'risk_score' => $newScore,
-            'risk_rating' => $newRating->value,
-            'risk_assessed_at' => now(),
-        ])->saveQuietly();
+            if ($previousScore === $newScore && $previousRating === $newRating) {
+                return false;
+            }
 
-        CustomerRiskHistory::create([
-            'customer_id' => $customer->id,
-            'old_score' => $previousScore,
-            'new_score' => $newScore,
-            'old_rating' => $previousRating->value,
-            'new_rating' => $newRating->value,
-            'change_reason' => $trigger,
-            'assessed_by' => $assessedBy ?? ActorContext::capture()->userId,
-        ]);
+            $locked->forceFill([
+                'risk_score' => $newScore,
+                'risk_rating' => $newRating->value,
+                'risk_assessed_at' => now(),
+            ])->saveQuietly();
 
-        return true;
+            CustomerRiskHistory::create([
+                'customer_id' => $customer->id,
+                'old_score' => $previousScore,
+                'new_score' => $newScore,
+                'old_rating' => $previousRating->value,
+                'new_rating' => $newRating->value,
+                'change_reason' => $trigger,
+                'assessed_by' => $assessedBy ?? ActorContext::capture()->userId,
+            ]);
+
+            return true;
+        });
     }
 
     /**

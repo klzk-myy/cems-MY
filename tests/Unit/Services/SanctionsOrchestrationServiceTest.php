@@ -4,7 +4,6 @@ namespace Tests\Unit\Services;
 
 use App\Enums\SanctionListType;
 use App\Models\Compliance\SanctionList;
-use App\Services\Compliance\SanctionsDownloadService;
 use App\Services\Compliance\SanctionsImportService;
 use App\Services\Compliance\SanctionsOrchestrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +23,6 @@ class SanctionsOrchestrationServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = new SanctionsOrchestrationService(
-            new SanctionsDownloadService,
             app(SanctionsImportService::class)
         );
     }
@@ -140,7 +138,6 @@ class SanctionsOrchestrationServiceTest extends TestCase
             ]);
 
         $service = new SanctionsOrchestrationService(
-            new SanctionsDownloadService,
             $mockImportService
         );
 

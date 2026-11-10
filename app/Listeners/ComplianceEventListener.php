@@ -13,12 +13,14 @@ use App\Events\CaseOpened;
 use App\Events\RiskScoreUpdated;
 use App\Models\Compliance\Alert;
 use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use App\Models\User;
 use App\Notifications\TransactionFlaggedNotification;
 use App\Services\AuditService;
 use App\Services\Compliance\CustomerRiskScoringService;
 use App\Services\Compliance\EddTemplateService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -136,28 +138,35 @@ class ComplianceEventListener
     {
         // Dedup: rescreening fires RiskScoreUpdated for every high-score
         // snapshot; only surface one open escalation alert per customer.
-        $existing = Alert::where('customer_id', $snapshot->customer_id)
-            ->where('type', ComplianceFlagType::RiskScoreEscalation->value)
-            ->where('status', AlertStatus::Open->value)
-            ->exists();
+        // The exists check runs under the customers row lock — the same lock
+        // competing scoring transactions hold via RiskScoreWriteBackService —
+        // so two concurrent snapshots can't both pass the check.
+        DB::transaction(function () use ($snapshot): void {
+            Customer::whereKey($snapshot->customer_id)->lockForUpdate()->firstOrFail();
 
-        if ($existing) {
-            return;
-        }
+            $existing = Alert::where('customer_id', $snapshot->customer_id)
+                ->where('type', ComplianceFlagType::RiskScoreEscalation->value)
+                ->where('status', AlertStatus::Open->value)
+                ->exists();
 
-        $priority = $snapshot->isCritical()
-            ? AlertPriority::Critical
-            : AlertPriority::High;
-        $level = $snapshot->isCritical() ? 'Critical' : 'High';
+            if ($existing) {
+                return;
+            }
 
-        Alert::create([
-            'customer_id' => $snapshot->customer_id,
-            'type' => ComplianceFlagType::RiskScoreEscalation,
-            'status' => AlertStatus::Open,
-            'priority' => $priority,
-            'risk_score' => $snapshot->overall_score,
-            'reason' => "Customer risk score escalated to {$level} (score: {$snapshot->overall_score})",
-        ]);
+            $priority = $snapshot->isCritical()
+                ? AlertPriority::Critical
+                : AlertPriority::High;
+            $level = $snapshot->isCritical() ? 'Critical' : 'High';
+
+            Alert::create([
+                'customer_id' => $snapshot->customer_id,
+                'type' => ComplianceFlagType::RiskScoreEscalation,
+                'status' => AlertStatus::Open,
+                'priority' => $priority,
+                'risk_score' => $snapshot->overall_score,
+                'reason' => "Customer risk score escalated to {$level} (score: {$snapshot->overall_score})",
+            ]);
+        });
     }
 
     public function subscribe($events): array

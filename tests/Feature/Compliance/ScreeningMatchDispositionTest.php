@@ -217,4 +217,33 @@ class ScreeningMatchDispositionTest extends TestCase
         $this->assertSame($this->officer->id, (int) $result->dispositioned_by);
         $this->assertFalse((bool) $result->customer->is_frozen);
     }
+
+    #[Test]
+    public function second_disposition_is_rejected_and_keeps_the_first_outcome(): void
+    {
+        $customer = Customer::factory()->create(['is_active' => true]);
+        $result = ScreeningResult::factory()->flagged()->create(['customer_id' => $customer->id]);
+
+        // Path A commits first.
+        $this->actingAs($this->officer)
+            ->post(route('compliance.screening.matches.confirm', $result), [
+                'reason' => 'Confirmed sanctions match',
+            ]);
+
+        $this->assertSame('confirmed', $result->fresh()->disposition);
+
+        // Path B arrives after A — the locked pending re-check must reject it
+        // rather than overwrite the committed disposition.
+        $this->actingAs($this->officer)
+            ->post(route('compliance.screening.matches.dismiss', $result), [
+                'reason' => 'Late dismiss attempt',
+            ])
+            ->assertRedirect(route('compliance.screening.matches.show', $result->id))
+            ->assertSessionHas('error');
+
+        $result->refresh();
+
+        $this->assertSame('confirmed', $result->disposition);
+        $this->assertSame('Confirmed sanctions match', $result->disposition_reason);
+    }
 }

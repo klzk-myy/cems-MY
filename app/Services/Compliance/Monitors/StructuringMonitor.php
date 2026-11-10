@@ -33,11 +33,6 @@ class StructuringMonitor extends BaseMonitor
         $this->structuringRiskService = $structuringRiskService;
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::StructuringPattern;
-    }
-
     public function run(): array
     {
         $findings = [];

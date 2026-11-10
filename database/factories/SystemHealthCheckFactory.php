@@ -6,6 +6,9 @@ use App\Enums\SystemHealthCheckStatus;
 use App\Models\SystemHealthCheck;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<SystemHealthCheck>
+ */
 class SystemHealthCheckFactory extends Factory
 {
     protected $model = SystemHealthCheck::class;

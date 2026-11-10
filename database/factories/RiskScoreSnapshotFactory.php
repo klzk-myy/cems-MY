@@ -7,6 +7,9 @@ use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<RiskScoreSnapshot>
+ */
 class RiskScoreSnapshotFactory extends Factory
 {
     protected $model = RiskScoreSnapshot::class;

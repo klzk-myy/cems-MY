@@ -67,8 +67,10 @@ class SealPendingAuditEntries extends Command
             // the failure mode that can stall forever. Count it; after
             // --attempts sweeps the row is presumed permanently unsealable
             // and quarantined so the chain resumes past it.
-            $attempts = (int) SystemLog::whereKey($id)->value('seal_attempts') + 1;
-            SystemLog::whereKey($id)->update(['seal_attempts' => $attempts]);
+            // increment() is atomic — a plain read-modify-write would lose
+            // count if two sweep instances overlap on the same row.
+            SystemLog::whereKey($id)->increment('seal_attempts');
+            $attempts = (int) SystemLog::whereKey($id)->value('seal_attempts');
 
             if ($attempts >= $maxAttempts) {
                 $auditChainService->quarantineEntry((int) $id);

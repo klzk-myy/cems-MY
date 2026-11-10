@@ -713,35 +713,6 @@ class StockTransferService
         });
     }
 
-    public function getPendingTransfers(): Collection
-    {
-        return StockTransfer::pending()->with('items')->get();
-    }
-
-    public function getInTransitTransfers(): Collection
-    {
-        return StockTransfer::inTransit()->with('items')->get();
-    }
-
-    public function getTransfersByBranch(string $branchName, int $limit = 500): Collection
-    {
-        $branchId = $this->branchFromIdentifier($branchName)?->id;
-
-        return StockTransfer::where(function ($q) use ($branchName, $branchId) {
-            if ($branchId !== null) {
-                $q->where('source_branch_id', $branchId)
-                    ->orWhere('destination_branch_id', $branchId);
-            }
-            // Legacy rows predating the FK columns only carry the name.
-            $q->orWhere('source_branch_name', $branchName)
-                ->orWhere('destination_branch_name', $branchName);
-        })
-            ->with('items')
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
-    }
-
     /**
      * Return dispatched-but-unreceived stock to the SOURCE branch on
      * cancel/reject. dispatch() removed the full quantity from the source;

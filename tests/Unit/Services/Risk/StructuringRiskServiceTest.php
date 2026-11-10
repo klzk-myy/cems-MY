@@ -6,7 +6,6 @@ use App\Enums\TransactionStatus;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\Risk\StructuringRiskService;
-use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +22,6 @@ class StructuringRiskServiceTest extends TestCase
         parent::setUp();
 
         $this->service = new StructuringRiskService(
-            new MathService,
             app(ThresholdService::class)
         );
     }

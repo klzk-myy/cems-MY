@@ -8,8 +8,6 @@ use Illuminate\Console\Command;
 
 class SanctionsImportCommand extends Command
 {
-    use Concerns\HasSanctionsImport;
-
     protected $signature = 'sanctions:import
                             {--list= : Import from specific list by ID or name}
                             {--all : Import all active auto-updatable lists}';

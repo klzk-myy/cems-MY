@@ -4,7 +4,6 @@ namespace App\Console\Commands\Concerns;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Notification;
 
 trait HasNotificationTesting
 {
@@ -29,15 +28,5 @@ trait HasNotificationTesting
                 return ! is_array($prefs) || ($prefs['digest_enabled'] ?? true) === true;
             })
             ->values();
-    }
-
-    protected function sendTestNotification(User $user, $notification): void
-    {
-        Notification::send($user, new $notification);
-    }
-
-    protected function formatNotificationResult(string $type, int $count): string
-    {
-        return "{$type} notification sent to {$count} user(s)";
     }
 }

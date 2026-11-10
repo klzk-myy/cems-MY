@@ -7,10 +7,12 @@ use App\Http\Requests\ConfirmScreeningMatchRequest;
 use App\Http\Requests\DismissScreeningMatchRequest;
 use App\Models\Compliance\SanctionEntry;
 use App\Models\Compliance\ScreeningResult;
+use App\Models\Customer;
 use App\Services\AuditService;
 use App\Services\Screening\CustomerScreeningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ScreeningMatchController extends Controller
@@ -74,21 +76,45 @@ class ScreeningMatchController extends Controller
                 ->with('error', 'Screening result has already been dispositioned');
         }
 
-        if ($result->isAdverseMedia()) {
-            // Adverse media confirmations escalate for review only - the
-            // customer is not frozen, blocked or rejected.
-            $listType = 'adverse_media';
-            $severity = $result->adverseMediaEntry === null ? 'medium' : $result->adverseMediaEntry->severity;
+        // Serialize the disposition on the result row lock: two concurrent
+        // confirms (or a confirm racing a dismiss) must not both pass the
+        // pending check — enforcement raises a regulatory FIU alert per call,
+        // so a double-confirm is a duplicated reporting obligation, not just
+        // a lost update.
+        $decision = DB::transaction(function () use ($result, $customer, $validated) {
+            $locked = ScreeningResult::whereKey($result->id)->lockForUpdate()->firstOrFail();
 
-            $outcome = $this->screeningService->handleConfirmedAdverseMatch($customer, $severity);
-        } else {
-            $listType = $result->sanctionEntry?->sanctionList?->list_type->value ?? 'sanctions';
-            $severity = null;
+            if (! $locked->isPending()) {
+                return null;
+            }
 
+            // Disposition inside the lock — writing it after the lock is
+            // released would reopen the double-confirm window.
+            $locked->markDispositioned('confirmed', $validated['reason'], (int) auth()->id());
+
+            if ($locked->isAdverseMedia()) {
+                // Adverse media confirmations escalate for review only - the
+                // customer is not frozen, blocked or rejected.
+                $outcome = $this->screeningService->handleConfirmedAdverseMatch(
+                    $customer,
+                    $locked->adverseMediaEntry === null ? 'medium' : $locked->adverseMediaEntry->severity
+                );
+
+                return [$outcome, 'adverse_media', $locked->adverseMediaEntry?->severity, $locked];
+            }
+
+            $listType = $locked->sanctionEntry?->sanctionList?->list_type->value ?? 'sanctions';
             $outcome = $this->screeningService->handleConfirmedMatch($customer, $listType);
+
+            return [$outcome, $listType, null, $locked];
+        });
+
+        if ($decision === null) {
+            return redirect()->route('compliance.screening.matches.show', $result->id)
+                ->with('error', 'Screening result has already been dispositioned');
         }
 
-        $result->markDispositioned('confirmed', $validated['reason'], (int) auth()->id());
+        [$outcome, $listType, $severity, $result] = $decision;
 
         $this->auditService->logSanctionEvent('screening_match_confirmed', $result->id, [
             'entity_type' => 'ScreeningResult',
@@ -119,33 +145,58 @@ class ScreeningMatchController extends Controller
                 ->with('error', 'Screening result has already been dispositioned');
         }
 
-        $result->markDispositioned('dismissed', $validated['reason'], (int) auth()->id());
+        // Lock the result row for the pending check + disposition, then the
+        // customer row for the restore probe — enforcement takes the same
+        // customer lock, so a restore can never interleave with a confirm
+        // landing on another result for this customer. Lock order is always
+        // screening_results → customers on both paths.
+        $dispositioned = DB::transaction(function () use ($result, $validated) {
+            $locked = ScreeningResult::whereKey($result->id)->lockForUpdate()->firstOrFail();
 
-        // If this dismissal removes the last real match and the customer was
-        // flagged/deactivated by screening alone, restore their standing.
-        $customer = $result->customer;
-
-        if ($customer !== null
-            && $customer->sanction_hit
-            && ! $customer->is_frozen
-            && ! $customer->transactions_blocked
-            && ! ScreeningResult::where('customer_id', $customer->id)
-                ->where('id', '!=', $result->id)
-                ->withHits()
-                ->where(function ($query) {
-                    $query->whereNull('disposition')
-                        ->orWhere('disposition', 'confirmed');
-                })
-                ->exists()
-        ) {
-            $customer->sanction_hit = false;
-
-            if (! $customer->is_active && $customer->rejection_reason === null) {
-                $customer->is_active = true;
+            if (! $locked->isPending()) {
+                return null;
             }
 
-            $customer->save();
+            $locked->markDispositioned('dismissed', $validated['reason'], (int) auth()->id());
+
+            // If this dismissal removes the last real match and the customer
+            // was flagged/deactivated by screening alone, restore their standing.
+            $customer = $locked->customer;
+
+            if ($customer !== null) {
+                $lockedCustomer = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
+
+                if ($lockedCustomer->sanction_hit
+                    && ! $lockedCustomer->is_frozen
+                    && ! $lockedCustomer->transactions_blocked
+                    && ! ScreeningResult::where('customer_id', $lockedCustomer->id)
+                        ->where('id', '!=', $locked->id)
+                        ->withHits()
+                        ->where(function ($query) {
+                            $query->whereNull('disposition')
+                                ->orWhere('disposition', 'confirmed');
+                        })
+                        ->exists()
+                ) {
+                    $lockedCustomer->sanction_hit = false;
+
+                    if (! $lockedCustomer->is_active && $lockedCustomer->rejection_reason === null) {
+                        $lockedCustomer->is_active = true;
+                    }
+
+                    $lockedCustomer->save();
+                }
+            }
+
+            return $locked;
+        });
+
+        if ($dispositioned === null) {
+            return redirect()->route('compliance.screening.matches.show', $result->id)
+                ->with('error', 'Screening result has already been dispositioned');
         }
+
+        $result = $dispositioned;
 
         $this->auditService->logSanctionEvent('screening_match_dismissed', $result->id, [
             'entity_type' => 'ScreeningResult',

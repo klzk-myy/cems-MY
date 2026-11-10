@@ -11,7 +11,6 @@ class SanctionsOrchestrationService
     use ValidatesSanctionsUrl;
 
     public function __construct(
-        protected SanctionsDownloadService $downloadService,
         protected SanctionsImportService $importService,
     ) {}
 

@@ -4,14 +4,11 @@ namespace App\Services\Risk;
 
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
-use App\Services\System\MathService;
 use App\Services\ThresholdService;
-use Illuminate\Database\Eloquent\Collection;
 
 class StructuringRiskService
 {
     public function __construct(
-        protected MathService $mathService,
         protected ThresholdService $thresholdService
     ) {}
 
@@ -90,22 +87,5 @@ class StructuringRiskService
         $check = $this->checkThreshold($customerId, $windowHours, $minTransactions);
 
         return $check['triggered'];
-    }
-
-    /**
-     * Get structuring transactions for a customer.
-     *
-     * @param  int  $windowHours  Time window in hours
-     */
-    public function getStructuringTransactions(int $customerId, int $windowHours = 1): Collection
-    {
-        $subThreshold = $this->thresholdService->getStructuringSubThreshold();
-
-        return Transaction::where('customer_id', $customerId)
-            ->where('created_at', '>=', now()->subHours($windowHours))
-            ->where('amount_myr', '<=', $subThreshold)
-            ->where('status', '!=', TransactionStatus::Cancelled->value)
-            ->orderBy('created_at', 'desc')
-            ->get();
     }
 }

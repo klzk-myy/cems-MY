@@ -123,15 +123,4 @@ class AuditTrailHelper
     ): AuditTrail {
         return $this->recordEntity('Customer', $customerId, $action, $metadata, $user, $severity, $ipAddress, 'log');
     }
-
-    public function recordCustomerSealed(
-        int $customerId,
-        string $action,
-        array $metadata = [],
-        ?User $user = null,
-        string $severity = 'INFO',
-        ?string $ipAddress = null
-    ): AuditTrail {
-        return $this->recordEntity('Customer', $customerId, $action, $metadata, $user, $severity, $ipAddress, 'logSealed');
-    }
 }

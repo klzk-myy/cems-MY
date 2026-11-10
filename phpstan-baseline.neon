@@ -8641,18 +8641,6 @@ parameters:
 			path: tests/Feature/Compliance/RiskScoreWriteBackTest.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Compliance\\ScreeningResult\:\:\$disposition_reason\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Compliance/ScreeningMatchDispositionTest.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Compliance\\ScreeningResult\:\:\$dispositioned_by\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Compliance/ScreeningMatchDispositionTest.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\SystemAlert\:\:\$level\.$#'
 			identifier: property.notFound
 			count: 1
@@ -11153,12 +11141,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: tests/Unit/Transaction/TransactionCreationServiceTest.php
-
-		-
-			message: '#^Parameter \#5 \$screeningService of class App\\Services\\Transaction\\TransactionValidationService constructor expects App\\Services\\Screening\\CustomerScreeningService, PHPUnit\\Framework\\MockObject\\MockObject given\.$#'
-			identifier: argument.type
-			count: 6
-			path: tests/Unit/Transaction/TransactionValidationServiceTest.php
 
 		-
 			message: '#^Call to function is_object\(\) with \*NEVER\* will always evaluate to true\.$#'

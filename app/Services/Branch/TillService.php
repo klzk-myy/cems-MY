@@ -34,16 +34,6 @@ class TillService
     }
 
     /**
-     * Calculate expected closing balance based on opening balance and net flow.
-     *
-     * @param  string  $netFlow  (positive for buy, negative for sell)
-     */
-    public function calculateExpectedClosing(string $openingBalance, string $netFlow): string
-    {
-        return $this->mathService->add($openingBalance, $netFlow);
-    }
-
-    /**
      * Calculate variance between actual and expected closing balance.
      */
     public function calculateVariance(string $actualClosing, string $expectedClosing): string
@@ -126,32 +116,5 @@ class TillService
     public function expectedClosingForBalance(TillBalance $balance): string
     {
         return $balance->getExpectedBalance();
-    }
-
-    /**
-     * Get today's MYR cash in hand from till balances.
-     *
-     * @param  int|null  $branchId  Optional branch filter
-     */
-    public function getMyrCashInHand(?int $branchId = null): string
-    {
-        $query = TillBalance::whereDate('date', now()->toDateString())
-            ->where('currency_code', Currency::baseCurrency());
-
-        if ($branchId !== null) {
-            $query->where('branch_id', $branchId);
-        }
-
-        $myrBalances = $query->get();
-        $myrCashInHand = '0';
-        foreach ($myrBalances as $balance) {
-            // Use closing_balance if closed, otherwise opening_balance
-            $balanceAmount = $balance->closed_at
-                ? ($balance->closing_balance ?? '0')
-                : ($balance->opening_balance ?? '0');
-            $myrCashInHand = $this->mathService->add($myrCashInHand, (string) $balanceAmount);
-        }
-
-        return $myrCashInHand;
     }
 }

@@ -6,6 +6,9 @@ use App\Models\Transaction;
 use App\Models\TransactionError;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<TransactionError>
+ */
 class TransactionErrorFactory extends Factory
 {
     protected $model = TransactionError::class;

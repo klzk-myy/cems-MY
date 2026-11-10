@@ -5,6 +5,9 @@ namespace Database\Factories\Compliance;
 use App\Models\Compliance\EddQuestionnaireTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<EddQuestionnaireTemplate>
+ */
 class EddQuestionnaireTemplateFactory extends Factory
 {
     protected $model = EddQuestionnaireTemplate::class;

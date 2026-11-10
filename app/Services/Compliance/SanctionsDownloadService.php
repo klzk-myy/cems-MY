@@ -181,37 +181,6 @@ class SanctionsDownloadService
         return null;
     }
 
-    /**
-     * Clean up old archive files.
-     */
-    public function cleanupArchives(int $days = 30): int
-    {
-        $archiveDir = config('sanctions.download.archive_directory', storage_path('app/archive/sanctions'));
-
-        if (! is_dir($archiveDir)) {
-            return 0;
-        }
-
-        $cutoff = time() - ($days * 86400);
-        $deleted = 0;
-
-        $archiveFiles = glob($archiveDir.'/*');
-        if ($archiveFiles === false) {
-            $archiveFiles = [];
-        }
-
-        foreach ($archiveFiles as $file) {
-            if (is_file($file) && filemtime($file) < $cutoff) {
-                unlink($file);
-                $deleted++;
-            }
-        }
-
-        Log::info("Cleaned up {$deleted} old sanctions archive files");
-
-        return $deleted;
-    }
-
     protected function ensureTempDirectoryExists(): void
     {
         if (! is_dir($this->tempDirectory)) {

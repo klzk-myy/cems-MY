@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Models\SystemLog;
 use App\Services\AuditService;
 use App\Services\System\QueryLoggingService;
-use App\Services\System\QueryOptimizerService;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -45,9 +44,7 @@ class QueryLogServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        $this->app->singleton('query.monitor', function ($app) {
-            return new QueryOptimizerService;
-        });
+        //
     }
 
     public function boot(): void

@@ -28,11 +28,6 @@ class CounterfeitAlertMonitor extends BaseMonitor
         $this->alertService = $alertService;
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::CounterfeitAlert;
-    }
-
     public function run(): array
     {
         $findings = [];

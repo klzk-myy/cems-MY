@@ -168,17 +168,6 @@ class TillBalance extends BaseModel
     }
 
     /**
-     * Check if variance exceeds threshold
-     */
-    public function hasSignificantVariance(string $threshold = '100.00'): bool
-    {
-        $variance = $this->calculateVariance();
-        $absVariance = BcmathHelper::abs($variance);
-
-        return BcmathHelper::compare($absVariance, $threshold) > 0;
-    }
-
-    /**
      * Scope for today's balances
      */
     public function scopeToday($query)

@@ -62,13 +62,6 @@ class CacheMonitoringService
         }
     }
 
-    public function resetCounters(): void
-    {
-        Redis::set(self::HITS_KEY, 0);
-        Redis::set(self::MISSES_KEY, 0);
-        Redis::set(self::LAST_RESET_KEY, time());
-    }
-
     protected function getMemoryUsage(): string
     {
         try {

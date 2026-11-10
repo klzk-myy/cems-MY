@@ -3,7 +3,6 @@
 namespace App\Services\Accounting;
 
 use App\Enums\BankReconciliationStatus;
-use App\Enums\CheckStatus;
 use App\Enums\JournalEntryStatus;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Models\BankReconciliation;
@@ -282,130 +281,6 @@ class BankReconciliationService
             'adjusted_balance' => $adjustedBalance,
             'outstanding_checks_list' => $outstandingChecks->toArray(),
             'outstanding_deposits_list' => $outstandingDeposits->toArray(),
-        ];
-    }
-
-    /**
-     * Get outstanding checks report
-     *
-     * Returns checks that have been issued but not yet cleared,
-     * categorized by their status.
-     */
-    public function getOutstandingChecksReport(string $accountCode, ?string $asOfDate = null): array
-    {
-        $asOfDate = $asOfDate ?? today()->toDateString();
-
-        $query = BankReconciliation::where('account_code', $accountCode)
-            ->whereNotNull('check_number')
-            ->where('check_date', '<=', $asOfDate);
-
-        $issued = (clone $query)->where('check_status', CheckStatus::Issued->value)->get();
-        $presented = (clone $query)->where('check_status', CheckStatus::Presented->value)->get();
-        $cleared = (clone $query)->where('check_status', CheckStatus::Cleared->value)->get();
-        $returned = (clone $query)->where('check_status', CheckStatus::Returned->value)->get();
-        $stopped = (clone $query)->where('check_status', CheckStatus::Stopped->value)->get();
-
-        return [
-            'account_code' => $accountCode,
-            'as_of_date' => $asOfDate,
-            'issued' => [
-                'count' => $issued->count(),
-                'total' => $this->sumAmounts($issued),
-                'items' => $issued,
-            ],
-            'presented' => [
-                'count' => $presented->count(),
-                'total' => $this->sumAmounts($presented),
-                'items' => $presented,
-            ],
-            'cleared' => [
-                'count' => $cleared->count(),
-                'total' => $this->sumAmounts($cleared),
-                'items' => $cleared,
-            ],
-            'returned' => [
-                'count' => $returned->count(),
-                'total' => $this->sumAmounts($returned),
-                'items' => $returned,
-            ],
-            'stopped' => [
-                'count' => $stopped->count(),
-                'total' => $this->sumAmounts($stopped),
-                'items' => $stopped,
-            ],
-            'total_outstanding' => $this->mathService->add(
-                $this->sumAmounts($issued),
-                $this->sumAmounts($presented)
-            ),
-        ];
-    }
-
-    /**
-     * Get aging of outstanding checks
-     *
-     * Categorizes outstanding checks by how long they've been outstanding.
-     */
-    public function getChecksAgingReport(string $accountCode, ?string $asOfDate = null): array
-    {
-        $asOfDate = $asOfDate ? Carbon::parse($asOfDate) : today();
-        $outstanding = BankReconciliation::where('account_code', $accountCode)
-            ->whereNotNull('check_number')
-            ->whereIn('check_status', [CheckStatus::Issued->value, CheckStatus::Presented->value])
-            ->where('check_date', '<=', $asOfDate)
-            ->get();
-
-        $current = collect();
-        $days30 = collect();
-        $days60 = collect();
-        $days90 = collect();
-        $over90 = collect();
-
-        foreach ($outstanding as $check) {
-            $daysOutstanding = $check->check_date->diffInDays($asOfDate);
-
-            if ($daysOutstanding <= 30) {
-                $current->push($check);
-            } elseif ($daysOutstanding <= 60) {
-                $days30->push($check);
-            } elseif ($daysOutstanding <= 90) {
-                $days60->push($check);
-            } elseif ($daysOutstanding <= 180) {
-                $days90->push($check);
-            } else {
-                $over90->push($check);
-            }
-        }
-
-        return [
-            'account_code' => $accountCode,
-            'as_of_date' => $asOfDate->toDateString(),
-            'aging' => [
-                'current_0_30' => [
-                    'count' => $current->count(),
-                    'total' => $this->sumAmounts($current),
-                    'items' => $current,
-                ],
-                'days_31_60' => [
-                    'count' => $days30->count(),
-                    'total' => $this->sumAmounts($days30),
-                    'items' => $days30,
-                ],
-                'days_61_90' => [
-                    'count' => $days60->count(),
-                    'total' => $this->sumAmounts($days60),
-                    'items' => $days60,
-                ],
-                'days_91_180' => [
-                    'count' => $days90->count(),
-                    'total' => $this->sumAmounts($days90),
-                    'items' => $days90,
-                ],
-                'over_180' => [
-                    'count' => $over90->count(),
-                    'total' => $this->sumAmounts($over90),
-                    'items' => $over90,
-                ],
-            ],
         ];
     }
 

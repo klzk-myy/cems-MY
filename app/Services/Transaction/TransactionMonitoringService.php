@@ -215,15 +215,6 @@ class TransactionMonitoringService
         return $flag;
     }
 
-    public function getOpenFlags(): array
-    {
-        return FlaggedTransaction::where('status', FlagStatus::Open->value)
-            ->with(['transaction.customer', 'assignedTo'])
-            ->orderBy('created_at', 'asc')
-            ->get()
-            ->toArray();
-    }
-
     public function assignFlag(int $flagId, int $userId): bool
     {
         $flag = FlaggedTransaction::find($flagId);

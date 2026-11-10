@@ -37,7 +37,6 @@ use App\Services\Compliance\AmlRuleEvaluator;
 use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\TillBalanceTrait;
 use App\Support\ActorContext;
@@ -60,7 +59,6 @@ class TransactionApprovalService
         protected TellerAllocationService $tellerAllocationService,
         protected MathService $mathService,
         protected TransactionConfirmationService $confirmationService,
-        protected ThresholdService $thresholdService,
         protected AmlRuleEvaluator $amlRuleEvaluator,
     ) {}
 

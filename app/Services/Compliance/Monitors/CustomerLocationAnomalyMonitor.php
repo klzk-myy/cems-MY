@@ -26,11 +26,6 @@ class CustomerLocationAnomalyMonitor extends BaseMonitor
         $this->highValueThreshold = $thresholdService->getLargeTransactionThreshold();
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::LocationAnomaly;
-    }
-
     public function run(): array
     {
         $findings = [];

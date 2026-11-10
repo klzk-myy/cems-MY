@@ -341,38 +341,6 @@ class CounterService
     }
 
     /**
-     * Get counter status
-     */
-    public function getCounterStatus(Counter $counter): array
-    {
-        $session = CounterSession::where('counter_id', $counter->id)
-            ->where('status', CounterSessionStatus::Open->value)
-            ->first();
-
-        return [
-            'counter' => $counter,
-            'status' => $session ? CounterSessionStatus::Open->value : CounterSessionStatus::Closed->value,
-            'current_user' => $session ? $session->user : null,
-            'session' => $session,
-        ];
-    }
-
-    /**
-     * Get available counters
-     */
-    public function getAvailableCounters(): array
-    {
-        $allCounters = Counter::active()->get();
-        $openCounterIds = CounterSession::where('status', CounterSessionStatus::Open->value)
-            ->pluck('counter_id')
-            ->toArray();
-
-        return $allCounters->filter(function ($counter) use ($openCounterIds) {
-            return ! in_array($counter->id, $openCounterIds);
-        })->values()->all();
-    }
-
-    /**
      * Resolve currency codes from opening floats, handling both numeric IDs and string codes.
      * Returns a map of [input_id => currency_code].
      */

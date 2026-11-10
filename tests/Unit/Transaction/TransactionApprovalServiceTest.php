@@ -36,7 +36,6 @@ use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\AmlRuleEvaluator;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionMonitoringService;
@@ -83,7 +82,6 @@ class TransactionApprovalServiceTest extends TestCase
             $tellerAllocation,
             new MathService,
             $mocks['confirmation'] ?? app(TransactionConfirmationService::class),
-            app(ThresholdService::class),
             $mocks['amlRuleEvaluator'] ?? app(AmlRuleEvaluator::class),
         );
     }

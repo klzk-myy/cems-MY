@@ -20,7 +20,6 @@ class TillBalanceManager
 {
     public function __construct(
         protected MathService $mathService,
-        protected TillService $tillService,
     ) {}
 
     private function resolveCounter(string|int $tillIdentifier): ?Counter

@@ -24,13 +24,13 @@
                 <div class="mb-6">
                     <x-input
                         type="file"
-                        id="file"
-                        name="file"
+                        id="csv_file"
+                        name="csv_file"
                         accept=".csv"
                         label="Transaction File"
                         inline
                     />
-                    @error('file')
+                    @error('csv_file')
                         <p class="mt-1 text-sm text-danger-text">{{ $message }}</p>
                     @enderror
                 </div>

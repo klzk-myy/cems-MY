@@ -72,24 +72,6 @@ class SystemAlert extends SystemModel
     }
 
     /**
-     * Scope for alerts by minimum level
-     */
-    public function scopeMinLevel($query, string $minLevel)
-    {
-        $level = SystemAlertLevel::tryFrom($minLevel) ?? SystemAlertLevel::Info;
-
-        return $query->where(function ($q) use ($level) {
-            $q->where('level', $level->value);
-            if ($level !== SystemAlertLevel::Critical) {
-                $q->orWhere('level', SystemAlertLevel::Critical->value);
-            }
-            if ($level !== SystemAlertLevel::Warning && $level !== SystemAlertLevel::Critical) {
-                $q->orWhere('level', SystemAlertLevel::Warning->value);
-            }
-        });
-    }
-
-    /**
      * Acknowledge the alert
      */
     public function acknowledge(int $userId): void

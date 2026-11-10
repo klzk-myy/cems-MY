@@ -82,13 +82,6 @@ class ReportRun extends BaseModel
         return (int) $this->completed_at->diffInSeconds($this->started_at);
     }
 
-    public function markAsRunning(): void
-    {
-        $this->status = ReportRunStatus::Running;
-        $this->started_at = now();
-        $this->save();
-    }
-
     public function markAsCompleted(string $filePath, int $rowCount): void
     {
         $this->status = ReportRunStatus::Completed;

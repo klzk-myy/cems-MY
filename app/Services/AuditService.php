@@ -10,8 +10,6 @@ use App\Services\Audit\AuditChainService;
 use App\Services\System\CacheKeys;
 use App\Services\System\CacheOptimizationService;
 use App\Support\ActorContext;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 
@@ -402,34 +400,12 @@ class AuditService
         return $this->logWithSeverity($action, $this->customerPayload($customerId, $data), $data['severity'] ?? SystemLogSeverity::Info);
     }
 
-    public function logCustomerSealed(string $action, int $customerId, array $data = []): SystemLog
-    {
-        return $this->logWithSeveritySealed($action, $this->customerPayload($customerId, $data), $data['severity'] ?? SystemLogSeverity::Info);
-    }
-
     public function logComplianceDecision(string $action, int $entityId, array $data = [], SystemLogSeverity|string $severity = SystemLogSeverity::Info): SystemLog
     {
         return $this->logAction($action, $data['entity_type'] ?? 'Compliance', $entityId, [
             'old_values' => $data['old'] ?? [],
             'new_values' => $data['new'] ?? [],
         ], $severity);
-    }
-
-    public function logCddDecision(int $transactionId, string $cddLevel, array $triggers = []): SystemLog
-    {
-        return $this->logAction('cdd_decision', 'Transaction', $transactionId, [
-            'new_values' => ['cdd_level' => $cddLevel, 'triggers' => $triggers],
-        ]);
-    }
-
-    public function logComplianceAlertEvent(string $action, int $alertId, array $data = []): SystemLog
-    {
-        return $this->logAction($action, 'Alert', $alertId, $data);
-    }
-
-    public function logComplianceCaseEvent(string $action, int $caseId, array $data = []): SystemLog
-    {
-        return $this->logAction($action, 'ComplianceCase', $caseId, $data);
     }
 
     public function logAmlMonitorEvent(string $action, ?int $entityId = null, array $data = []): SystemLog
@@ -450,15 +426,6 @@ class AuditService
     public function logPositionEvent(string $action, array $data = []): SystemLog
     {
         return $this->logAction($action, 'CurrencyPosition', $data['position_id'] ?? null, $data);
-    }
-
-    public function logTransactionWorkflow(string $step, int $transactionId, string $status, array $context = []): SystemLog
-    {
-        return $this->logWithSeverity($step, [
-            'entity_type' => 'Transaction',
-            'entity_id' => $transactionId,
-            'new_values' => $context,
-        ], $status === 'ERROR' ? SystemLogSeverity::Error : SystemLogSeverity::Info);
     }
 
     public function logCustomerRiskEvent(string $action, int $customerId, array $data = []): SystemLog
@@ -530,99 +497,12 @@ class AuditService
         return $this->logAction($action, $data['entity_type'] ?? 'Report', $data['entity_id'] ?? null, $data);
     }
 
-    public function logEddTemplateEvent(string $action, int $templateId, array $data = []): SystemLog
-    {
-        return $this->logAction($action, 'EddTemplate', $templateId, $data);
-    }
-
-    public function logApiAccessEvent(string $action, array $data = []): SystemLog
-    {
-        return $this->logWithSeverity($action, [
-            'user_id' => $data['user_id'] ?? ActorContext::capture()->userId,
-            'entity_type' => 'ApiAccess',
-            'entity_id' => $data['entity_id'] ?? null,
-            'new_values' => $data['new'] ?? [],
-        ], $this->resolveSeverity($action));
-    }
-
-    public function logBranchAccessEvent(int $accessedBranchId, string $resource, int $resourceId, array $data = []): SystemLog
-    {
-        return $this->logWithSeverity('cross_branch_access', [
-            'user_id' => ActorContext::capture()->userId,
-            'entity_type' => $resource,
-            'entity_id' => $resourceId,
-            'new_values' => [
-                'accessed_branch_id' => $accessedBranchId,
-                'accessed_branch_name' => $data['branch_name'] ?? null,
-                'user_branch_id' => ActorContext::capture()->user?->branch_id,
-            ],
-        ], SystemLogSeverity::Warning);
-    }
-
     /**
      * @param  array<string, mixed>  $data
      */
     public function logBranchEvent(string $action, int $branchId, array $data = []): SystemLog
     {
         return $this->logAction($action, 'Branch', $branchId, $data);
-    }
-
-    public function logBatchOperationEvent(string $action, array $data = []): SystemLog
-    {
-        return $this->logWithSeverity($action, [
-            'user_id' => ActorContext::capture()->userId,
-            'entity_type' => 'BatchOperation',
-            'entity_id' => $data['batch_id'] ?? null,
-            'new_values' => [
-                'items_processed' => $data['items_processed'] ?? 0,
-                'items_succeeded' => $data['items_succeeded'] ?? 0,
-                'items_failed' => $data['items_failed'] ?? 0,
-            ],
-        ], SystemLogSeverity::Info);
-    }
-
-    public function logProcedureTrigger(string $procedureName, array $parameters = []): SystemLog
-    {
-        return $this->logWithSeverity('procedure_triggered', [
-            'entity_type' => 'Procedure',
-            'entity_id' => null,
-            'new_values' => [
-                'procedure_name' => $procedureName,
-                'parameters' => $parameters,
-            ],
-        ], SystemLogSeverity::Info);
-    }
-
-    public function logControllerAction(
-        string $controller,
-        string $action,
-        ?int $userId,
-        array $requestData = [],
-        array $result = []
-    ): SystemLog {
-        return $this->logWithSeverity($action, [
-            'user_id' => $userId,
-            'entity_type' => $controller,
-            'new_values' => [
-                'request_data' => $requestData,
-                'result' => $result,
-            ],
-        ], SystemLogSeverity::Info);
-    }
-
-    public function logModelEvent(
-        string $model,
-        string $event,
-        ?int $modelId,
-        array $changes = [],
-        array $original = []
-    ): SystemLog {
-        return $this->logWithSeverity(strtoupper($event), [
-            'entity_type' => $model,
-            'entity_id' => $modelId,
-            'old_values' => $original,
-            'new_values' => $changes,
-        ], SystemLogSeverity::Info);
     }
 
     /**
@@ -648,60 +528,5 @@ class AuditService
                 fn (string $needle) => str_contains(mb_strtolower($value), mb_strtolower($needle))
             )
         ));
-    }
-
-    /**
-     * Batch insert multiple audit log entries.
-     */
-    public function logBatch(array $logs): bool
-    {
-        if (empty($logs)) {
-            return true;
-        }
-
-        $now = now();
-        $ipAddress = Request::ip();
-        $userAgent = Request::userAgent();
-        $sessionId = session()->getId();
-
-        $batchData = array_map(function ($log) use ($now, $ipAddress, $userAgent, $sessionId) {
-            return [
-                'user_id' => $log['user_id'] ?? ActorContext::capture()->userId,
-                'action' => $log['action'],
-                'severity' => ($log['severity'] instanceof SystemLogSeverity ? $log['severity'] : SystemLogSeverity::normalize($log['severity'] ?? 'INFO'))->value,
-                'entity_type' => $log['entity_type'] ?? null,
-                'entity_id' => $log['entity_id'] ?? null,
-                'old_values' => ! empty($log['old_values'] ?? []) ? $log['old_values'] : null,
-                'new_values' => ! empty($log['new_values'] ?? []) ? $log['new_values'] : null,
-                'ip_address' => $ipAddress,
-                'user_agent' => $userAgent,
-                'session_id' => $sessionId,
-                'previous_hash' => null,
-                'entry_hash' => null,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }, $logs);
-
-        $inserted = SystemLog::insert($batchData);
-
-        if ($inserted) {
-            // Single insert() yields a contiguous ID range. Capture the range
-            // via the DB connection's lastInsertId to avoid concurrent-insert
-            // contamination (the prior max(id) - count math broke under
-            // concurrent writes).
-            $lastId = (int) DB::getPdo()->lastInsertId();
-            $count = count($logs);
-            $firstId = $lastId - $count + 1;
-
-            $chunks = collect(range($firstId, $lastId))->chunk(100);
-            foreach ($chunks as $chunk) {
-                Bus::batch(
-                    $chunk->map(fn ($id) => new SealAuditHashJob($id))->toArray()
-                )->dispatch();
-            }
-        }
-
-        return $inserted;
     }
 }

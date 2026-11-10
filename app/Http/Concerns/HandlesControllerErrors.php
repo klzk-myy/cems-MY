@@ -107,31 +107,4 @@ trait HandlesControllerErrors
      *       );
      *   }
      */
-    /**
-     * @param  array<string, mixed>  $extra
-     */
-    protected function withWebError(callable $fn, string $context, string $message, array $extra = []): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable $e) {
-            return $this->handleExceptionWeb($e, $context, $message, $extra);
-        }
-    }
-
-    /**
-     * Try a callable and return either its result or an API JSON error
-     * response on exception.
-     */
-    /**
-     * @param  array<string, mixed>  $extra
-     */
-    protected function withApiError(callable $fn, string $context, string $message, int $status = 500, array $extra = []): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable $e) {
-            return $this->handleExceptionApi($e, $context, $message, $status, $extra);
-        }
-    }
 }

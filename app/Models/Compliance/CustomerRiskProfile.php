@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Customer Risk Profile Model
@@ -99,38 +100,45 @@ class CustomerRiskProfile extends BaseModel
      * Lock does not auto-expire - manual unlock only after EDD completion.
      * Uses a far-future date (100 years) to ensure isLocked() returns true
      * without relying on null which would return false.
+     *
+     * The write goes through a `lockForUpdate` re-read so lock/unlock
+     * serialise with RiskScoringEngine's profile lock and cannot clobber a
+     * concurrent lock from a stale instance.
      */
     public function lock(int $userId, string $reason): void
     {
-        $this->locked_until = now()->addYears(100);
-        $this->locked_by = $userId;
-        $this->lock_reason = $reason;
-        $this->save();
+        DB::transaction(function () use ($userId, $reason) {
+            $profile = static::whereKey($this->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $profile->locked_until = now()->addYears(100);
+            $profile->locked_by = $userId;
+            $profile->lock_reason = $reason;
+            $profile->save();
+        });
+
+        $this->refresh();
     }
 
     /**
-     * Unlock the risk profile.
+     * Unlock the risk profile. Serialised on the profile row for the same
+     * reason as lock().
      */
     public function unlock(): void
     {
-        $this->locked_until = null;
-        $this->locked_by = null;
-        $this->lock_reason = null;
-        $this->save();
-    }
+        DB::transaction(function () {
+            $profile = static::whereKey($this->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-    /**
-     * Recalculate the risk score with a new value.
-     */
-    public function recalculateWithScore(int $score): self
-    {
-        $this->previous_score = $this->risk_score;
-        $this->risk_score = $score;
-        $this->risk_tier = self::getTierForScore($score);
-        $this->score_changed_at = now();
-        $this->save();
+            $profile->locked_until = null;
+            $profile->locked_by = null;
+            $profile->lock_reason = null;
+            $profile->save();
+        });
 
-        return $this;
+        $this->refresh();
     }
 
     /**
@@ -155,32 +163,6 @@ class CustomerRiskProfile extends BaseModel
             'customer_id' => $customerId,
             'risk_score' => $score,
             'risk_tier' => self::getTierForScore($score),
-        ]);
-    }
-
-    /**
-     * Create a risk profile from risk factors.
-     */
-    public static function createFromFactors(int $customerId, array $factors): self
-    {
-        $totalContribution = 0;
-
-        if (isset($factors['contributions']) && is_array($factors['contributions'])) {
-            foreach ($factors['contributions'] as $contribution) {
-                if (isset($contribution['value'])) {
-                    $totalContribution += (int) $contribution['value'];
-                }
-            }
-        }
-
-        $baseScore = 20;
-        $riskScore = min($baseScore + $totalContribution, 100);
-
-        return self::create([
-            'customer_id' => $customerId,
-            'risk_score' => $riskScore,
-            'risk_tier' => self::getTierForScore($riskScore),
-            'risk_factors' => $factors,
         ]);
     }
 }

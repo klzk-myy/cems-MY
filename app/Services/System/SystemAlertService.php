@@ -288,22 +288,6 @@ EOT;
     }
 
     /**
-     * Cleanup old acknowledged alerts
-     */
-    public function cleanupOldAlerts(int $days = 30): int
-    {
-        $cutoff = now()->subDays($days);
-
-        $deleted = SystemAlert::acknowledged()
-            ->where('created_at', '<', $cutoff)
-            ->delete();
-
-        Log::info("Cleaned up {$deleted} old alerts (older than {$days} days)");
-
-        return $deleted;
-    }
-
-    /**
      * Get alerts for dashboard widget
      */
     public function getDashboardWidgetData(): array

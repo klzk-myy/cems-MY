@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -93,14 +94,23 @@ class ComplianceFinding extends BaseModel
      */
     public function dismiss(string $reason): void
     {
-        if (! $this->status->canBeDismissed()) {
-            throw new CaseManagementException(
-                "Finding cannot be dismissed in {$this->status->label()} status"
-            );
-        }
+        DB::transaction(function (): void {
+            // Re-check the guard on the locked row: a concurrent
+            // markCaseCreated landing between check and save must not be
+            // overwritten by a stale-instance dismiss.
+            $locked = static::whereKey($this->getKey())->lockForUpdate()->firstOrFail();
 
-        $this->status = FindingStatus::Dismissed;
-        $this->save();
+            if (! $locked->status->canBeDismissed()) {
+                throw new CaseManagementException(
+                    "Finding cannot be dismissed in {$locked->status->label()} status"
+                );
+            }
+
+            $locked->status = FindingStatus::Dismissed;
+            $locked->save();
+
+            $this->refresh();
+        });
     }
 
     /**
@@ -110,14 +120,20 @@ class ComplianceFinding extends BaseModel
      */
     public function markCaseCreated(): void
     {
-        if (! $this->status->canCreateCase()) {
-            throw new CaseManagementException(
-                "Case cannot be created from finding in {$this->status->label()} status"
-            );
-        }
+        DB::transaction(function (): void {
+            $locked = static::whereKey($this->getKey())->lockForUpdate()->firstOrFail();
 
-        $this->status = FindingStatus::CaseCreated;
-        $this->save();
+            if (! $locked->status->canCreateCase()) {
+                throw new CaseManagementException(
+                    "Case cannot be created from finding in {$locked->status->label()} status"
+                );
+            }
+
+            $locked->status = FindingStatus::CaseCreated;
+            $locked->save();
+
+            $this->refresh();
+        });
     }
 
     /**

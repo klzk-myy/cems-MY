@@ -79,8 +79,8 @@ foreach ($navItems as $key => $item) {
 @endphp
 
 <aside
-    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'sticky top-0 flex h-screen w-64 shrink-0 flex-col self-start border-r border-sidebar-border bg-surface-inverted transition-all']) }}
-    :class="{ 'w-20': sidebarCollapsed }"
+    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'sticky top-0 flex h-screen shrink-0 flex-col self-start border-r border-sidebar-border bg-surface-inverted transition-all']) }}
+    :class="sidebarCollapsed ? 'w-20' : 'w-64'"
 >
     <div class="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2" x-show="!sidebarCollapsed">

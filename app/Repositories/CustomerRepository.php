@@ -19,11 +19,6 @@ class CustomerRepository
         return Customer::find($customerId);
     }
 
-    public function findByIdOrFail(int $customerId): Customer
-    {
-        return Customer::findOrFail($customerId);
-    }
-
     public function findByIdNumber(string $idNumber): ?Customer
     {
         return Customer::where('id_number_hash', CustomerService::computeBlindIndex($idNumber))->first();

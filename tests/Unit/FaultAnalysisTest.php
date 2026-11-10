@@ -39,7 +39,7 @@ class FaultAnalysisTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->eddService = new EddService(new MathService, new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService)));
+        $this->eddService = new EddService(new MathService, new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new ThresholdService)));
     }
 
     /**
@@ -140,7 +140,7 @@ class FaultAnalysisTest extends TestCase
             'details' => [],
         ]);
 
-        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService));
+        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new ThresholdService));
         $this->assertFalse($service->checkSanctionMatch($customer));
 
         // Exact-like match should still work
@@ -162,7 +162,7 @@ class FaultAnalysisTest extends TestCase
     #[Test]
     public function working_days_calculation_inclusive_range(): void
     {
-        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new MathService, new ThresholdService));
+        $service = new ComplianceService(new EncryptionService, new MathService, new ThresholdService, new VelocityRiskService(new MathService, new ThresholdService), new StructuringRiskService(new ThresholdService));
 
         $from = new Carbon('2026-04-13'); // Monday
         $to = new Carbon('2026-04-14');   // Tuesday

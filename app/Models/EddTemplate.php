@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use App\Enums\EddTemplateType;
-use App\Models\Compliance\EnhancedDiligenceRecord;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -48,11 +46,6 @@ class EddTemplate extends BaseModel
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function enhancedDiligenceRecords(): HasMany
-    {
-        return $this->hasMany(EnhancedDiligenceRecord::class);
-    }
-
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
@@ -77,16 +70,5 @@ class EddTemplate extends BaseModel
         }
 
         return $count;
-    }
-
-    public function duplicate(): static
-    {
-        $clone = $this->replicate();
-        $clone->name = $this->name.' (Copy)';
-        $clone->version = 1;
-        $clone->is_active = false;
-        $clone->save();
-
-        return $clone;
     }
 }

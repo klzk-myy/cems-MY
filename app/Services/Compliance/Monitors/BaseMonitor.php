@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * Abstract base class for compliance monitors.
  *
- * All monitors should extend this class and implement the run() and getFindingType() methods.
+ * All monitors should extend this class and implement the run() method.
  */
 abstract class BaseMonitor
 {
@@ -36,19 +36,6 @@ abstract class BaseMonitor
      * @return array Array of finding data arrays
      */
     abstract public function run(): array;
-
-    /**
-     * Return the FindingType for this monitor.
-     */
-    abstract protected function getFindingType(): FindingType;
-
-    /**
-     * Return default severity (can be overridden).
-     */
-    protected function getDefaultSeverity(): FindingSeverity
-    {
-        return $this->getFindingType()->defaultSeverity();
-    }
 
     /**
      * Create a finding data array (not yet saved).

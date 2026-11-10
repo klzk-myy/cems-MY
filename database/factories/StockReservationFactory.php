@@ -8,6 +8,9 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<StockReservation>
+ */
 class StockReservationFactory extends Factory
 {
     protected $model = StockReservation::class;

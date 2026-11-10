@@ -7,7 +7,6 @@ use App\Enums\CustomerDocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
-use App\Services\AuditService;
 use App\Services\ThresholdService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,7 +16,6 @@ class KycDocumentExpiryService
 {
     public function __construct(
         protected ThresholdService $thresholdService,
-        protected AuditService $auditService,
     ) {}
 
     /**

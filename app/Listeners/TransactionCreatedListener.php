@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Enums\RecalculationTrigger;
 use App\Events\TransactionCreated;
+use App\Models\Customer;
 use App\Services\Compliance\RiskScoringEngine;
 use App\Services\System\CacheInvalidationService;
 use App\Services\Transaction\TransactionMonitoringService;
@@ -33,9 +34,12 @@ class TransactionCreatedListener implements ShouldQueue
     public function handle(TransactionCreated $event)
     {
         if ($event->transaction->exists) {
-            $event->transaction->customer?->update([
-                'last_transaction_at' => $event->transaction->created_at,
-            ]);
+            // Monotonic write: queued events can be processed out of order,
+            // so a delayed event must not overwrite a newer timestamp.
+            Customer::whereKey($event->transaction->customer_id)
+                ->where(fn ($q) => $q->whereNull('last_transaction_at')
+                    ->orWhere('last_transaction_at', '<', $event->transaction->created_at))
+                ->update(['last_transaction_at' => $event->transaction->created_at]);
         }
 
         // Invalidate cached report datasets — they aggregate over the

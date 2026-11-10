@@ -13,7 +13,6 @@ use App\Models\Customer;
 use App\Models\TillBalance;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
@@ -22,7 +21,6 @@ use App\Services\DTOs\PreValidationResult;
 use App\Services\DTOs\SanctionCheckResult;
 use App\Services\Screening\CustomerScreeningService;
 use App\Services\Security\IpValidationService;
-use App\Services\ThresholdService;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\Cache;
 
@@ -38,8 +36,6 @@ class TransactionValidationService
 
     public function __construct(
         protected ComplianceService $complianceService,
-        protected ThresholdService $thresholdService,
-        protected TellerAllocationService $tellerAllocationService,
         protected PepApprovalService $pepApprovalService,
         protected CustomerScreeningService $screeningService,
         protected HistoricalRiskAnalysisService $historicalRiskAnalysisService,

@@ -11,7 +11,6 @@ use App\Enums\JournalEntryStatus;
 use App\Enums\Permission;
 use App\Exceptions\Domain\AccountingPeriodException;
 use App\Exceptions\Domain\FiscalYearClosedException;
-use App\Exceptions\Domain\FiscalYearNotFoundException;
 use App\Exceptions\Domain\InvalidFiscalYearStateException;
 use App\Exceptions\Domain\OpenPeriodsException;
 use App\Exceptions\Domain\PermissionDeniedException;
@@ -23,7 +22,6 @@ use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Support\ActorContext;
 use Carbon\Carbon;
@@ -45,7 +43,6 @@ class FiscalYearService
         protected AuditService $auditService,
         protected MathService $mathService,
         protected LedgerService $ledgerService,
-        protected CacheInvalidationService $cacheInvalidationService,
         protected AccountingService $accountingService,
         protected AccountMappingService $accountMappingService,
     ) {}
@@ -199,37 +196,6 @@ class FiscalYearService
                 'closing_entries' => $closingEntries,
             ];
         });
-    }
-
-    /**
-     * Get year-end report for a fiscal year.
-     */
-    public function getYearEndReport(string $yearCode): array
-    {
-        $year = FiscalYear::where('year_code', $yearCode)->first();
-
-        if (! $year) {
-            throw new FiscalYearNotFoundException($yearCode);
-        }
-
-        $yearEndDate = $year->end_date->toDateString();
-
-        // Get trial balance as of year-end
-        $trialBalance = $this->ledgerService->getTrialBalance($yearEndDate);
-
-        // Get P&L summary
-        $pAndL = $this->ledgerService->getProfitAndLoss(
-            $year->start_date->toDateString(),
-            $yearEndDate
-        );
-
-        return [
-            'fiscal_year' => $year,
-            'as_of_date' => $yearEndDate,
-            'trial_balance' => $trialBalance,
-            'profit_and_loss' => $pAndL,
-            'net_income' => $pAndL['net_income'] ?? '0',
-        ];
     }
 
     /**

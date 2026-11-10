@@ -130,12 +130,23 @@ class ComplianceScreeningJob implements ShouldQueue
             ->whereIn('status', $holdableStatuses)
             ->get();
 
-        DB::transaction(function () use ($transactions, $customer, $reason) {
+        DB::transaction(function () use ($transactions, $customer, $reason, $holdableStatuses) {
             foreach ($transactions as $transaction) {
-                $transaction->status = TransactionStatus::PendingApproval;
-                $transaction->save();
+                // Lock each row and re-check the holdable set: a transaction
+                // that moved to Processing/Completed since the unlocked read
+                // must not be rewound (re-running approval double-books).
+                $locked = Transaction::whereKey($transaction->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                $this->upsertTransactionSanctionFlag($customer, $transaction, $reason);
+                if (! in_array($locked->status, $holdableStatuses, true)) {
+                    continue;
+                }
+
+                $locked->status = TransactionStatus::PendingApproval;
+                $locked->save();
+
+                $this->upsertTransactionSanctionFlag($customer, $locked, $reason);
             }
         });
 

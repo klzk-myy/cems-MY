@@ -31,11 +31,6 @@ class VelocityMonitor extends BaseMonitor
         $this->velocityWindowDays = $thresholdService->getVelocityWindowDays();
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::VelocityExceeded;
-    }
-
     public function run(): array
     {
         $findings = [];

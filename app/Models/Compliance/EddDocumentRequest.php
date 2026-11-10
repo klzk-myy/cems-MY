@@ -4,12 +4,10 @@ namespace App\Models\Compliance;
 
 use App\Enums\EddDocumentStatus;
 use App\Models\BaseModel;
-use App\Models\Customer;
 use App\Models\Traits\HasStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Carbon;
 
 /**
@@ -89,50 +87,12 @@ class EddDocumentRequest extends BaseModel
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    /**
-     * The customer under review, reached through the parent EDD record
-     * (edd_document_requests has no customer_id column of its own).
-     */
-    /**
-     * @return HasOneThrough<Customer, EnhancedDiligenceRecord, $this>
-     */
-    public function customer()
-    {
-        return $this->hasOneThrough(
-            Customer::class,
-            EnhancedDiligenceRecord::class,
-            'id',
-            'id',
-            'edd_record_id',
-            'customer_id',
-        );
-    }
-
     public function markReceived(string $filePath): void
     {
         $this->update([
             'status' => EddDocumentStatus::Received->value,
             'file_path' => $filePath,
             'uploaded_at' => now(),
-        ]);
-    }
-
-    public function verify(int $verifiedBy): void
-    {
-        $this->update([
-            'status' => EddDocumentStatus::Verified->value,
-            'verified_at' => now(),
-            'verified_by' => $verifiedBy,
-        ]);
-    }
-
-    public function reject(string $reason, int $verifiedBy): void
-    {
-        $this->update([
-            'status' => EddDocumentStatus::Rejected->value,
-            'rejection_reason' => $reason,
-            'verified_at' => now(),
-            'verified_by' => $verifiedBy,
         ]);
     }
 }

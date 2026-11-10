@@ -49,10 +49,10 @@ class CustomerRiskReviewServiceTest extends TestCase
             $mathService,
             $thresholdService,
             new VelocityRiskService($mathService, $thresholdService),
-            new StructuringRiskService($mathService, $thresholdService),
+            new StructuringRiskService($thresholdService),
             new GeographicRiskService($thresholdService),
             new AmountRiskService($mathService, $thresholdService),
-            new PatternRiskService($mathService, new RoundTripDetector($mathService)),
+            new PatternRiskService(new RoundTripDetector($mathService)),
         );
         $geographicRiskService = new GeographicRiskService($thresholdService);
 

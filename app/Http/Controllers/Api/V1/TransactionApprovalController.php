@@ -13,7 +13,6 @@ use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\Transaction;
 use App\Services\Transaction\TransactionApprovalService;
 use App\Services\Transaction\TransactionConfirmationService;
-use App\Services\Transaction\TransactionStateMachineFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,7 +23,6 @@ class TransactionApprovalController extends Controller
     public function __construct(
         protected ApproveTransactionAction $approveAction,
         protected TransactionApprovalService $approvalService,
-        protected TransactionStateMachineFactory $stateMachineFactory,
         protected TransactionConfirmationService $confirmationService
     ) {}
 

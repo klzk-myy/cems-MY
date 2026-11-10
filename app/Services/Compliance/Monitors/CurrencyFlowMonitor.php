@@ -29,11 +29,6 @@ class CurrencyFlowMonitor extends BaseMonitor
         $this->roundTripDetector = $roundTripDetector;
     }
 
-    protected function getFindingType(): FindingType
-    {
-        return FindingType::CurrencyFlowAnomaly;
-    }
-
     public function run(): array
     {
         $findings = [];

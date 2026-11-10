@@ -112,30 +112,6 @@ class BcmathHelper
     }
 
     /**
-     * Check if value is positive (> 0).
-     *
-     * @param  string  $value  Value to check
-     * @param  int|null  $scale  Decimal places (uses default if null)
-     * @return bool True if value > 0
-     */
-    public static function isPositive(string $value, ?int $scale = null): bool
-    {
-        return self::gt($value, '0', $scale);
-    }
-
-    /**
-     * Check if value is negative (< 0).
-     *
-     * @param  string  $value  Value to check
-     * @param  int|null  $scale  Decimal places (uses default if null)
-     * @return bool True if value < 0
-     */
-    public static function isNegative(string $value, ?int $scale = null): bool
-    {
-        return self::lt($value, '0', $scale);
-    }
-
-    /**
      * Check if value is zero.
      *
      * @param  string  $value  Value to check
@@ -157,18 +133,6 @@ class BcmathHelper
     public static function isNotZero(string $value, ?int $scale = null): bool
     {
         return ! self::isZero($value, $scale);
-    }
-
-    /**
-     * Check if value is greater than or equal to zero.
-     *
-     * @param  string  $value  Value to check
-     * @param  int|null  $scale  Decimal places (uses default if null)
-     * @return bool True if value >= 0
-     */
-    public static function isNonNegative(string $value, ?int $scale = null): bool
-    {
-        return self::gte($value, '0', $scale);
     }
 
     /**

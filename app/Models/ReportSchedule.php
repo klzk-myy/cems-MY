@@ -82,13 +82,6 @@ class ReportSchedule extends BaseModel
         $this->save();
     }
 
-    public function isDue(): bool
-    {
-        return $this->is_active
-            && $this->next_run_at !== null
-            && now()->isAfter($this->next_run_at);
-    }
-
     public static function getReportTypes(): array
     {
         return [

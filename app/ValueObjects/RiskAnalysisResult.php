@@ -26,18 +26,4 @@ class RiskAnalysisResult
 
         return false;
     }
-
-    public function getFlagSummary(): string
-    {
-        if (empty($this->flags)) {
-            return 'No risk flags detected';
-        }
-
-        $summary = [];
-        foreach ($this->flags as $flag) {
-            $summary[] = "[{$flag['severity']}] {$flag['type']}";
-        }
-
-        return implode(', ', $summary);
-    }
 }

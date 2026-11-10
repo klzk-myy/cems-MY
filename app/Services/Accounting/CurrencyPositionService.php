@@ -471,26 +471,6 @@ class CurrencyPositionService
     }
 
     /**
-     * Get position for a specific transaction (required branch_id).
-     *
-     * @param  string  $currencyCode  Currency code (e.g., 'USD', 'EUR')
-     * @param  string  $branchId  Branch identifier (required)
-     * @return CurrencyPosition|null Position model or null if not found
-     *
-     * @throws \InvalidArgumentException If branch_id is empty or invalid
-     */
-    public function getPositionForTransaction(string $currencyCode, string $branchId): ?CurrencyPosition
-    {
-        if (empty($branchId) || $branchId === 'undefined') {
-            throw new \InvalidArgumentException(
-                'branch_id is required for position lookup. Transaction must specify a branch.'
-            );
-        }
-
-        return $this->getPosition($currencyCode, $branchId);
-    }
-
-    /**
      * Get all positions for a specific branch.
      *
      * @param  string|null  $branchId  Branch identifier; null returns the company-wide positions
@@ -637,52 +617,6 @@ class CurrencyPositionService
         });
 
         return new Collection($consolidated->values());
-    }
-
-    /**
-     * Aggregate currency position totals grouped by user role visibility.
-     *
-     * Returns aggregated totals across all positions visible to the user.
-     * Uses MathService for precision-safe calculations.
-     */
-    public function aggregateForUser(User $user): array
-    {
-        $positions = $this->getVisiblePositionsForUser($user);
-
-        $aggregates = [
-            'total_balance_myr' => '0',
-            'total_unrealized_gain_loss' => '0',
-            'total_positions' => $positions->count(),
-            'currencies' => [],
-        ];
-
-        foreach ($positions as $position) {
-            $myrEquivalent = $this->mathService->multiply(
-                $position->quantity,
-                $position->current_rate
-            );
-
-            $aggregates['total_balance_myr'] = $this->mathService->add(
-                $aggregates['total_balance_myr'],
-                $myrEquivalent
-            );
-
-            $aggregates['total_unrealized_gain_loss'] = $this->mathService->add(
-                $aggregates['total_unrealized_gain_loss'],
-                $position->unrealized_gain_loss
-            );
-
-            $aggregates['currencies'][] = [
-                'currency_code' => $position->currency_code,
-                'quantity' => $position->quantity,
-                'myr_equivalent' => $myrEquivalent,
-                'average_cost' => $position->average_cost,
-                'current_rate' => $position->current_rate,
-                'unrealized_gain_loss' => $position->unrealized_gain_loss,
-            ];
-        }
-
-        return $aggregates;
     }
 
     /**

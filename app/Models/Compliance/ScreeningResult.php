@@ -27,6 +27,9 @@ use Illuminate\Support\Carbon;
  * @property string $result
  * @property array<string, mixed>|null $matched_fields
  * @property string|null $disposition
+ * @property string|null $disposition_reason
+ * @property int|null $dispositioned_by
+ * @property Carbon|null $dispositioned_at
  * @property Carbon|null $created_at
  */
 class ScreeningResult extends BaseModel

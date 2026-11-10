@@ -7,33 +7,21 @@ use App\Exceptions\Domain\FileOperationException;
 use App\Http\Requests\BatchUploadRequest;
 use App\Jobs\ProcessTransactionImportJob;
 use App\Models\TransactionImport;
-use App\Services\Accounting\AccountingService;
-use App\Services\Accounting\CurrencyPositionService;
-use App\Services\Compliance\ComplianceService;
 use App\Services\Reporting\CsvReportWriter;
 use App\Services\System\DocumentStorageService;
-use App\Services\System\MathService;
 use App\Services\Transaction\TransactionImportService;
-use App\Services\Transaction\TransactionMonitoringService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TransactionBatchController extends Controller
 {
     public function __construct(
-        protected MathService $mathService,
-        protected ComplianceService $complianceService,
-        protected CurrencyPositionService $positionService,
-        protected AccountingService $accountingService,
-        protected TransactionMonitoringService $monitoringService,
         protected DocumentStorageService $documentStorageService,
         protected TransactionImportService $importService,
-        protected CsvReportWriter $csvReportWriter,
-        protected LoggerInterface $logger
+        protected CsvReportWriter $csvReportWriter
     ) {}
 
     /**

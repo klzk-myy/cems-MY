@@ -105,14 +105,6 @@ class BackupLog extends BaseModel
     }
 
     /**
-     * Scope: By disk
-     */
-    public function scopeByDisk($query, string $disk)
-    {
-        return $query->where('disk', $disk);
-    }
-
-    /**
      * Get duration in seconds
      */
     public function getDurationAttribute(): ?int

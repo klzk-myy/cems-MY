@@ -17,6 +17,7 @@ use App\Services\Compliance\Parsing\OpenSanctionsJsonParser;
 use App\Services\Compliance\Parsing\SanctionsEntryMapper;
 use App\Services\Compliance\Parsing\XmlSanctionsParser;
 use App\Support\ActorContext;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
@@ -46,29 +47,47 @@ class SanctionsImportService
 
     public function import(SanctionList $list, bool $manual = false): array
     {
-        $this->pendingTempFile = null;
-        $this->pendingDatasetVersion = null;
-
-        $index = $this->fetchDatasetIndex($list);
-        $this->pendingDatasetVersion = is_array($index) ? ($index['version'] ?? null) : null;
-
-        try {
-            $deltaResult = $this->importFromDelta($list, $index, $manual);
-            if ($deltaResult !== null) {
-                return $deltaResult;
-            }
-
-            $result = $this->importWithData($list, $this->fetchSource($list), $manual);
-            $this->commitDatasetVersion($list);
-
-            return $result;
-        } finally {
-            if ($this->pendingTempFile !== null && file_exists($this->pendingTempFile)) {
-                unlink($this->pendingTempFile);
-            }
+        return $this->withImportLock($list, function () use ($list, $manual): array {
             $this->pendingTempFile = null;
             $this->pendingDatasetVersion = null;
-        }
+
+            $index = $this->fetchDatasetIndex($list);
+            $this->pendingDatasetVersion = is_array($index) ? ($index['version'] ?? null) : null;
+
+            try {
+                $deltaResult = $this->importFromDelta($list, $index, $manual);
+                if ($deltaResult !== null) {
+                    return $deltaResult;
+                }
+
+                $result = $this->performImport($list, $this->fetchSource($list), $manual);
+                $this->commitDatasetVersion($list);
+
+                return $result;
+            } finally {
+                if ($this->pendingTempFile !== null && file_exists($this->pendingTempFile)) {
+                    unlink($this->pendingTempFile);
+                }
+                $this->pendingTempFile = null;
+                $this->pendingDatasetVersion = null;
+            }
+        });
+    }
+
+    /**
+     * Serialise imports per list: concurrent imports (scheduled vs manual,
+     * or double-clicked triggers) would otherwise interleave entry syncs,
+     * duplicate import records, and double-fire SanctionsListUpdated
+     * re-screening fan-out. Mirrors the Cache::lock dedup used by monitors.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    protected function withImportLock(SanctionList $list, callable $callback): mixed
+    {
+        return Cache::lock("sanctions_import:{$list->id}", 600)->block(120, $callback);
     }
 
     /**
@@ -99,6 +118,15 @@ class SanctionsImportService
      * @param  iterable<array-key, mixed>|array<string, mixed>  $data  Decoded source payload (`['results' => [...]]` doc) or a lazy stream of flat/nested items.
      */
     public function importWithData(SanctionList $list, iterable $data, bool $manual = false): array
+    {
+        return $this->withImportLock($list, fn (): array => $this->performImport($list, $data, $manual));
+    }
+
+    /**
+     * @param  iterable<array-key, mixed>|array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function performImport(SanctionList $list, iterable $data, bool $manual = false): array
     {
         $previousVersion = $list->last_dataset_version;
 
@@ -511,16 +539,6 @@ class SanctionsImportService
     }
 
     // ---- Delegates preserved for existing callers/tests --------------------
-
-    /**
-     * Stream flat entry items from a downloaded source file.
-     *
-     * @return iterable<array-key, array<string, mixed>>
-     */
-    public function streamSourceFile(string $filepath): iterable
-    {
-        return $this->jsonParser->parse($filepath);
-    }
 
     /**
      * @param  iterable<array-key, mixed>|array<string, mixed>  $data

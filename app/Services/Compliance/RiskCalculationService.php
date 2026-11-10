@@ -130,11 +130,6 @@ class RiskCalculationService
         return $this->structuringRiskService->checkThreshold($customerId, $windowHours, $threshold);
     }
 
-    public function checkVelocityAmountThreshold(int $customerId, string $newAmount): array
-    {
-        return $this->velocityRiskService->checkAmountThreshold($customerId, $newAmount);
-    }
-
     public function isStructuring(int $customerId): bool
     {
         return $this->structuringRiskService->isStructuring($customerId);

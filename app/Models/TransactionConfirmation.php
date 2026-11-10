@@ -77,19 +77,6 @@ class TransactionConfirmation extends BaseModel
     }
 
     /**
-     * Get the user who confirmed/rejected the confirmation.
-     */
-    /**
-     * Get the user who confirmed (or rejected) the request.
-     *
-     * @return BelongsTo<User, $this>
-     */
-    public function confirmer(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'confirmed_by');
-    }
-
-    /**
      * Check if the confirmation has expired.
      */
     public function isExpired(): bool

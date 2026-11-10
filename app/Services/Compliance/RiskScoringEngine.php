@@ -109,16 +109,26 @@ class RiskScoringEngine
      */
     public function recalculateForCustomer(int $customerId): CustomerRiskProfile
     {
-        return DB::transaction(function () use ($customerId) {
-            $customer = Customer::findOrFail($customerId);
+        // Factor reads are unlocked anyway, so compute before the transaction
+        // to keep the locked section short. A wasted compute when the profile
+        // turns out locked is cheaper than holding row locks through it.
+        $result = $this->calculateScoreWithFactors($customerId);
 
-            // Check if locked
-            $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)->first();
+        return DB::transaction(function () use ($customerId, $result) {
+            // Lock order: customers -> customer_risk_profiles. The customer
+            // lock serializes the create path (no profile row exists to lock),
+            // the profile lock serializes the isLocked check against EDD
+            // lock()/unlock() writes.
+            $customer = Customer::whereKey($customerId)->lockForUpdate()->firstOrFail();
+
+            // Check if locked — under the profile row lock so a concurrent
+            // EDD lock() cannot land between the check and the update.
+            $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)
+                ->lockForUpdate()
+                ->first();
             if ($existingProfile && $existingProfile->isLocked()) {
                 return $existingProfile;
             }
-
-            $result = $this->calculateScoreWithFactors($customerId);
 
             if ($existingProfile) {
                 $existingProfile->update([
@@ -159,17 +169,21 @@ class RiskScoringEngine
             Cache::put($debounceKey, true, self::RECALCULATION_DEBOUNCE_SECONDS);
         }
 
-        return DB::transaction(function () use ($customerId, $trigger) {
-            $customer = Customer::find($customerId);
-            $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)->first();
+        $result = $this->calculateScoreWithFactors($customerId);
+
+        return DB::transaction(function () use ($customerId, $trigger, $result) {
+            // Same lock order as recalculateForCustomer():
+            // customers -> customer_risk_profiles.
+            $customer = Customer::whereKey($customerId)->lockForUpdate()->first();
+            $existingProfile = CustomerRiskProfile::where('customer_id', $customerId)
+                ->lockForUpdate()
+                ->first();
 
             // Locked profiles must not be overwritten by any entry point,
             // matching the guard applied in recalculateForCustomer().
             if ($existingProfile && $existingProfile->isLocked()) {
                 return $existingProfile;
             }
-
-            $result = $this->calculateScoreWithFactors($customerId);
 
             if ($existingProfile) {
                 $scoreDelta = abs($result['score'] - $existingProfile->risk_score);

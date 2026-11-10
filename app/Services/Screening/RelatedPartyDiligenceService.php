@@ -9,6 +9,7 @@ use App\Models\CustomerRelation;
 use App\Models\SanctionsAnalysis;
 use App\Models\Transaction;
 use App\Services\System\MathService;
+use Illuminate\Support\Facades\DB;
 
 /**
  * pd-00.md 27.5: due diligence on related parties — examines past
@@ -85,9 +86,18 @@ class RelatedPartyDiligenceService
         $relation ??= CustomerRelation::where('related_customer_id', $relatedParty->id)->first();
 
         if ($relation) {
-            $additionalInfo = $relation->additional_info ?? [];
-            $additionalInfo['last_due_diligence_analysis'] = $analysis;
-            $relation->update(['additional_info' => $additionalInfo]);
+            // JSON merge is a read-modify-write: re-read additional_info on
+            // the locked relation row so a concurrent due-diligence run
+            // cannot drop the other's analysis key.
+            DB::transaction(function () use ($relation, $analysis) {
+                $locked = CustomerRelation::whereKey($relation->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $additionalInfo = $locked->additional_info ?? [];
+                $additionalInfo['last_due_diligence_analysis'] = $analysis;
+                $locked->update(['additional_info' => $additionalInfo]);
+            });
         }
 
         // Create SanctionsAnalysis record per pd-00.md 27.5.2

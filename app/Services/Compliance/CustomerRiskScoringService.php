@@ -5,7 +5,6 @@ namespace App\Services\Compliance;
 use App\Enums\RiskRating;
 use App\Enums\RiskTrend;
 use App\Events\RiskScoreUpdated;
-use App\Exceptions\Domain\RiskProfileNotFoundException;
 use App\Models\Compliance\CustomerRiskProfile;
 use App\Models\Customer;
 use App\Models\RiskScoreSnapshot;
@@ -166,17 +165,6 @@ class CustomerRiskScoringService
     }
 
     /**
-     * Get high-risk customers needing attention.
-     */
-    public function getHighRiskCustomers(int $threshold = 60): Collection
-    {
-        return Customer::whereHas('riskScoreSnapshots', function ($query) use ($threshold) {
-            $query->where('overall_score', '>=', $threshold)
-                ->whereDate('snapshot_date', today());
-        })->with('latestRiskSnapshot')->get();
-    }
-
-    /**
      * Get customers needing rescreening.
      *
      * The due check must run against each customer's LATEST snapshot:
@@ -255,27 +243,6 @@ class CustomerRiskScoringService
             'deteriorating_trend' => (int) ($today?->getAttribute('deteriorating') ?? 0),
             'needs_rescreening' => Customer::whereLatestSnapshotNeedsRescreening()->count(),
         ];
-    }
-
-    /**
-     * Lock a customer's risk profile.
-     */
-    public function lockCustomerRisk(int $customerId, int $userId, string $reason): CustomerRiskProfile
-    {
-        $profile = CustomerRiskProfile::where('customer_id', $customerId)->first();
-
-        if (! $profile) {
-            throw new RiskProfileNotFoundException($customerId);
-        }
-
-        $profile->lock($userId, $reason);
-
-        $this->auditService->logCustomerRiskEvent('customer_risk_locked', $customerId, [
-            'locked_by' => $userId,
-            'reason' => $reason,
-        ]);
-
-        return $profile;
     }
 
     protected function getRecentTransactions(int $customerId): Collection

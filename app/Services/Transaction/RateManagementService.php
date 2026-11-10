@@ -377,17 +377,6 @@ class RateManagementService
         ];
     }
 
-    public function hasRateForCurrency(string $currencyCode, ?int $branchId = null): bool
-    {
-        $query = ExchangeRate::where('currency_code', $currencyCode)->active();
-
-        if ($branchId !== null) {
-            $query->forBranchOrCompany($branchId);
-        }
-
-        return $query->exists();
-    }
-
     public function areAllRatesSet(array $currencyCodes, ?int $branchId = null): array
     {
         // Single query instead of one exists() query per currency code.

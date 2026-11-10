@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\NotificationType;
-use App\Exceptions\Domain\NotificationPreferenceException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -153,22 +152,6 @@ class UserNotificationPreference extends BaseModel
     }
 
     /**
-     * Scope to get preferences for a specific notification type.
-     */
-    public function scopeForType($query, string $type)
-    {
-        return $query->where('notification_type', $type);
-    }
-
-    /**
-     * Scope to get preferences for a specific user.
-     */
-    public function scopeForUser($query, int $userId)
-    {
-        return $query->where('user_id', $userId);
-    }
-
-    /**
      * Check if email is enabled for this notification type.
      */
     public function isEmailEnabled(): bool
@@ -198,47 +181,5 @@ class UserNotificationPreference extends BaseModel
     public function isPushEnabled(): bool
     {
         return $this->push_enabled;
-    }
-
-    /**
-     * Enable all channels for this notification type.
-     */
-    public function enableAllChannels(): void
-    {
-        $this->update([
-            'email_enabled' => true,
-            'sms_enabled' => true,
-            'in_app_enabled' => true,
-            'push_enabled' => true,
-        ]);
-    }
-
-    /**
-     * Disable all channels for this notification type.
-     */
-    public function disableAllChannels(): void
-    {
-        $this->update([
-            'email_enabled' => false,
-            'sms_enabled' => false,
-            'in_app_enabled' => false,
-            'push_enabled' => false,
-        ]);
-    }
-
-    /**
-     * Update a specific channel setting.
-     */
-    public function updateChannel(string $channel, bool $enabled): void
-    {
-        $validChannels = ['email', 'sms', 'in_app', 'push'];
-
-        if (! in_array($channel, $validChannels)) {
-            throw new NotificationPreferenceException("Invalid channel: {$channel}");
-        }
-
-        $this->update([
-            "{$channel}_enabled" => $enabled,
-        ]);
     }
 }

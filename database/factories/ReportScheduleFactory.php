@@ -7,6 +7,9 @@ use App\Models\ReportSchedule;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<ReportSchedule>
+ */
 class ReportScheduleFactory extends Factory
 {
     protected $model = ReportSchedule::class;

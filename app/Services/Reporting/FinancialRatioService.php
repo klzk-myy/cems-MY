@@ -28,29 +28,6 @@ class FinancialRatioService
     }
 
     /**
-     * Get all financial ratios.
-     *
-     * @param  string  $asOfDate  Date for balance sheet ratios (YYYY-MM-DD)
-     * @param  string  $fromDate  Start date for income statement ratios (YYYY-MM-DD)
-     * @param  string  $toDate  End date for income statement ratios (YYYY-MM-DD)
-     * @param  int|null  $branchId  Optional branch ID to filter by. Null means all branches.
-     * @return array All financial ratios
-     */
-    public function getAllRatios(string $asOfDate, string $fromDate, string $toDate, ?int $branchId = null): array
-    {
-        return [
-            'as_of_date' => $asOfDate,
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-            'branch_id' => $branchId,
-            'liquidity' => $this->getLiquidityRatios($asOfDate, $branchId),
-            'profitability' => $this->getProfitabilityRatios($fromDate, $toDate, $branchId),
-            'leverage' => $this->getLeverageRatios($asOfDate, $branchId),
-            'efficiency' => $this->getEfficiencyRatios($fromDate, $toDate, $branchId),
-        ];
-    }
-
-    /**
      * Get liquidity ratios.
      *
      * Current Ratio = Current Assets / Current Liabilities

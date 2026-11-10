@@ -7,17 +7,10 @@ use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\System\MathService;
-use App\Services\ThresholdService;
 use Illuminate\Support\Str;
 
 class TransactionPolicy
 {
-    public function __construct(
-        protected ThresholdService $thresholdService,
-        protected MathService $mathService,
-    ) {}
-
     /**
      * Determine whether the user can view any transactions.
      * Office roles (admin, compliance officer, accountant) operate

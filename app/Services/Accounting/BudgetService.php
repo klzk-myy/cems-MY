@@ -54,17 +54,24 @@ class BudgetService
      */
     public function setBudget(string $accountCode, string $periodCode, string $budgetMyr, int $userId, ?string $notes = null): Budget
     {
-        return Budget::updateOrCreate(
-            [
+        // INSERT ... ON DUPLICATE KEY UPDATE: updateOrCreate's select-then-insert
+        // loses to budgets_account_code_period_code_unique under concurrent
+        // submits — the loser gets a duplicate-key 500 instead of an update.
+        Budget::upsert(
+            [[
                 'account_code' => $accountCode,
                 'period_code' => $periodCode,
-            ],
-            [
                 'budget_myr' => $budgetMyr,
                 'created_by' => $userId,
                 'notes' => $notes,
-            ]
+            ]],
+            ['account_code', 'period_code'],
+            ['budget_myr', 'created_by', 'notes']
         );
+
+        return Budget::where('account_code', $accountCode)
+            ->where('period_code', $periodCode)
+            ->firstOrFail();
     }
 
     /**

@@ -77,14 +77,26 @@ class CustomerRelationService
 
     public function updateRelation(int $relationId, array $data): CustomerRelation
     {
-        $relation = CustomerRelation::findOrFail($relationId);
-        $relation->update($data);
-        $relation->refresh();
+        $relation = DB::transaction(function () use ($relationId, $data) {
+            $relation = CustomerRelation::findOrFail($relationId);
+            $relation->update($data);
+            $relation->refresh();
 
-        $this->auditService->logCustomerRiskEvent('customer_relation_updated', $relation->customer_id, [
-            'relation_id' => $relationId,
-            'changes' => $data,
-        ]);
+            // Keep the derived flag consistent when is_pep changes.
+            if (array_key_exists('is_pep', $data)) {
+                $customer = Customer::find($relation->customer_id);
+                if ($customer) {
+                    $this->updateCustomerPepAssociateStatus($customer);
+                }
+            }
+
+            $this->auditService->logCustomerRiskEvent('customer_relation_updated', $relation->customer_id, [
+                'relation_id' => $relationId,
+                'changes' => $data,
+            ]);
+
+            return $relation;
+        });
 
         return $relation;
     }
@@ -126,20 +138,13 @@ class CustomerRelationService
         return min($score, 30);
     }
 
-    public function getAllRelatedCustomers(Customer $customer): Collection
-    {
-        $directRelations = $customer->pepRelations;
-        $reverseRelations = $customer->associateRelations;
-
-        $allRelations = $directRelations->merge($reverseRelations);
-        $relatedIds = $allRelations->pluck('related_customer_id')->filter()->unique();
-
-        return Customer::whereIn('id', $relatedIds)->get();
-    }
-
     public function updateCustomerPepAssociateStatus(Customer $customer): void
     {
-        $hasPepAssociate = $this->isPepAssociate($customer);
-        $customer->update(['is_pep_associate' => $hasPepAssociate]);
+        // Serialise the derived flag on the customer row so the probe and the
+        // write observe the same committed relation set.
+        DB::transaction(function () use ($customer): void {
+            $locked = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
+            $locked->update(['is_pep_associate' => $this->isPepAssociate($locked)]);
+        });
     }
 }

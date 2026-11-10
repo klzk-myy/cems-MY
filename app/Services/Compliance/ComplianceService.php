@@ -4,10 +4,8 @@ namespace App\Services\Compliance;
 
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
-use App\Enums\FlagStatus;
 use App\Enums\RiskRating;
 use App\Enums\TransactionStatus;
-use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Compliance\SanctionEntry;
 use App\Models\Compliance\ScreeningResult;
 use App\Models\Customer;
@@ -478,24 +476,6 @@ class ComplianceService
             'threshold_hours' => $thresholdHours,
             'severity' => $severity,
         ];
-    }
-
-    /**
-     * Get all open flags for a customer requiring attention.
-     *
-     * @param  int  $customerId  The customer ID
-     * @return array<FlaggedTransaction> List of open flags
-     */
-    public function getCustomerOpenFlags(int $customerId): array
-    {
-        return FlaggedTransaction::whereHas('transaction', function ($query) use ($customerId) {
-            $query->where('customer_id', $customerId);
-        })
-            ->whereNotIn('status', FlagStatus::terminalValues())
-            ->with('transaction')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->toArray();
     }
 
     /**

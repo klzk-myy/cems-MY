@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\CddLevel;
 use App\Enums\CounterSessionStatus;
 use App\Enums\FlagStatus;
 use App\Enums\TransactionStatus;
@@ -625,75 +624,6 @@ class EodReconciliationService
             'threshold_red' => $redThreshold,
             'threshold_yellow' => $yellowThreshold,
         ];
-    }
-
-    /**
-     * Check for Enhanced CDD transactions missing deferred accounting entries.
-     * Returns transactions that are completed but have no journal entry linked.
-     *
-     * @param  Carbon  $date  Date to check
-     * @param  int|null  $branchId  Optional branch filter
-     * @return array Transactions missing accounting entries
-     */
-    public function checkMissingAccountingEntries(Carbon $date, ?int $branchId = null): array
-    {
-        $transactions = Transaction::with(['user', 'branch'])
-            ->completed()
-            ->whereBetween('approved_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
-            ->where('cdd_level', CddLevel::Enhanced->value)
-            ->when($branchId, function ($query) use ($branchId) {
-                $query->where('branch_id', $branchId);
-            })
-            ->get();
-
-        $missingEntries = $transactions->filter(function ($tx) {
-            return $tx->journal_entry_id === null;
-        });
-
-        $hasIssues = $missingEntries->isNotEmpty();
-
-        return [
-            'date' => $date->toDateString(),
-            'checked_at' => now()->toIso8601String(),
-            'total_enhanced_ccd_transactions' => $transactions->count(),
-            'missing_entries_count' => $missingEntries->count(),
-            'has_issues' => $hasIssues,
-            'transactions' => $missingEntries->map(function ($tx) {
-                return [
-                    'id' => $tx->id,
-                    'type' => $tx->type->value,
-                    'currency_code' => $tx->currency_code,
-                    'amount_myr' => $tx->amount_myr,
-                    'quantity' => $tx->quantity,
-                    'branch_id' => $tx->branch_id,
-                    'branch_name' => $tx->branch?->name,
-                    'user_id' => $tx->user_id,
-                    'user_name' => $tx->user?->username,
-                    'approved_at' => $tx->approved_at?->toIso8601String(),
-                    'approved_by' => $tx->approved_by,
-                    'journal_entry_id' => $tx->journal_entry_id,
-                ];
-            })->values()->toArray(),
-        ];
-    }
-
-    /**
-     * Get count of transactions missing accounting entries for reporting.
-     *
-     * @param  Carbon  $date  Date to check
-     * @param  int|null  $branchId  Optional branch filter
-     * @return int Count of transactions missing entries
-     */
-    public function getMissingAccountingEntriesCount(Carbon $date, ?int $branchId = null): int
-    {
-        return Transaction::whereBetween('approved_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
-            ->completed()
-            ->where('cdd_level', CddLevel::Enhanced->value)
-            ->when($branchId, function ($query) use ($branchId) {
-                $query->where('branch_id', $branchId);
-            })
-            ->whereNull('journal_entry_id')
-            ->count();
     }
 
     /**

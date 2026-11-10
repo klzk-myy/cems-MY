@@ -38,10 +38,10 @@ class RiskCalculationServiceTest extends TestCase
             $this->mathService,
             $this->thresholdService,
             new VelocityRiskService($this->mathService, $this->thresholdService),
-            new StructuringRiskService($this->mathService, $this->thresholdService),
+            new StructuringRiskService($this->thresholdService),
             new GeographicRiskService($this->thresholdService),
             new AmountRiskService($this->mathService, $this->thresholdService),
-            new PatternRiskService($this->mathService, new RoundTripDetector($this->mathService)),
+            new PatternRiskService(new RoundTripDetector($this->mathService)),
         );
     }
 

@@ -7,6 +7,9 @@ use App\Models\TillBalance;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<TillBalance>
+ */
 class TillBalanceFactory extends Factory
 {
     protected $model = TillBalance::class;

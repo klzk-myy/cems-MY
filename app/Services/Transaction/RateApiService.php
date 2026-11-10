@@ -594,78 +594,8 @@ class RateApiService
         $this->cacheInvalidationService->forgetExchangeRates($branchId);
     }
 
-    public function getRateTrend(string $currencyCode, int $days = 30, ?int $branchId = null): array
-    {
-        $endDate = now()->toDateString();
-        $startDate = now()->subDays($days)->toDateString();
-
-        $query = ExchangeRateHistory::forCurrency($currencyCode)
-            ->forDateRange($startDate, $endDate);
-
-        if ($branchId !== null) {
-            $query->where('branch_id', $branchId);
-        }
-
-        $histories = $query->orderBy('effective_date', 'asc')->get();
-
-        if ($histories->isEmpty()) {
-            return [
-                'currency' => $currencyCode,
-                'days' => $days,
-                'data' => [],
-                'trend' => null,
-            ];
-        }
-
-        $data = $histories->map(function ($history) {
-            return [
-                'date' => $history->effective_date->format('Y-m-d'),
-                'rate' => $history->rate,
-                'rate_unit' => (string) $history->rate_unit,
-                'rate_inverse' => (bool) $history->rate_inverse,
-            ];
-        })->toArray();
-
-        $firstRate = $histories->first()->rate;
-        $lastRate = $histories->last()->rate;
-        $firstRateStr = (string) $firstRate;
-        $lastRateStr = (string) $lastRate;
-
-        $change = $this->mathService->subtract($lastRateStr, $firstRateStr);
-
-        if ($this->mathService->compare($firstRateStr, '0') > 0) {
-            $percentChangeRaw = $this->mathService->divide($change, $firstRateStr);
-            $percentChange = $this->mathService->add($this->mathService->multiply($percentChangeRaw, '100'), '0');
-        } else {
-            $percentChange = '0';
-        }
-
-        return [
-            'currency' => $currencyCode,
-            'days' => $days,
-            'data' => $data,
-            'trend' => [
-                'start_rate' => $firstRate,
-                'end_rate' => $lastRate,
-                'change' => $change,
-                'percent_change' => $percentChange,
-                'direction' => $this->mathService->compare($change, '0') >= 0 ? 'up' : 'down',
-            ],
-        ];
-    }
-
     public function getSpread(): string
     {
         return $this->rateThresholds()['spread'];
-    }
-
-    public function getMaxDeviationPercent(): string
-    {
-        return $this->rateThresholds()['max_deviation_percent'];
-    }
-
-    public function getPrecision(): int
-    {
-        return $this->rateThresholds()['precision'];
     }
 }

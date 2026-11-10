@@ -6,14 +6,12 @@ use App\Enums\CddLevel;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\AuditService;
-use App\Services\Branch\TellerAllocationService;
 use App\Services\Branch\TillBalanceManager;
 use App\Services\Compliance\ComplianceService;
 use App\Services\Compliance\HistoricalRiskAnalysisService;
 use App\Services\Compliance\PepApprovalService;
 use App\Services\Screening\CustomerScreeningService;
 use App\Services\Security\IpValidationService;
-use App\Services\ThresholdService;
 use App\Services\Transaction\TransactionHoldService;
 use App\Services\Transaction\TransactionValidationService;
 use App\ValueObjects\RiskAnalysisResult;
@@ -27,7 +25,7 @@ use Tests\TestCase;
 
 trait CreatesScreeningMock
 {
-    protected function createScreeningMock(string $action = 'clear'): MockObject
+    protected function createScreeningMock(string $action = 'clear'): CustomerScreeningService
     {
         $screeningMock = $this->createMock(CustomerScreeningService::class);
         $screeningMock->method('screenCustomer')
@@ -63,8 +61,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock(),
             $this->createMock(HistoricalRiskAnalysisService::class),
@@ -92,8 +88,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock(),
             $this->createMock(HistoricalRiskAnalysisService::class),
@@ -134,8 +128,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock(),
             $riskAnalysisMock,
@@ -165,8 +157,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock(),
             $this->createMock(HistoricalRiskAnalysisService::class),
@@ -245,8 +235,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock('flag'),
             $this->createMock(HistoricalRiskAnalysisService::class),
@@ -284,8 +272,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $this->createScreeningMock(),
             $this->createMock(HistoricalRiskAnalysisService::class),

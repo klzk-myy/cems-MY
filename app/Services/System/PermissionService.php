@@ -42,19 +42,6 @@ class PermissionService
     }
 
     /**
-     * Get all granted permission keys for a role.
-     *
-     * @return list<string>
-     */
-    public function grantedPermissions(UserRole $role): array
-    {
-        $matrix = $this->getMatrix();
-        $permissions = $matrix[$role->value] ?? [];
-
-        return array_keys(array_filter($permissions));
-    }
-
-    /**
      * Get the full role-permission matrix.
      * Returns [role => [permission_key => bool]].
      *

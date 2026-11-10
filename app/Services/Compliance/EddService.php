@@ -69,26 +69,53 @@ class EddService
         }
     }
 
+    /**
+     * Apply field updates and auto-promote to PendingReview when the record
+     * becomes complete. The completeness probe and status transition run on
+     * the locked row so a concurrent approve/reject cannot be rewound to
+     * PendingReview by a late update.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function updateEddRecord(EnhancedDiligenceRecord $record, array $data): EnhancedDiligenceRecord
     {
-        $record->update($data);
+        return DB::transaction(function () use ($record, $data) {
+            $locked = EnhancedDiligenceRecord::whereKey($record->id)->lockForUpdate()->firstOrFail();
+            $locked->fill($data);
 
-        if ($this->isRecordComplete($record)) {
-            $record->update(['status' => EddStatus::PendingReview]);
-        }
+            if ($this->isRecordComplete($locked) && ! $this->isTerminalStatus($locked->status)) {
+                $locked->status = EddStatus::PendingReview;
+            }
 
-        return $record->fresh();
+            $locked->save();
+
+            return $locked->fresh();
+        });
     }
 
+    /**
+     * Submit a complete record for review. Same locking as approve(): the
+     * completeness gate and the status write both act on the locked row,
+     * and a record already in a terminal status can no longer be rewound.
+     */
     public function submitForReview(EnhancedDiligenceRecord $record): EnhancedDiligenceRecord
     {
-        if (! $this->isRecordComplete($record)) {
-            throw new EddValidationException('EDD record must be complete before submission');
-        }
+        return DB::transaction(function () use ($record) {
+            $locked = EnhancedDiligenceRecord::whereKey($record->id)->lockForUpdate()->firstOrFail();
 
-        $record->update(['status' => EddStatus::PendingReview]);
+            if (! $this->isRecordComplete($locked)) {
+                throw new EddValidationException('EDD record must be complete before submission');
+            }
 
-        return $record;
+            if ($this->isTerminalStatus($locked->status)) {
+                throw new EddValidationException('Cannot submit a finalised EDD record for review.');
+            }
+
+            $locked->status = EddStatus::PendingReview;
+            $locked->save();
+
+            return $locked;
+        });
     }
 
     /**
@@ -107,12 +134,13 @@ class EddService
                 throw new EddValidationException('Cannot submit questionnaire in current status.');
             }
 
-            $locked->update([
-                'questionnaire_responses' => $responses,
-                'questionnaire_completed_at' => now(),
-                'questionnaire_completed_by' => $userId,
-                'status' => EddStatus::QuestionnaireSubmitted,
-            ]);
+            // Direct assignment + save(): status is intentionally not in
+            // $fillable, so ->update() would silently drop it.
+            $locked->questionnaire_responses = $responses;
+            $locked->questionnaire_completed_at = now();
+            $locked->questionnaire_completed_by = $userId;
+            $locked->status = EddStatus::QuestionnaireSubmitted;
+            $locked->save();
 
             return $locked->fresh();
         });
@@ -139,12 +167,11 @@ class EddService
             $locked = EnhancedDiligenceRecord::whereKey($record->id)->lockForUpdate()->firstOrFail();
             $this->assertFinalisable($locked, 'approved');
 
-            $locked->update([
-                'status' => EddStatus::Approved,
-                'approved_by' => $reviewer->id,
-                'approved_at' => now(),
-                'review_notes' => $notes ?? $locked->review_notes,
-            ]);
+            $locked->status = EddStatus::Approved;
+            $locked->approved_by = $reviewer->id;
+            $locked->approved_at = now();
+            $locked->review_notes = $notes ?? $locked->review_notes;
+            $locked->save();
 
             return $locked->fresh();
         });
@@ -159,15 +186,23 @@ class EddService
             $locked = EnhancedDiligenceRecord::whereKey($record->id)->lockForUpdate()->firstOrFail();
             $this->assertFinalisable($locked, 'rejected');
 
-            $locked->update([
-                'status' => EddStatus::Rejected,
-                'reviewed_by' => $reviewer->id,
-                'reviewed_at' => now(),
-                'review_notes' => $reason,
-            ]);
+            $locked->status = EddStatus::Rejected;
+            $locked->reviewed_by = $reviewer->id;
+            $locked->reviewed_at = now();
+            $locked->review_notes = $reason;
+            $locked->save();
 
             return $locked->fresh();
         });
+    }
+
+    /**
+     * Statuses that must never be overwritten by a status transition —
+     * Approved/Rejected are review outcomes and Expired is end-of-life.
+     */
+    private function isTerminalStatus(EddStatus $status): bool
+    {
+        return in_array($status, [EddStatus::Approved, EddStatus::Rejected, EddStatus::Expired], true);
     }
 
     /**
@@ -219,8 +254,12 @@ class EddService
     protected function generateEddReference(): string
     {
         $prefix = 'EDD-'.date('Ym').'-';
+        // lockForUpdate inside createEddRecord's transaction gap-locks the
+        // prefix range so a concurrent insert cannot reuse the same number —
+        // same idiom as StockTransfer::generateTransferNumber().
         $lastRecord = EnhancedDiligenceRecord::where('edd_reference', 'like', $prefix.'%')
             ->orderBy('edd_reference', 'desc')
+            ->lockForUpdate()
             ->first();
 
         if ($lastRecord) {

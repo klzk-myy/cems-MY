@@ -10,6 +10,7 @@ use App\Enums\FindingType;
 use App\Events\RelatedPartyOwnershipConcern;
 use App\Models\Compliance\Alert;
 use App\Models\Compliance\ComplianceFinding;
+use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 
 class RelatedPartyOwnershipConcernListener
@@ -17,6 +18,22 @@ class RelatedPartyOwnershipConcernListener
     public function __invoke(RelatedPartyOwnershipConcern $event): void
     {
         DB::transaction(function () use ($event) {
+            // Serialise on the customer row and dedup per (customer, related
+            // party): concurrent evaluations of the same pair would otherwise
+            // stack duplicate findings and alerts for one concern.
+            Customer::whereKey($event->customer->id)->lockForUpdate()->firstOrFail();
+
+            $alreadyOpen = ComplianceFinding::where('subject_type', 'Customer')
+                ->where('subject_id', $event->customer->id)
+                ->where('finding_type', FindingType::AggregateTransaction->value)
+                ->where('status', FindingStatus::New->value)
+                ->where('details->related_party_id', $event->relatedParty->id)
+                ->exists();
+
+            if ($alreadyOpen) {
+                return;
+            }
+
             ComplianceFinding::create([
                 'subject_type' => 'Customer',
                 'subject_id' => $event->customer->id,
