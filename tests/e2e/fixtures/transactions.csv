@@ -1,0 +1,2 @@
+customer_id,type,currency_code,quantity,rate,purpose,source_of_funds,till_id
+1,buy,USD,100.00,4.50,Travel,Salary,C01

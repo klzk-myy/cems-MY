@@ -1,0 +1,201 @@
+import { expect, type BrowserContext, type Page } from '@playwright/test';
+import { resolveMfa } from './auth';
+import type { E2eUser } from './env';
+
+const BRANCH = 5;
+const TELLER_ID = 5;
+
+// Session float quantities — generous enough for a full booking day.
+const FLOATS = { MYR: '5000', USD: '5000' };
+const LIMITS = { MYR: '50000000', USD: '50000000' };
+
+// Stateful Sanctum auth keys off Referer/Origin matching APP_URL; without
+// them the session cookie is ignored (401). Stateful requests also traverse
+// the web pipeline, so CSRF applies (419 without the token).
+export async function api(ctx: BrowserContext, page: Page, method: 'get' | 'post', path: string, data?: unknown) {
+    const base = new URL(page.url()).origin;
+    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    return ctx.request.fetch(`${base}/api/v1${path}`, {
+        method,
+        data,
+        headers: { referer: `${base}/`, origin: base, 'x-csrf-token': csrf! },
+    });
+}
+
+export async function primeMfa(page: Page, user: E2eUser) {
+    await page.goto('/mfa/verify');
+    await resolveMfa(page, user);
+}
+
+export async function branchCounters(ctx: BrowserContext, page: Page): Promise<Array<{ id: number; code: string }>> {
+    const res = await api(ctx, page, 'get', `/branches/${BRANCH}/counters`);
+    const body = await res.json();
+    const list = body.data?.data ?? body.data ?? body;
+    expect(Array.isArray(list), `counters list: ${JSON.stringify(body).slice(0, 200)}`).toBe(true);
+    return list;
+}
+
+// Counter sessions have no web UI (CounterService is API-only — CLAUDE.md).
+// closeSession demands a declared float for EVERY open till currency
+// (MissingClosingFloatException), and variance past the red threshold needs a
+// manage_counters supervisor — both supplied here.
+export async function closeCounterSession(ctx: BrowserContext, page: Page, counterId: number, supervisorId: number) {
+    const res = await api(ctx, page, 'post', `/counters/${counterId}/close`, {
+        closing_floats: { MYR: '0', USD: '0', EUR: '0', GBP: '0', SGD: '0', AUD: '0' },
+        notes: 'E2E day close',
+        supervisor_id: supervisorId,
+    });
+    // 200 = closed; 404 = no open session on this counter.
+    expect([200, 404], `close session on counter ${counterId}: ${await res.text()}`).toContain(res.status());
+}
+
+// till-report renders the day's Open/Closed badge for a counter code — the
+// probe that distinguishes "till rows still writable" from "closed for the
+// day" (a redirect back means no rows exist at all).
+async function tillState(mgrPage: Page, code: string): Promise<'none' | 'open' | 'closed'> {
+    await mgrPage.goto(`/stock-cash/till-report?till_id=${code}`);
+    if (!mgrPage.url().includes('till-report')) {
+        return 'none';
+    }
+    if (await mgrPage.getByText('Closed', { exact: true }).count()) {
+        return 'closed';
+    }
+    if (await mgrPage.getByText('Open', { exact: true }).count()) {
+        return 'open';
+    }
+    return 'none';
+}
+
+// A day's till rows are immutable once closed — a session-close permanently
+// burns that counter's currencies for the business date (fiscal close). The
+// teller's seat therefore rotates to whichever counter still has clean till
+// space. Returns the counter code the teller is seated on.
+export async function ensureSeated(
+    tlrCtx: BrowserContext, tlrPage: Page,
+    mgrCtx: BrowserContext, mgrPage: Page,
+    supervisorId: number,
+): Promise<string | null> {
+    const counters = await branchCounters(mgrCtx, mgrPage);
+    const clean = [];
+    let sessionBlocked = false;
+
+    for (const counter of counters) {
+        // Burned counters can't host a seat today — a closed same-day till
+        // row rejects both openSession and openTill.
+        if (await tillState(mgrPage, counter.code) === 'closed') {
+            continue;
+        }
+        clean.push(counter);
+
+        // The real morning-open flow: the request lands pending allocations
+        // (which approve-and-open requires), then the approval creates the
+        // session, its till rows and the active allocations in one call.
+        await api(tlrCtx, tlrPage, 'post', `/counters/${counter.id}/opening-request`, {
+            requested_floats: FLOATS,
+        });
+        const approve = await api(mgrCtx, mgrPage, 'post', `/counters/${counter.id}/approve-and-open`, {
+            teller_id: TELLER_ID,
+            approved_floats: FLOATS,
+            daily_limits: LIMITS,
+        });
+        if (approve.status() === 200) {
+            await rejectPendingAllocations(mgrCtx, mgrPage);
+            return counter.code; // fresh seat landed
+        }
+        if ((await approve.text()).includes('already open today')) {
+            // Ambient seat: a session from a prior spec already lives here
+            // and its tills are still open (state !== 'closed' above). The
+            // probe's own pending request (and any stale ones) get rejected.
+            await rejectPendingAllocations(mgrCtx, mgrPage);
+            return counter.code;
+        }
+        // "already at a counter" → a session lives elsewhere and blocks
+        // every fresh seat until it's closed.
+        sessionBlocked = true;
+    }
+
+    // A stray session on a burned counter blocks all seating — close it and
+    // re-seat on the first clean counter.
+    if (sessionBlocked && clean.length) {
+        for (const counter of counters) {
+            await closeCounterSession(tlrCtx, tlrPage, counter.id, supervisorId);
+        }
+        for (const counter of clean) {
+            await api(tlrCtx, tlrPage, 'post', `/counters/${counter.id}/opening-request`, {
+                requested_floats: FLOATS,
+            });
+            const approve = await api(mgrCtx, mgrPage, 'post', `/counters/${counter.id}/approve-and-open`, {
+                teller_id: TELLER_ID,
+                approved_floats: FLOATS,
+                daily_limits: LIMITS,
+            });
+            if (approve.status() === 200) {
+                await rejectPendingAllocations(mgrCtx, mgrPage);
+                return counter.code;
+            }
+        }
+    }
+
+    await rejectPendingAllocations(mgrCtx, mgrPage).catch(() => {});
+    return null;
+}
+
+// approve-and-open probes and ambient seats leave pending allocation
+// requests behind — they accumulate across runs and block the EOD checklist.
+// The manager rejects the branch's pending queue through /allocations —
+// day-end semantics: no pending request should survive close anyway.
+export async function rejectPendingAllocations(
+    ctx: BrowserContext, page: Page,
+): Promise<void> {
+    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const base = new URL(page.url()).origin;
+    // Rejections shift pagination — always re-read page 1 until it is clear.
+    for (let pass = 0; pass < 6; pass++) {
+        await page.goto('/allocations?status=pending');
+        await page.waitForLoadState('load');
+        const ids = await page.locator('a[href*="/allocations/"]').evaluateAll(
+            (links) => links.map((a) => (a.getAttribute('href') ?? '').match(/\/allocations\/(\d+)/)?.[1]).filter(Boolean) as string[],
+        );
+        if (ids.length === 0) { break; }
+        for (const id of ids) {
+            await ctx.request.post(`${base}/allocations/${id}/reject`, { form: { _token: csrf! } });
+        }
+    }
+}
+
+// settle() is a no-op once a workflow reaches Settled, so floats created
+// after a reopen can never be swept by re-settling — they must be returned
+// through the manager's return-to-pool endpoint before finalize unlocks.
+export async function returnActiveAllocations(
+    ctx: BrowserContext, page: Page,
+): Promise<void> {
+    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const base = new URL(page.url()).origin;
+    for (let pass = 0; pass < 6; pass++) {
+        await page.goto('/allocations?status=active');
+        await page.waitForLoadState('load');
+        const ids = await page.locator('a[href*="/allocations/"]').evaluateAll(
+            (links) => links.map((a) => (a.getAttribute('href') ?? '').match(/\/allocations\/(\d+)/)?.[1]).filter(Boolean) as string[],
+        );
+        if (ids.length === 0) { break; }
+        for (const id of ids) {
+            await ctx.request.post(`${base}/allocations/${id}/return-to-pool`, { form: { _token: csrf! } });
+        }
+    }
+}
+
+// stock-cash/open creates the day's till row; a same-day row (open or closed)
+// rejects with "already open", which also covers the ambient-seat case.
+export async function openTill(ctx: BrowserContext, page: Page, till: string, currency: string) {
+    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const base = new URL(page.url()).origin;
+    const res = await ctx.request.post(`${base}/stock-cash/open`, {
+        form: {
+            _token: csrf!,
+            till_id: till,
+            currency_code: currency,
+            opening_balance: '100000',
+        },
+    });
+    expect([200, 302, 303, 422]).toContain(res.status());
+}

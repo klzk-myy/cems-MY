@@ -55,6 +55,11 @@ playwright.config.js
 /test-results/
 # Playwright MFA spec state (TOTP secret captured at enrollment — local only)
 tests/support/.mfa-state.json
+/playwright-report/
+/blob-report/
+/tests/e2e/.auth/
+/tests/e2e/.env.local
+/tests/Load/armed.json
 tailwind.config.js
 vite.config.js
 *.log
