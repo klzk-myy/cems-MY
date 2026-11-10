@@ -269,5 +269,7 @@ jobs:
             playwright-report/
             test-results/e2e/
             storage/logs/e2e-serve.log
+            storage/logs/e2e-worker.log
+            storage/logs/laravel.log
           retention-days: 7
           if-no-files-found: ignore
