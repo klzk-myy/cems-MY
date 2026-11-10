@@ -30,7 +30,9 @@
              data-currency-inverses='@json($currencyInverses ?? [])'
              class="w-full">
 
-            <form @submit.prevent="submitStep()">
+            <!-- novalidate: hidden step-2/3 controls carry `required`; native
+                 validation would cancel every submit. Alpine + server validate. -->
+            <form @submit.prevent="submitStep()" novalidate>
 
                 <!-- Step indicator -->
                 <ol class="mb-8 flex items-center" aria-label="Transaction steps">
