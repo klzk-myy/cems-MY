@@ -163,4 +163,12 @@ class OpsCommandsTest extends TestCase
         $this->assertContains($exit, [0, 1, 2]);
         $this->assertNotEmpty(Artisan::output());
     }
+
+    #[Test]
+    public function monitor_check_runs_all_checks_and_exits_with_health_code(): void
+    {
+        $exit = Artisan::call('monitor:check', ['--output' => 'json']);
+
+        $this->assertContains($exit, [0, 1, 2]);
+    }
 }
