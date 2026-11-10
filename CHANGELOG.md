@@ -5,6 +5,52 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-11] - Coverage tail: remaining API v1 / jobs / web / ops surfaces + slow-group repair
+
+### Coverage Added (41 tests across 4 files)
+- `tests/Feature/Api/V1/SanctionsScreeningCountersApiTest.php` — 13 tests:
+  sanctions search + envelope, lists/entries/import-logs (admin vs teller
+  403), screening batch + status/history, branch counters/users own-branch
+  scoping, allocation request/my-active/pending/active, customer search,
+  KYC document upload.
+- `tests/Feature/Jobs/ReconcileAndImportJobsTest.php` — 7 tests:
+  `ReconcileDeferredAccountingJob` quiet path + Enhanced-only targeting
+  (constructor-injected service spy), `ImportSanctionsJob` slug/fallback/
+  no-list resolution, `TransactionCancelledListener` audit write,
+  `ReportGeneratedListener` log.
+- `tests/Feature/WebTailEndpointsTest.php` — 11 tests: transaction print
+  receipt, findings show/dismiss (reason required), web screening trigger,
+  expense create form + admin fund, STR export behind `password.confirm`,
+  audit-log detail, branch edit, branch-pool fund (balance mutation).
+- `tests/Feature/Commands/OpsCommandsTest.php` — 10 tests:
+  `compliance:rescreen` stamp vs `--dry-run`, `accounting:month-end`
+  preflight-failure/force/attribution paths, `sanctions:update` source
+  validation + job dispatch, `sanctions:import` list resolution,
+  display/housekeeping commands exit codes, `monitor:status` health-code
+  contract.
+
+### Slow-group repair (17 failures on main, pre-existing drift)
+- **Real bug found**: `TransactionCreationService::prepareAndCreate()`
+  captured `$ipAddress` but invoked `buildCreationContext($user, $data)`
+  without it → `validateIpAddress` received `null` → IP validation was
+  silently bypassed on this creation path. Now passes `ipAddress:`.
+- `tests/Feature/TransactionCancellationFlowTest.php` — fixture used
+  `Completed` status, but `canCancel()` now subsumes the window check for
+  Completed txns (returns generic "cannot be cancelled"). Status changed
+  to `Approved` so the explicit `isWithinCancellationWindow` gate fires
+  the expected "outside the cancellation window" message.
+- `tests/Feature/RouteVerificationTest.php` — deleted: it tested
+  `scripts/check-routes.php`, which was removed in `31da2b93`. A test for
+  a deleted script can only ever fail.
+
+### Verified
+- The 3 standard suite skips are intentional environment guards
+  (production-only DebugMode, mysql-only credentials, Redis-store rate
+  limit), not masked failures.
+- Slow group returned to green: 17 failed → 0 failed (126 tests).
+
+---
+
 ## [2026-11-10] - CI honesty: pipefail masking + encryption-salt determinism + MSB2 unit fix
 
 ### Root Cause

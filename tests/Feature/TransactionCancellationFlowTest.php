@@ -78,7 +78,7 @@ class TransactionCancellationFlowTest extends TestCase
             'user_id' => $teller->id,
             'branch_id' => $counter->branch_id,
             'till_id' => (string) $counter->id,
-            'status' => TransactionStatus::Completed,
+            'status' => TransactionStatus::Approved,
             'cdd_level' => 'Simplified',
             'idempotency_key' => uniqid('test_', true),
             'created_at' => now()->subDays(2),

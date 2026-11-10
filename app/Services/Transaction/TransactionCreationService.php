@@ -95,7 +95,7 @@ class TransactionCreationService
         $user = User::findOrFail($userId);
         $ipAddress ??= ActorContext::capture()->ipAddress;
 
-        return $this->create($this->buildCreationContext($user, $data), $user->id, $ipAddress);
+        return $this->create($this->buildCreationContext($user, $data, ipAddress: $ipAddress), $user->id, $ipAddress);
     }
 
     /**
