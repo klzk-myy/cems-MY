@@ -165,6 +165,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Start Redis
+        run: |
+          docker run -d --name redis -p 6379:6379 redis:7-alpine redis-server --requirepass redpass
+          for i in {1..30}; do
+            if docker exec redis redis-cli -a redpass ping 2>/dev/null | grep -q PONG; then
+              echo "Redis is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Redis failed to start"; exit 1
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
