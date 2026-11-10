@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Support\ActorContext;
 use App\Support\PasswordHash;
+use Illuminate\Cache\RedisStore;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -484,13 +485,32 @@ class MfaService
         $store = Cache::store(config('ratelimit.store'));
         $key = self::FAILED_ATTEMPTS_PREFIX.$user->id;
 
-        // Ensure the key exists with a TTL before incrementing so it can
-        // never be left without an expiry under concurrent increments.
-        if (! $store->has($key)) {
-            $store->put($key, 0, now()->addMinutes(self::FAILED_ATTEMPT_WINDOW_MINUTES));
-        }
+        // Atomically seed the counter to 0 ONLY when it does not exist —
+        // Cache::add() maps to SET-NX-with-TTL under Redis, so two concurrent
+        // first attempts cannot both reset the counter (the previous
+        // has()+put() pair raced exactly there). Same pattern as
+        // RateLimitService::recordFailedAttempt.
+        $store->add($key, 0, now()->addMinutes(self::FAILED_ATTEMPT_WINDOW_MINUTES));
 
+        // Atomic increment - creates key if missing with Redis
         $store->increment($key);
+
+        // TOCTOU guard: the key can expire between add() and increment(),
+        // and a bare INCR recreates it WITHOUT a TTL — a permanent
+        // failed-attempt counter feeding the lockout check. Re-apply the
+        // window whenever the live key has none (same repair RateLimitService
+        // performs; RedisStore::increment() accepts no TTL argument).
+        $underlyingStore = $store->getStore();
+
+        if ($underlyingStore instanceof RedisStore) {
+            $connection = $underlyingStore->connection();
+            $prefixedKey = $underlyingStore->getPrefix().$key;
+            $keyTtl = $connection->ttl($prefixedKey);
+
+            if ($keyTtl === -1 || $keyTtl === false) {
+                $connection->expire($prefixedKey, self::FAILED_ATTEMPT_WINDOW_MINUTES * 60);
+            }
+        }
     }
 
     /**

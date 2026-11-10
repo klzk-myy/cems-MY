@@ -85,32 +85,44 @@ class ComplianceScreeningJob implements ShouldQueue
             return;
         }
 
-        // Place all pending transactions on hold
-        $this->placePendingTransactionsForComplianceReview(
-            $customer,
-            "New sanctions match detected: {$firstMatch?->entityName}"
-        );
+        // Two screening jobs for the same customer can run concurrently on
+        // parallel workers (this job is intentionally not ShouldBeUnique —
+        // different trigger sources must each be able to screen). Their
+        // dedup helpers below are check-then-create, so without a
+        // serialization point both read "no open alert/flag" and insert
+        // duplicate CRITICAL rows. Lock the customer row — the same anchor
+        // technique TillBalanceManager uses — so the loser re-reads the
+        // committed rows and refreshes instead of duplicating.
+        DB::transaction(function () use ($customer, $firstMatch, $auditService): void {
+            Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
 
-        // Alert compliance team
-        $this->createComplianceAlert(
-            $customer,
-            "CRITICAL: New sanctions match detected for customer {$customer->full_name} during rescreening. Matched entity: {$firstMatch?->entityName} (similarity: {$firstMatch?->matchScore}%)",
-            AlertPriority::Critical
-        );
+            // Place all pending transactions on hold
+            $this->placePendingTransactionsForComplianceReview(
+                $customer,
+                "New sanctions match detected: {$firstMatch?->entityName}"
+            );
+
+            // Alert compliance team
+            $this->createComplianceAlert(
+                $customer,
+                "CRITICAL: New sanctions match detected for customer {$customer->full_name} during rescreening. Matched entity: {$firstMatch?->entityName} (similarity: {$firstMatch?->matchScore}%)",
+                AlertPriority::Critical
+            );
+
+            // Audit log the sanction event
+            $auditService->logSanctionEvent('customer_record_updated_rescreening', $customer->id, [
+                'entity_type' => 'Customer',
+                'triggered_by' => 'ComplianceScreeningJob',
+                'screening_result' => 'blocked',
+                'matched_entity' => $firstMatch?->entityName,
+            ]);
+        });
 
         Log::critical('Sanctions match detected during queued compliance screening', [
             'customer_id' => $customer->id,
             'customer_name' => $customer->full_name,
             'matched_entity' => $firstMatch?->entityName,
             'similarity' => $firstMatch?->matchScore,
-        ]);
-
-        // Audit log the sanction event
-        $auditService->logSanctionEvent('customer_record_updated_rescreening', $customer->id, [
-            'entity_type' => 'Customer',
-            'triggered_by' => 'ComplianceScreeningJob',
-            'screening_result' => 'blocked',
-            'matched_entity' => $firstMatch?->entityName,
         ]);
     }
 

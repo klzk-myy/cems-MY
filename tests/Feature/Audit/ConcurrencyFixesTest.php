@@ -10,8 +10,11 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Exceptions\Domain\AccountingPeriodException;
+use App\Jobs\ComplianceScreeningJob;
 use App\Models\Branch;
 use App\Models\BranchPool;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Counter;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
@@ -23,14 +26,23 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\CurrencyPositionService;
+use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\TellerAllocationService;
+use App\Services\Screening\CustomerScreeningService;
+use App\Services\System\MfaService;
 use App\Services\System\RateLimitService;
+use App\Services\ThresholdService;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Services\Transaction\TransactionConfirmationService;
 use App\Services\Transaction\TransactionCreationService;
 use App\Services\Transaction\TransactionReversalService;
+use App\ValueObjects\ScreeningMatch;
+use App\ValueObjects\ScreeningResponse;
+use Carbon\Carbon;
+use Illuminate\Cache\RedisStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class ConcurrencyFixesTest extends TestCase
@@ -314,6 +326,83 @@ class ConcurrencyFixesTest extends TestCase
 
         $this->expectException(AccountingPeriodException::class);
         $service->reverseJournalEntry($entry, 'reason', $user->id);
+    }
+
+    public function test_mfa_failed_attempt_counter_accumulates_and_keeps_expiry(): void
+    {
+        $user = User::factory()->create();
+        $service = app(MfaService::class);
+
+        $service->recordFailedAttempt($user);
+        $service->recordFailedAttempt($user);
+
+        // add() must seed only when missing: an existing counter is never
+        // re-zeroed by a concurrent first attempt.
+        $this->assertSame(2, $service->failedAttemptCount($user));
+
+        // The seeded key must carry an expiry; a TTL-less counter would
+        // lock the user out of verification permanently. Only observable
+        // on the Redis store — the array store expires internally.
+        $store = Cache::store(config('ratelimit.store'));
+        $underlying = $store->getStore();
+
+        if ($underlying instanceof RedisStore) {
+            $prefixedKey = $underlying->getPrefix().'mfa_failed_attempts:'.$user->id;
+            $this->assertGreaterThan(0, $underlying->connection()->ttl($prefixedKey));
+        }
+
+        $service->clearFailedAttempts($user);
+        $this->assertSame(0, $service->failedAttemptCount($user));
+    }
+
+    public function test_repeated_compliance_screening_runs_do_not_duplicate_enforcement_rows(): void
+    {
+        $branch = Branch::factory()->create();
+        $customer = Customer::factory()->create();
+
+        Transaction::factory()->for($branch)->for($customer)->create([
+            'status' => TransactionStatus::PendingApproval->value,
+        ]);
+
+        $response = new ScreeningResponse(
+            action: 'block',
+            confidenceScore: 95.0,
+            matches: collect([
+                new ScreeningMatch(
+                    entryId: 1,
+                    entityName: 'SANCTIONED ENTITY',
+                    listName: 'Test List',
+                    listSource: 'test',
+                    matchScore: 95.0,
+                    matchedFields: ['name'],
+                    listingDate: null,
+                    dateOfBirth: null,
+                    nationality: null,
+                ),
+            ]),
+            screenedAt: Carbon::now(),
+        );
+
+        $screeningService = $this->mock(CustomerScreeningService::class);
+        $screeningService->shouldReceive('screenCustomer')->andReturn($response);
+
+        $thresholdService = $this->mock(ThresholdService::class);
+        $thresholdService->shouldReceive('getJobDurationWarning')->andReturn(1000);
+
+        // Parallel workers each run the job for the same customer; the
+        // customer-row lock serializes the check-then-create dedup helpers
+        // so the loser refreshes rows instead of stacking duplicates.
+        $job = new ComplianceScreeningJob($customer->id);
+        $job->handle($screeningService, $thresholdService, app(AuditService::class));
+        $job->handle($screeningService, $thresholdService, app(AuditService::class));
+
+        $this->assertSame(1, Alert::where('customer_id', $customer->id)->count());
+
+        // One transaction-scoped flag + one customer-scoped flag, no stacking.
+        $this->assertSame(1, FlaggedTransaction::where('customer_id', $customer->id)
+            ->whereNotNull('transaction_id')->count());
+        $this->assertSame(1, FlaggedTransaction::where('customer_id', $customer->id)
+            ->whereNull('transaction_id')->count());
     }
 
     protected function createCompletedSellTransaction(): Transaction

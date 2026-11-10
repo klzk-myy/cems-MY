@@ -5,6 +5,48 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - Concurrency sweep: MFA counter TTL race + screening-job dedup serialization
+
+### Files Changed
+- `app/Services/System/MfaService.php` - `recordFailedAttempt()` replaces
+  `has()` + `put()` with atomic `add()` seeding plus the Redis TTL-repair
+  guard (same pattern `RateLimitService::recordFailedAttempt` already uses).
+- `app/Jobs/ComplianceScreeningJob.php` - the blocked-screening enforcement
+  block (holds + alert + flag + audit) now runs inside a `DB::transaction`
+  anchored by `Customer::lockForUpdate()`, serializing concurrent jobs for
+  the same customer.
+- `tests/Feature/Audit/ConcurrencyFixesTest.php` - two new tests:
+  `test_mfa_failed_attempt_counter_accumulates_and_keeps_expiry`,
+  `test_repeated_compliance_screening_runs_do_not_duplicate_enforcement_rows`.
+
+### Vulnerabilities Fixed
+- `MfaService::recordFailedAttempt` (Medium) - `has()`/`put()`/`increment()`
+  TOCTOU: if the counter key expired between the check and `increment()`, a
+  bare Redis `INCR` recreated it **without TTL**, leaving a permanent
+  failed-attempt counter feeding the verification lockout. `add()` seeds
+  atomically (SET-NX-with-TTL); the TTL-repair block re-applies the window
+  whenever a live key has none.
+- `ComplianceScreeningJob::screenAndEnforce` (Medium) - the job is
+  intentionally not `ShouldBeUnique`; parallel workers for the same customer
+  both passed the open-alert/open-flag `first()` checks and inserted
+  duplicate CRITICAL alerts + flags. The customer-row lock serializes the
+  check-then-create block so the loser refreshes instead of duplicating.
+
+### Scan Result (already hardened — no changes needed)
+- Approval (status-scoped lock + optimistic version), till/counter sessions,
+  stock transfers, branch-pool allocations, remittances, EDD transitions,
+  sanctions import (`withImportLock`), audit-chain sealing (ordered
+  predecessor locks + `GAP:` quarantine), journal reject/reverse, last-admin
+  delete, transaction imports (`uniqueId` + status guard + per-row
+  idempotency), setup marker (`updateOrInsert` in-tx).
+
+### Verification
+- `ConcurrencyFixesTest` (13 tests) + `ComplianceScreeningJobTest` +
+  `ComplianceScreeningJobPerformanceTest` + `MfaControllerTest` +
+  `MfaApiTest`: 29 tests green. PHPStan clean on both changed files.
+
+---
+
 ## [2026-11-10] - CI E2E environment brought fully green (114/114 across four jobs)
 
 ### Files Changed
