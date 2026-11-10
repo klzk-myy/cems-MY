@@ -222,7 +222,7 @@ jobs:
           CACHE_LIMITER_STORE=array
           RATE_LIMIT_CACHE_STORE=array
           SESSION_DRIVER=file
-          QUEUE_CONNECTION=sync
+          QUEUE_CONNECTION=database
           MAIL_MAILER=array
           MFA_ENABLED=true
           SECURITY_IP_BLOCKING_ENABLED=false
@@ -238,6 +238,10 @@ jobs:
       - name: Start application server
         run: |
           php artisan serve --host=127.0.0.1 --port=8080 --no-reload > storage/logs/e2e-serve.log 2>&1 &
+          # A real worker matches production semantics: queued job failures
+          # (e.g. SealAuditHashJob's retryable unsealed-gap) must not
+          # propagate into web requests the way the sync driver rethrows.
+          php artisan queue:work --queue=audit,compliance,notifications,default --sleep=1 --tries=5 > storage/logs/e2e-worker.log 2>&1 &
           for i in {1..30}; do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/up || true)
             if [ "$code" = "200" ]; then
