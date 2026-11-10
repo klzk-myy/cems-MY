@@ -5,6 +5,67 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - Deep E2E coverage: wizard completion, STR, onboarding, compliance + admin details
+
+### Files Changed
+- `tests/e2e/wizard-step3.spec.ts` (new) - full wizard journey: step 1
+  eligibility -> step 2 customer details -> review -> confirm -> books a real
+  transaction and asserts the `Transaction Created` result.
+- `tests/e2e/journey-str.spec.ts` (new) - high-value booking trips velocity ->
+  alert -> case -> dismiss linked alerts -> close -> STR auto-draft -> submit
+  -> acknowledge.
+- `tests/e2e/journey-onboarding.spec.ts` (new) - walk-in registration via the
+  form -> profile -> first transaction.
+- `tests/e2e/compliance-details.spec.ts` (new) - compliance surface sweep plus
+  sanctions entry create -> search -> show -> edit and screening match ->
+  detail -> customer history/status.
+- `tests/e2e/admin-internals.spec.ts` (new) - admin surface sweep plus
+  audit-log detail, user provisioning and branch edit.
+- `tests/e2e/helpers/auth.ts` - `resolveMfa` re-authenticates through the
+  login form when a stored session died server-side, instead of silently
+  returning on `/login`.
+- `tests/e2e/helpers/seat.ts` - `createCustomer` accepts an optional `E2eUser`
+  for pre-post session healing; `tillState` probes via API request instead of
+  page navigation.
+- `tests/e2e/reports-views.spec.ts` - `/reports/monthly-trends` and
+  `/reports/profitability` added to the render sweep.
+- Call sites in `admin-surfaces`, `journey-refund`, `journey-transaction` and
+  `wizard-step2` updated for the new `createCustomer` signature.
+
+### Root Causes Fixed
+- `tillState` navigated to `till-report`, whose empty-result `back()` targets
+  the session `_previous.url` — consecutive empty probes ping-ponged between
+  till-report URLs (`ERR_TOO_MANY_REDIRECTS`). The probe now uses
+  `ctx.request.get` with `maxRedirects: 0` (302 = no rows) and sends
+  `x-requested-with` so it never writes `_previous.url` either.
+- `createCustomer`'s generated phone mapped every non-digit suffix char to
+  `'2'` — two suffixes sharing digit positions produced identical phones and
+  tripped the `phone_hash` unique blind index (`ValidationException` ->
+  `back()` -> referer `/` -> misleading `/dashboard` landing). Digits now
+  derive from charcodes, and the referer points at the real form.
+- Stored sessions die between specs (idle timeout); a remember-recaller then
+  masked the guest bounce as a `/dashboard` landing. `resolveMfa` heals
+  `/login` by resubmitting credentials; `createCustomer` warms via
+  `gotoVerified` before posting.
+- STR browser path uses `dismiss`, not `resolve`: `resolveAlert` clears
+  `case_id`, which would orphan the case-alert linkage the auto-draft
+  requires.
+
+### Design Notes
+- Counter-handover browser coverage intentionally skipped: `initiateHandover`
+  is service-only with zero HTTP callers; `CounterHandoverServiceTest` and the
+  concurrency suites remain authoritative.
+- `resolveAlert` clearing `case_id` is a deliberate domain semantic — the
+  intended case-linked terminal path is dismissal. Worth reviewing whether
+  resolve should keep the link when a case is open; flagged for a separate
+  decision, not changed here.
+
+### Testing
+- `npx playwright test` locally — **114 green** (112 in the full pass; the 2
+  phone-collision failures re-verified green after the generator fix).
+
+---
+
 ## [2026-11-10] - CI Browser E2E job brought green; wizard form dead-submit bug fixed
 
 ### Files Changed
