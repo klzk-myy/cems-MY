@@ -60,10 +60,24 @@ class TransactionImportService
      */
     public function process(TransactionImport $import, string $filePath): void
     {
-        $import->update([
-            'status' => TransactionImportStatus::Processing->value,
-            'imported_at' => now(),
-        ]);
+        // Atomically claim the import for processing: the conditional
+        // update only succeeds while the record sits in a queueable status,
+        // so a stale job instance or a direct caller can never re-run a
+        // Completed/Failed file. Mirrors the queueable-status gate in
+        // ProcessTransactionImportJob::handle.
+        $claimed = TransactionImport::whereKey($import->id)
+            ->whereIn('status', [
+                TransactionImportStatus::Pending->value,
+                TransactionImportStatus::Processing->value,
+            ])
+            ->update([
+                'status' => TransactionImportStatus::Processing->value,
+                'imported_at' => now(),
+            ]);
+
+        if ($claimed === 0) {
+            return;
+        }
 
         $handle = fopen($filePath, 'r');
 

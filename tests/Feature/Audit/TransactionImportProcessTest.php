@@ -46,6 +46,35 @@ class TransactionImportProcessTest extends TestCase
         }
     }
 
+    public function test_process_skips_import_already_in_terminal_status(): void
+    {
+        ['customer' => $customer, 'import' => $import] = $this->createFixtures();
+        $service = $this->createImportService('10000');
+        $csv = $this->createCsv("{$customer->id},Buy,USD,1000,4.0,Business,Salary,MAIN");
+
+        // Simulate a second processor arriving after the first finished —
+        // the conditional status claim must turn it into a no-op instead of
+        // re-running the file (rows dedupe anyway, but counters would lie).
+        $import->update(['status' => TransactionImportStatus::Completed->value]);
+        $beforeCounts = $import->fresh()->only(['success_count', 'error_count', 'processed_rows']);
+
+        try {
+            $service->process($import, $csv);
+
+            $this->assertDatabaseMissing('transactions', [
+                'customer_id' => $customer->id,
+            ]);
+
+            // The claim must short-circuit before any counter write.
+            $this->assertDatabaseHas('transaction_imports', [
+                'id' => $import->id,
+                'status' => TransactionImportStatus::Completed->value,
+            ] + $beforeCounts);
+        } finally {
+            unlink($csv);
+        }
+    }
+
     public function test_batch_upload_updates_the_created_import_record(): void
     {
         // The importer must sit on the till's branch — the booking gate now

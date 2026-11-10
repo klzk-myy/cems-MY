@@ -10,6 +10,7 @@ use App\Models\Currency;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -137,14 +138,23 @@ class CurrencyAccountProvisioner
             return ['code' => null, 'created' => false];
         }
 
-        $mapping = AccountMapping::firstOrCreate(
-            ['key' => $key],
-            [
-                'account_code' => $accountCode,
-                'description' => "Auto-provisioned for currency {$code}",
-                'updated_by' => $userId,
-            ],
-        );
+        try {
+            $mapping = AccountMapping::firstOrCreate(
+                ['key' => $key],
+                [
+                    'account_code' => $accountCode,
+                    'description' => "Auto-provisioned for currency {$code}",
+                    'updated_by' => $userId,
+                ],
+            );
+        } catch (UniqueConstraintViolationException $e) {
+            // Lost the key unique race to a concurrent provisioner — re-read
+            // the committed row under lock and report the winner's code
+            // (CurrencyPositionLockService::lock catch-and-re-read idiom).
+            $mapping = AccountMapping::where('key', $key)
+                ->lockForUpdate()
+                ->first() ?? throw $e;
+        }
 
         $this->cacheInvalidationService->invalidate(CacheKeys::AccountMappingsTag->value);
 
@@ -184,17 +194,26 @@ class CurrencyAccountProvisioner
                 return null;
             }
 
-            $account = ChartOfAccount::firstOrCreate(
-                ['account_code' => $candidate],
-                [
-                    'account_name' => $enumAccount instanceof AccountCode && $candidate === $enumAccount->value
-                        ? $enumAccount->description()
-                        : "{$spec['name']} ({$code})",
-                    'account_type' => AccountType::Asset,
-                    'account_class' => $spec['class'],
-                    'is_active' => true,
-                ],
-            );
+            try {
+                $account = ChartOfAccount::firstOrCreate(
+                    ['account_code' => $candidate],
+                    [
+                        'account_name' => $enumAccount instanceof AccountCode && $candidate === $enumAccount->value
+                            ? $enumAccount->description()
+                            : "{$spec['name']} ({$code})",
+                        'account_type' => AccountType::Asset,
+                        'account_class' => $spec['class'],
+                        'is_active' => true,
+                    ],
+                );
+            } catch (UniqueConstraintViolationException $e) {
+                // A concurrent provision claimed this code first — re-read
+                // the committed row under lock; the usability check below
+                // then decides whether to adopt it or try the next code.
+                $account = ChartOfAccount::where('account_code', $candidate)
+                    ->lockForUpdate()
+                    ->first() ?? throw $e;
+            }
 
             if ($account->wasRecentlyCreated || $this->isUsableEnumAccount($account, $enumAccount, $candidate)) {
                 return $candidate;

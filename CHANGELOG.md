@@ -5,6 +5,42 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - Concurrency sweep part 2: unique-race catch-and-re-read + import status claim
+
+### Files Changed
+- `app/Services/Branch/BranchPoolService.php` - `getOrCreateForBranch()`
+  wraps `firstOrCreate` in `UniqueConstraintViolationException` catch +
+  `lockForUpdate` re-read (CurrencyPositionLockService idiom).
+- `app/Services/Accounting/CurrencyAccountProvisioner.php` - both
+  `firstOrCreate` sites (`AccountMapping` by key, `ChartOfAccount` by
+  account_code) catch the lost unique race and re-read under lock; the
+  existing enum-usability check then adopts or retries the next code.
+- `app/Services/Transaction/TransactionImportService.php` - `process()`
+  now claims the import via conditional `whereIn(status, [pending,
+  processing])` update; terminal-status calls are a no-op.
+- `tests/Feature/Audit/TransactionImportProcessTest.php` -
+  `test_process_skips_import_already_in_terminal_status`.
+
+### Vulnerabilities Fixed
+- `BranchPoolService::getOrCreateForBranch` (Low) - `firstOrCreate`'s
+  select-then-insert loses the `(branch_id, currency_code)` unique race:
+  two concurrent opening-request allocations on a new currency → loser
+  500s on duplicate key. Now re-reads the winner's committed row.
+- `CurrencyAccountProvisioner::provisionLeg` / `resolveAccountCode` (Low) -
+  same hole on `account_mappings.key` / `chart_of_accounts.account_code`:
+  concurrent currency provisioning → duplicate-key exception escaping the
+  allocation retry loop. Caught + re-read; existing adoption logic decides.
+- `TransactionImportService::process` (Low) - unconditional
+  `Processing` transition allowed a direct call/stale instance to re-run a
+  Completed/Failed file (dedupe saves rows but corrupts counters). The
+  conditional claim mirrors `ProcessTransactionImportJob`'s status gate.
+
+### Verification
+- `TransactionImportProcessTest` (3), `ConcurrencyFixesTest` pool tests,
+  `CurrencyManagementTest` (23): green. PHPStan clean.
+
+---
+
 ## [2026-11-10] - Concurrency sweep: MFA counter TTL race + screening-job dedup serialization
 
 ### Files Changed

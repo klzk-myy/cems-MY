@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\BranchPool;
 use App\Services\AuditService;
 use App\Services\System\MathService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,16 +22,27 @@ class BranchPoolService
     public function getOrCreateForBranch(Branch $branch, string $currencyCode): BranchPool
     {
         return DB::transaction(function () use ($branch, $currencyCode) {
-            return BranchPool::firstOrCreate(
-                [
-                    'branch_id' => $branch->id,
-                    'currency_code' => $currencyCode,
-                ],
-                [
-                    'available_balance' => '0.0000',
-                    'allocated_balance' => '0.0000',
-                ]
-            );
+            try {
+                return BranchPool::firstOrCreate(
+                    [
+                        'branch_id' => $branch->id,
+                        'currency_code' => $currencyCode,
+                    ],
+                    [
+                        'available_balance' => '0.0000',
+                        'allocated_balance' => '0.0000',
+                    ]
+                );
+            } catch (UniqueConstraintViolationException $e) {
+                // Lost the (branch_id, currency_code) unique race to a
+                // concurrent creator — re-read the committed row under lock
+                // instead of surfacing a duplicate-key 500. Same catch-and-
+                // re-read idiom CurrencyPositionLockService::lock uses.
+                return BranchPool::where('branch_id', $branch->id)
+                    ->where('currency_code', $currencyCode)
+                    ->lockForUpdate()
+                    ->first() ?? throw $e;
+            }
         });
     }
 
