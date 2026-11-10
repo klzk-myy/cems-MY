@@ -53,6 +53,8 @@ class EdgeCaseFixesTest extends TestCase
     {
         $service = app(ExportService::class);
         $path = $service->getExportPath('stale_report.csv');
+        // Fresh checkouts have no storage/app/reports dir yet.
+        Storage::makeDirectory('reports');
         file_put_contents($path, 'data');
         touch($path, now()->subDay()->timestamp);
 
