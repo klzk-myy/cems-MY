@@ -155,6 +155,7 @@ async function enrollInPage(page: Page, user: E2eUser): Promise<void> {
 export async function logout(page: Page): Promise<void> {
   await Promise.all([
     page.waitForURL('**/login', { timeout: 15_000 }),
-    page.locator('form[action*="logout"] button[type="submit"]').click(),
+    // Scope to the sidebar form — the header user menu has one too.
+    page.locator('aside form[action*="logout"] button[type="submit"]').click(),
   ]);
 }
