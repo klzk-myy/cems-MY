@@ -2,7 +2,6 @@
 
 namespace App\Services\Reporting\Generators;
 
-use App\Enums\TransactionType;
 use App\Services\Reporting\CsvReportWriter;
 use App\Services\Reporting\TransactionReportQuery;
 use App\Services\System\MathService;
