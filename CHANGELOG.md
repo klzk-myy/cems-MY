@@ -53,10 +53,16 @@ components, app.js + components.js extended.
   AJAX flows like the transaction wizard are untouched).
 - Hand-rolled status pills in `transactions/index` converted to
   `x-badge` variants.
-- Empty `resources/views/orphaned/` scaffold directory deleted.
+- E2E specs updated for the new markup: `md:` width tokens, logout
+  scoped to the sidebar form, `#confirm-dialog` assertions replacing the
+  native-dialog listener; new specs cover the mobile drawer, user menu +
+  dark toggle, and Escape-cancel. (Note: `resources/views/orphaned/` is
+  an intentional retention folder asserted by `OrphanedViewsRetentionTest`
+  — kept.)
 
-Verified: 701 related tests green, GitNexus `detect-changes` risk low
-(2 JS symbols), Pint clean, production build clean.
+Verified: full suite 2750 green locally, GitNexus `detect-changes` risk
+low (2 JS symbols), Pint clean, production build clean, CI run
+42878634951 green on all four jobs (security, lint, tests, E2E).
 
 ---
 
