@@ -2,8 +2,13 @@ import { expect, type BrowserContext, type Page } from '@playwright/test';
 import { resolveMfa } from './auth';
 import type { E2eUser } from './env';
 
-const BRANCH = 5;
-const TELLER_ID = 5;
+// Resolved per-run from the acting user's /user payload — the seed's
+// branch ids differ between environments (staging has drifted past the
+// seeder's fresh-install set).
+async function me(ctx: BrowserContext, page: Page): Promise<{ id: number; branch_id: number }> {
+    const res = await api(ctx, page, 'get', '/user');
+    return (await res.json()).data;
+}
 
 // Session float quantities — generous enough for a full booking day.
 const FLOATS = { MYR: '5000', USD: '5000' };
@@ -28,7 +33,8 @@ export async function primeMfa(page: Page, user: E2eUser) {
 }
 
 export async function branchCounters(ctx: BrowserContext, page: Page): Promise<Array<{ id: number; code: string }>> {
-    const res = await api(ctx, page, 'get', `/branches/${BRANCH}/counters`);
+    const user = await me(ctx, page);
+    const res = await api(ctx, page, 'get', `/branches/${user.branch_id}/counters`);
     const body = await res.json();
     const list = body.data?.data ?? body.data ?? body;
     expect(Array.isArray(list), `counters list: ${JSON.stringify(body).slice(0, 200)}`).toBe(true);
@@ -75,7 +81,8 @@ export async function ensureSeated(
     mgrCtx: BrowserContext, mgrPage: Page,
     supervisorId: number,
 ): Promise<string | null> {
-    const counters = await branchCounters(mgrCtx, mgrPage);
+    const counters = await branchCounters(tlrCtx, tlrPage);
+    const teller = await me(tlrCtx, tlrPage);
     const clean = [];
     let sessionBlocked = false;
 
@@ -94,7 +101,7 @@ export async function ensureSeated(
             requested_floats: FLOATS,
         });
         const approve = await api(mgrCtx, mgrPage, 'post', `/counters/${counter.id}/approve-and-open`, {
-            teller_id: TELLER_ID,
+            teller_id: teller.id,
             approved_floats: FLOATS,
             daily_limits: LIMITS,
         });
@@ -125,7 +132,7 @@ export async function ensureSeated(
                 requested_floats: FLOATS,
             });
             const approve = await api(mgrCtx, mgrPage, 'post', `/counters/${counter.id}/approve-and-open`, {
-                teller_id: TELLER_ID,
+                teller_id: teller.id,
                 approved_floats: FLOATS,
                 daily_limits: LIMITS,
             });

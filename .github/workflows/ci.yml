@@ -223,7 +223,7 @@ jobs:
           SESSION_DRIVER=file
           QUEUE_CONNECTION=sync
           MAIL_MAILER=array
-          MFA_ENABLED=false
+          MFA_ENABLED=true
           SECURITY_IP_BLOCKING_ENABLED=false
           BCRYPT_ROUNDS=4
           BNM_LICENSE_NUMBER=TEST-LICENSE-001
