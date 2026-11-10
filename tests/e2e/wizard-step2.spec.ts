@@ -23,7 +23,7 @@ test('valid step-1 input advances the wizard to customer details', async ({ brow
     await openTill(admCtx, admPage, till!, 'USD');
     await openTill(admCtx, admPage, till!, 'MYR');
     // The fresh CI seed ships no customers — step1 needs a real id to pass.
-    const customerId = (await createCustomer(tlrCtx, tlrPage)).id;
+    const customerId = (await createCustomer(tlrCtx, tlrPage, undefined, USERS.teller)).id;
     await admCtx.close();
     await mgrCtx.close();
 

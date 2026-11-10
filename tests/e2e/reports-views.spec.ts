@@ -20,6 +20,8 @@ for (const url of [
     '/reports/quarterly-lvr',
     '/reports/customer-analysis',
     '/reports/compliance-summary',
+    '/reports/monthly-trends',
+    '/reports/profitability',
 ]) {
     test(`report view ${url} renders`, async ({ page }) => {
         await gotoVerified(page, url, USERS.admin);

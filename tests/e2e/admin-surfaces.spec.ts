@@ -32,7 +32,7 @@ for (const url of [
 // The customer show page needs a real id — the fresh CI seed ships none.
 test('surface /customers/{id} renders', async ({ page, context }) => {
     await primeMfa(page, USERS.admin);
-    const { id } = await createCustomer(context, page);
+    const { id } = await createCustomer(context, page, undefined, USERS.admin);
     const url = `/customers/${id}`;
     await gotoVerified(page, url, USERS.admin);
     await rendersOk(page, url);

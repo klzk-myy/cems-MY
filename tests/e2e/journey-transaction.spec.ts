@@ -155,7 +155,7 @@ test.describe('money-path journey', () => {
         await createAllocation(admCtx, admPage, teller.data.id, 'USD', '5000');
         // The fresh CI seed ships no customers — register one for the
         // typeahead to match (names must be unique to stay deterministic).
-        customerName = (await createCustomer(tlrCtx, tlrPage)).full_name;
+        customerName = (await createCustomer(tlrCtx, tlrPage, undefined, USERS.teller)).full_name;
         await mgrCtx.close();
     });
 

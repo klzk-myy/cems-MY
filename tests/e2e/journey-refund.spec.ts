@@ -40,7 +40,7 @@ test.describe('refund journey', () => {
         // environments and the fresh CI seed ships no customers at all.
         const teller = await (await api(tlrCtx, tlrPage, 'get', '/user')).json();
         await createAllocation(admCtx, admPage, teller.data.id, 'USD', '5000');
-        const customerName = (await createCustomer(tlrCtx, tlrPage)).full_name;
+        const customerName = (await createCustomer(tlrCtx, tlrPage, undefined, USERS.teller)).full_name;
         await mgrCtx.close();
 
         // Teller books a small Buy through the classic form.
