@@ -194,8 +194,6 @@ class TransactionValidationServiceTest extends TestCase
 
         $service = new TransactionValidationService(
             $complianceMock,
-            new ThresholdService,
-            $this->createMock(TellerAllocationService::class),
             $this->createMock(PepApprovalService::class),
             $screeningMock,
             $this->createMock(HistoricalRiskAnalysisService::class),
