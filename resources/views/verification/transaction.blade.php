@@ -13,7 +13,7 @@
                 <x-page-header title="Transaction Verification" description="{{ config('app.name') }}" />
 
                 @if($verified)
-                    <div class="p-4 rounded-lg border bg-green-50 border-green-200 text-green-800 text-sm">
+                    <div class="p-4 rounded-lg border bg-success-subtle border-success-border text-success-text text-sm">
                         This receipt reference matches a recorded transaction.
                     </div>
 
@@ -32,7 +32,7 @@
                         </div>
                     </dl>
                 @else
-                    <div class="p-4 rounded-lg border bg-yellow-50 border-yellow-200 text-yellow-800 text-sm">
+                    <div class="p-4 rounded-lg border bg-warning-subtle border-warning-border text-warning-text text-sm">
                         This reference could not be verified. Please check the QR code on your receipt or contact the branch that issued it.
                     </div>
                 @endif

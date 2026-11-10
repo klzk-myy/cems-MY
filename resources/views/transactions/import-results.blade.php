@@ -15,13 +15,13 @@
         />
 
         @if(session('success'))
-            <div class="rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-200">
+            <div class="rounded-lg border border-success-border bg-success-subtle px-4 py-3 text-sm text-success-text">
                 {{ session('success') }}
             </div>
         @endif
 
         @if($isRunning)
-            <div class="rounded-lg border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+            <div class="rounded-lg border border-info-border bg-info-subtle px-4 py-3 text-sm text-info-text">
                 Import is <strong>{{ $import->status->value }}</strong> —
                 {{ $import->processed_rows }} / {{ $import->total_rows }} rows processed.
                 This page refreshes automatically every 5 seconds…

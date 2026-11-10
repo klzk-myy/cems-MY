@@ -3,12 +3,12 @@
         <x-page-header title="EDD Review: {{ $record->edd_reference }}" description="Enhanced Due Diligence record detail" />
 
         @if(session('error'))
-            <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
+            <div class="rounded-lg border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-text">
                 {{ session('error') }}
             </div>
         @endif
         @if($errors->any())
-            <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
+            <div class="rounded-lg border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-text">
                 <ul class="list-disc pl-4">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
@@ -70,7 +70,7 @@
 
                     <form action="{{ route('compliance.edd-reviews.reject', $record) }}" method="POST" class="space-y-3">
                         @csrf
-                        <label for="reason" class="block text-sm font-medium">Rejection reason <span class="text-red-600">*</span></label>
+                        <label for="reason" class="block text-sm font-medium">Rejection reason <span class="text-danger">*</span></label>
                         <x-textarea name="reason" id="reason" rows="3" required maxlength="1000"
                             placeholder="Explain why this EDD record is rejected (required)" />
                         <x-button type="submit" variant="secondary">Reject</x-button>

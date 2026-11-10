@@ -59,7 +59,7 @@
                         <td class="px-4 py-3 text-right font-medium">{{ number_format($transaction->quantity, 2) }} {{ $transaction->currency_code }}</td>
                         <td class="px-4 py-3 text-right font-medium">RM {{ number_format($transaction->amount_myr, 2) }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status === \App\Enums\TransactionStatus::Completed ? 'bg-success/10 text-success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'bg-warning/10 text-warning' : 'bg-gray/10 text-muted') }}">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status === \App\Enums\TransactionStatus::Completed ? 'bg-success/10 text-success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'bg-warning/10 text-warning' : 'bg-canvas-subtle text-ink-muted') }}">
                                 {{ $transaction->status->label() }}
                             </span>
                         </td>

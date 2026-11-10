@@ -43,7 +43,7 @@
 
             @if($branchPool->currency_code === \App\Models\Currency::baseCurrency() && $remitDestinations->isNotEmpty())
                 <x-card title="Remit Funds">
-                    <p class="text-sm text-muted mb-4">
+                    <p class="text-sm text-ink-muted mb-4">
                         Send {{ \App\Models\Currency::baseCurrency() }} {{ $branchPool->branch?->isHeadOffice() ? 'capital to a branch' : 'surplus to head office' }}.
                         The amount is held in transit until the receiving side acknowledges.
                     </p>
@@ -80,7 +80,7 @@
                         <div class="flex items-center justify-between gap-4 rounded-md border border-border p-3">
                             <div class="text-sm">
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} from {{ $remittance->fromBranch?->name }} ({{ $remittance->initiator?->username }})</span>
+                                <span class="text-ink-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} from {{ $remittance->fromBranch?->name }} ({{ $remittance->initiator?->username }})</span>
                             </div>
                             <form action="{{ route('branch-pools.remittances.acknowledge', $remittance->id) }}" method="POST">
                                 @csrf
@@ -93,7 +93,7 @@
                         <div class="flex items-center justify-between gap-4 rounded-md border border-border p-3">
                             <div class="text-sm">
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} to {{ $remittance->toBranch?->name }} — awaiting acknowledgement</span>
+                                <span class="text-ink-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} to {{ $remittance->toBranch?->name }} — awaiting acknowledgement</span>
                             </div>
                             <form action="{{ route('branch-pools.remittances.cancel', $remittance->id) }}" method="POST">
                                 @csrf
@@ -112,9 +112,9 @@
                         <div class="flex items-center justify-between gap-4 text-sm">
                             <span>
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
-                                <span class="text-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }}: {{ $remittance->fromBranch?->name }} → {{ $remittance->toBranch?->name }}</span>
+                                <span class="text-ink-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }}: {{ $remittance->fromBranch?->name }} → {{ $remittance->toBranch?->name }}</span>
                             </span>
-                            <span class="text-muted">{{ $remittance->status->label() }}</span>
+                            <span class="text-ink-muted">{{ $remittance->status->label() }}</span>
                         </div>
                     @endforeach
                 </div>

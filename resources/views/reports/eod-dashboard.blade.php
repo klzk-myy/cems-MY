@@ -16,15 +16,15 @@
             </x-card>
             <x-card>
                 <div class="text-sm text-ink-muted">Active</div>
-                <div class="text-2xl font-bold mt-1 text-green-600">{{ $report['summary']['active_counters'] ?? 0 }}</div>
+                <div class="text-2xl font-bold mt-1 text-success">{{ $report['summary']['active_counters'] ?? 0 }}</div>
             </x-card>
             <x-card>
                 <div class="text-sm text-ink-muted">Closed</div>
-                <div class="text-2xl font-bold mt-1 text-blue-600">{{ $report['summary']['closed_counters'] ?? 0 }}</div>
+                <div class="text-2xl font-bold mt-1 text-info">{{ $report['summary']['closed_counters'] ?? 0 }}</div>
             </x-card>
             <x-card>
                 <div class="text-sm text-ink-muted">Handed Over</div>
-                <div class="text-2xl font-bold mt-1 text-yellow-600">{{ $report['summary']['handed_over_counters'] ?? 0 }}</div>
+                <div class="text-2xl font-bold mt-1 text-warning">{{ $report['summary']['handed_over_counters'] ?? 0 }}</div>
             </x-card>
         </div>
 
@@ -70,16 +70,16 @@
             $yellowThreshold = (string) ($varianceYellow ?? '100.00');
 
             if (bccomp($absVariance, $redThreshold, 2) === 1) {
-                $alertClass = 'bg-red-50 border-red-200 text-red-800';
+                $alertClass = 'bg-danger-subtle border-danger-border text-danger-text';
                 $varianceLabel = 'CRITICAL VARIANCE';
             } elseif (bccomp($absVariance, $yellowThreshold, 2) === 1) {
-                $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                $alertClass = 'bg-warning-subtle border-warning-border text-warning-text';
                 $varianceLabel = 'Variance Warning';
             } elseif (bccomp($variance, '0', 2) !== 0) {
-                $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                $alertClass = 'bg-warning-subtle border-warning-border text-warning-text';
                 $varianceLabel = 'Minor Variance';
             } else {
-                $alertClass = 'bg-green-50 border-green-200 text-green-800';
+                $alertClass = 'bg-success-subtle border-success-border text-success-text';
                 $varianceLabel = 'No Variance';
             }
         @endphp
@@ -118,7 +118,7 @@
                                     <td>{{ number_format((float) ($counter['opening_float'] ?? 0), 2) }}</td>
                                     <td>{{ number_format((float) ($counter['closing_float_expected'] ?? 0), 2) }}</td>
                                     <td>{{ number_format((float) ($counter['closing_float_actual'] ?? 0), 2) }}</td>
-                                    <td class="{{ bccomp((string) ($counter['variance'] ?? '0'), '0', 2) !== 0 ? 'text-red-600 font-bold' : '' }}">
+                                    <td class="{{ bccomp((string) ($counter['variance'] ?? '0'), '0', 2) !== 0 ? 'text-danger font-bold' : '' }}">
                                         {{ number_format((float) ($counter['variance'] ?? 0), 2) }}
                                     </td>
                                 </tr>

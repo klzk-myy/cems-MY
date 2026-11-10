@@ -3,12 +3,12 @@
         <x-page-header title="EDD Reviews" description="Enhanced Due Diligence records awaiting review" />
 
         @if(session('success'))
-            <div class="rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-200">
+            <div class="rounded-lg border border-success-border bg-success-subtle px-4 py-3 text-sm text-success-text">
                 {{ session('success') }}
             </div>
         @endif
         @if(session('error'))
-            <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
+            <div class="rounded-lg border border-danger-border bg-danger-subtle px-4 py-3 text-sm text-danger-text">
                 {{ session('error') }}
             </div>
         @endif
@@ -29,7 +29,7 @@
                     @forelse($records as $record)
                         <tr class="border-b border-border/60">
                             <td class="py-3 pr-4 font-medium">
-                                <a href="{{ route('compliance.edd-reviews.show', $record) }}" class="text-blue-600 hover:underline dark:text-blue-400">
+                                <a href="{{ route('compliance.edd-reviews.show', $record) }}" class="text-info hover:underline">
                                     {{ $record->edd_reference }}
                                 </a>
                             </td>
