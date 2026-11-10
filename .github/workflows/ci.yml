@@ -222,7 +222,7 @@ jobs:
           CACHE_LIMITER_STORE=array
           RATE_LIMIT_CACHE_STORE=array
           SESSION_DRIVER=file
-          QUEUE_CONNECTION=database
+          QUEUE_CONNECTION=redis
           MAIL_MAILER=array
           MFA_ENABLED=true
           SECURITY_IP_BLOCKING_ENABLED=false

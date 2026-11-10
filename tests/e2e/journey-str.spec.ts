@@ -168,7 +168,9 @@ test.describe('STR filing journey', () => {
         });
         expect([200, 302, 303], `case close status ${close.status()}`).toContain(close.status());
 
-        await gotoVerified(comPage, '/str?status=Draft', USERS.compliance);
+        // status filter is matched verbatim — sqlite (CI) is case-sensitive
+        // where the local MySQL collation is not.
+        await gotoVerified(comPage, '/str?status=draft', USERS.compliance);
         const row = comPage.locator(`tr:has-text("${customerName}")`).first();
         await expect(row, 'no drafted STR for the case customer').toBeVisible({ timeout: 15_000 });
         await row.locator('a', { hasText: 'View' }).click();
