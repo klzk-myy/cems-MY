@@ -5,6 +5,48 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - CI E2E environment brought fully green (114/114 across four jobs)
+
+### Files Changed
+- `.github/workflows/ci.yml` - `CACHE_DRIVER=redis` (tag support),
+  `CACHE_LIMITER_STORE=array` (limiter isolation), `QUEUE_CONNECTION=redis`
+  plus a `queue:work audit,compliance,notifications,default` process, and
+  `e2e-worker.log` + `laravel.log` added to the e2e artifact upload.
+- `config/cache.php` - new `limiter` key (`CACHE_LIMITER_STORE`); null
+  falls back to the default store, preserving production behavior.
+- `config/database.php` - sqlite connection gains `busy_timeout=5000`
+  (`DB_BUSY_TIMEOUT`) and `journal_mode=wal` (`DB_JOURNAL_MODE`).
+- `tests/e2e/journey-str.spec.ts` - case-store POST reads the raw 302 via
+  `maxRedirects:0` with JSON error-bag + alert-column diagnostics;
+  `/str?status=draft` uses the exact stored enum value.
+
+### Root Causes Fixed (CI environment only — all green locally on MySQL)
+- `CACHE_DRIVER=file` 500'd accounting/report pages: `Cache::tags()` is
+  unsupported by the file store. Redis (predis, no extension) supports tags.
+- `CACHE_DRIVER=redis` silently re-armed every `throttle:*` route — Laravel's
+  `RateLimiter` uses `cache.default`. Login/TOTP endpoints (5/min) and the
+  API bucket began 429ing mid-suite. `cache.limiter=array` restores the
+  per-request inert behavior in CI only.
+- `QUEUE_CONNECTION=sync` executed `SealAuditHashJob` inline inside the
+  request transaction's `afterCommit` and rethrew its *retryable*
+  `AuditIntegrityException` as a web 500 on `POST /compliance/cases`.
+  Production absorbs this via worker backoff; a real CI worker now does too.
+- `QUEUE_CONNECTION=database` on sqlite then produced `SQLITE_BUSY` 500s —
+  the worker's `jobs`-table polling collided with web writes. Redis queue
+  removes queue traffic from sqlite entirely; `busy_timeout`+`WAL` cover the
+  residual job-execution overlap.
+- `/str?status=Draft` returned zero rows on sqlite (case-sensitive `=`)
+  where local MySQL's `_ci` collation matched — a spec bug masked locally.
+- `page.evaluate(fetch)` for the case-store POST died with `Failed to
+  fetch` despite reaching PHP; `ctx.request` + `maxRedirects:0` reads the
+  redirect deterministically.
+
+### Verification
+- GitHub Actions run `42830141948` on `f61c924a`: **success** — security
+  audit, lint/static, PHPUnit (unit+feature+simulation), Browser E2E all green.
+
+---
+
 ## [2026-11-10] - Deep E2E coverage: wizard completion, STR, onboarding, compliance + admin details
 
 ### Files Changed
