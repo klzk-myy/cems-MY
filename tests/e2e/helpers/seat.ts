@@ -1,5 +1,5 @@
 import { expect, type BrowserContext, type Page } from '@playwright/test';
-import { resolveMfa } from './auth';
+import { gotoVerified, resolveMfa } from './auth';
 import { baseUrl, type E2eUser } from './env';
 
 // Resolved per-run from the acting user's /user payload — the seed's
@@ -47,11 +47,23 @@ async function xsrf(ctx: BrowserContext, base: string): Promise<string> {
 // ID and phone are unique per call — id_number_hash/phone_hash are unique
 // indexes, and an exact name keeps the typeahead match deterministic.
 export async function createCustomer(
-    ctx: BrowserContext, page: Page, name?: string,
+    ctx: BrowserContext, page: Page, name?: string, user?: E2eUser,
 ): Promise<{ id: number; full_name: string }> {
     const base = baseUrl();
+    if (user) {
+        // Stored sessions can die between specs (idle timeout invalidates
+        // server-side; a remember-recaller then masks the bounce as a
+        // /dashboard landing). Healing also lands the page on a real
+        // csrf-meta route so the token read below is always fresh.
+        await gotoVerified(page, '/customers/create', user);
+    }
     const suffix = `${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 3).toString(36)}`;
     const fullName = name ?? `E2E Journey ${suffix}`;
+    // phone_hash is a unique blind index — digits must derive from the
+    // suffix's actual charcodes (mapping every letter to '2' collides
+    // whenever two suffixes share digit positions). Referer points at the
+    // form like a real browser so a validation back() lands there, not on
+    // '/' — which reads as a misleading /dashboard bounce.
     const res = await ctx.request.post(`${base}/customers`, {
         form: {
             _token: await csrf(page),
@@ -61,11 +73,11 @@ export async function createCustomer(
             date_of_birth: '1990-01-01',
             nationality: 'MY',
             address: '1 Jalan Testing, Kuala Lumpur',
-            phone: `+601${suffix.replace(/[^0-9]/g, '2').slice(-8).padStart(8, '2')}`,
+            phone: `+601${suffix.replace(/./g, (c) => String(c.charCodeAt(0) % 10)).slice(-8).padStart(8, '0')}`,
             occupation: 'Engineer',
             employer_name: 'Test Corp',
         },
-        headers: { referer: `${base}/`, origin: base, 'x-xsrf-token': await xsrf(ctx, base) },
+        headers: { referer: `${base}/customers/create`, origin: base, 'x-xsrf-token': await xsrf(ctx, base) },
     });
     const id = Number(res.url().match(/\/customers\/(\d+)/)?.[1]);
     expect(id, `customer store did not land on /customers/{id} (url=${res.url()})`).toBeGreaterThan(0);
@@ -115,16 +127,24 @@ export async function closeCounterSession(ctx: BrowserContext, page: Page, count
 
 // till-report renders the day's Open/Closed badge for a counter code — the
 // probe that distinguishes "till rows still writable" from "closed for the
-// day" (a redirect back means no rows exist at all).
-async function tillState(mgrPage: Page, code: string): Promise<'none' | 'open' | 'closed'> {
-    await mgrPage.goto(`/stock-cash/till-report?till_id=${code}`);
-    if (!mgrPage.url().includes('till-report')) {
+// day" (a redirect back means no rows exist at all). Probed via request, not
+// navigation: back() targets the session's _previous.url, and consecutive
+// empty probes on a page ping-pong between till-report URLs
+// (ERR_TOO_MANY_REDIRECTS). XHR keeps the probe from writing _previous.url,
+// so it can't poison a later real back() either.
+async function tillState(mgrCtx: BrowserContext, code: string): Promise<'none' | 'open' | 'closed'> {
+    const res = await mgrCtx.request.get(`${baseUrl()}/stock-cash/till-report?till_id=${code}`, {
+        maxRedirects: 0,
+        headers: { 'x-requested-with': 'XMLHttpRequest' },
+    });
+    if (res.status() !== 200) {
         return 'none';
     }
-    if (await mgrPage.getByText('Closed', { exact: true }).count()) {
+    const html = await res.text();
+    if (/>\s*Closed\s*</.test(html)) {
         return 'closed';
     }
-    if (await mgrPage.getByText('Open', { exact: true }).count()) {
+    if (/>\s*Open\s*</.test(html)) {
         return 'open';
     }
     return 'none';
@@ -147,7 +167,7 @@ export async function ensureSeated(
     for (const counter of counters) {
         // Burned counters can't host a seat today — a closed same-day till
         // row rejects both openSession and openTill.
-        if (await tillState(mgrPage, counter.code) === 'closed') {
+        if (await tillState(mgrCtx, counter.code) === 'closed') {
             continue;
         }
         clean.push(counter);

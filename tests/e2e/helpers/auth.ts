@@ -57,9 +57,19 @@ export async function ensureEnrolled(page: Page, user: E2eUser): Promise<void> {
 
 /** Complete whatever MFA step the current URL demands (no-op otherwise). */
 export async function resolveMfa(page: Page, user: E2eUser): Promise<void> {
-  const url = page.url();
+  if (page.url().includes('/login')) {
+    // Dead stored session (idle timeout / auth.session invalidation) —
+    // re-authenticate through the form, then fall through to whatever
+    // MFA state the account now demands.
+    await page.locator('input[name="username"]').fill(user.username);
+    await page.locator('input[name="password"]').fill(user.password);
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 }),
+      page.locator('form[action*="login"] button[type="submit"]').click(),
+    ]);
+  }
 
-  if (url.includes('/mfa/setup')) {
+  if (page.url().includes('/mfa/setup')) {
     await enrollInPage(page, user);
   }
 
