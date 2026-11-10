@@ -145,7 +145,7 @@ class QlvrReportGenerator
      * (monotonic with created_at), which both eager-loads each chunk and stays
      * stable when created_at ties or rows are inserted mid-report.
      *
-     * @return LazyCollection<int, array{Transaction_ID: string, Date: string, Customer_Name: string, Amount_Local: string, Currency: string, Transaction_Type: TransactionType}>
+     * @return LazyCollection<int, array{Transaction_ID: string, Date: string, Customer_Name: string, Amount_Local: string, Currency: string, Transaction_Type: string}>
      */
     protected function transactionRows(Carbon $startDate, Carbon $endDate): LazyCollection
     {
@@ -164,7 +164,7 @@ class QlvrReportGenerator
                     'Customer_Name' => $txn->customer->full_name,
                     'Amount_Local' => $txn->amount_myr,
                     'Currency' => $txn->currency_code,
-                    'Transaction_Type' => $txn->type,
+                    'Transaction_Type' => $txn->type->value,
                 ]
             );
     }
