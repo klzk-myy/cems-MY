@@ -116,21 +116,41 @@ test.describe('STR filing journey', () => {
         expect(alertIds.length, `no triage alert for ${customerName}`).toBeGreaterThan(0);
 
         // Create a case from those alerts (the index form posts the same
-        // contract — alerts-bulk.spec.ts covers the checkbox UI itself). A
-        // validation/CaseManagementException bounce lands back on the
-        // referer — surface the flashed error instead of just the URL.
-        const params = new URLSearchParams();
-        params.append('_token', await csrf(comPage));
-        for (const id of alertIds) params.append('alert_ids[]', id);
-        const caseRes = await comCtx.request.fetch(`${baseUrl()}/compliance/cases`, {
-            method: 'POST',
-            headers: { 'content-type': 'application/x-www-form-urlencoded', referer: `${baseUrl()}/compliance/alerts`, origin: baseUrl() },
-            data: params.toString(),
-        });
-        caseUrl = caseRes.url();
+        // contract — alerts-bulk.spec.ts covers the checkbox UI itself).
+        // The evaluate runs in the alerts index document, which carries
+        // the session's csrf meta; Accept:json makes a ValidationException
+        // return its error bag instead of an opaque back() redirect. A
+        // CaseManagementException still redirects (the controller catches
+        // it before the request's Accept matters) — on that path the
+        // alerts' live columns are dumped into the error for diagnosis.
+        await gotoVerified(comPage, '/compliance/alerts', USERS.compliance);
+        const caseRes = await comPage.evaluate(async ({ url, ids }) => {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            const body = new URLSearchParams();
+            for (const id of ids) body.append('alert_ids[]', id);
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                    'accept': 'application/json',
+                    'x-csrf-token': token,
+                },
+                body,
+            });
+            const text = await res.text().catch(() => '');
+            return { status: res.status, url: res.url, text: text.slice(0, 800) };
+        }, { url: `${baseUrl()}/compliance/cases`, ids: alertIds });
+        caseUrl = new URL(caseRes.url || '/compliance/cases', baseUrl()).pathname;
         if (!/\/compliance\/cases\/\d+/.test(caseUrl)) {
-            const flash = (await caseRes.text()).match(/<div[^>]*class="[^"]*(?:alert|error|flash)[^"]*"[^>]*>([\s\S]{0,300}?)<\/div>/i)?.[1]?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-            throw new Error(`case store bounced to ${caseUrl} (alerts=${alertIds.join(',')}): ${flash ?? 'no flash captured'}`);
+            const probe = await api(comCtx, comPage, 'get', '/compliance/alerts?per_page=100');
+            const probeBody = await probe.json().catch(() => null);
+            const probeRows: any[] = probeBody?.data?.data ?? probeBody?.data ?? [];
+            const diag = probeRows
+                .filter((a) => alertIds.includes(String(a.id)))
+                .map((a) => `alert ${a.id}: customer=${a.customer_id} case=${a.case_id} status=${a.status}`)
+                .join(' | ');
+            throw new Error(`case store rejected (alerts=${alertIds.join(',')} status=${caseRes.status} url=${caseRes.url}): ${caseRes.text || diag}`);
         }
 
         // Close requires every linked alert terminal. Dismiss (reject) is
