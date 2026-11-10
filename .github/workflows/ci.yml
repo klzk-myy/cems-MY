@@ -212,6 +212,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate --force
           touch database/e2e.sqlite
+          mkdir -p storage/framework/{sessions,cache,views} storage/logs bootstrap/cache
           cat >> .env <<'EOF'
           APP_ENV=testing
           APP_URL=http://127.0.0.1:8080
