@@ -219,6 +219,7 @@ jobs:
           DB_CONNECTION=sqlite
           DB_DATABASE=/database/e2e.sqlite
           CACHE_DRIVER=redis
+          CACHE_LIMITER_STORE=array
           RATE_LIMIT_CACHE_STORE=array
           SESSION_DRIVER=file
           QUEUE_CONNECTION=sync

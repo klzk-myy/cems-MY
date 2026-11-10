@@ -108,4 +108,17 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel'), '_').'_cache_'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Rate Limiter Store
+    |--------------------------------------------------------------------------
+    |
+    | The store Laravel's RateLimiter (throttle:* middleware, RateLimiter::for)
+    | uses for hit counters. Null falls back to the default cache store.
+    | E2E runs set CACHE_LIMITER_STORE=array so limits stay per-request.
+    |
+    */
+
+    'limiter' => env('CACHE_LIMITER_STORE'),
+
 ];
