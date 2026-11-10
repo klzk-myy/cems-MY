@@ -236,13 +236,16 @@ jobs:
         run: |
           php artisan serve --host=127.0.0.1 --port=8080 --no-reload > storage/logs/e2e-serve.log 2>&1 &
           for i in {1..30}; do
-            if curl -sf http://127.0.0.1:8080/login -o /dev/null; then
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/up || true)
+            if [ "$code" = "200" ]; then
               echo "Server is up"
               exit 0
             fi
             sleep 1
           done
-          echo "Server failed to start"; cat storage/logs/e2e-serve.log; exit 1
+          echo "Server failed to start (last status: $code)"
+          curl -s -D - http://127.0.0.1:8080/login -o /dev/null || true
+          cat storage/logs/e2e-serve.log; exit 1
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
