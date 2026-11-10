@@ -107,8 +107,8 @@
     <table class="totals-table">
         <thead>
             <tr>
-                <th>Description</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
             </tr>
         </thead>
         <tbody>
@@ -144,14 +144,14 @@
         <table>
             <thead>
                 <tr>
-                    <th>Counter</th>
-                    <th>Teller</th>
-                    <th>Opening</th>
-                    <th>Received</th>
-                    <th>Paid Out</th>
-                    <th>Expected</th>
-                    <th>Actual</th>
-                    <th>Variance</th>
+                    <th scope="col">Counter</th>
+                    <th scope="col">Teller</th>
+                    <th scope="col">Opening</th>
+                    <th scope="col">Received</th>
+                    <th scope="col">Paid Out</th>
+                    <th scope="col">Expected</th>
+                    <th scope="col">Actual</th>
+                    <th scope="col">Variance</th>
                 </tr>
             </thead>
             <tbody>
@@ -177,12 +177,12 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Customer</th>
-                    <th>Type</th>
-                    <th>Amount (RM)</th>
-                    <th>Currency</th>
-                    <th>Status</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Amount (RM)</th>
+                    <th scope="col">Currency</th>
+                    <th scope="col">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -211,11 +211,11 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Flag Type</th>
-                    <th>Status</th>
-                    <th>Transaction ID</th>
-                    <th>Amount (RM)</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Flag Type</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Transaction ID</th>
+                    <th scope="col">Amount (RM)</th>
                 </tr>
             </thead>
             <tbody>

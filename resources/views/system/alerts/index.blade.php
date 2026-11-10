@@ -59,12 +59,12 @@
             <x-table>
                 <x-slot:thead>
                     <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Level</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Message</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Time</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Level</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Message</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Time</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

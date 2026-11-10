@@ -54,7 +54,8 @@
                 </x-card>
 
                 <x-card title="Reject Request">
-                    <form method="POST" action="{{ route('allocations.reject', $allocation->id) }}">
+                    <form method="POST" action="{{ route('allocations.reject', $allocation->id) }}"
+                          data-confirm="Reject this allocation request?">
                         @csrf
                         <x-textarea
                             name="rejection_reason"

@@ -40,14 +40,14 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Listed</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry ID</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity Name</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Listed</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($entries as $entry)

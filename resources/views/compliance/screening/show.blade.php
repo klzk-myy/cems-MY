@@ -140,11 +140,11 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Screened Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Match Score</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Result</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Matched Fields</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Screened Name</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Match Score</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Result</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Matched Fields</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse ($history as $row)

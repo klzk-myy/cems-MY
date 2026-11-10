@@ -38,13 +38,13 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Imported At</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Added</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Updated</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Deactivated</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Error</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Imported At</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Added</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Updated</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Deactivated</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Error</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse ($logs as $log)

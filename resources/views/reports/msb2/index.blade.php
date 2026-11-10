@@ -49,12 +49,12 @@
             <x-card title="Currency Breakdown" description="for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Count</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Volume</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Count</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Volume</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Net Volume</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Count</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Volume</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Count</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Volume</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Net Volume</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($summary as $currency => $data)

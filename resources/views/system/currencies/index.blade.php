@@ -17,12 +17,12 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Symbol</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Decimal Places</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Symbol</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Decimal Places</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

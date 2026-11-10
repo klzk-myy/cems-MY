@@ -47,12 +47,12 @@
                             <table class="w-full">
                                 <thead>
                                     <tr class="text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                                        <th class="px-4 py-3 text-left">Threshold</th>
-                                        <th class="px-4 py-3 text-left">Config</th>
-                                        <th class="px-4 py-3 text-left">Active</th>
-                                        <th class="px-4 py-3 text-left">Source</th>
-                                        <th class="px-4 py-3 text-left">Last change</th>
-                                        <th class="px-4 py-3 text-right"></th>
+                                        <th scope="col" class="px-4 py-3 text-left">Threshold</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Config</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Active</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Source</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Last change</th>
+                                        <th scope="col" class="px-4 py-3 text-right"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -148,12 +148,12 @@
                 <table class="w-full">
                     <thead>
                         <tr class="text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                            <th class="px-4 py-3 text-left">When</th>
-                            <th class="px-4 py-3 text-left">Threshold</th>
-                            <th class="px-4 py-3 text-left">Old</th>
-                            <th class="px-4 py-3 text-left">New</th>
-                            <th class="px-4 py-3 text-left">Changed by</th>
-                            <th class="px-4 py-3 text-left">Reason</th>
+                            <th scope="col" class="px-4 py-3 text-left">When</th>
+                            <th scope="col" class="px-4 py-3 text-left">Threshold</th>
+                            <th scope="col" class="px-4 py-3 text-left">Old</th>
+                            <th scope="col" class="px-4 py-3 text-left">New</th>
+                            <th scope="col" class="px-4 py-3 text-left">Changed by</th>
+                            <th scope="col" class="px-4 py-3 text-left">Reason</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -52,14 +52,14 @@
         <x-card>
             <x-table striped>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trigger Amount (MYR)</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">BNM Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Created By</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Created</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trigger Amount (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">BNM Reference</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Created By</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Created</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($reports as $report)

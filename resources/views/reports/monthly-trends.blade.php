@@ -58,11 +58,11 @@
         <x-card title="Monthly Breakdown">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume ({{ $currency == 'all' ? 'MYR' : $currency }})</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Value</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">MoM Change</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume ({{ $currency == 'all' ? 'MYR' : $currency }})</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Value</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">MoM Change</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($monthlyData as $data)

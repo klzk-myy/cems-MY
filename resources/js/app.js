@@ -63,11 +63,71 @@ document.addEventListener('change', (event) => {
     }
 });
 
-document.addEventListener('submit', (event) => {
-    const message = event.target.dataset?.confirm;
-    if (message && !window.confirm(message)) {
-        event.preventDefault();
+// data-confirm -> styled dialog (x-confirm-dialog markup lives in the layout).
+// requestSubmit() re-fires the submit event; a one-shot dataset flag lets the
+// confirmed submission pass through on the second dispatch.
+const confirmDialog = document.getElementById('confirm-dialog');
+let confirmTarget = null;
+let confirmReturnFocus = null;
+
+const closeConfirmDialog = () => {
+    if (confirmDialog) {
+        confirmDialog.hidden = true;
     }
+    confirmTarget = null;
+    confirmReturnFocus?.focus?.();
+    confirmReturnFocus = null;
+};
+
+if (confirmDialog) {
+    confirmDialog.querySelectorAll('[data-confirm-cancel]').forEach((el) => {
+        el.addEventListener('click', closeConfirmDialog);
+    });
+    confirmDialog.querySelector('[data-confirm-ok]')?.addEventListener('click', () => {
+        const form = confirmTarget;
+        closeConfirmDialog();
+        if (form) {
+            form.dataset.confirmed = '1';
+            form.requestSubmit();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !confirmDialog.hidden) {
+            closeConfirmDialog();
+        }
+    });
+}
+
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+    const message = form.dataset?.confirm;
+
+    if (message && !form.dataset.confirmed) {
+        if (confirmDialog) {
+            event.preventDefault();
+            confirmTarget = form;
+            confirmReturnFocus = document.activeElement;
+            confirmDialog.querySelector('[data-confirm-message]').textContent = message;
+            confirmDialog.hidden = false;
+            confirmDialog.querySelector('[data-confirm-ok]')?.focus();
+            return;
+        }
+        // Layouts without the shared dialog keep the native fallback.
+        if (!window.confirm(message)) {
+            event.preventDefault();
+            return;
+        }
+    }
+    delete form.dataset?.confirmed;
+
+    // Double-submit guard: once every listener has run and nothing prevented
+    // the submission, disable the form's submit controls until navigation.
+    setTimeout(() => {
+        if (!event.defaultPrevented) {
+            form.querySelectorAll('button[type="submit"], input[type="submit"]')
+                .forEach((button) => { button.disabled = true; });
+        }
+    }, 0);
 }, true);
 
 document.addEventListener('input', (event) => {

@@ -20,8 +20,8 @@
         <x-card title="Revenue">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($report['revenues'] ?? [] as $revenue)
@@ -43,8 +43,8 @@
         <x-card title="Expenses">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (RM)</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($report['expenses'] ?? [] as $expense)

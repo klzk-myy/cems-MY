@@ -40,11 +40,11 @@
             <x-card title="Journal Lines">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Remove</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Remove</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         <template x-for="(line, index) in lines" :key="index">

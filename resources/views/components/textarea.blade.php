@@ -25,7 +25,8 @@ $attrs = ($attributes ?? new \Illuminate\View\ComponentAttributeBag);
 
     <textarea
         @if($name) name="{{ $name }}" id="{{ $name }}" @endif
-        @if($required) required @endif
+        @if($required) required aria-required="true" @endif
+        @if(isset($errors) && $errors->has($name ?? '')) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
         @if($disabled) disabled @endif
         @if($readonly) readonly @endif
         @if($placeholder) placeholder="{{ $placeholder }}" @endif
@@ -44,7 +45,7 @@ $attrs = ($attributes ?? new \Illuminate\View\ComponentAttributeBag);
 
     @if($name && isset($errors))
         @error($name)
-            <p class="mt-1 text-xs text-danger-text">{{ $message }}</p>
+            <p id="{{ $name }}-error" class="mt-1 text-xs text-danger-text" role="alert">{{ $message }}</p>
         @enderror
     @endif
 </div>

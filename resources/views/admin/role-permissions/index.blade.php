@@ -9,9 +9,9 @@
                     <table class="w-full">
                         <thead>
                             <tr class="text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Permission</th>
+                                <th scope="col" class="px-4 py-3 text-left">Permission</th>
                                 @foreach ($roles as $role)
-                                    <th class="px-4 py-3 text-center">{{ $role->label() }}</th>
+                                    <th scope="col" class="px-4 py-3 text-center">{{ $role->label() }}</th>
                                 @endforeach
                             </tr>
                         </thead>

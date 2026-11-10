@@ -31,14 +31,14 @@
         <x-card title="Foreign Currency Positions">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Branch</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Quantity</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Cost</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Value</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Revalued</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Branch</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Quantity</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Cost</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Current Value</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Revalued</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($positions as $position)

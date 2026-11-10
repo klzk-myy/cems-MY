@@ -73,14 +73,14 @@
         <x-card title="Recent Buy Transactions (Last 50)">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">MYR Amount</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">MYR Amount</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($transactions as $transaction)

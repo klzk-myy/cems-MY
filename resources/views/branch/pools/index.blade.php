@@ -33,12 +33,12 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th>Branch</th>
-                        <th>Currency</th>
-                        <th>Available</th>
-                        <th>Allocated</th>
-                        <th>Total</th>
-                        <th>Actions</th>
+                        <th scope="col">Branch</th>
+                        <th scope="col">Currency</th>
+                        <th scope="col">Available</th>
+                        <th scope="col">Allocated</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Actions</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($pools as $pool)

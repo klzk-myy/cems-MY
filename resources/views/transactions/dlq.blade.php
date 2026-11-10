@@ -13,14 +13,14 @@
             <x-table>
                 <x-slot:thead>
                     <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Failure Reason</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Retries</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Failure Reason</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Retries</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

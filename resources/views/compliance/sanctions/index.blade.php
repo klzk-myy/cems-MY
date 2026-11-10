@@ -12,15 +12,15 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Update Frequency</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entries</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Update Frequency</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entries</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($lists as $list)

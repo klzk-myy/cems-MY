@@ -33,8 +33,8 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-border">
-                            <th class="text-left py-2 px-4">Description</th>
-                            <th class="text-right py-2 px-4">Amount (RM)</th>
+                            <th scope="col" class="text-left py-2 px-4">Description</th>
+                            <th scope="col" class="text-right py-2 px-4">Amount (RM)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -97,13 +97,13 @@
                 <div class="overflow-x-auto">
                     <x-table>
                         <x-slot:thead>
-                            <th>Counter</th>
-                            <th>Status</th>
-                            <th>Teller</th>
-                            <th>Opening Float</th>
-                            <th>Closing Expected</th>
-                            <th>Closing Actual</th>
-                            <th>Variance</th>
+                            <th scope="col">Counter</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Teller</th>
+                            <th scope="col">Opening Float</th>
+                            <th scope="col">Closing Expected</th>
+                            <th scope="col">Closing Actual</th>
+                            <th scope="col">Variance</th>
                         </x-slot:thead>
                         <x-slot:tbody>
                             @foreach($report['counter_summaries'] as $counter)

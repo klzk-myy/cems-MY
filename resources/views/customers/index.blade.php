@@ -26,13 +26,13 @@
             <x-table>
                 <x-slot:thead>
                     <tr class="text-left text-sm text-ink-muted">
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Number</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Nationality</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Transaction</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Type</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Number</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Nationality</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Transaction</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

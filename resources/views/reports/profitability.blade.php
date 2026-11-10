@@ -50,13 +50,13 @@
         <x-card title="Position P&L Breakdown">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Buy Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Sell Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Realized P&L</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total P&L</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Buy Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Sell Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Realized P&L</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Unrealized P&L</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total P&L</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($positions as $position)

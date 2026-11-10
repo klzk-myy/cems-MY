@@ -60,12 +60,12 @@
         <x-card title="Currency Balances">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Opening Balance</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Bought</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Sold</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Closing Balance</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Opening Balance</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Bought</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Sold</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Closing Balance</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($balances as $balance)

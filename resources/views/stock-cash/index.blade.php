@@ -8,11 +8,11 @@
         <x-card title="Currency Positions">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Available</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Held</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">P&L</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Available</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Held</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Total</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">P&L</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($positions ?? [] as $position)

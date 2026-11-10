@@ -62,9 +62,9 @@
             <x-card title="Monthly Breakdown">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume (MYR)</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume (MYR)</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @foreach($reportData['monthly_breakdown'] as $month)
@@ -83,9 +83,9 @@
             <x-card title="By Currency">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume (MYR)</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Volume (MYR)</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @foreach($reportData['by_currency'] as $currency)
@@ -103,12 +103,12 @@
         <x-card title="Large Value Transactions">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Transaction ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (MYR)</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Transaction ID</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($reportData['data'] ?? [] as $txn)

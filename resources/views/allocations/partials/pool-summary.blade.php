@@ -8,10 +8,10 @@
         @endif
         <x-table>
             <x-slot:thead>
-                <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Pool Total</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Available to Allocate</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Allocated to Tellers</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Pool Total</th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Available to Allocate</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Allocated to Tellers</th>
             </x-slot:thead>
             <x-slot:tbody>
                 @foreach($group['rows'] as $row)

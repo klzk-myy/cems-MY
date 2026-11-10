@@ -56,9 +56,9 @@
                             <table class="w-full">
                                 <thead>
                                     <tr class="text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                                        <th class="px-4 py-3 text-left">Mapping</th>
-                                        <th class="px-4 py-3 text-left">Account</th>
-                                        <th class="px-4 py-3 text-left">Source</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Mapping</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Account</th>
+                                        <th scope="col" class="px-4 py-3 text-left">Source</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -118,9 +118,9 @@
                         <table class="w-full">
                             <thead>
                                 <tr class="text-left text-xs font-medium text-ink-muted uppercase tracking-wider">
-                                    <th class="px-4 py-3 text-left">Currency</th>
-                                    <th class="px-4 py-3 text-left">Cash account (cash.{CCY})</th>
-                                    <th class="px-4 py-3 text-left">Inventory account (inventory.{CCY})</th>
+                                    <th scope="col" class="px-4 py-3 text-left">Currency</th>
+                                    <th scope="col" class="px-4 py-3 text-left">Cash account (cash.{CCY})</th>
+                                    <th scope="col" class="px-4 py-3 text-left">Inventory account (inventory.{CCY})</th>
                                 </tr>
                             </thead>
                             <tbody>

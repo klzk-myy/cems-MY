@@ -97,10 +97,10 @@
         <x-card title="Differences">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Metric</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Run #{{ $run1->id }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Run #{{ $run2->id }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Change</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Metric</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Run #{{ $run1->id }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Run #{{ $run2->id }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Change</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     <!-- Total Tests -->

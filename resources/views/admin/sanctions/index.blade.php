@@ -23,14 +23,14 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Entries</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Name</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source URL</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Format</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Entries</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Synced</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($lists as $list)
@@ -91,14 +91,14 @@
         <x-card title="Update History">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Imported At</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Added</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Updated</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Deactivated</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trigger</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Error</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Source</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Imported At</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Added</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Updated</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Deactivated</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trigger</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Error</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($history as $log)

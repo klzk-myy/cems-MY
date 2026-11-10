@@ -6,12 +6,12 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th>ID</th>
-                        <th>Customer</th>
-                        <th>PEP Type</th>
-                        <th>Status</th>
-                        <th>Requested</th>
-                        <th>Actions</th>
+                        <th scope="col">ID</th>
+                        <th scope="col">Customer</th>
+                        <th scope="col">PEP Type</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Requested</th>
+                        <th scope="col">Actions</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($pending as $req)
@@ -26,7 +26,8 @@
                                         @csrf
                                         <x-button type="submit" variant="success">Approve</x-button>
                                     </form>
-                                    <form action="{{ route('compliance.pep-approvals.reject', $req->id) }}" method="POST">
+                                    <form action="{{ route('compliance.pep-approvals.reject', $req->id) }}" method="POST"
+                                          data-confirm="Reject this PEP approval request?">
                                         @csrf
                                         <input type="hidden" name="reason" value="Rejected by management">
                                         <x-button type="submit" variant="danger">Reject</x-button>

@@ -49,13 +49,13 @@
                 </x-slot:actions>
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Quote Unit</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Buy Rate</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Sell Rate</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Spread</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Updated</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Actions</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Quote Unit</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Buy Rate</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Sell Rate</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Spread</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Updated</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($rates as $rate)

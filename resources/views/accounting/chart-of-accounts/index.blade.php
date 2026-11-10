@@ -6,11 +6,11 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase"></th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

@@ -31,7 +31,8 @@
             </x-card>
 
             <x-card title="Debit Pool">
-                <form action="{{ route('branch-pools.debit', $branchPool->id) }}" method="POST" class="space-y-4">
+                <form action="{{ route('branch-pools.debit', $branchPool->id) }}" method="POST" class="space-y-4"
+                      data-confirm="Debit the entered amount from this branch pool?">
                     @csrf
                     <div>
                         <label for="debit-quantity" class="block text-sm font-medium mb-1">Amount</label>
@@ -95,7 +96,8 @@
                                 <span class="font-medium">{{ $remittance->remittance_number }}</span>
                                 <span class="text-ink-muted"> — {{ number_format((float) $remittance->amount_myr, 2) }} {{ $remittance->currency_code }} to {{ $remittance->toBranch?->name }} — awaiting acknowledgement</span>
                             </div>
-                            <form action="{{ route('branch-pools.remittances.cancel', $remittance->id) }}" method="POST">
+                            <form action="{{ route('branch-pools.remittances.cancel', $remittance->id) }}" method="POST"
+                                  data-confirm="Cancel remittance {{ $remittance->remittance_number }}? The funds return to this pool.">
                                 @csrf
                                 <x-button type="submit" variant="danger" size="sm">Cancel</x-button>
                             </form>

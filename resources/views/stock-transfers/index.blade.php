@@ -13,12 +13,12 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">From</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">To</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">From</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">To</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($transfers ?? [] as $transfer)

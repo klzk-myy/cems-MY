@@ -39,13 +39,13 @@
         <x-card title="Latest Results by Suite">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Suite</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Run</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Passed</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Failed</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Pass Rate</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trend</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Suite</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Run</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Passed</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Failed</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Pass Rate</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Trend</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($latestBySuite as $suiteName => $suiteData)

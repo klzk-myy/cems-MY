@@ -16,13 +16,13 @@
         <x-card title="Entries — {{ \Carbon\Carbon::parse($month)->format('F Y') }}">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Old Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">New Rate</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain / Loss</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Posted By</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Old Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">New Rate</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Gain / Loss</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Posted By</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($history as $entry)

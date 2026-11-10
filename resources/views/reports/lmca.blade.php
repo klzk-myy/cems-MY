@@ -57,15 +57,15 @@
         >
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Count</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Volume</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Value (MYR)</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Count</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Volume</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Value (MYR)</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Opening Stock</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Closing Stock</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Count</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Volume</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Buy Value (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Count</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Volume</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Sell Value (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Opening Stock</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Closing Stock</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($reportData['currencies'] ?? [] as $currency)

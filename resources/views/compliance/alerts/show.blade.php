@@ -72,10 +72,10 @@
             <x-card title="Related Transactions">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Transaction ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Transaction ID</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Amount</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @php

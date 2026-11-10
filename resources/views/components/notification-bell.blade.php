@@ -31,6 +31,8 @@
     {{-- Bell --}}
     <button type="button"
             aria-label="Notifications"
+            aria-haspopup="true"
+            :aria-expanded="open.toString()"
             @click="open = !open"
             class="relative p-2 rounded-lg hover:bg-border/70 transition-colors focus:outline-none focus:ring-2 focus:ring-sidebar-ring">
         <x-heroicon-o-bell class="w-5 h-5" />

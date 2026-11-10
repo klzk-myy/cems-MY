@@ -44,12 +44,12 @@
                 @if(count($recon['counters']) > 0)
                     <x-table>
                         <x-slot:thead>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Opening</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Expected</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Counted</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Counter</th>
+                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Status</th>
+                            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Opening</th>
+                            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Expected</th>
+                            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Counted</th>
+                            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
                         </x-slot:thead>
                         <x-slot:tbody>
                             @foreach($recon['counters'] as $counter)

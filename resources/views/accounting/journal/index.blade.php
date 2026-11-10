@@ -17,14 +17,14 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry No.</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entry No.</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

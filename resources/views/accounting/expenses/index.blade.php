@@ -21,13 +21,13 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Branch</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Category</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (MYR)</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Posted By</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Branch</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Category</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount (MYR)</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Posted By</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

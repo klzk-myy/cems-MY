@@ -42,17 +42,17 @@
                 <table class="min-w-full divide-y divide-border text-sm">
                     <thead class="bg-canvas-subtle">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">
                                 <input type="checkbox" data-check-all="[data-alert-check]" aria-label="Select all alerts">
                             </th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Reason</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Risk Score</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Reason</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Risk Score</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">

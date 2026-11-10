@@ -34,7 +34,7 @@ $inputValue = $name ? old($name, $value ?? $attrs->get('value')) : ($value ?? $a
            @if($disabled) disabled @endif
            @if($readonly) readonly @endif
            @if($placeholder) placeholder="{{ $placeholder }}" @endif
-           @if($hasError) aria-describedby="{{ $name }}-error" @endif
+           @if($hasError) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
            {{ $attrs->except(['label', 'name', 'type', 'required', 'disabled', 'readonly', 'placeholder', 'value', 'help', 'inline']) }}
            class="mt-1 w-full px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg
                   focus:bg-surface text-ink placeholder:text-ink-muted

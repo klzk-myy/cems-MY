@@ -31,12 +31,12 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th>Report Type</th>
-                        <th>Cadence (Cron)</th>
-                        <th>Next Run</th>
-                        <th>Last Run</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th scope="col">Report Type</th>
+                        <th scope="col">Cadence (Cron)</th>
+                        <th scope="col">Next Run</th>
+                        <th scope="col">Last Run</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($schedules as $schedule)

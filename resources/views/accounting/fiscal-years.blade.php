@@ -52,12 +52,12 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Fiscal Year</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Periods</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Fiscal Year</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Periods</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($fiscalYears as $fiscalYear)
@@ -104,12 +104,12 @@
         <x-card title="Current Periods{{ $activeYear ? ' - FY '.$activeYear->year_code : '' }}">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Period</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Month</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Start Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">End Date</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Actions</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse (($activeYear?->periods ?? collect())->sortBy('period_code') as $period)

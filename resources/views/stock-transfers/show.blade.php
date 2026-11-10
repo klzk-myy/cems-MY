@@ -69,13 +69,13 @@
         <x-card title="Items">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Quantity</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Rate</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Value (MYR)</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Received</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">In Transit</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Variance</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Quantity</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Rate</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Value (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Received</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">In Transit</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Variance</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($stockTransfer->items as $item)
@@ -258,9 +258,9 @@
                         <table class="w-full">
                             <thead>
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Expected</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Quantity Received</th>
+                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Expected</th>
+                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-ink-muted uppercase">Quantity Received</th>
                                 </tr>
                             </thead>
                             <tbody>

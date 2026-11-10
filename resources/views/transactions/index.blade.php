@@ -31,14 +31,14 @@
         <x-table>
             <x-slot:thead>
                 <tr>
-                    <th class="px-4 py-3">Reference</th>
-                    <th class="px-4 py-3">Customer</th>
-                    <th class="px-4 py-3">Type</th>
-                    <th class="px-4 py-3">FC Amount</th>
-                    <th class="px-4 py-3">MYR Amount</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3">Date</th>
-                    <th class="px-4 py-3">Actions</th>
+                    <th scope="col" class="px-4 py-3">Reference</th>
+                    <th scope="col" class="px-4 py-3">Customer</th>
+                    <th scope="col" class="px-4 py-3">Type</th>
+                    <th scope="col" class="px-4 py-3">FC Amount</th>
+                    <th scope="col" class="px-4 py-3">MYR Amount</th>
+                    <th scope="col" class="px-4 py-3">Status</th>
+                    <th scope="col" class="px-4 py-3">Date</th>
+                    <th scope="col" class="px-4 py-3">Actions</th>
                 </tr>
             </x-slot:thead>
             <x-slot:tbody>
@@ -47,21 +47,21 @@
                         <td class="px-4 py-3 font-mono text-sm">
                             <a href="{{ route('transactions.show', $transaction) }}" class="text-primary hover:underline">{{ $transaction->reference }}</a>
                             @if($transaction->is_refund)
-                                <span class="ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-warning/10 text-warning">Refund</span>
+                                <x-badge variant="warning" class="ml-1">Refund</x-badge>
                             @endif
                         </td>
                         <td class="px-4 py-3"><x-customer-link :customer="$transaction->customer" /></td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->type?->value === 'Buy' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger' }}">
+                            <x-badge :variant="$transaction->type?->value === 'Buy' ? 'success' : 'danger'">
                                 {{ $transaction->type->label() }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3 text-right font-medium">{{ number_format($transaction->quantity, 2) }} {{ $transaction->currency_code }}</td>
                         <td class="px-4 py-3 text-right font-medium">RM {{ number_format($transaction->amount_myr, 2) }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $transaction->status === \App\Enums\TransactionStatus::Completed ? 'bg-success/10 text-success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'bg-warning/10 text-warning' : 'bg-canvas-subtle text-ink-muted') }}">
+                            <x-badge :variant="$transaction->status === \App\Enums\TransactionStatus::Completed ? 'success' : (in_array($transaction->status, [\App\Enums\TransactionStatus::PendingApproval, \App\Enums\TransactionStatus::PendingCancellation], true) ? 'warning' : 'gray')">
                                 {{ $transaction->status->label() }}
-                            </span>
+                            </x-badge>
                         </td>
                         <td class="px-4 py-3 text-sm text-ink-muted">{{ $transaction->created_at->format('M j, Y H:i:s') }}</td>
                         <td class="px-4 py-3">

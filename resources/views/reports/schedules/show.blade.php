@@ -70,11 +70,11 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th>Status</th>
-                        <th>Started At</th>
-                        <th>Completed At</th>
-                        <th>Rows</th>
-                        <th>Error</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Started At</th>
+                        <th scope="col">Completed At</th>
+                        <th scope="col">Rows</th>
+                        <th scope="col">Error</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($recentRuns as $run)

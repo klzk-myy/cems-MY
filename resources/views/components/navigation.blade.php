@@ -79,11 +79,12 @@ foreach ($navItems as $key => $item) {
 @endphp
 
 <aside
-    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'sticky top-0 flex h-screen shrink-0 flex-col self-start border-r border-sidebar-border bg-surface-inverted transition-all']) }}
-    :class="sidebarCollapsed ? 'w-20' : 'w-64'"
+    {{ ($attributes ?? new \Illuminate\View\ComponentAttributeBag)->merge(['class' => 'fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-surface-inverted transition-transform duration-200 md:sticky md:top-0 md:self-start']) }}
+    :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0', sidebarCollapsed ? 'md:w-20' : 'md:w-64']"
+    aria-label="Primary"
 >
     <div class="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2" x-show="!sidebarCollapsed">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-2" :class="{ 'md:hidden': sidebarCollapsed }">
             <span class="text-lg font-bold text-sidebar-text">CEMS</span>
         </a>
         @if($collapsible)
@@ -91,7 +92,7 @@ foreach ($navItems as $key => $item) {
                 type="button"
                 @click="sidebarCollapsed = !sidebarCollapsed"
                 :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                class="rounded-md p-1.5 text-sidebar-text-muted hover:bg-sidebar-hover hover:text-sidebar-text"
+                class="hidden rounded-md p-1.5 text-sidebar-text-muted hover:bg-sidebar-hover hover:text-sidebar-text md:block"
             >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -112,12 +113,14 @@ foreach ($navItems as $key => $item) {
                 <li>
                     <a
                         href="{{ route($item['route']) }}"
+                        @if($isActive) aria-current="page" @endif
+                        title="{{ $item['label'] }}"
                         class="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors {{ $isActive ? 'bg-sidebar-hover text-sidebar-text' : 'text-sidebar-text hover:bg-sidebar-hover' }}"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
                         </svg>
-                        <span :class="{ 'sr-only': sidebarCollapsed }">{{ $item['label'] }}</span>
+                        <span :class="{ 'md:sr-only': sidebarCollapsed }">{{ $item['label'] }}</span>
                     </a>
                 </li>
             @endforeach
@@ -131,7 +134,7 @@ foreach ($navItems as $key => $item) {
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span :class="{ 'sr-only': sidebarCollapsed }">Logout</span>
+                <span :class="{ 'md:sr-only': sidebarCollapsed }">Logout</span>
             </button>
         </form>
     </div>

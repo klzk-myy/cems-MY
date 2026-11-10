@@ -17,12 +17,12 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-border text-left text-xs uppercase tracking-wide text-ink-muted">
-                        <th class="py-2 pr-4">Reference</th>
-                        <th class="py-2 pr-4">Customer</th>
-                        <th class="py-2 pr-4">Risk Level</th>
-                        <th class="py-2 pr-4">Submitted</th>
-                        <th class="py-2 pr-4">Status</th>
-                        <th class="py-2"></th>
+                        <th scope="col" class="py-2 pr-4">Reference</th>
+                        <th scope="col" class="py-2 pr-4">Customer</th>
+                        <th scope="col" class="py-2 pr-4">Risk Level</th>
+                        <th scope="col" class="py-2 pr-4">Submitted</th>
+                        <th scope="col" class="py-2 pr-4">Status</th>
+                        <th scope="col" class="py-2"></th>
                     </tr>
                 </thead>
                 <tbody>

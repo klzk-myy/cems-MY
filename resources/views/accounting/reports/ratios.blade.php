@@ -46,12 +46,12 @@
         <x-card title="Trial Balance Detail">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Code</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Type</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Balance</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse (($trialBalance['accounts'] ?? []) as $account)

@@ -40,13 +40,13 @@
         <x-card title="Top 50 Customers">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Rank</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Number</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Volume (MYR)</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Value</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Risk Rating</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Rank</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">ID Number</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Transactions</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Total Volume (MYR)</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Avg Value</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Risk Rating</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse($topCustomers as $index => $customer)

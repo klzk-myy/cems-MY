@@ -5,6 +5,61 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - UI/UX overhaul: responsive shell, user menu, a11y, confirm dialog
+
+Implements every item from the UI/UX audit. 96 Blade views touched, 2 new
+components, app.js + components.js extended.
+
+### Responsive shell
+- `appShell` Alpine state gains `sidebarOpen` (mobile drawer) and
+  `sidebarCollapsed` persistence via `localStorage`; body scroll locks
+  while the drawer is open.
+- `x-navigation` is now `fixed`/`translate-x-full` off-canvas below `md`
+  and `sticky` in-flow on `md+`; collapse toggle is desktop-only.
+- `x-app-layout` adds a `md:hidden` hamburger, a scrim (click + Escape
+  close), `min-w-0` on `main`, and renders the new components.
+
+### User menu (`x-user-menu`, new)
+- Header dropdown: avatar + username/role, links to `password.change`,
+  `mfa.trusted-devices`, `notifications.preferences`, the previously
+  orphaned dark-mode toggle (`data-toggle="dark-mode"` was already wired
+  in app.js but never rendered), and a POST logout. Sidebar logout kept
+  as the always-visible fallback.
+
+### Accessibility
+- `aria-current="page"` on the active nav link; `title` tooltips on nav
+  links (labels go `md:sr-only` when the rail is collapsed).
+- Notification bell gains `aria-haspopup` + reactive `aria-expanded`.
+- `scope="col"` added to 578 `<th>` cells across 92 views.
+- `x-select` and `x-textarea` brought to parity with `x-input`:
+  `aria-invalid`, `aria-describedby="{name}-error"`, error `id` +
+  `role="alert"`.
+
+### Confirmation dialog (`x-confirm-dialog`, new)
+- `data-confirm` forms now open a styled `role="dialog"` modal instead of
+  `window.confirm`: message injection, Cancel/backdrop/Escape close,
+  focus moves to Confirm and returns to the trigger on close.
+- Confirmed submits pass through via a one-shot `data-confirmed` flag +
+  `requestSubmit()`; layouts without the shared dialog keep the native
+  `window.confirm` fallback.
+- New `data-confirm` coverage on genuine gaps: trusted-device removal,
+  PEP rejection, branch-pool debit, remittance cancellation, allocation
+  rejection. Modal/reason-gated flows intentionally untouched.
+
+### Consistency & hygiene
+- Double-submit guard: the delegated submit handler disables a form's
+  submit controls once the submission survives all listeners
+  (`defaultPrevented` checked in `setTimeout(0)`, so `@submit.prevent`
+  AJAX flows like the transaction wizard are untouched).
+- Hand-rolled status pills in `transactions/index` converted to
+  `x-badge` variants.
+- Empty `resources/views/orphaned/` scaffold directory deleted.
+
+Verified: 701 related tests green, GitNexus `detect-changes` risk low
+(2 JS symbols), Pint clean, production build clean.
+
+---
+
 ## [2026-11-11] - Concurrency sweep round 3: residual idiom audit (9 fixes)
 
 Fresh whole-tree sweep for race idioms beyond the previous index. Nine

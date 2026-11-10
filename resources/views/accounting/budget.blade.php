@@ -55,13 +55,13 @@
         <x-card title="Budget vs Actual — {{ $periodCode }}">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Budget</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Actual</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Var %</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Update</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Budget</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Actual</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Variance</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Var %</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Update</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($report['items'] as $item)

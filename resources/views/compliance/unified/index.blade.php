@@ -112,14 +112,14 @@
             <table class="min-w-full divide-y divide-border text-sm">
                 <thead class="bg-canvas-subtle">
                     <tr>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Source</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Date</th>
-                        <th class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Source</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Date</th>
+                        <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,14 +135,14 @@
                 <table class="min-w-full divide-y divide-border text-sm">
                     <thead class="bg-canvas-subtle">
                         <tr>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Source</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Date</th>
-                            <th class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Source</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Priority</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Type</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Customer</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Status</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Assigned To</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Date</th>
+                            <th scope="col" class="px-4 py-3 text-left font-medium text-ink-muted">Actions</th>
                         </tr>
                     </thead>
 

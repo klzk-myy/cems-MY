@@ -20,12 +20,12 @@
         <x-card title="Statement Lines">
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Reference</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @forelse ($report['unmatched_items']->merge($report['exceptions'])->sortBy('date') as $item)

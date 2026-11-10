@@ -28,13 +28,13 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3">Currency</th>
-                        <th class="px-4 py-3 text-right">Opening</th>
-                        <th class="px-4 py-3 text-right">Buy</th>
-                        <th class="px-4 py-3 text-right">RM Cr</th>
-                        <th class="px-4 py-3 text-right">Sell</th>
-                        <th class="px-4 py-3 text-right">RM Dr</th>
-                        <th class="px-4 py-3 text-right">Current</th>
+                        <th scope="col" class="px-4 py-3">Currency</th>
+                        <th scope="col" class="px-4 py-3 text-right">Opening</th>
+                        <th scope="col" class="px-4 py-3 text-right">Buy</th>
+                        <th scope="col" class="px-4 py-3 text-right">RM Cr</th>
+                        <th scope="col" class="px-4 py-3 text-right">Sell</th>
+                        <th scope="col" class="px-4 py-3 text-right">RM Dr</th>
+                        <th scope="col" class="px-4 py-3 text-right">Current</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

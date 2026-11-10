@@ -28,7 +28,8 @@ $selectedValue = $name ? old($name, $rawValue instanceof \BackedEnum ? $rawValue
     @endif
 
     <select @if($name) name="{{ $name }}" id="{{ $name }}" @endif
-            @if($required) required @endif
+            @if($required) required aria-required="true" @endif
+            @if($hasError) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
             @if($disabled) disabled @endif
             {{ $attrs->except(['label', 'name', 'options', 'required', 'disabled', 'placeholder', 'value', 'selected', 'help', 'inline']) }}
             class="mt-1 w-full px-3 py-2 text-sm bg-canvas-subtle border border-border rounded-lg
@@ -51,7 +52,7 @@ $selectedValue = $name ? old($name, $rawValue instanceof \BackedEnum ? $rawValue
 
     @if($name)
         @error($name)
-            <p class="mt-1 text-xs text-danger-text">{{ $message }}</p>
+            <p id="{{ $name }}-error" class="mt-1 text-xs text-danger-text" role="alert">{{ $message }}</p>
         @enderror
     @endif
 </div>

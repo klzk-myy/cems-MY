@@ -61,11 +61,11 @@
         <x-card>
             <x-table>
                 <x-slot:thead>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Code</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Code</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account Name</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Description</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Debit</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Credit</th>
                 </x-slot:thead>
                 <x-slot:tbody>
                     @foreach($entry->lines as $line)

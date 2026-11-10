@@ -26,9 +26,9 @@
             <x-card title="Flagged Transactions by Type">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Flag Type</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Count</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Percentage</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Flag Type</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Count</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Percentage</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($flaggedStats['by_type'] as $type => $count)

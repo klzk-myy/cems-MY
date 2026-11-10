@@ -52,9 +52,9 @@
         <x-card title="Your Trusted Devices" class="mb-6">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Device</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Used</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Device</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Used</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Actions</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($trustedDevices ?? [] as $device)
@@ -82,7 +82,8 @@
                                     {{ $device->last_used_at?->diffForHumans() ?? 'Just now' }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <form method="POST" action="{{ route('mfa.trusted-devices.remove', $device) }}">
+                                    <form method="POST" action="{{ route('mfa.trusted-devices.remove', $device) }}"
+                                          data-confirm="Remove this trusted device? MFA verification will be required on its next login.">
                                         @csrf
                                         @method('DELETE')
                                         <x-button variant="danger" size="sm" type="submit">Remove</x-button>

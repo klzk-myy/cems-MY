@@ -4,8 +4,8 @@
 
 <table style="border-collapse: collapse; width: 100%; max-width: 400px;">
     <tr>
-        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Type</th>
-        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Count</th>
+        <th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Type</th>
+        <th scope="col" style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Count</th>
     </tr>
     @foreach($byType as $type => $count)
     <tr>

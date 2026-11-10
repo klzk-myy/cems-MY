@@ -18,13 +18,13 @@
         <x-table>
             <x-slot:thead>
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">#</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Time</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">User</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Action</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Severity</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Sealed</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">#</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Time</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">User</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Action</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Entity</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Severity</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Sealed</th>
                 </tr>
             </x-slot:thead>
             <x-slot:tbody>

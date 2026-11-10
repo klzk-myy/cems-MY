@@ -13,11 +13,11 @@
             <x-table>
                 <x-slot:thead>
                     <tr>
-                        <th class="px-4 py-3">Reference</th>
-                        <th class="px-4 py-3">Customer</th>
-                        <th class="px-4 py-3">Type</th>
-                        <th class="px-4 py-3">Amount</th>
-                        <th class="px-4 py-3">Status</th>
+                        <th scope="col" class="px-4 py-3">Reference</th>
+                        <th scope="col" class="px-4 py-3">Customer</th>
+                        <th scope="col" class="px-4 py-3">Type</th>
+                        <th scope="col" class="px-4 py-3">Amount</th>
+                        <th scope="col" class="px-4 py-3">Status</th>
                     </tr>
                 </x-slot:thead>
                 <x-slot:tbody>

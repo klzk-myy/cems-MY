@@ -154,7 +154,23 @@ export function registerComponents(Alpine) {
     }));
 
     Alpine.data('appShell', () => ({
+        // sidebarOpen: off-canvas sidebar on small screens (hidden by
+        // default, slid in via hamburger). sidebarCollapsed: icon-only rail
+        // on md+ screens, persisted across page loads.
+        sidebarOpen: false,
         sidebarCollapsed: false,
+        init() {
+            try {
+                this.sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            } catch (e) { /* storage unavailable */ }
+            this.$watch('sidebarCollapsed', (value) => {
+                try { localStorage.setItem('sidebarCollapsed', value ? 'true' : 'false'); } catch (e) {}
+            });
+            // Stop body scroll while the mobile drawer is open.
+            this.$watch('sidebarOpen', (value) => {
+                document.body.style.overflow = value ? 'hidden' : '';
+            });
+        },
     }));
 
     // Single-page transaction create form: customer register-or-match panel

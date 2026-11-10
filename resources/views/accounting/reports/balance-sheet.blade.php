@@ -39,8 +39,8 @@
             <x-card title="Assets">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse ($assets as $asset)
@@ -63,8 +63,8 @@
                 <x-card title="Liabilities">
                     <x-table>
                         <x-slot:thead>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
                         </x-slot:thead>
                         <x-slot:tbody>
                             @forelse ($liabilities as $liability)
@@ -86,8 +86,8 @@
                 <x-card title="Equity">
                     <x-table>
                         <x-slot:thead>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Account</th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Amount</th>
                         </x-slot:thead>
                         <x-slot:tbody>
                             @forelse ($equity as $eq)

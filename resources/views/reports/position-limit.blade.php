@@ -39,12 +39,12 @@
             <x-card title="Currency Positions">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Limit</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Utilization</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Exposure (MYR)</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Currency</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Position</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Limit</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Utilization</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-ink-muted uppercase">Status</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Exposure (MYR)</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse($reportData['positions'] as $position)

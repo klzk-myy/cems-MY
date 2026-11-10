@@ -47,10 +47,10 @@
             <div class="overflow-x-auto">
                 <x-table>
                     <x-slot:thead>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Score</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Review</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Customer</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Risk Level</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Score</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Last Review</th>
                     </x-slot:thead>
                     <x-slot:tbody>
                         @forelse ($customers as $customer)
