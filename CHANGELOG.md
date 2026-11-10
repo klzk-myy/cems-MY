@@ -5,6 +5,52 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - CI Browser E2E job brought green; wizard form dead-submit bug fixed
+
+### Files Changed
+- `resources/views/transaction-wizard/index.blade.php` - added `novalidate` to the
+  multi-step form.
+- `.github/workflows/ci.yml` - E2E env prep generates `APP_ENCRYPTION_SALT`,
+  creates `storage/framework/{sessions,cache}` + `storage/logs`, probes `/up`
+  for readiness, and runs the same `Start Redis` step the PHPUnit job uses.
+- `tests/e2e/helpers/seat.ts` - `api()` reads `XSRF-TOKEN` from context cookies
+  (page-state independent); shared `csrf()` falls back to `/dashboard` on
+  meta-less pages; `createCustomer()` posts the full CDD store form; `FLOATS.MYR`
+  raised to 30000 with the till-drawer semantics documented.
+- `tests/e2e/helpers/auth.ts` - MFA self-enrollment + next-window TOTP retry.
+- `tests/e2e/journey-transaction.spec.ts`, `journey-refund.spec.ts`,
+  `admin-surfaces.spec.ts`, `wizard-step2.spec.ts`, `journey-eod.spec.ts`,
+  `transaction-wizard.spec.ts`, `mfa-verify.spec.ts` - dynamic branch/customer
+  resolution, full-CDD customers, corrected assertions.
+
+### Root Causes Fixed
+- `APP_ENCRYPTION_SALT` was empty in `.env.example` — any page hydrating a
+  customer (PII decryption via `EncryptionService`) threw a `DomainException`
+  rendered as `back()` → `/` → `/dashboard`, so pages appeared to bounce.
+- The wizard's `<form>` wrapped all three steps; hidden `required` controls in
+  `x-show` step 2/3 sections made native constraint validation cancel every
+  submit ("invalid form control is not focusable"), so `submitStep()` never ran
+  and Continue was dead for real users too.
+- Counter opening-request floats become the day's `TillBalance` rows —
+  `stock-cash/open` then 422s as a duplicate. A ~RM13k Buy exceeded the 5000
+  MYR drawer at approve time on a fresh seed ("Insufficient stock for MYR");
+  bookings now sit just over the RM10k approval threshold with the float
+  raised to 30k.
+- Fresh CI seeds ship zero customers: hardcoded staging names timed out, so
+  journeys register their own via the full CDD form (a bare quick-create 302s
+  Standard-tier bookings back — `assertCustomerCddRequirements` reads the
+  persisted record).
+- `meta[name="csrf-token"]` reads hung on meta-less pages (`back()` landing on
+  a recorded `/api/v1` URL); Sanctum stateful calls need matching
+  Referer/Origin plus the `XSRF-TOKEN` cookie — never the page meta.
+
+### Testing
+- `npx playwright test` locally — **84/84 passed**.
+- GitHub Actions run 42802347388 — **all jobs green**: lint 1m57s, security 18s,
+  PHPUnit 3m18s, Browser E2E 4m15s.
+
+---
+
 ## [2026-10-04] - Playwright suites: kill the duplicate-ID collision and the timezone-blind counter scan
 
 ### Files Changed
