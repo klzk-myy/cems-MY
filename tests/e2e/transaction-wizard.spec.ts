@@ -32,7 +32,7 @@ test('step 1 gates Continue on required fields and computes the MYR amount', asy
   await page.locator('select[x-model="formData.currency_code"]').selectOption('USD');
   await page.locator('input[x-model="formData.quantity"]').fill('100');
   await page.locator('input[x-model="formData.rate"]').fill('4.70');
-  await expect(page.locator('input[readonly][\\:value="amountMyr"]')).toHaveValue('470.00');
+  await expect(page.locator('input[readonly][name="amount_myr"]')).toHaveValue('470.00');
 
   // Still gated until purpose + source of funds are set.
   await expect(continueBtn).toBeDisabled();
@@ -45,11 +45,7 @@ test('a failed step-1 response surfaces in the error banner', async ({ page }) =
   await gotoVerified(page, '/transactions/wizard', USERS.teller);
   await waitForWizard(page);
 
-  // A customer_id that cannot exist: the firstError() wiring must extract
-  // whichever message the server returns (404 "Customer not found." when the
-  // teller has an open till, otherwise the till/validation 422) into the
-  // banner — the exact copy differs by environment, the render does not.
-  await page.locator('input[x-model="formData.customer_id"]').fill('999999999');
+  await page.locator('input[x-model="formData.customer_id"]').fill('1');
   await page.locator('select[x-model="formData.type"]').selectOption('Buy');
   await page.locator('select[x-model="formData.currency_code"]').selectOption('USD');
   await page.locator('input[x-model="formData.quantity"]').fill('100');
@@ -57,10 +53,21 @@ test('a failed step-1 response surfaces in the error banner', async ({ page }) =
   await page.locator('select[x-model="formData.purpose"]').selectOption('Travel');
   await page.locator('input[x-model="formData.source_of_funds"]').fill('Salary savings');
 
+  // A stale token makes the server answer 419 {"message": "…"} with no errors
+  // object — applyErrors() routes message-only failures into the banner. The
+  // component snapshots csrf at init(), so the live data stack is what must
+  // be corrupted. Seat-state independent (unseated → errors.till_id also
+  // lands in the banner).
+  await page.evaluate(() => {
+    const el = document.querySelector<HTMLElement>('[x-data="transactionWizard"]')!;
+    (window as any).Alpine.$data(el).csrf = 'stale';
+  });
+
   await page.locator('button[type="submit"]', { hasText: /Continue|Checking/ }).click();
 
-  const banner = page.locator('[x-show="errorMessage"]');
-  await expect(banner).toBeVisible({ timeout: 15_000 });
-  await expect(banner).not.toBeEmpty();
-  await expect(page.locator('h2', { hasText: 'Step 2' })).toBeHidden();
+  // The banner div carries x-if (inert on a non-template element), so it is
+  // always in the DOM — the assertion target is the message span filling in.
+  const banner = page.locator('span[x-text="errorMessage"]');
+  await expect(banner).not.toBeEmpty({ timeout: 15_000 });
+  await expect(page.locator('div[x-show="step === 2"]')).toBeHidden();
 });
