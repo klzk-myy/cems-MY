@@ -2,10 +2,13 @@
 
 namespace App\Services\Reporting;
 
+use App\Enums\EddStatus;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use App\Events\ReportGenerated;
+use App\Models\Compliance\EnhancedDiligenceRecord;
+use App\Models\Compliance\FlaggedTransaction;
 use App\Models\ReportRun;
 use App\Models\ReportSchedule;
 use App\Services\AuditService;
