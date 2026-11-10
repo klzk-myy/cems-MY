@@ -56,40 +56,47 @@ class FiscalYearService
      */
     public function createFiscalYear(string $yearCode, string $startDate, string $endDate): FiscalYear
     {
-        $year = FiscalYear::create([
-            'year_code' => $yearCode,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'status' => FiscalYearStatus::Open->value,
-        ]);
+        // Single transaction: without it the attach UPDATE and the
+        // firstOrCreate loop autocommit independently, so a concurrent
+        // overlapping create can steal attached periods and lose on
+        // period_code's unique index mid-loop — leaving a partial year.
+        // Inside the transaction the loser rolls back atomically.
+        return DB::transaction(function () use ($yearCode, $startDate, $endDate) {
+            $year = FiscalYear::create([
+                'year_code' => $yearCode,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => FiscalYearStatus::Open->value,
+            ]);
 
-        // Attach any existing unlinked periods that fall inside the year so
-        // the year view and closeFiscalYear()'s all-periods-closed guard see them.
-        AccountingPeriod::whereNull('fiscal_year_id')
-            ->whereDate('start_date', '>=', $startDate)
-            ->whereDate('end_date', '<=', $endDate)
-            ->update(['fiscal_year_id' => $year->id]);
+            // Attach any existing unlinked periods that fall inside the year so
+            // the year view and closeFiscalYear()'s all-periods-closed guard see them.
+            AccountingPeriod::whereNull('fiscal_year_id')
+                ->whereDate('start_date', '>=', $startDate)
+                ->whereDate('end_date', '<=', $endDate)
+                ->update(['fiscal_year_id' => $year->id]);
 
-        // A fiscal year without periods accepts no postings — generate one
-        // open monthly period per month covered by the year.
-        $month = Carbon::parse($startDate)->startOfMonth();
-        $last = Carbon::parse($endDate)->endOfMonth();
+            // A fiscal year without periods accepts no postings — generate one
+            // open monthly period per month covered by the year.
+            $month = Carbon::parse($startDate)->startOfMonth();
+            $last = Carbon::parse($endDate)->endOfMonth();
 
-        while ($month->lte($last)) {
-            AccountingPeriod::firstOrCreate(
-                ['period_code' => $month->format('Y-m')],
-                [
-                    'fiscal_year_id' => $year->id,
-                    'start_date' => $month->copy()->startOfMonth()->toDateString(),
-                    'end_date' => $month->copy()->endOfMonth()->toDateString(),
-                    'period_type' => AccountingPeriodType::Month->value,
-                    'status' => AccountingPeriodStatus::Open->value,
-                ]
-            );
-            $month->addMonth();
-        }
+            while ($month->lte($last)) {
+                AccountingPeriod::firstOrCreate(
+                    ['period_code' => $month->format('Y-m')],
+                    [
+                        'fiscal_year_id' => $year->id,
+                        'start_date' => $month->copy()->startOfMonth()->toDateString(),
+                        'end_date' => $month->copy()->endOfMonth()->toDateString(),
+                        'period_type' => AccountingPeriodType::Month->value,
+                        'status' => AccountingPeriodStatus::Open->value,
+                    ]
+                );
+                $month->addMonth();
+            }
 
-        return $year;
+            return $year;
+        });
     }
 
     /**

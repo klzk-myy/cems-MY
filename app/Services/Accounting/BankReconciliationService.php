@@ -10,6 +10,7 @@ use App\Models\JournalEntry;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,60 +27,67 @@ class BankReconciliationService
      */
     public function importStatement(string $accountCode, array $lines, int $userId): array
     {
-        return DB::transaction(function () use ($accountCode, $lines, $userId) {
-            $imported = [];
-            $skipped = 0;
+        // Serialise imports per account: the dedup check is exists()->create,
+        // so two concurrent uploads of the same statement otherwise both
+        // pass the checks and insert duplicate reconciliation rows. Mirrors
+        // the Cache::lock dedup used by monitors/SanctionsImportService.
+        return Cache::lock("bank_recon_import:{$accountCode}", 120)->block(
+            30,
+            fn () => DB::transaction(function () use ($accountCode, $lines, $userId) {
+                $imported = [];
+                $skipped = 0;
 
-            foreach ($lines as $line) {
-                // Re-importing the same statement must not create duplicates —
-                // a line is identical when every supplied field matches an
-                // existing record for this account.
-                $exists = BankReconciliation::where('account_code', $accountCode)
-                    ->whereDate('statement_date', $line['date'])
-                    ->where('description', $line['description'])
-                    ->where('debit', $line['debit'] ?? 0)
-                    ->where('credit', $line['credit'] ?? 0)
-                    ->when(
-                        ($line['reference'] ?? null) !== null,
-                        fn ($q) => $q->where('reference', $line['reference']),
-                        fn ($q) => $q->whereNull('reference')
-                    )
-                    ->exists();
+                foreach ($lines as $line) {
+                    // Re-importing the same statement must not create duplicates —
+                    // a line is identical when every supplied field matches an
+                    // existing record for this account.
+                    $exists = BankReconciliation::where('account_code', $accountCode)
+                        ->whereDate('statement_date', $line['date'])
+                        ->where('description', $line['description'])
+                        ->where('debit', $line['debit'] ?? 0)
+                        ->where('credit', $line['credit'] ?? 0)
+                        ->when(
+                            ($line['reference'] ?? null) !== null,
+                            fn ($q) => $q->where('reference', $line['reference']),
+                            fn ($q) => $q->whereNull('reference')
+                        )
+                        ->exists();
 
-                if ($exists) {
-                    $skipped++;
+                    if ($exists) {
+                        $skipped++;
 
-                    continue;
+                        continue;
+                    }
+
+                    $record = BankReconciliation::create([
+                        'account_code' => $accountCode,
+                        'statement_date' => $line['date'],
+                        'reference' => $line['reference'] ?? null,
+                        'description' => $line['description'],
+                        'debit' => $line['debit'] ?? 0,
+                        'credit' => $line['credit'] ?? 0,
+                        'status' => BankReconciliationStatus::Unmatched->value,
+                        'created_by' => $userId,
+                        'check_number' => $line['check_number'] ?? null,
+                        'check_date' => $line['check_date'] ?? null,
+                        'check_status' => $line['check_status'] ?? null,
+                        'check_payee' => $line['check_payee'] ?? null,
+                    ]);
+
+                    $imported[] = $record;
                 }
 
-                $record = BankReconciliation::create([
-                    'account_code' => $accountCode,
-                    'statement_date' => $line['date'],
-                    'reference' => $line['reference'] ?? null,
-                    'description' => $line['description'],
-                    'debit' => $line['debit'] ?? 0,
-                    'credit' => $line['credit'] ?? 0,
-                    'status' => BankReconciliationStatus::Unmatched->value,
-                    'created_by' => $userId,
-                    'check_number' => $line['check_number'] ?? null,
-                    'check_date' => $line['check_date'] ?? null,
-                    'check_status' => $line['check_status'] ?? null,
-                    'check_payee' => $line['check_payee'] ?? null,
-                ]);
+                $this->autoMatch($accountCode);
 
-                $imported[] = $record;
-            }
-
-            $this->autoMatch($accountCode);
-
-            return [
-                'imported' => count($imported),
-                'skipped' => $skipped,
-                'unmatched' => BankReconciliation::where('account_code', $accountCode)
-                    ->where('status', BankReconciliationStatus::Unmatched->value)
-                    ->count(),
-            ];
-        });
+                return [
+                    'imported' => count($imported),
+                    'skipped' => $skipped,
+                    'unmatched' => BankReconciliation::where('account_code', $accountCode)
+                        ->where('status', BankReconciliationStatus::Unmatched->value)
+                        ->count(),
+                ];
+            })
+        );
     }
 
     /**

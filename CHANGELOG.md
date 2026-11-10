@@ -5,6 +5,57 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-11] - Concurrency sweep round 3: residual idiom audit (9 fixes)
+
+Fresh whole-tree sweep for race idioms beyond the previous index. Nine
+findings fixed; ~15 sites verified already-safe (see below).
+
+### Fixed
+- `FiscalYearService::createFiscalYear` — non-transactional 3-phase write
+  (year create + unlinked-period attach `UPDATE` + `firstOrCreate` loop on
+  `period_code` unique). Concurrent overlapping creates could steal
+  attached periods (last-writer-wins UPDATE) and lose mid-loop on the
+  unique index, leaving a partial year. Wrapped in `DB::transaction` —
+  the loser now rolls back atomically.
+- `PermissionService::updateRolePermissions` — per-row `updateOrCreate`
+  loop on `unique_role_permission` with no transaction: a concurrent
+  matrix submit losing mid-loop left a **partially applied privilege
+  matrix** (earlier rows committed). Replaced with a single atomic
+  `RolePermission::upsert` (BudgetService precedent).
+- `PermissionService::updatePermission` — same `updateOrCreate` hole on
+  the single-toggle path → single-row `upsert`.
+- `AccountMappingService::update` — `updateOrCreate` on
+  `account_mappings_key_unique` inside its transaction 500'd the loser;
+  added the codebase's catch + `lockForUpdate` re-read idiom (adopt the
+  winner's row, apply the update).
+- `RiskScoringEngine` event-debounce — `Cache::has` + `Cache::put`
+  check-then-act let every concurrent trigger pass; now atomic
+  `Cache::add` (SET-NX-with-TTL).
+- `BankReconciliationService::importStatement` — `exists()`→`create`
+  dedup loop inside a transaction but with no mutex: two concurrent
+  uploads of the same statement duplicate reconciliation rows. Added
+  `Cache::lock("bank_recon_import:{account}")` (mirrors
+  `withImportLock`/monitor idiom).
+- `BranchPoolController::store`, `SanctionSourceController::store`,
+  `CurrencyController::store` — `exists()` pre-check → `create()` on
+  unique-constrained data produced a raw duplicate-key 500 for the race
+  loser instead of the friendly error the pre-check intended. Each now
+  catches `UniqueConstraintViolationException` → same friendly outcome.
+
+### Verified safe (no change)
+- `MfaService::rememberDevice` (`updateOrCreate` keyed on
+  `sha256(random_token)` — collision impossible), `RateApiService`
+  failure marker (idempotent put), `TransactionValidationService`
+  sanctions memo (idempotent), `SetupService` (marker inside setup tx +
+  unique backstops), `PepApprovalService` (customer-row mutex),
+  `StrReportService` (case-row lock), `BranchClosingService`
+  (generated-column unique index), all 43 scheduled commands
+  (`withoutOverlapping` + `onOneServer`), all `increment()`/`decrement()`
+  (atomic SQL), `seedDefaults` (seeder context).
+- Verified: PHPStan clean · Pint clean · 2750 tests pass.
+
+---
+
 ## [2026-11-11] - Coverage tail: remaining API v1 / jobs / web / ops surfaces + slow-group repair
 
 ### Coverage Added (41 tests across 4 files)

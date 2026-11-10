@@ -10,6 +10,7 @@ use App\Models\ChartOfAccount;
 use App\Services\AuditService;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\CacheKeys;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -156,16 +157,32 @@ class AccountMappingService
                     continue;
                 }
 
-                $row = AccountMapping::updateOrCreate(
-                    ['key' => $key],
-                    [
+                try {
+                    $row = AccountMapping::updateOrCreate(
+                        ['key' => $key],
+                        [
+                            'account_code' => $accountCode,
+                            'description' => $existing !== null
+                                ? $existing->description
+                                : AccountMappingKey::tryFrom($key)?->usedBy(),
+                            'updated_by' => $userId,
+                        ]
+                    );
+                } catch (UniqueConstraintViolationException) {
+                    // Lost the account_mappings_key_unique race to a
+                    // concurrent admin submit — adopt the winner's row
+                    // under lock and apply this update to it.
+                    $row = AccountMapping::where('key', $key)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+                    $row->update([
                         'account_code' => $accountCode,
                         'description' => $existing !== null
                             ? $existing->description
                             : AccountMappingKey::tryFrom($key)?->usedBy(),
                         'updated_by' => $userId,
-                    ]
-                );
+                    ]);
+                }
 
                 $this->auditService->log(
                     'account_mapping_updated',

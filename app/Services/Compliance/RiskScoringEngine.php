@@ -162,11 +162,11 @@ class RiskScoringEngine
         if ($trigger === RecalculationTrigger::EventDriven) {
             $debounceKey = "risk_recalc:customer:{$customerId}";
 
-            if (Cache::has($debounceKey)) {
+            // Cache::add() is SET-NX-with-TTL — atomic, so two concurrent
+            // event triggers can't both pass the has()+put() check.
+            if (! Cache::add($debounceKey, true, self::RECALCULATION_DEBOUNCE_SECONDS)) {
                 return null;
             }
-
-            Cache::put($debounceKey, true, self::RECALCULATION_DEBOUNCE_SECONDS);
         }
 
         $result = $this->calculateScoreWithFactors($customerId);

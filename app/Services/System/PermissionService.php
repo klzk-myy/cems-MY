@@ -93,9 +93,15 @@ class PermissionService
             return; // No change
         }
 
-        RolePermission::updateOrCreate(
-            ['role' => $role->value, 'permission' => $permission->value],
-            ['granted' => $granted, 'updated_by' => $updatedBy]
+        RolePermission::upsert(
+            [[
+                'role' => $role->value,
+                'permission' => $permission->value,
+                'granted' => $granted,
+                'updated_by' => $updatedBy,
+            ]],
+            ['role', 'permission'],
+            ['granted', 'updated_by']
         );
 
         $this->auditService->log(
@@ -130,6 +136,7 @@ class PermissionService
         int $updatedBy
     ): void {
         $changes = [];
+        $rows = [];
 
         foreach ($permissions as $key => $granted) {
             $permission = Permission::tryFrom($key);
@@ -150,10 +157,21 @@ class PermissionService
                 'new' => $granted,
             ];
 
-            RolePermission::updateOrCreate(
-                ['role' => $role->value, 'permission' => $permission->value],
-                ['granted' => $granted, 'updated_by' => $updatedBy]
-            );
+            $rows[] = [
+                'role' => $role->value,
+                'permission' => $permission->value,
+                'granted' => $granted,
+                'updated_by' => $updatedBy,
+            ];
+        }
+
+        if (! empty($rows)) {
+            // INSERT ... ON DUPLICATE KEY UPDATE: an updateOrCreate loop
+            // select-then-inserts each row, so a concurrent matrix submit
+            // loses on unique_role_permission mid-loop — a duplicate-key
+            // 500 that leaves the permissions applied up to that row
+            // committed. One upsert applies the matrix atomically.
+            RolePermission::upsert($rows, ['role', 'permission'], ['granted', 'updated_by']);
         }
 
         if (! empty($changes)) {

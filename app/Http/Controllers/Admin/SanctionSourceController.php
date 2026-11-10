@@ -11,6 +11,7 @@ use App\Http\Requests\StoreSanctionSourceRequest;
 use App\Models\Compliance\SanctionImportLog;
 use App\Models\Compliance\SanctionList;
 use App\Services\Compliance\SanctionsOrchestrationService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -56,16 +57,24 @@ class SanctionSourceController extends Controller
             $slug = Str::slug($validated['name']).'-'.$suffix++;
         }
 
-        SanctionList::create([
-            'name' => $validated['name'],
-            'slug' => $slug,
-            'list_type' => $validated['list_type'],
-            'source_url' => $validated['source_url'] ?? null,
-            'source_format' => $validated['source_format'] ?? null,
-            'uploaded_by' => $request->user()->id,
-            'is_active' => true,
-            'update_status' => UpdateStatus::NeverRun,
-        ]);
+        try {
+            SanctionList::create([
+                'name' => $validated['name'],
+                'slug' => $slug,
+                'list_type' => $validated['list_type'],
+                'source_url' => $validated['source_url'] ?? null,
+                'source_format' => $validated['source_format'] ?? null,
+                'uploaded_by' => $request->user()->id,
+                'is_active' => true,
+                'update_status' => UpdateStatus::NeverRun,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Lost the slug unique race to a concurrent submit of the same
+            // list name — the suffix loop ran before the winner committed.
+            return back()
+                ->withErrors(['name' => 'A list with this name was just created. Check the list before re-submitting.'])
+                ->withInput();
+        }
 
         return redirect()->route('admin.sanctions.index')
             ->with('success', 'Sanction source added.');

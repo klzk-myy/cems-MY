@@ -15,6 +15,7 @@ use App\Models\Currency;
 use App\Models\PoolRemittance;
 use App\Services\Branch\BranchPoolService;
 use App\Services\Branch\PoolRemittanceService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -73,12 +74,18 @@ class BranchPoolController extends Controller
             return back()->with('error', 'A pool already exists for this branch and currency.');
         }
 
-        BranchPool::create([
-            'branch_id' => $branchId,
-            'currency_code' => $validated['currency_code'],
-            'available_balance' => '0.0000',
-            'allocated_balance' => '0.0000',
-        ]);
+        try {
+            BranchPool::create([
+                'branch_id' => $branchId,
+                'currency_code' => $validated['currency_code'],
+                'available_balance' => '0.0000',
+                'allocated_balance' => '0.0000',
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Lost the branch_id+currency_code unique race to a concurrent
+            // submit — surface the same friendly error as the pre-check.
+            return back()->with('error', 'A pool already exists for this branch and currency.');
+        }
 
         return back()->with('success', 'Pool created. Use Fund to add balance.');
     }

@@ -15,6 +15,7 @@ use App\Services\Accounting\CurrencyAccountProvisioner;
 use App\Services\Accounting\CurrencyPositionLockService;
 use App\Services\AuditService;
 use App\Services\Branch\BranchPoolService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -88,33 +89,41 @@ class CurrencyController extends Controller
         $actorId = auth()->id();
         $actorId = $actorId === null ? null : (int) $actorId;
 
-        [$currency, $branches, $glAccounts] = DB::transaction(function () use ($validated, $actorId) {
-            $currency = Currency::create([
-                ...$validated,
-                'is_active' => true,
-            ]);
+        try {
+            [$currency, $branches, $glAccounts] = DB::transaction(function () use ($validated, $actorId) {
+                $currency = Currency::create([
+                    ...$validated,
+                    'is_active' => true,
+                ]);
 
-            // Map the new currency into the accounting system: every active
-            // trading branch gets a zero branch pool and a zero currency
-            // position so the currency appears in stock/position views
-            // immediately instead of waiting for lazy provisioning at first
-            // transaction/counter open. Head offices are non-trading and hold
-            // no foreign-currency stock.
-            $branches = Branch::where('is_active', true)
-                ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
-                ->get();
-            foreach ($branches as $branch) {
-                $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
-                $this->positionLockService->lock((string) $branch->id, $currency->code);
-            }
+                // Map the new currency into the accounting system: every active
+                // trading branch gets a zero branch pool and a zero currency
+                // position so the currency appears in stock/position views
+                // immediately instead of waiting for lazy provisioning at first
+                // transaction/counter open. Head offices are non-trading and hold
+                // no foreign-currency stock.
+                $branches = Branch::where('is_active', true)
+                    ->where('type', '!=', Branch::TYPE_HEAD_OFFICE)
+                    ->get();
+                foreach ($branches as $branch) {
+                    $this->branchPoolService->getOrCreateForBranch($branch, $currency->code);
+                    $this->positionLockService->lock((string) $branch->id, $currency->code);
+                }
 
-            // Dedicated Cash/Inventory chart accounts plus cash.{CCY} and
-            // inventory.{CCY} mapping rows so postings route to the
-            // currency's own GL accounts instead of the pooled defaults.
-            $glAccounts = $this->accountProvisioner->provision($currency, $actorId);
+                // Dedicated Cash/Inventory chart accounts plus cash.{CCY} and
+                // inventory.{CCY} mapping rows so postings route to the
+                // currency's own GL accounts instead of the pooled defaults.
+                $glAccounts = $this->accountProvisioner->provision($currency, $actorId);
 
-            return [$currency, $branches, $glAccounts];
-        });
+                return [$currency, $branches, $glAccounts];
+            });
+        } catch (UniqueConstraintViolationException) {
+            // Lost the currencies.code primary-key race to a concurrent
+            // submit — same outcome as the exists() pre-check above.
+            return back()
+                ->withErrors(['code' => 'A currency with this code already exists (it may be disabled). Re-enable it instead.'])
+                ->withInput();
+        }
 
         $this->auditService->log(
             'currency_created',
