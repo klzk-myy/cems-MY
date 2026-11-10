@@ -10,8 +10,12 @@ async function me(ctx: BrowserContext, page: Page): Promise<{ id: number; branch
     return (await res.json()).data;
 }
 
-// Session float quantities — generous enough for a full booking day.
-const FLOATS = { MYR: '5000', USD: '5000' };
+// Session float quantities — the counter opening-request floats become the
+// day's TillBalance rows (stock-cash/open then 422s as a same-day duplicate),
+// so MYR must cover every Buy payout a spec can stack on one till. Sized for
+// the money path's ~RM10.5k buys incl. a retry, without draining the 200k
+// branch pool across the run's seated sessions.
+const FLOATS = { MYR: '30000', USD: '5000' };
 const LIMITS = { MYR: '50000000', USD: '50000000' };
 
 // Stateful Sanctum auth keys off Referer/Origin matching APP_URL; without

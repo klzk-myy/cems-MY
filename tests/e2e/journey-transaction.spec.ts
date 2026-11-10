@@ -65,7 +65,10 @@ async function createViaForm(page: Page, customerName: string): Promise<{ id: st
 
     await page.selectOption('select[name="type"]', 'Buy');
     await page.selectOption('select[name="currency_code"]', 'USD');
-    const qty = (2400 + (Date.now() % 400) + Math.random()).toFixed(2);
+    // Just over the RM10k approval threshold (≥ 2128 USD at 4.70): the buy
+    // pays ~RM10.5k out of the MYR till — inside the 30k session float with
+    // headroom for a retry re-booking on the same drawer.
+    const qty = (2200 + (Date.now() % 100) + Math.random()).toFixed(2);
     await page.fill('input[name="quantity"]', qty);
     await page.fill('input[name="rate"]', String(RATE));
     await page.selectOption('select[name="purpose"]', 'Travel');
