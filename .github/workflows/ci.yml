@@ -10,6 +10,12 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# `php artisan test | tee results.txt` returns tee's exit code without
+# pipefail — test failures were invisible while artifacts looked complete.
+defaults:
+  run:
+    shell: bash -eo pipefail {0}
+
 env:
   APP_ENV: testing
   APP_KEY: base64:WlbBhnWV/8WIwLujIHnV4WqVBGA6jVh/6mAt4gt+NN8=

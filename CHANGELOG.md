@@ -5,6 +5,86 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-10] - CI honesty: pipefail masking + encryption-salt determinism + MSB2 unit fix
+
+### Root Cause
+CI's PHPUnit steps ran `php artisan test | tee output.txt` — without
+`pipefail` the step exits with `tee`'s status (always 0), so the "green"
+PHPUnit job was masking **347 real test failures** (Unit: 185, Feature: 162)
+on run `42838657891`.
+
+The mass failures traced to one env gap: CI copies `.env.example`, whose
+`APP_ENCRYPTION_SALT` is empty, while local `.env` has a real salt.
+`EncryptionService` fail-closes on a missing salt → every decrypted-model
+read threw `EncryptionConfigurationException` → 500s/redirects everywhere.
+
+### Files Changed
+- `.github/workflows/ci.yml` - `defaults.run.shell: bash -eo pipefail {0}`:
+  every `run` step now propagates pipeline exit codes. **Expect CI to go
+  red if any real failure survives — that is the point.**
+- `phpunit.xml` - deterministic `APP_ENCRYPTION_SALT` (64-hex test value,
+  `force="true"`, same pattern as the committed test `APP_KEY`) — test env
+  no longer inherits salt from the developer's `.env`.
+- `app/Services/Reporting/Generators/Msb2ReportGenerator.php` - **real
+  bug the masked failure was reporting**: `computeData()` derived
+  `Opening_Position` as `closing(units) - net_flow(MYR)` — dimensional
+  mix of currency units and MYR amounts. Now requests `quantity` as the
+  amount column and derives `netFlow` from `buy_amount`/`sell_amount`
+  (units), while `*_Volume_MYR` outputs keep MYR sums. Fixes
+  `ReportingServiceTest` (4850 vs 4500).
+- `tests/Feature/PerformanceTrackingMiddlewareTest.php` - strict
+  `shouldReceive('info')->once()` died on any unrelated log call in the
+  request pipeline before the middleware's own `Log::info` fired (0
+  invocations). Now `Log::spy()` + `shouldHaveReceived` assertions.
+- `tests/Http/Simulation/WaveA/Steps/CounterLifecycleSteps.php` - A13
+  travelled +31min, which near midnight rolls `session_date` into the next
+  day → `whereDate` finds no session → 409. Now backdates `opened_at`
+  deterministically instead of moving the clock.
+
+### Notes
+- `tests/Unit/CompiledAssetsTest` passes in CI (assets built in-job);
+  locally it only passes after a fresh `npm run build`.
+
+---
+
+## [2026-11-10] - Coverage wave: reporting, API v1, jobs, web flows, ops commands
+
+### Files Added
+- `tests/Feature/Reporting/ReportGeneratorsTest.php` - golden-output tests
+  for MSB2/LMCA/QLVR/Position/Trial-Balance generators: MYR aggregation,
+  threshold filtering, monthly breakdowns, utilization/exposure math, CSV
+  headers, and the license-number guard. Numeric assertions use float
+  comparison where `SUM(DECIMAL)` scale differs between sqlite and MySQL.
+- `tests/Feature/Reporting/ReportCommandsTest.php` - `report:msb2|lmca|qlvr|
+  position-limit|trial-balance|eod` smoke tests: exit code, output, CSV/JSON
+  artifact, `reports_generated` row. `seedSystemUser()` points
+  `cems.system_user_id` at a real user for the `generated_by` FK.
+- `tests/Feature/Api/V1/RatesRiskComplianceApiTest.php` - 17 tests across
+  `/api/v1/rates` (index, summary, dates, show, history, check, validate +
+  teller 403), `/api/v1/risk` (history, recalculate, unlock + teller 403),
+  `/api/v1/compliance` (alert show, dashboard, EDD show/reject, reason
+  validation).
+- `tests/Feature/Jobs/ComplianceJobsTest.php` - `LowStockAlertJob` alert/no-
+  alert paths, `ComputeBehavioralBaselineJob` baseline math + version-bump
+  upsert, `RunComplianceMonitorJob` engine delegation.
+- `tests/Feature/Customers/CustomerFreezeAndKycTest.php` - customer
+  freeze/unfreeze (incl. reason validation + teller 403), KYC document
+  verify/reject incl. the 409 already-dispositioned path.
+- `tests/Feature/Commands/AuditAndRevaluationCommandsTest.php` -
+  `audit:verify` empty/valid/broken chain + `--limit` forwarding;
+  `revaluation:run` month-end gate, `--force` happy path, failure exit 1.
+
+### Notes
+- Report command tests call `Artisan::call` + `Artisan::output()` instead of
+  `PendingCommand` - the mocked OutputStyle path silently skipped
+  `createReportRecord`'s row write under test (exit 0, no row); direct calls
+  are also type-clean for phpstan's `PendingCommand|int` union.
+- Command tests mock `RevaluationService`/`ExportService`/
+  `RevaluationNotificationService` - the contract under test is the
+  command's gating/exit-code/reporting behavior, not the engine.
+
+---
+
 ## [2026-11-10] - Concurrency sweep part 2: unique-race catch-and-re-read + import status claim
 
 ### Files Changed

@@ -2,6 +2,8 @@
 
 namespace Tests\Http\Simulation\WaveA\Steps;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * CounterLifecycleSteps — Wave A step A13.
  *
@@ -16,21 +18,22 @@ trait CounterLifecycleSteps
      * A13 — emergency close via the API surface.
      *
      * The service rejects sessions younger than 30 minutes
-     * (EmergencyCloseSessionTooNewException), so the test clock travels
-     * forward before closing and back afterwards.
+     * (EmergencyCloseSessionTooNewException). The clock is NOT travelled:
+     * +31 minutes near midnight rolls session_date into the next day and the
+     * whereDate lookup then reports "no active session" — a flake, not a
+     * real outcome. Backdating opened_at satisfies the age guard instead.
      */
     protected function itEmergencyClosesCounter(): void
     {
-        $this->travel(31)->minutes();
+        DB::table('counter_sessions')
+            ->where('counter_id', $this->state->counterId)
+            ->where('status', 'open')
+            ->update(['opened_at' => now()->subMinutes(45)]);
 
-        try {
-            $api = $this->newApiClient($this->tokenFor('teller'));
-            $resp = $api->post('/counters/'.$this->state->counterId.'/emergency-close', [
-                'reason' => 'Wave A emergency closure.',
-            ]);
-            $this->assertContains($resp['status'], [200, 201, 202], 'A13 API emergency close');
-        } finally {
-            $this->travelBack();
-        }
+        $api = $this->newApiClient($this->tokenFor('teller'));
+        $resp = $api->post('/counters/'.$this->state->counterId.'/emergency-close', [
+            'reason' => 'Wave A emergency closure.',
+        ]);
+        $this->assertContains($resp['status'], [200, 201, 202], 'A13 API emergency close');
     }
 }

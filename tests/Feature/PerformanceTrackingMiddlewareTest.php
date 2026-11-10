@@ -26,9 +26,14 @@ class PerformanceTrackingMiddlewareTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        Log::shouldReceive('error')->zeroOrMoreTimes();
+        // A spy tolerates the rest of the request pipeline's logging; a strict
+        // shouldReceive(...)->once() mock dies on the first non-matching call
+        // and the expectation reports 0 invocations.
+        $spy = Log::spy();
 
-        Log::shouldReceive('info')
+        $this->get('/dashboard');
+
+        $spy->shouldHaveReceived('info')
             ->once()
             ->with('Request performance', Mockery::on(function ($context) {
                 return isset($context['url']) &&
@@ -36,8 +41,6 @@ class PerformanceTrackingMiddlewareTest extends TestCase
                        isset($context['duration_ms']) &&
                        isset($context['status']);
             }));
-
-        $this->get('/dashboard');
     }
 
     #[Test]
@@ -46,17 +49,19 @@ class PerformanceTrackingMiddlewareTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        Log::shouldReceive('error')->zeroOrMoreTimes();
-
-        Log::shouldReceive('info')
-            ->once()
-            ->with('Request performance', Mockery::any());
-
         $thresholdService = Mockery::mock(ThresholdService::class);
         $thresholdService->shouldReceive('getResponseTimeWarning')->andReturn('0.001');
         $this->app->instance(ThresholdService::class, $thresholdService);
 
-        Log::shouldReceive('warning')
+        $spy = Log::spy();
+
+        $this->get('/dashboard');
+
+        $spy->shouldHaveReceived('info')
+            ->once()
+            ->with('Request performance', Mockery::any());
+
+        $spy->shouldHaveReceived('warning')
             ->once()
             ->with('Slow endpoint detected', Mockery::on(function ($context) {
                 return isset($context['url']) &&
@@ -64,7 +69,5 @@ class PerformanceTrackingMiddlewareTest extends TestCase
                        isset($context['duration_ms']) &&
                        isset($context['threshold_ms']);
             }));
-
-        $this->get('/dashboard');
     }
 }

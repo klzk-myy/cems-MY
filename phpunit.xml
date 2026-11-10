@@ -58,6 +58,11 @@
         <env name="BACKUP_NOTIFY_EMAIL" value="backups@example.com" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
         <env name="ALLOW_DERIVED_ENCRYPTION_SALT" value="false" force="true"/>
+        <!-- Fixed test-only salt for throwaway test databases (the committed
+             test APP_KEY above is already the same pattern). Without this,
+             CI's fresh .env leaves APP_ENCRYPTION_SALT empty and
+             EncryptionService throws on every decrypted-model read. -->
+        <env name="APP_ENCRYPTION_SALT" value="46b909242e75498148c00ebbabd26c462ad2244e9f57f1e04bd057d970edd01b" force="true"/>
         <env name="SECURITY_IP_BLOCKING_ENABLED" value="false" force="true"/>
         <!-- .env disables throttle middleware for dev convenience; the suite
              asserts 429 behavior, so force it on (tests that need it off set

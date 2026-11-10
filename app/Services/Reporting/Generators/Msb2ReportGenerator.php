@@ -98,7 +98,9 @@ class Msb2ReportGenerator
 
         $summary = $query->buySellSummary(
             $query->completed()->forDateRange($date, $date)->select('currency_code')->orderBy('currency_code'),
-            'currency_code'
+            'currency_code',
+            'amount_myr',
+            'quantity'
         )->keyBy('currency_code');
 
         $currencies = Currency::where('is_active', true)->get();
@@ -138,7 +140,14 @@ class Msb2ReportGenerator
             $buyVolume = $row ? (string) $row->buy_volume : '0';
             /** @var numeric-string $sellVolume */
             $sellVolume = $row ? (string) $row->sell_volume : '0';
-            $netFlow = bcsub($buyVolume, $sellVolume, 4);
+            // buy_amount/sell_amount carry quantity-denominated sums (see the
+            // amountColumn arg above): the opening-position derivation is in
+            // currency units, while buy/sell volume outputs stay MYR.
+            /** @var numeric-string $buyUnits */
+            $buyUnits = $row ? (string) $row->buy_amount : '0';
+            /** @var numeric-string $sellUnits */
+            $sellUnits = $row ? (string) $row->sell_amount : '0';
+            $netFlow = bcsub($buyUnits, $sellUnits, 4);
             $openingPosition = bcsub($closingPosition, $netFlow, 4);
 
             $rows[] = [
