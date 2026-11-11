@@ -29,6 +29,8 @@ class AnalyticsSnapshotBuilderTest extends TestCase
     /**
      * Create a transaction with controlled attributes. created_at is not
      * fillable, so it is stamped after creation via forceFill.
+     *
+     * @param  array<string, mixed>  $overrides
      */
     protected function makeTransaction(array $overrides = []): Transaction
     {
@@ -51,9 +53,13 @@ class AnalyticsSnapshotBuilderTest extends TestCase
         return $transaction;
     }
 
+    /**
+     * @param  numeric-string  $expected
+     */
     protected function moneyEqual(string $expected, mixed $actual): void
     {
-        $this->assertSame(0, bccomp((string) $actual, $expected, 4), "Expected {$expected}, got {$actual}");
+        $this->assertTrue(is_numeric($actual), "Expected {$expected}, got non-numeric value");
+        $this->assertSame(0, bccomp($expected, (string) $actual, 4), "Expected {$expected}, got {$actual}");
     }
 
     #[Test]
@@ -310,7 +316,7 @@ class AnalyticsSnapshotBuilderTest extends TestCase
             'branch_id' => $branch->id, 'created_at' => '2026-03-03 10:00:00',
         ]);
 
-        $this->artisan('analytics:rebuild', ['--from' => '2026-03-01', '--to' => '2026-03-05'])
+        $this->artisanCommand('analytics:rebuild', ['--from' => '2026-03-01', '--to' => '2026-03-05'])
             ->assertSuccessful();
 
         $this->assertSame(1, DB::table('analytics_daily_branch')
