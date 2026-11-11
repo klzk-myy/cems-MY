@@ -555,6 +555,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/bi-alerts.log'));
+
+        // Currency demand forecasts - next-7-day predictions per
+        // branch×currency, generated after the nightly rollup rebuild.
+        $schedule->command('bi:forecast')
+            ->dailyAt('02:55')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/bi-forecast.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers

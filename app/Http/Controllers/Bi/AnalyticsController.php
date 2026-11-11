@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Services\Bi\AnalyticsSnapshotBuilder;
+use App\Services\Bi\DemandForecaster;
 use App\Services\Bi\KpiService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -29,6 +31,7 @@ class AnalyticsController extends Controller
     public function __construct(
         protected KpiService $kpiService,
         protected AnalyticsSnapshotBuilder $snapshotBuilder,
+        protected DemandForecaster $forecaster,
     ) {}
 
     /**
@@ -204,6 +207,72 @@ class AnalyticsController extends Controller
                         $trend['active'], $trend['new']
                     ), 'backgroundColor' => '#3b82f6'],
                     ['label' => 'New', 'data' => $trend['new'], 'backgroundColor' => '#22c55e'],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Currency demand forecast: historical demand vs the seasonal-blend
+     * predictions generated nightly into analytics_daily_forecast.
+     */
+    public function forecast(Request $request): View
+    {
+        $this->requirePermission(Permission::ViewBiDashboard);
+
+        $user = auth()->user();
+        $branchId = $this->resolveReportBranchId($user, $request);
+
+        $currencyOptions = Currency::query()
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->pluck('code', 'code');
+
+        $selected = strtoupper((string) $request->input('currency', ''));
+        if (! $currencyOptions->has($selected)) {
+            $selected = (string) ($currencyOptions->keys()->first() ?? '');
+        }
+
+        $historyDays = 28;
+        $history = $selected === ''
+            ? ['labels' => [], 'buy' => [], 'sell' => []]
+            : $this->forecaster->history($branchId, $selected, today(), $historyDays);
+
+        $forecasts = $selected === ''
+            ? collect()
+            : $this->forecaster->forecastFor($branchId, $selected, Carbon::tomorrow(), 7);
+
+        // Merge history + forecast onto one label axis; Chart.js renders
+        // nulls as gaps so the dashed forecast line starts where the
+        // solid history ends.
+        $labels = array_merge($history['labels'], $forecasts->pluck('date')->map(fn ($d) => $d->toDateString())->all());
+        $forecastPad = array_fill(0, count($history['labels']), null);
+        $forecastBuy = array_merge($forecastPad, $forecasts->pluck('predicted_buy_qty')->all());
+        $forecastSell = array_merge($forecastPad, $forecasts->pluck('predicted_sell_qty')->all());
+        $historyPad = array_fill(0, $forecasts->count(), null);
+
+        // All-currency demand summary for the horizon — the stocking table.
+        $summary = $this->forecaster->forecastSummary($branchId, Carbon::tomorrow(), 7);
+
+        return view('bi.forecast', [
+            'from' => Carbon::tomorrow()->toDateString(),
+            'to' => Carbon::tomorrow()->addDays(6)->toDateString(),
+            'branchId' => $branchId,
+            'canSeeAllBranches' => $user->role->canManageAllBranches(),
+            'branches' => $user->role->canManageAllBranches()
+                ? Branch::query()->orderBy('name')->get(['id', 'name'])
+                : collect(),
+            'selected' => $selected,
+            'currencyOptions' => $currencyOptions,
+            'forecasts' => $forecasts,
+            'summary' => $summary,
+            'chart' => [
+                'labels' => $labels,
+                'datasets' => [
+                    ['label' => 'Buy qty (actual)', 'data' => array_merge($history['buy'], $historyPad), 'borderColor' => '#3b82f6', 'backgroundColor' => 'rgba(59, 130, 246, 0.15)', 'fill' => true, 'tension' => 0.3],
+                    ['label' => 'Sell qty (actual)', 'data' => array_merge($history['sell'], $historyPad), 'borderColor' => '#22c55e', 'backgroundColor' => 'rgba(34, 197, 94, 0.15)', 'fill' => true, 'tension' => 0.3],
+                    ['label' => 'Buy qty (forecast)', 'data' => $forecastBuy, 'borderColor' => '#3b82f6', 'borderDash' => [6, 4], 'pointRadius' => 3, 'tension' => 0.3],
+                    ['label' => 'Sell qty (forecast)', 'data' => $forecastSell, 'borderColor' => '#d4a843', 'borderDash' => [6, 4], 'pointRadius' => 3, 'tension' => 0.3],
                 ],
             ],
         ]);

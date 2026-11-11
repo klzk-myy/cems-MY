@@ -191,6 +191,7 @@ class SchemaSeeder extends Seeder
             'analytics_daily_currency',
             'analytics_daily_teller',
             'analytics_monthly_customer',
+            'analytics_daily_forecast',
             'bi_alert_rules',
         ];
 
@@ -2286,6 +2287,36 @@ class SchemaSeeder extends Seeder
             $table->index('branch_id', 'bi_alert_rules_branch_id_index');
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+        });
+
+        // Currency demand forecasts — one row per forecast target day per
+        // branch×currency, produced nightly by DemandForecaster from the
+        // analytics_daily_currency rollups. branch_id NULL rows hold the
+        // consolidated all-branch prediction (sum of branch forecasts —
+        // means are linear, so the sum equals forecasting the total).
+        // Rebuilt idempotently: delete-then-insert per forecast date.
+        Schema::create('analytics_daily_forecast', function (Blueprint $table) {
+            $table->id();
+            $table->date('date');
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
+            $table->string('currency_code', 8);
+            $table->decimal('predicted_buy_qty', 18, 4)->default(0);
+            $table->decimal('predicted_sell_qty', 18, 4)->default(0);
+            $table->decimal('predicted_buy_volume_myr', 18, 4)->default(0);
+            $table->decimal('predicted_sell_volume_myr', 18, 4)->default(0);
+            $table->string('method', 32)->default('seasonal_blend');
+            // Days of rollup history used to produce the prediction —
+            // explainability: a forecast built on 4 days of history reads
+            // differently from one built on 28.
+            $table->unsignedSmallInteger('sample_days')->default(0);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['date', 'branch_key', 'currency_code'], 'analytics_daily_forecast_date_branch_currency_unique');
+            $table->index('date', 'analytics_daily_forecast_date_index');
+            $table->index('branch_id', 'analytics_daily_forecast_branch_id_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
 
     }
