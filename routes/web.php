@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SanctionSourceController;
 use App\Http\Controllers\Admin\ThresholdController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Bi\AnalyticsController as BiAnalyticsController;
 use App\Http\Controllers\Bi\DashboardController as BiDashboardController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\BranchController;
@@ -540,6 +541,10 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
     // dashboard; gated by its own permission.
     Route::middleware('role:view_bi_dashboard')->prefix('bi')->name('bi.')->group(function () {
         Route::get('/', [BiDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/branches', [BiAnalyticsController::class, 'branches'])->name('branches');
+        Route::get('/currencies', [BiAnalyticsController::class, 'currencies'])->name('currencies');
+        Route::get('/operations', [BiAnalyticsController::class, 'operations'])->name('operations');
+        Route::get('/customers', [BiAnalyticsController::class, 'customers'])->name('customers');
     });
 
     Route::middleware(['role:manage_users', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {

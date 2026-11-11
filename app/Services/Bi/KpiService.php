@@ -4,9 +4,12 @@ namespace App\Services\Bi;
 
 use App\Models\Bi\AnalyticsDailyBranch;
 use App\Models\Bi\AnalyticsDailyCurrency;
+use App\Models\Bi\AnalyticsDailyTeller;
+use App\Models\Bi\AnalyticsMonthlyCustomer;
 use App\Models\Transaction;
 use App\Services\System\MathService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Computes executive-dashboard KPIs from the analytics_* rollup tables
@@ -176,9 +179,10 @@ class KpiService
     /**
      * Per-branch comparison — only for viewers who can see all branches.
      * Margin comes from the currency rollup (the only table holding it),
-     * grouped per branch and merged in PHP.
+     * and period-unique customers come from transactions because summing
+     * daily uniques would double-count repeat visitors.
      *
-     * @return array<int, array{branch_id: int|null, branch_name: string, volume_myr: string, realized_margin_myr: string, tx_count: int}>
+     * @return array<int, array{branch_id: int|null, branch_name: string, tx_count: int, completed_count: int, cancelled_count: int, volume_myr: string, sell_volume_myr: string, realized_margin_myr: string, margin_pct: string, avg_ticket_myr: string, unique_customers: int}>
      */
     public function branchComparison(Carbon $from, Carbon $to): array
     {
@@ -190,25 +194,294 @@ class KpiService
             ->toBase()
             ->pluck('margin', 'branch_id');
 
+        $customers = Transaction::query()
+            ->completed()
+            ->forDateRange($from->toDateString(), $to->toDateString())
+            ->groupBy('branch_id')
+            ->selectRaw('branch_id')
+            ->selectRaw('COUNT(DISTINCT customer_id) as customers')
+            ->toBase()
+            ->pluck('customers', 'branch_id');
+
         return AnalyticsDailyBranch::query()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->leftJoin('branches', 'branches.id', '=', 'analytics_daily_branch.branch_id')
             ->groupBy('analytics_daily_branch.branch_id', 'branches.name')
             ->selectRaw('analytics_daily_branch.branch_id')
             ->selectRaw('branches.name as branch_name')
-            ->selectRaw('SUM(analytics_daily_branch.buy_volume_myr + analytics_daily_branch.sell_volume_myr) as volume')
             ->selectRaw('SUM(analytics_daily_branch.tx_count) as tx_count')
+            ->selectRaw('SUM(analytics_daily_branch.completed_count) as completed_count')
+            ->selectRaw('SUM(analytics_daily_branch.cancelled_count) as cancelled_count')
+            ->selectRaw('SUM(analytics_daily_branch.buy_volume_myr + analytics_daily_branch.sell_volume_myr) as volume')
+            ->selectRaw('SUM(analytics_daily_branch.sell_volume_myr) as sell_volume')
+            ->orderByDesc('volume')
+            ->toBase()
+            ->get()
+            ->map(function ($row) use ($margins, $customers) {
+                $volume = (string) $row->volume;
+                $sell = (string) $row->sell_volume;
+                $margin = (string) ($margins[$row->branch_id] ?? '0');
+
+                return [
+                    'branch_id' => $row->branch_id,
+                    'branch_name' => $row->branch_name ?? 'Unassigned',
+                    'tx_count' => (int) $row->tx_count,
+                    'completed_count' => (int) $row->completed_count,
+                    'cancelled_count' => (int) $row->cancelled_count,
+                    'volume_myr' => $volume,
+                    'sell_volume_myr' => $sell,
+                    'realized_margin_myr' => $margin,
+                    'margin_pct' => $this->mathService->multiply(
+                        $this->mathService->safeDivide($margin, $sell, 6),
+                        '100', 4
+                    ),
+                    'avg_ticket_myr' => $this->mathService->safeDivide($volume, (string) $row->completed_count, 4),
+                    'unique_customers' => (int) ($customers[$row->branch_id] ?? 0),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * Per-currency deep-dive for the currency report: quantities, volumes,
+     * realized margin and share of total period volume.
+     *
+     * @return array<int, array{currency_code: string, buy_qty: string, sell_qty: string, buy_volume_myr: string, sell_volume_myr: string, volume_myr: string, realized_margin_myr: string, share_pct: string}>
+     */
+    public function currencyBreakdown(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $rows = AnalyticsDailyCurrency::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('currency_code')
+            ->selectRaw('currency_code')
+            ->selectRaw('SUM(buy_qty) as buy_qty')
+            ->selectRaw('SUM(sell_qty) as sell_qty')
+            ->selectRaw('SUM(buy_volume_myr) as buy_volume')
+            ->selectRaw('SUM(sell_volume_myr) as sell_volume')
+            ->selectRaw('SUM(buy_volume_myr + sell_volume_myr) as volume')
+            ->selectRaw('SUM(realized_margin_myr) as margin')
+            ->orderByDesc('volume')
+            ->toBase()
+            ->get();
+
+        $total = $rows->reduce(
+            fn ($carry, $row) => $this->mathService->add($carry, (string) $row->volume),
+            '0'
+        );
+
+        return $rows->map(fn ($row) => [
+            'currency_code' => $row->currency_code,
+            'buy_qty' => (string) $row->buy_qty,
+            'sell_qty' => (string) $row->sell_qty,
+            'buy_volume_myr' => (string) $row->buy_volume,
+            'sell_volume_myr' => (string) $row->sell_volume,
+            'volume_myr' => (string) $row->volume,
+            'realized_margin_myr' => (string) $row->margin,
+            'share_pct' => $this->mathService->multiply(
+                $this->mathService->safeDivide((string) $row->volume, $total, 6),
+                '100', 2
+            ),
+        ])->all();
+    }
+
+    /**
+     * Daily series for a single currency — the deep-dive trend chart.
+     *
+     * @return array{labels: array<int, string>, buy: array<int, string>, sell: array<int, string>, margin: array<int, string>}
+     */
+    public function currencyTrend(Carbon $from, Carbon $to, ?int $branchId, string $currencyCode): array
+    {
+        $rows = AnalyticsDailyCurrency::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->where('currency_code', $currencyCode)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(buy_volume_myr) as buy_volume')
+            ->selectRaw('SUM(sell_volume_myr) as sell_volume')
+            ->selectRaw('SUM(realized_margin_myr) as margin')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $labels = $buy = $sell = $margin = [];
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $row = $rows->get($day->toDateString());
+            $labels[] = $day->format('M j');
+            $buy[] = $row->buy_volume ?? '0';
+            $sell[] = $row->sell_volume ?? '0';
+            $margin[] = $row->margin ?? '0';
+        }
+
+        return compact('labels', 'buy', 'sell', 'margin');
+    }
+
+    /**
+     * Daily operational SLA series: average approval turnaround and
+     * cancel/reject rates per day.
+     *
+     * @return array{labels: array<int, string>, avg_approval_seconds: array<int, string>, cancel_rate_pct: array<int, string>, reject_rate_pct: array<int, string>}
+     */
+    public function operationsTrend(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $rows = AnalyticsDailyBranch::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(tx_count) as tx_count')
+            ->selectRaw('SUM(cancelled_count) as cancelled')
+            ->selectRaw('SUM(rejected_count) as rejected')
+            ->selectRaw('SUM(approved_count) as approved')
+            ->selectRaw('SUM(approval_seconds_total) as approval_seconds')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $labels = $avgApproval = $cancelRate = $rejectRate = [];
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $row = $rows->get($day->toDateString());
+            $labels[] = $day->format('M j');
+            $avgApproval[] = $row === null ? '0' : $this->mathService->safeDivide(
+                (string) $row->approval_seconds, (string) $row->approved, 2
+            );
+            $cancelRate[] = $row === null ? '0' : $this->mathService->multiply(
+                $this->mathService->safeDivide((string) $row->cancelled, (string) $row->tx_count, 6), '100', 4
+            );
+            $rejectRate[] = $row === null ? '0' : $this->mathService->multiply(
+                $this->mathService->safeDivide((string) $row->rejected, (string) $row->tx_count, 6), '100', 4
+            );
+        }
+
+        return [
+            'labels' => $labels,
+            'avg_approval_seconds' => $avgApproval,
+            'cancel_rate_pct' => $cancelRate,
+            'reject_rate_pct' => $rejectRate,
+        ];
+    }
+
+    /**
+     * Per-teller productivity over the period — volume, outcomes, rate
+     * overrides, and average approval turnaround of their own work.
+     *
+     * @return array<int, array{user_id: int, teller_name: string, tx_count: int, volume_myr: string, cancelled_count: int, rejected_count: int, rate_override_count: int, avg_approval_seconds: string}>
+     */
+    public function tellerProductivity(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        return AnalyticsDailyTeller::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->leftJoin('users', 'users.id', '=', 'analytics_daily_teller.user_id')
+            ->groupBy('analytics_daily_teller.user_id', 'users.username')
+            ->selectRaw('analytics_daily_teller.user_id')
+            ->selectRaw('users.username as teller_name')
+            ->selectRaw('SUM(analytics_daily_teller.tx_count) as tx_count')
+            ->selectRaw('SUM(analytics_daily_teller.volume_myr) as volume')
+            ->selectRaw('SUM(analytics_daily_teller.cancelled_count) as cancelled')
+            ->selectRaw('SUM(analytics_daily_teller.rejected_count) as rejected')
+            ->selectRaw('SUM(analytics_daily_teller.rate_override_count) as overrides')
+            ->selectRaw('SUM(analytics_daily_teller.approved_count) as approved')
+            ->selectRaw('SUM(analytics_daily_teller.approval_seconds_total) as approval_seconds')
             ->orderByDesc('volume')
             ->toBase()
             ->get()
             ->map(fn ($row) => [
-                'branch_id' => $row->branch_id,
-                'branch_name' => $row->branch_name ?? 'Unassigned',
-                'volume_myr' => (string) $row->volume,
-                'realized_margin_myr' => (string) ($margins[$row->branch_id] ?? '0'),
+                'user_id' => (int) $row->user_id,
+                'teller_name' => $row->teller_name ?? 'Unknown',
                 'tx_count' => (int) $row->tx_count,
+                'volume_myr' => (string) $row->volume,
+                'cancelled_count' => (int) $row->cancelled,
+                'rejected_count' => (int) $row->rejected,
+                'rate_override_count' => (int) $row->overrides,
+                'avg_approval_seconds' => $this->mathService->safeDivide(
+                    (string) $row->approval_seconds, (string) $row->approved, 2
+                ),
             ])
             ->all();
+    }
+
+    /**
+     * Top customers by period volume from the monthly-customer rollup.
+     *
+     * @return array<int, array{customer_id: int, full_name: string, tx_count: int, volume_myr: string, realized_margin_myr: string, currencies_used: int}>
+     */
+    public function topCustomers(Carbon $from, Carbon $to, ?int $branchId, int $limit = 20): array
+    {
+        return AnalyticsMonthlyCustomer::query()
+            ->whereBetween('month', [$from->format('Y-m'), $to->format('Y-m')])
+            ->forBranch($branchId)
+            ->leftJoin('customers', 'customers.id', '=', 'analytics_monthly_customer.customer_id')
+            ->groupBy('analytics_monthly_customer.customer_id', 'customers.full_name')
+            ->selectRaw('analytics_monthly_customer.customer_id')
+            ->selectRaw('customers.full_name')
+            ->selectRaw('SUM(analytics_monthly_customer.tx_count) as tx_count')
+            ->selectRaw('SUM(analytics_monthly_customer.volume_myr) as volume')
+            ->selectRaw('SUM(analytics_monthly_customer.realized_margin_myr) as margin')
+            ->selectRaw('MAX(analytics_monthly_customer.currencies_used) as currencies_used')
+            ->orderByDesc('volume')
+            ->limit($limit)
+            ->toBase()
+            ->get()
+            ->map(fn ($row) => [
+                'customer_id' => (int) $row->customer_id,
+                'full_name' => $row->full_name ?? 'Unknown',
+                'tx_count' => (int) $row->tx_count,
+                'volume_myr' => (string) $row->volume,
+                'realized_margin_myr' => (string) $row->margin,
+                'currencies_used' => (int) $row->currencies_used,
+            ])
+            ->all();
+    }
+
+    /**
+     * Monthly active-customer counts split into new vs returning. A
+     * customer counts as "new" in the month of their first-ever rollup
+     * row; months in the period with no activity are zero-filled.
+     *
+     * @return array{labels: array<int, string>, active: array<int, int>, new: array<int, int>}
+     */
+    public function activeCustomersTrend(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $monthFrom = $from->format('Y-m');
+        $monthTo = $to->format('Y-m');
+
+        $active = AnalyticsMonthlyCustomer::query()
+            ->whereBetween('month', [$monthFrom, $monthTo])
+            ->forBranch($branchId)
+            ->groupBy('month')
+            ->selectRaw('month')
+            ->selectRaw('COUNT(DISTINCT customer_id) as customers')
+            ->toBase()
+            ->pluck('customers', 'month');
+
+        // First month each customer ever appears — over all history, not
+        // just the selected window, so a customer who started last year
+        // is not mislabelled "new" in this period.
+        $firstMonths = DB::table('analytics_monthly_customer')
+            ->select('customer_id', DB::raw('MIN(month) as first_month'))
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->groupBy('customer_id');
+
+        $new = DB::query()
+            ->fromSub($firstMonths, 'fm')
+            ->selectRaw('first_month as month, COUNT(*) as new_customers')
+            ->whereBetween('first_month', [$monthFrom, $monthTo])
+            ->groupBy('first_month')
+            ->pluck('new_customers', 'month');
+
+        $labels = $activeSeries = $newSeries = [];
+        for ($month = Carbon::parse($monthFrom.'-01'); $month->format('Y-m') <= $monthTo; $month->addMonth()) {
+            $key = $month->format('Y-m');
+            $labels[] = $month->format('M Y');
+            $activeSeries[] = (int) ($active[$key] ?? 0);
+            $newSeries[] = (int) ($new[$key] ?? 0);
+        }
+
+        return ['labels' => $labels, 'active' => $activeSeries, 'new' => $newSeries];
     }
 
     /**

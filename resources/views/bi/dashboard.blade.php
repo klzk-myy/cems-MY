@@ -5,6 +5,8 @@
             description="Executive KPIs, volume trends, currency mix and margin analytics"
         />
 
+        @include('bi.partials.nav')
+
         {{-- Filters: same start_date/end_date convention as the report
              pages. The branch selector only renders for viewers who can
              see all branches; scoped viewers are pinned server-side. --}}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Bi;
 
 use App\Enums\Permission;
 use App\Http\Controllers\Concerns\RequiresPermission;
+use App\Http\Controllers\Concerns\ResolvesBiFilters;
 use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -11,7 +12,6 @@ use App\Services\Bi\AnalyticsSnapshotBuilder;
 use App\Services\Bi\KpiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -24,12 +24,8 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     use RequiresPermission;
+    use ResolvesBiFilters;
     use ResolvesBranchScope;
-
-    /**
-     * Debounce window for the daily-rollup refresh triggered by page loads.
-     */
-    protected const REFRESH_DEBOUNCE_SECONDS = 300;
 
     public function __construct(
         protected KpiService $kpiService,
@@ -40,9 +36,9 @@ class DashboardController extends Controller
     {
         $this->requirePermission(Permission::ViewBiDashboard);
 
-        $this->refreshTodaysRollups();
+        $this->refreshTodaysRollups($this->snapshotBuilder);
 
-        [$from, $to] = $this->resolvePeriod($request);
+        [$from, $to] = $this->resolveBiPeriod($request);
 
         $user = auth()->user();
         $canSeeAllBranches = $user->role->canManageAllBranches();
@@ -86,51 +82,6 @@ class DashboardController extends Controller
                 : $this->statusMixChart($from, $to, $branchId),
             'lastComputedAt' => $this->kpiService->lastComputedAt($branchId),
         ]);
-    }
-
-    /**
-     * Rebuild today's daily rollups at most once per debounce window.
-     * Cache::add wins the race — only the first request inside the window
-     * pays for the three aggregate queries.
-     */
-    protected function refreshTodaysRollups(): void
-    {
-        if (Cache::add('bi:rollup-refresh', true, self::REFRESH_DEBOUNCE_SECONDS)) {
-            $this->snapshotBuilder->refreshToday();
-        }
-    }
-
-    /**
-     * Normalize the requested [from, to] period. Unparseable input falls
-     * back to the default trailing-30-days window; a reversed range is
-     * swapped (same lenient convention as the report pages — a silent
-     * empty whereBetween reads as "no activity").
-     *
-     * @return array{0: Carbon, 1: Carbon}
-     */
-    protected function resolvePeriod(Request $request): array
-    {
-        $from = $this->parseDate($request->input('start_date')) ?? today()->subDays(29);
-        $to = $this->parseDate($request->input('end_date')) ?? today();
-
-        if ($from->greaterThan($to)) {
-            return [$to, $from];
-        }
-
-        return [$from, $to];
-    }
-
-    protected function parseDate(mixed $input): ?Carbon
-    {
-        if (! is_string($input) || $input === '') {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($input)->startOfDay();
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     /**

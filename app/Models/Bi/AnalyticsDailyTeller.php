@@ -5,7 +5,9 @@ namespace App\Models\Bi;
 use App\Casts\MoneyCast;
 use App\Models\BaseModel;
 use App\Models\Branch;
+use App\Models\Traits\BelongsToBranch;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -60,19 +62,22 @@ class AnalyticsDailyTeller extends BaseModel
         ];
     }
 
+    use BelongsToBranch;
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForBranch(Builder $query, ?int $branchId): Builder
+    {
+        return $query->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
+    }
+
     /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * @return BelongsTo<Branch, $this>
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 }
