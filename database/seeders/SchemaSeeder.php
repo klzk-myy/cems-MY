@@ -187,6 +187,10 @@ class SchemaSeeder extends Seeder
             'transaction_errors',
             'transaction_imports',
             'user_notification_preferences',
+            'analytics_daily_branch',
+            'analytics_daily_currency',
+            'analytics_daily_teller',
+            'analytics_monthly_customer',
         ];
 
         Schema::disableForeignKeyConstraints();
@@ -2153,6 +2157,111 @@ class SchemaSeeder extends Seeder
             $table->unique(['role', 'permission'], 'unique_role_permission');
             $table->index('role', 'idx_role_permissions_role');
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+        });
+
+        // ── BI analytics rollups ──────────────────────────────────────
+        // Derived data, rebuilt by AnalyticsSnapshotBuilder (nightly job /
+        // analytics:rebuild). Status counts reflect the *current* status of
+        // transactions created on that date — rebuilds refresh them, so a
+        // later cancellation moves the number. Volumes and unique_customers
+        // count completed transactions only (money that actually moved).
+        // branch_key mirrors the currency_positions idiom: MySQL treats
+        // NULLs as distinct under unique indexes, so the generated column
+        // is what makes (date, branch) uniqueness enforceable.
+
+        Schema::create('analytics_daily_branch', function (Blueprint $table) {
+            $table->id();
+            $table->date('date');
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
+            $table->integer('tx_count')->default(0);
+            $table->integer('completed_count')->default(0);
+            $table->integer('rejected_count')->default(0);
+            $table->integer('cancelled_count')->default(0);
+            // Rows with approved_at set; pair with approval_seconds_total
+            // for the approval-SLA KPI (avg = total / count).
+            $table->integer('approved_count')->default(0);
+            $table->decimal('approval_seconds_total', 20, 2)->default(0);
+            $table->integer('rate_override_count')->default(0);
+            $table->decimal('buy_volume_myr', 18, 4)->default(0);
+            $table->decimal('sell_volume_myr', 18, 4)->default(0);
+            $table->integer('unique_customers')->default(0);
+            $table->timestamp('computed_at')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['date', 'branch_key'], 'analytics_daily_branch_date_branch_unique');
+            $table->index('branch_id', 'analytics_daily_branch_branch_id_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+        });
+
+        Schema::create('analytics_daily_currency', function (Blueprint $table) {
+            $table->id();
+            $table->date('date');
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
+            $table->string('currency_code', 8);
+            $table->decimal('buy_qty', 18, 4)->default(0);
+            $table->decimal('sell_qty', 18, 4)->default(0);
+            $table->decimal('buy_volume_myr', 18, 4)->default(0);
+            $table->decimal('sell_volume_myr', 18, 4)->default(0);
+            // Sum of (rate - prev_average_cost) * quantity over completed
+            // sells. Uses the position-cost snapshot captured on the
+            // transaction at mutation time — never the current position
+            // state. Sells without a snapshot contribute nothing.
+            $table->decimal('realized_margin_myr', 18, 4)->default(0);
+            $table->timestamp('computed_at')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['date', 'branch_key', 'currency_code'], 'analytics_daily_currency_date_branch_currency_unique');
+            $table->index('branch_id', 'analytics_daily_currency_branch_id_index');
+            $table->index('currency_code', 'analytics_daily_currency_currency_code_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
+        });
+
+        Schema::create('analytics_daily_teller', function (Blueprint $table) {
+            $table->id();
+            $table->date('date');
+            $table->unsignedBigInteger('user_id');
+            // MAX(branch_id) of the day's transactions — tellers are
+            // branch-bound, so this is their home branch in practice.
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->integer('tx_count')->default(0);
+            $table->decimal('volume_myr', 18, 4)->default(0);
+            $table->integer('cancelled_count')->default(0);
+            $table->integer('rejected_count')->default(0);
+            $table->integer('rate_override_count')->default(0);
+            // Turnaround of the teller's own transactions (created →
+            // approved), not approvals they performed.
+            $table->integer('approved_count')->default(0);
+            $table->decimal('approval_seconds_total', 20, 2)->default(0);
+            $table->timestamp('computed_at')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['date', 'user_id'], 'analytics_daily_teller_date_user_unique');
+            $table->index('branch_id', 'analytics_daily_teller_branch_id_index');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+        });
+
+        Schema::create('analytics_monthly_customer', function (Blueprint $table) {
+            $table->id();
+            $table->string('month', 7);
+            $table->unsignedBigInteger('customer_id');
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
+            $table->integer('tx_count')->default(0);
+            $table->decimal('volume_myr', 18, 4)->default(0);
+            $table->decimal('realized_margin_myr', 18, 4)->default(0);
+            $table->integer('currencies_used')->default(0);
+            $table->timestamp('computed_at')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['month', 'customer_id', 'branch_key'], 'analytics_monthly_customer_month_customer_branch_unique');
+            $table->index('month', 'analytics_monthly_customer_month_index');
+            $table->index('branch_id', 'analytics_monthly_customer_branch_id_index');
+            $table->foreign('customer_id')->references('id')->on('customers')->cascadeOnDelete();
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
         });
 
     }

@@ -28,4 +28,18 @@ class DbDate
             ? "strftime('%Y-%m', {$wrapped})"
             : "DATE_FORMAT({$wrapped}, '%Y-%m')";
     }
+
+    /**
+     * Signed whole-second difference (endColumn − startColumn), driver-aware.
+     */
+    public static function secondsBetween(string $startColumn, string $endColumn): string
+    {
+        $grammar = DB::connection()->getQueryGrammar();
+        $start = $grammar->wrap($startColumn);
+        $end = $grammar->wrap($endColumn);
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "(strftime('%s', {$end}) - strftime('%s', {$start}))"
+            : "TIMESTAMPDIFF(SECOND, {$start}, {$end})";
+    }
 }

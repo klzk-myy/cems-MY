@@ -5,6 +5,33 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-11] - BI analytics rollup layer (BI-PLAN.md phase 1)
+
+Foundation for the BI initiative (`BI-PLAN.md`): pre-aggregated snapshot
+tables so dashboards/reports read rollups instead of scanning
+transactions.
+
+- Four rollup tables added to `SchemaSeeder` (drop list + `createSchema`):
+  `analytics_daily_branch`, `analytics_daily_currency`,
+  `analytics_daily_teller`, `analytics_monthly_customer`. `branch_key`
+  generated columns reuse the `currency_positions` idiom so
+  (date, branch) uniqueness survives NULL `branch_id`s on MySQL.
+- `App\Services\Bi\AnalyticsSnapshotBuilder` — delete-then-insert per
+  day/month inside a transaction; idempotent and self-healing on late
+  cancellations/reversals. Margin uses the transaction's own
+  `prev_average_cost` snapshot, never current position state.
+- `DbDate::secondsBetween()` — driver-aware whole-second diff
+  (TIMESTAMPDIFF vs strftime) for approval-SLA aggregates.
+- `BuildAnalyticsSnapshots` job (`ShouldBeUnique`, 7-day rolling window
+  default) scheduled nightly at 02:20; `analytics:rebuild` artisan
+  command for backfills (`--from/--to/--days/--queue`).
+- `App\Models\Bi\*` rollup models with `MoneyCast` decimal strings.
+- `tests/Unit/AnalyticsSnapshotBuilderTest.php` — 7 tests: per-table
+  aggregates, margin math, idempotent refresh, rolling-window job, and
+  the command.
+
+---
+
 ## [2026-11-10] - UI/UX overhaul: responsive shell, user menu, a11y, confirm dialog
 
 Implements every item from the UI/UX audit. 96 Blade views touched, 2 new

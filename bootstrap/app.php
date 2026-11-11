@@ -16,6 +16,7 @@ use App\Http\Middleware\SessionTimeout;
 use App\Http\Middleware\TestDashboard;
 use App\Http\Middleware\ThrottleRequests;
 use App\Jobs\Accounting\ReconcileDeferredAccountingJob;
+use App\Jobs\BuildAnalyticsSnapshots;
 use App\Jobs\Compliance\LowStockAlertJob;
 use App\Jobs\Compliance\RunComplianceMonitorJob;
 use App\Jobs\ImportSanctionsJob;
@@ -537,6 +538,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/thresholds-check-overrides.log'));
+
+        // BI analytics rollups - rebuild the rolling window nightly so
+        // dashboards read pre-aggregated snapshots instead of scanning
+        // transactions. The window absorbs late cancellations/reversals.
+        $schedule->job(new BuildAnalyticsSnapshots)
+            ->dailyAt('02:20')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/analytics-snapshots.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers
