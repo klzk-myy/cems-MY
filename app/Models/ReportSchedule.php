@@ -89,6 +89,11 @@ class ReportSchedule extends BaseModel
             ReportType::Lmca->value => ReportType::Lmca->label(),
             ReportType::Qlvr->value => ReportType::Qlvr->label(),
             ReportType::Plr->value => ReportType::Plr->label(),
+            ReportType::BiDailyDigest->value => ReportType::BiDailyDigest->label(),
+            ReportType::BiBranchPerformance->value => ReportType::BiBranchPerformance->label(),
+            ReportType::BiCurrencyBreakdown->value => ReportType::BiCurrencyBreakdown->label(),
+            ReportType::BiTellerProductivity->value => ReportType::BiTellerProductivity->label(),
+            ReportType::BiTopCustomers->value => ReportType::BiTopCustomers->label(),
         ];
     }
 

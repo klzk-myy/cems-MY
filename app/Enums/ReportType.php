@@ -12,6 +12,11 @@ enum ReportType: string
     case MonthEnd = 'month_end';
     case ProfitLoss = 'profit_loss';
     case BalanceSheet = 'balance_sheet';
+    case BiDailyDigest = 'bi_daily_digest';
+    case BiBranchPerformance = 'bi_branch_performance';
+    case BiCurrencyBreakdown = 'bi_currency_breakdown';
+    case BiTellerProductivity = 'bi_teller_productivity';
+    case BiTopCustomers = 'bi_top_customers';
 
     public function label(): string
     {
@@ -24,6 +29,11 @@ enum ReportType: string
             self::MonthEnd => 'Month End',
             self::ProfitLoss => 'Profit & Loss',
             self::BalanceSheet => 'Balance Sheet',
+            self::BiDailyDigest => 'BI Daily Digest',
+            self::BiBranchPerformance => 'BI Branch Performance',
+            self::BiCurrencyBreakdown => 'BI Currency Breakdown',
+            self::BiTellerProductivity => 'BI Teller Productivity',
+            self::BiTopCustomers => 'BI Top Customers',
         };
     }
 
@@ -42,6 +52,11 @@ enum ReportType: string
             self::MonthEnd => 'MONTH_END',
             self::ProfitLoss => 'PL',
             self::BalanceSheet => 'BalanceSheet',
+            self::BiDailyDigest => 'BI_Digest',
+            self::BiBranchPerformance => 'BI_Branches',
+            self::BiCurrencyBreakdown => 'BI_Currencies',
+            self::BiTellerProductivity => 'BI_Tellers',
+            self::BiTopCustomers => 'BI_Customers',
         };
     }
 

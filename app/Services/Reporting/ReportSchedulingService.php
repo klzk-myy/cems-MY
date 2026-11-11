@@ -120,7 +120,7 @@ class ReportSchedulingService
         ]);
 
         try {
-            $filePath = $this->reportingService->generateReport($type->value, $period);
+            $filePath = $this->reportingService->generateReport($type->value, $period, $params);
 
             $meta = $this->getFileMeta($filePath);
 
@@ -182,6 +182,11 @@ class ReportSchedulingService
             ReportType::ProfitLoss,
             ReportType::BalanceSheet => ['period' => now()->subMonthNoOverflow()->format('Y-m')],
             ReportType::Plr => [],
+            ReportType::BiDailyDigest => ['date' => now()->subDay()->toDateString()],
+            ReportType::BiBranchPerformance,
+            ReportType::BiCurrencyBreakdown,
+            ReportType::BiTellerProductivity,
+            ReportType::BiTopCustomers => ['period' => now()->subMonthNoOverflow()->format('Y-m')],
         };
 
         return array_merge($defaults, $schedule->parameters ?? []);
@@ -196,7 +201,8 @@ class ReportSchedulingService
     protected function resolvePeriodString(ReportType $type, array $params): string
     {
         return match ($type) {
-            ReportType::Msb2 => (string) ($params['date'] ?? now()->subDay()->toDateString()),
+            ReportType::Msb2,
+            ReportType::BiDailyDigest => (string) ($params['date'] ?? now()->subDay()->toDateString()),
             ReportType::Lmca => (string) ($params['month'] ?? now()->subMonthNoOverflow()->format('Y-m')),
             ReportType::Qlvr => $this->normalizeQuarterToPeriod((string) ($params['quarter'] ?? '')),
             ReportType::Plr => now()->toDateString(),
@@ -224,7 +230,8 @@ class ReportSchedulingService
     protected function resolvePeriodBounds(ReportType $type, array $params): array
     {
         return match ($type) {
-            ReportType::Msb2 => $this->dayBounds((string) ($params['date'] ?? now()->subDay()->toDateString())),
+            ReportType::Msb2,
+            ReportType::BiDailyDigest => $this->dayBounds((string) ($params['date'] ?? now()->subDay()->toDateString())),
             ReportType::Lmca => $this->monthBounds((string) ($params['month'] ?? now()->subMonthNoOverflow()->format('Y-m'))),
             ReportType::Qlvr => $this->quarterBounds((string) ($params['quarter'] ?? '')),
             ReportType::Plr => [now()->startOfDay(), now()->endOfDay()],
@@ -289,6 +296,13 @@ class ReportSchedulingService
             ReportType::MonthEnd => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
             ReportType::ProfitLoss => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
             ReportType::BalanceSheet => $this->reportingService->generateReport($type->value, $params['period'] ?? now()->toDateString()),
+            ReportType::BiDailyDigest,
+            ReportType::BiBranchPerformance,
+            ReportType::BiCurrencyBreakdown,
+            ReportType::BiTellerProductivity,
+            ReportType::BiTopCustomers => $this->reportingService->generateReport(
+                $type->value, $this->resolvePeriodString($type, $params), $params
+            ),
         };
     }
 

@@ -15,8 +15,10 @@ use App\Http\Controllers\Admin\SanctionSourceController;
 use App\Http\Controllers\Admin\ThresholdController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Bi\AlertRuleController as BiAlertRuleController;
 use App\Http\Controllers\Bi\AnalyticsController as BiAnalyticsController;
 use App\Http\Controllers\Bi\DashboardController as BiDashboardController;
+use App\Http\Controllers\Bi\ExportController as BiExportController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchPoolController;
@@ -545,6 +547,14 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/currencies', [BiAnalyticsController::class, 'currencies'])->name('currencies');
         Route::get('/operations', [BiAnalyticsController::class, 'operations'])->name('operations');
         Route::get('/customers', [BiAnalyticsController::class, 'customers'])->name('customers');
+        Route::post('/export', [BiExportController::class, 'store'])->name('export');
+        Route::get('/alerts', [BiAlertRuleController::class, 'index'])->name('alerts');
+        Route::post('/alerts', [BiAlertRuleController::class, 'store'])
+            ->middleware('role:manage_report_schedules')
+            ->name('alerts.store');
+        Route::delete('/alerts/{rule}', [BiAlertRuleController::class, 'destroy'])
+            ->middleware('role:manage_report_schedules')
+            ->name('alerts.destroy');
     });
 
     Route::middleware(['role:manage_users', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {

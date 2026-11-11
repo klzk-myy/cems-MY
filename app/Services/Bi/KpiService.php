@@ -485,6 +485,23 @@ class KpiService
     }
 
     /**
+     * Public scalar metrics map for one period — the single source behind
+     * KPI cards, BI exports and alert-rule evaluation. Keys:
+     * volume_myr, tx_count, avg_ticket_myr, realized_margin_myr,
+     * margin_pct, cancel_rate_pct, reject_rate_pct,
+     * avg_approval_seconds, rate_override_count, unique_customers.
+     *
+     * @return array<string, string|int>
+     */
+    public function periodMetrics(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $metrics = $this->summarize($from, $to, $branchId);
+        $metrics['unique_customers'] = $this->distinctCustomers($from, $to, $branchId);
+
+        return $metrics;
+    }
+
+    /**
      * Scalar summary over the branch rollup for one period.
      *
      * @return array<string, string|int>
@@ -497,6 +514,7 @@ class KpiService
             ->selectRaw('SUM(tx_count) as tx_count')
             ->selectRaw('SUM(completed_count) as completed_count')
             ->selectRaw('SUM(cancelled_count) as cancelled_count')
+            ->selectRaw('SUM(rejected_count) as rejected_count')
             ->selectRaw('SUM(approved_count) as approved_count')
             ->selectRaw('SUM(approval_seconds_total) as approval_seconds_total')
             ->selectRaw('SUM(rate_override_count) as rate_override_count')
@@ -511,6 +529,7 @@ class KpiService
         $txCount = (int) ($row->tx_count ?? 0);
         $completedCount = (int) ($row->completed_count ?? 0);
         $cancelledCount = (int) ($row->cancelled_count ?? 0);
+        $rejectedCount = (int) ($row->rejected_count ?? 0);
         $approvedCount = (int) ($row->approved_count ?? 0);
         $approvalSeconds = (string) ($row->approval_seconds_total ?? '0');
 
@@ -527,6 +546,10 @@ class KpiService
             ),
             'cancel_rate_pct' => $this->mathService->multiply(
                 $this->mathService->safeDivide((string) $cancelledCount, (string) $txCount, 6),
+                '100', 4
+            ),
+            'reject_rate_pct' => $this->mathService->multiply(
+                $this->mathService->safeDivide((string) $rejectedCount, (string) $txCount, 6),
                 '100', 4
             ),
             'avg_approval_seconds' => $this->mathService->safeDivide($approvalSeconds, (string) $approvedCount, 2),

@@ -191,6 +191,7 @@ class SchemaSeeder extends Seeder
             'analytics_daily_currency',
             'analytics_daily_teller',
             'analytics_monthly_customer',
+            'bi_alert_rules',
         ];
 
         Schema::disableForeignKeyConstraints();
@@ -2262,6 +2263,29 @@ class SchemaSeeder extends Seeder
             $table->index('branch_id', 'analytics_monthly_customer_branch_id_index');
             $table->foreign('customer_id')->references('id')->on('customers')->cascadeOnDelete();
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+        });
+
+        // BI alert rules — threshold checks evaluated daily against the
+        // rollups by the bi:evaluate-alerts command; breaches raise
+        // SystemAlert rows (and emails for warning/critical).
+        Schema::create('bi_alert_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('metric', 64);
+            $table->string('comparison', 8);
+            $table->decimal('threshold', 18, 4);
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->string('level', 16)->default('warning');
+            $table->text('notification_recipients')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('last_evaluated_at')->nullable();
+            $table->timestamp('last_triggered_at')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index('is_active', 'bi_alert_rules_is_active_index');
+            $table->index('branch_id', 'bi_alert_rules_branch_id_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
         });
 
     }

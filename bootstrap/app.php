@@ -547,6 +547,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/analytics-snapshots.log'));
+
+        // BI alert rules - evaluated after the nightly rollup rebuild so
+        // yesterday's aggregates are fresh; breaches raise SystemAlerts.
+        $schedule->command('bi:evaluate-alerts')
+            ->dailyAt('02:45')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/bi-alerts.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers

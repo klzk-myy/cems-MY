@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Models\Bi;
+
+use App\Models\BaseModel;
+use App\Models\Branch;
+use App\Models\Traits\BelongsToBranch;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * Threshold rule evaluated daily against the analytics rollups by
+ * BiAlertEvaluator; breaches raise a SystemAlert (and email when the
+ * level is warning/critical). branch_id null = consolidated view.
+ *
+ * @property int $id
+ * @property string $metric
+ * @property string $comparison
+ * @property string $threshold
+ * @property int|null $branch_id
+ * @property string $level
+ * @property array<int, string>|null $notification_recipients
+ * @property bool $is_active
+ * @property Carbon|null $last_evaluated_at
+ * @property Carbon|null $last_triggered_at
+ * @property int|null $created_by
+ * @property-read Branch|null $branch
+ * @property-read User|null $creator
+ */
+class BiAlertRule extends BaseModel
+{
+    use BelongsToBranch;
+
+    protected $table = 'bi_alert_rules';
+
+    protected $fillable = [
+        'metric',
+        'comparison',
+        'threshold',
+        'branch_id',
+        'level',
+        'notification_recipients',
+        'is_active',
+        'last_evaluated_at',
+        'last_triggered_at',
+        'created_by',
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function casts(): array
+    {
+        return [
+            'threshold' => 'decimal:4',
+            'notification_recipients' => 'array',
+            'is_active' => 'boolean',
+            'last_evaluated_at' => 'datetime',
+            'last_triggered_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Metrics the evaluator can resolve via KpiService::periodMetrics().
+     *
+     * @return array<string, string>
+     */
+    public static function availableMetrics(): array
+    {
+        return [
+            'volume_myr' => 'Volume (MYR)',
+            'tx_count' => 'Transactions',
+            'realized_margin_myr' => 'Realized margin (MYR)',
+            'margin_pct' => 'Margin %',
+            'avg_ticket_myr' => 'Average ticket (MYR)',
+            'unique_customers' => 'Unique customers',
+            'cancel_rate_pct' => 'Cancel rate %',
+            'reject_rate_pct' => 'Reject rate %',
+            'avg_approval_seconds' => 'Avg approval time (s)',
+            'rate_override_count' => 'Rate overrides',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function availableComparisons(): array
+    {
+        return [
+            'lt' => 'below',
+            'lte' => 'at or below',
+            'gt' => 'above',
+            'gte' => 'at or above',
+        ];
+    }
+
+    /**
+     * Rollup branch scoping — null means all branches, matching the other
+     * BI models (the trait's int-only signature does not apply here).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForBranch(Builder $query, ?int $branchId): Builder
+    {
+        return $branchId === null ? $query : $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+}

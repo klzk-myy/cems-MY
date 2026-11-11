@@ -5,6 +5,7 @@ namespace App\Services\Reporting;
 use App\Enums\ReportGeneratedStatus;
 use App\Enums\ReportType;
 use App\Models\ReportGenerated;
+use App\Services\Reporting\Generators\BiReportGenerator;
 use App\Services\Reporting\Generators\LedgerBackedReportGenerator;
 use App\Services\Reporting\Generators\LmcaReportGenerator;
 use App\Services\Reporting\Generators\Msb2ReportGenerator;
@@ -26,6 +27,7 @@ class ReportingService
         protected QlvrReportGenerator $qlvrGenerator,
         protected PositionReportGenerator $positionGenerator,
         protected LedgerBackedReportGenerator $ledgerBackedGenerator,
+        protected BiReportGenerator $biGenerator,
     ) {}
 
     public function recordGeneratedReport(
@@ -96,7 +98,10 @@ class ReportingService
         return $this->positionGenerator->generatePositionLimitCsv();
     }
 
-    public function generateReport(string $reportType, string $period): string
+    /**
+     * @param  array<string, mixed>  $params  extra parameters (BI reports honour branch_id)
+     */
+    public function generateReport(string $reportType, string $period, array $params = []): string
     {
         $type = ReportType::tryFrom($reportType);
 
@@ -113,6 +118,15 @@ class ReportingService
             ReportType::MonthEnd => $this->ledgerBackedGenerator->generateMonthEnd($period),
             ReportType::ProfitLoss => $this->ledgerBackedGenerator->generateProfitLoss($period),
             ReportType::BalanceSheet => $this->ledgerBackedGenerator->generateBalanceSheet($period),
+            ReportType::BiDailyDigest => $this->biGenerator->generate(
+                $type, Carbon::parse($period)->startOfDay(), Carbon::parse($period)->endOfDay(), $params
+            ),
+            ReportType::BiBranchPerformance,
+            ReportType::BiCurrencyBreakdown,
+            ReportType::BiTellerProductivity,
+            ReportType::BiTopCustomers => $this->biGenerator->generate(
+                $type, Carbon::parse($period)->startOfMonth(), Carbon::parse($period)->endOfMonth(), $params
+            ),
         };
     }
 

@@ -38,6 +38,17 @@
             <x-button variant="primary" type="submit">Apply</x-button>
         </x-filter-bar>
 
+        <div class="flex justify-end">
+            <form method="POST" action="{{ route('bi.export') }}">
+                @csrf
+                <input type="hidden" name="type" value="digest">
+                <input type="hidden" name="start_date" value="{{ $from }}">
+                <input type="hidden" name="end_date" value="{{ $to }}">
+                @if($canSeeAllBranches && $branchId)<input type="hidden" name="branch_id" value="{{ $branchId }}">@endif
+                <x-button variant="secondary" size="sm" type="submit">Export CSV</x-button>
+            </form>
+        </div>
+
         @php
             $delta = fn ($card) => $card['delta'] === null ? null : (float) $card['delta'];
             $money = fn ($v) => number_format((float) $v, 2);

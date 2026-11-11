@@ -17,6 +17,17 @@
             <x-button variant="primary" type="submit">Apply</x-button>
         </x-filter-bar>
 
+        <div class="flex justify-end">
+            <form method="POST" action="{{ route('bi.export') }}">
+                @csrf
+                <input type="hidden" name="type" value="currencies">
+                <input type="hidden" name="start_date" value="{{ $from }}">
+                <input type="hidden" name="end_date" value="{{ $to }}">
+                @if($canSeeAllBranches && $branchId)<input type="hidden" name="branch_id" value="{{ $branchId }}">@endif
+                <x-button variant="secondary" size="sm" type="submit">Export CSV</x-button>
+            </form>
+        </div>
+
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <x-card title="Currency Mix" description="Share of period volume">
                 <div class="p-4">

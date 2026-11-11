@@ -6,9 +6,22 @@ use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
+ * @property int $id
+ * @property int|null $schedule_id
+ * @property ReportType $report_type
+ * @property array<string, mixed>|null $parameters
+ * @property ReportRunStatus $status
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property string|null $file_path
+ * @property int $generated_by
+ * @property int $row_count
+ * @property string|null $error_message
+ * @property-read ReportSchedule|null $schedule
  * @property-read User|null $generatedBy
  */
 class ReportRun extends BaseModel
