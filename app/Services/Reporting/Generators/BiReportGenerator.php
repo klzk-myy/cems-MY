@@ -3,6 +3,7 @@
 namespace App\Services\Reporting\Generators;
 
 use App\Enums\ReportType;
+use App\Exceptions\Domain\ReportValidationException;
 use App\Services\Bi\KpiService;
 use App\Services\Reporting\CsvReportWriter;
 use Carbon\Carbon;
@@ -37,7 +38,7 @@ class BiReportGenerator
             ReportType::BiCurrencyBreakdown => $this->currencyReport($from, $to, $branchId),
             ReportType::BiTellerProductivity => $this->tellerReport($from, $to, $branchId),
             ReportType::BiTopCustomers => $this->customerReport($from, $to, $branchId),
-            default => throw new \InvalidArgumentException("Unsupported BI report type: {$type->value}"),
+            default => throw new ReportValidationException("Unsupported BI report type: {$type->value}"),
         };
     }
 
@@ -129,14 +130,14 @@ class BiReportGenerator
     public function customerReport(Carbon $from, Carbon $to, ?int $branchId): string
     {
         $rows = collect($this->kpiService->topCustomers($from, $to, $branchId, 500))->map(fn (array $c) => [
-            $c['customer_id'], $c['full_name'], $c['tx_count'], $c['volume_myr'],
+            $c['customer_id'], $c['tx_count'], $c['volume_myr'],
             $c['realized_margin_myr'], $c['currencies_used'],
         ])->all();
 
         return $this->csvReportWriter->writeWithTitleRows(
             "BI_Customers_{$from->format('Y-m-d')}_{$to->format('Y-m-d')}.csv",
             [['BI Top Customers'], ["{$from->toDateString()} to {$to->toDateString()}".($branchId ? " — branch {$branchId}" : '')]],
-            ['Customer ID', 'Name', 'Transactions', 'Volume MYR', 'Margin MYR', 'Currencies Used'],
+            ['Customer ID', 'Transactions', 'Volume MYR', 'Margin MYR', 'Currencies Used'],
             $rows
         );
     }

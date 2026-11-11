@@ -2,6 +2,7 @@
 
 namespace App\Services\Bi;
 
+use App\Enums\BiAlertComparison;
 use App\Enums\SystemAlertLevel;
 use App\Models\Bi\BiAlertRule;
 use App\Services\System\MathService;
@@ -78,21 +79,13 @@ class BiAlertEvaluator
         return $counts;
     }
 
-    protected function breaches(string $value, string $comparison, string $threshold): bool
+    protected function breaches(string $value, BiAlertComparison $comparison, string $threshold): bool
     {
         if (! is_numeric($value) || ! is_numeric($threshold)) {
             return false;
         }
 
-        $cmp = bccomp($value, $threshold, 4);
-
-        return match ($comparison) {
-            'lt' => $cmp < 0,
-            'lte' => $cmp <= 0,
-            'gt' => $cmp > 0,
-            'gte' => $cmp >= 0,
-            default => false,
-        };
+        return $comparison->breaches(bccomp($value, $threshold, 4));
     }
 
     protected function inCooldown(BiAlertRule $rule): bool
@@ -106,12 +99,12 @@ class BiAlertEvaluator
         $metricLabel = BiAlertRule::availableMetrics()[$rule->metric] ?? $rule->metric;
         // branch_id cascades on delete, so a non-null FK always resolves.
         $branchName = $rule->branch_id === null ? 'all branches' : $rule->branch->name;
-        $level = $rule->level === SystemAlertLevel::Critical->value
+        $level = $rule->level === SystemAlertLevel::Critical
             ? SystemAlertLevel::Critical
             : SystemAlertLevel::Warning;
 
         $this->alertService->send(
-            "BI alert: {$metricLabel} {$value} {$rule->comparison} {$rule->threshold} for {$branchName} on {$day->toDateString()}",
+            "BI alert: {$metricLabel} {$value} {$rule->comparison->value} {$rule->threshold} for {$branchName} on {$day->toDateString()}",
             $level->value,
             [
                 'source' => 'bi_alert_rule',
@@ -120,7 +113,7 @@ class BiAlertEvaluator
                     'rule_id' => $rule->id,
                     'metric' => $rule->metric,
                     'value' => $value,
-                    'comparison' => $rule->comparison,
+                    'comparison' => $rule->comparison->value,
                     'threshold' => $rule->threshold,
                     'branch_id' => $rule->branch_id,
                     'date' => $day->toDateString(),

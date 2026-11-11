@@ -165,23 +165,29 @@ class AnalyticsSnapshotBuilder
             ->selectRaw('SUM(CASE WHEN status = ? AND type = ? THEN amount_myr ELSE 0 END) as sell_volume_myr', [$completed, $sell])
             ->selectRaw('COUNT(DISTINCT CASE WHEN status = ? THEN customer_id END) as unique_customers', [$completed])
             ->get()
-            ->map(fn ($row) => [
-                'date' => $date,
-                'branch_id' => $row->branch_id,
-                'tx_count' => $row->tx_count,
-                'completed_count' => $row->completed_count,
-                'rejected_count' => $row->rejected_count,
-                'cancelled_count' => $row->cancelled_count,
-                'approved_count' => $row->approved_count,
-                'approval_seconds_total' => $row->approval_seconds_total,
-                'rate_override_count' => $row->rate_override_count,
-                'buy_volume_myr' => $row->buy_volume_myr,
-                'sell_volume_myr' => $row->sell_volume_myr,
-                'unique_customers' => $row->unique_customers,
-                'computed_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ])
+            ->map(function ($row) use ($date, $now) {
+                $buyVolume = is_numeric($row->buy_volume_myr) ? (string) $row->buy_volume_myr : '0';
+                $sellVolume = is_numeric($row->sell_volume_myr) ? (string) $row->sell_volume_myr : '0';
+
+                return [
+                    'date' => $date,
+                    'branch_id' => $row->branch_id,
+                    'tx_count' => $row->tx_count,
+                    'completed_count' => $row->completed_count,
+                    'rejected_count' => $row->rejected_count,
+                    'cancelled_count' => $row->cancelled_count,
+                    'approved_count' => $row->approved_count,
+                    'approval_seconds_total' => $row->approval_seconds_total,
+                    'rate_override_count' => $row->rate_override_count,
+                    'buy_volume_myr' => $row->buy_volume_myr,
+                    'sell_volume_myr' => $row->sell_volume_myr,
+                    'net_volume_myr' => bcsub($buyVolume, $sellVolume, 4),
+                    'unique_customers' => $row->unique_customers,
+                    'computed_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            })
             ->all();
     }
 
@@ -207,19 +213,28 @@ class AnalyticsSnapshotBuilder
             ->selectRaw('SUM(CASE WHEN type = ? THEN amount_myr ELSE 0 END) as sell_volume_myr', [$sell])
             ->selectRaw('SUM(CASE WHEN type = ? AND prev_average_cost IS NOT NULL THEN (rate - prev_average_cost) * quantity ELSE 0 END) as realized_margin_myr', [$sell])
             ->get()
-            ->map(fn ($row) => [
-                'date' => $date,
-                'branch_id' => $row->branch_id,
-                'currency_code' => $row->currency_code,
-                'buy_qty' => $row->buy_qty,
-                'sell_qty' => $row->sell_qty,
-                'buy_volume_myr' => $row->buy_volume_myr,
-                'sell_volume_myr' => $row->sell_volume_myr,
-                'realized_margin_myr' => $row->realized_margin_myr,
-                'computed_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ])
+            ->map(function ($row) use ($date, $now) {
+                $buyQty = is_numeric($row->buy_qty) ? (string) $row->buy_qty : '0';
+                $sellQty = is_numeric($row->sell_qty) ? (string) $row->sell_qty : '0';
+                $buyVolume = is_numeric($row->buy_volume_myr) ? (string) $row->buy_volume_myr : '0';
+                $sellVolume = is_numeric($row->sell_volume_myr) ? (string) $row->sell_volume_myr : '0';
+
+                return [
+                    'date' => $date,
+                    'branch_id' => $row->branch_id,
+                    'currency_code' => $row->currency_code,
+                    'buy_qty' => $row->buy_qty,
+                    'sell_qty' => $row->sell_qty,
+                    'buy_volume_myr' => $row->buy_volume_myr,
+                    'sell_volume_myr' => $row->sell_volume_myr,
+                    'realized_margin_myr' => $row->realized_margin_myr,
+                    'avg_buy_rate' => bccomp($buyQty, '0', 8) > 0 ? bcdiv($buyVolume, $buyQty, 8) : '0',
+                    'avg_sell_rate' => bccomp($sellQty, '0', 8) > 0 ? bcdiv($sellVolume, $sellQty, 8) : '0',
+                    'computed_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            })
             ->all();
     }
 

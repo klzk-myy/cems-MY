@@ -7,16 +7,16 @@ use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Concerns\ResolvesBiFilters;
 use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
-use App\Models\Branch;
 use App\Services\Bi\AnalyticsSnapshotBuilder;
 use App\Services\Bi\KpiService;
+use App\Support\ChartPalette;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
  * Executive BI dashboard — KPI cards and charts over the analytics_*
- * rollups (see BI-PLAN.md, Phase 2). A separate /bi route: the operational
+ * rollups. A separate /bi route: the operational
  * dashboard stays untouched. Rollups are refreshed for today at most once
  * per five minutes so the page reads fresh data without paying the nightly
  * rebuild's cost on every request.
@@ -47,9 +47,7 @@ class DashboardController extends Controller
         $trends = $this->kpiService->dailyTrends($from, $to, $branchId);
         $currencyMix = $this->kpiService->currencyMix($from, $to, $branchId);
 
-        $branches = $canSeeAllBranches
-            ? Branch::query()->orderBy('name')->get(['id', 'name'])
-            : collect();
+        $branches = $this->branchSelectOptions($user);
 
         return view('bi.dashboard', [
             'from' => $from->toDateString(),
@@ -74,7 +72,7 @@ class DashboardController extends Controller
             'currencyChart' => [
                 'labels' => array_column($currencyMix, 'currency_code'),
                 'datasets' => [
-                    ['data' => array_column($currencyMix, 'volume_myr'), 'backgroundColor' => $this->palette(count($currencyMix))],
+                    ['data' => array_column($currencyMix, 'volume_myr'), 'backgroundColor' => ChartPalette::colors(count($currencyMix))],
                 ],
             ],
             'comparisonChart' => $canSeeAllBranches
@@ -121,18 +119,5 @@ class DashboardController extends Controller
                 ],
             ],
         ];
-    }
-
-    /**
-     * Chart.js doughnut palette — theme accent first, then a stable
-     * rotation so a given rank always renders the same color.
-     *
-     * @return array<int, string>
-     */
-    protected function palette(int $count): array
-    {
-        $colors = ['#d4a843', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316'];
-
-        return array_map(fn (int $i) => $colors[$i % count($colors)], range(0, max(0, $count - 1)));
     }
 }

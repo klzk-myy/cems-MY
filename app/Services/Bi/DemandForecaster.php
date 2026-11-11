@@ -4,6 +4,7 @@ namespace App\Services\Bi;
 
 use App\Models\Bi\AnalyticsDailyCurrency;
 use App\Models\Bi\AnalyticsDailyForecast;
+use App\Models\CurrencyPosition;
 use App\Services\System\MathService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -147,6 +148,7 @@ class DemandForecaster
     {
         return AnalyticsDailyForecast::query()
             ->forBranch($branchId)
+            ->when($branchId === null, fn ($q) => $q->consolidated())
             ->where('currency_code', $currencyCode)
             ->whereBetween('date', [$from->toDateString(), $from->copy()->addDays($days - 1)->toDateString()])
             ->orderBy('date')
@@ -157,12 +159,24 @@ class DemandForecaster
      * Per-currency totals over the forecast horizon — the all-currency
      * stocking summary on the forecast page.
      *
-     * @return array<int, array{currency_code: string, buy_qty: string, sell_qty: string, buy_volume_myr: string, sell_volume_myr: string, sample_days: int}>
+     * Each row also carries the branch's current on-hand position so the
+     * stocking table can flag a sell forecast that would outrun stock.
+     *
+     * @return array<int, array{currency_code: string, buy_qty: string, sell_qty: string, buy_volume_myr: string, sell_volume_myr: string, sample_days: int, on_hand_qty: string, restock: bool}>
      */
     public function forecastSummary(?int $branchId, Carbon $from, int $days): array
     {
+        $positions = CurrencyPosition::query()
+            ->when(
+                $branchId === null,
+                fn ($q) => $q->whereNull('branch_id'),
+                fn ($q) => $q->where('branch_id', $branchId),
+            )
+            ->pluck('quantity', 'currency_code');
+
         return AnalyticsDailyForecast::query()
             ->forBranch($branchId)
+            ->when($branchId === null, fn ($q) => $q->consolidated())
             ->whereBetween('date', [$from->toDateString(), $from->copy()->addDays($days - 1)->toDateString()])
             ->groupBy('currency_code')
             ->selectRaw('currency_code')
@@ -174,14 +188,21 @@ class DemandForecaster
             ->orderByDesc('buy_volume_myr')
             ->toBase()
             ->get()
-            ->map(fn ($row) => [
-                'currency_code' => $row->currency_code,
-                'buy_qty' => (string) $row->buy_qty,
-                'sell_qty' => (string) $row->sell_qty,
-                'buy_volume_myr' => (string) $row->buy_volume_myr,
-                'sell_volume_myr' => (string) $row->sell_volume_myr,
-                'sample_days' => (int) $row->sample_days,
-            ])
+            ->map(function ($row) use ($positions) {
+                $sellQty = is_numeric($row->sell_qty) ? (string) $row->sell_qty : '0';
+                $onHand = is_numeric($positions->get($row->currency_code) ?? null) ? (string) $positions->get($row->currency_code) : '0';
+
+                return [
+                    'currency_code' => $row->currency_code,
+                    'buy_qty' => (string) $row->buy_qty,
+                    'sell_qty' => (string) $row->sell_qty,
+                    'buy_volume_myr' => (string) $row->buy_volume_myr,
+                    'sell_volume_myr' => (string) $row->sell_volume_myr,
+                    'sample_days' => (int) $row->sample_days,
+                    'on_hand_qty' => $onHand,
+                    'restock' => bccomp($sellQty, $onHand, 4) > 0,
+                ];
+            })
             ->all();
     }
 

@@ -44,9 +44,9 @@
                 @forelse($rules as $rule)
                     <tr>
                         <td class="px-4 py-3 text-sm font-medium text-ink dark:text-ink-dark">{{ $metrics[$rule->metric] ?? $rule->metric }}</td>
-                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $comparisons[$rule->comparison] ?? $rule->comparison }} {{ $rule->threshold }}</td>
+                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $rule->comparison->label() }} {{ $rule->threshold }}</td>
                         <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $rule->branch?->name ?? 'All branches' }}</td>
-                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ ucfirst($rule->level) }}</td>
+                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $rule->level->name }}</td>
                         <td class="px-4 py-3 text-sm text-ink-muted">{{ $rule->last_evaluated_at?->toDateTimeString() ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-ink-muted">{{ $rule->last_triggered_at?->toDateTimeString() ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $rule->is_active ? 'Yes' : 'No' }}</td>
@@ -67,6 +67,8 @@
                 @endforelse
                 </x-slot:tbody>
             </x-table>
+
+            <div class="mt-4">{{ $rules->links() }}</div>
         </x-card>
     </div>
 </x-app-layout>

@@ -57,7 +57,7 @@ class ReportSchedulingService
             event(new ReportGenerated($reportRun));
 
             return $reportRun;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $reportRun->markAsFailed($e->getMessage());
             throw $e;
         }

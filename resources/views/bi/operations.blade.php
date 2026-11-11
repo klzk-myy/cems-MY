@@ -16,6 +16,9 @@
             <x-button variant="primary" type="submit">Apply</x-button>
         </x-filter-bar>
 
+        @include('bi.partials.date-presets')
+
+        @if($canViewTellers)
         <div class="flex justify-end">
             <form method="POST" action="{{ route('bi.export') }}">
                 @csrf
@@ -74,5 +77,10 @@
                 </x-slot:tbody>
             </x-table>
         </x-card>
+        @else
+            <x-card title="Teller Productivity">
+                <p class="px-4 py-6 text-sm text-center text-ink-muted">You do not have permission to view teller productivity data.</p>
+            </x-card>
+        @endif
     </div>
 </x-app-layout>

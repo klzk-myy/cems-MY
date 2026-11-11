@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
  * @property string|null $file_path
+ * @property Carbon|null $emailed_at
  * @property int $generated_by
  * @property int $row_count
  * @property string|null $error_message
@@ -36,12 +37,14 @@ class ReportRun extends BaseModel
         'started_at',
         'completed_at',
         'file_path',
+        'emailed_at',
         'generated_by',
         'row_count',
         'error_message',
     ];
 
     protected $casts = [
+        'emailed_at' => 'datetime',
         'parameters' => 'array',
         'status' => ReportRunStatus::class,
         'started_at' => 'datetime',

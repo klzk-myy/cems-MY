@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int $rate_override_count
  * @property string $buy_volume_myr
  * @property string $sell_volume_myr
+ * @property string $net_volume_myr
  * @property int $unique_customers
  * @property Carbon|null $computed_at
  * @property-read Branch|null $branch
@@ -44,23 +45,19 @@ class AnalyticsDailyBranch extends BaseModel
         'rate_override_count',
         'buy_volume_myr',
         'sell_volume_myr',
+        'net_volume_myr',
         'unique_customers',
         'computed_at',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'date' => 'date',
-            'approval_seconds_total' => 'decimal:2',
-            'buy_volume_myr' => MoneyCast::class,
-            'sell_volume_myr' => MoneyCast::class,
-            'computed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'date' => 'date',
+        'approval_seconds_total' => 'decimal:2',
+        'buy_volume_myr' => MoneyCast::class,
+        'sell_volume_myr' => MoneyCast::class,
+        'net_volume_myr' => 'decimal:4',
+        'computed_at' => 'datetime',
+    ];
 
     use BelongsToBranch;
 

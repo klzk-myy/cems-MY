@@ -1607,6 +1607,7 @@ class SchemaSeeder extends Seeder
             $table->integer('row_count')->default(0);
             $table->text('error_message')->nullable();
             $table->integer('downloaded_count')->default(0);
+            $table->timestamp('emailed_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['report_type', 'status'], 'report_runs_report_type_status_index');
@@ -2187,6 +2188,8 @@ class SchemaSeeder extends Seeder
             $table->integer('rate_override_count')->default(0);
             $table->decimal('buy_volume_myr', 18, 4)->default(0);
             $table->decimal('sell_volume_myr', 18, 4)->default(0);
+            // buy_volume - sell_volume: net MYR demand pressure for the day.
+            $table->decimal('net_volume_myr', 18, 4)->default(0);
             $table->integer('unique_customers')->default(0);
             $table->timestamp('computed_at')->nullable();
             $table->timestamp('created_at')->nullable();
@@ -2211,6 +2214,10 @@ class SchemaSeeder extends Seeder
             // transaction at mutation time — never the current position
             // state. Sells without a snapshot contribute nothing.
             $table->decimal('realized_margin_myr', 18, 4)->default(0);
+            // Volume-weighted effective rates (amount_myr / quantity); 0
+            // when the day had no trades of that side.
+            $table->decimal('avg_buy_rate', 18, 8)->default(0);
+            $table->decimal('avg_sell_rate', 18, 8)->default(0);
             $table->timestamp('computed_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -16,6 +16,8 @@
             <x-button variant="primary" type="submit">Apply</x-button>
         </x-filter-bar>
 
+        @include('bi.partials.date-presets')
+
         <div class="flex justify-end">
             <form method="POST" action="{{ route('bi.export') }}">
                 @csrf
@@ -53,7 +55,7 @@
                 @forelse($topCustomers as $index => $customer)
                     <tr>
                         <td class="px-4 py-3 text-sm text-ink-muted">{{ $index + 1 }}</td>
-                        <td class="px-4 py-3 text-sm font-medium text-ink dark:text-ink-dark">{{ $customer['full_name'] }}</td>
+                        <td class="px-4 py-3 text-sm font-medium text-ink dark:text-ink-dark"><x-customer-link :customer="$customerModels->get($customer['customer_id'])" /></td>
                         <td class="px-4 py-3 text-sm text-right text-ink dark:text-ink-dark">{{ number_format($customer['tx_count']) }}</td>
                         <td class="px-4 py-3 text-sm text-right font-medium text-ink dark:text-ink-dark">{{ number_format((float) $customer['volume_myr'], 2) }}</td>
                         <td class="px-4 py-3 text-sm text-right text-ink dark:text-ink-dark">{{ number_format((float) $customer['realized_margin_myr'], 2) }}</td>

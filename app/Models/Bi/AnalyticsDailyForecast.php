@@ -43,32 +43,37 @@ class AnalyticsDailyForecast extends BaseModel
         'sample_days',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'date' => 'date',
-            'predicted_buy_qty' => 'decimal:4',
-            'predicted_sell_qty' => 'decimal:4',
-            'predicted_buy_volume_myr' => 'decimal:4',
-            'predicted_sell_volume_myr' => 'decimal:4',
-            'sample_days' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'date' => 'date',
+        'predicted_buy_qty' => 'decimal:4',
+        'predicted_sell_qty' => 'decimal:4',
+        'predicted_buy_volume_myr' => 'decimal:4',
+        'predicted_sell_volume_myr' => 'decimal:4',
+        'sample_days' => 'integer',
+    ];
 
     /**
-     * Nullable branch scope matching the other BI models — null means
-     * all branches (the consolidated rows carry branch_id NULL).
+     * Nullable branch scope matching the other BI models — null leaves
+     * the query unfiltered. The consolidated all-branch view carries
+     * branch_id NULL; select it explicitly via consolidated().
      *
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
     public function scopeForBranch(Builder $query, ?int $branchId): Builder
     {
-        return $branchId === null
-            ? $query->whereNull('branch_id')
-            : $query->where('branch_id', $branchId);
+        return $branchId === null ? $query : $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Consolidated all-branch forecast rows (branch_id NULL) — the
+     * per-branch sums the forecaster writes alongside leaf rows.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeConsolidated(Builder $query): Builder
+    {
+        return $query->whereNull('branch_id');
     }
 }

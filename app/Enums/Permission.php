@@ -57,6 +57,8 @@ enum Permission: string
     case AccessPerformance = 'access_performance';
     case ManageReportSchedules = 'manage_report_schedules';
     case ViewBiDashboard = 'view_bi_dashboard';
+    case ViewTellerProductivity = 'view_teller_productivity';
+    case ExportBiReports = 'export_bi_reports';
     case ManageCurrencies = 'manage_currencies';
     case ManageSystemAlerts = 'manage_system_alerts';
     case ManageSystem = 'manage_system';
@@ -110,6 +112,8 @@ enum Permission: string
             self::AccessPerformance => 'Access Performance Dashboard',
             self::ManageReportSchedules => 'Manage Report Schedules',
             self::ViewBiDashboard => 'View BI Dashboard',
+            self::ViewTellerProductivity => 'View Teller Productivity',
+            self::ExportBiReports => 'Export BI Reports',
             self::ManageCurrencies => 'Manage Currencies',
             self::ManageSystemAlerts => 'Manage System Alerts',
             self::ManageSystem => 'Manage System',
@@ -165,6 +169,8 @@ enum Permission: string
             self::AccessPerformance => 'View the performance monitoring dashboard',
             self::ManageReportSchedules => 'Schedule automated report generation',
             self::ViewBiDashboard => 'View the executive BI dashboard: KPIs, trends, and branch comparison',
+            self::ViewTellerProductivity => 'View per-teller productivity figures (volumes, overrides, turnaround) — restricted HR-sensitive data',
+            self::ExportBiReports => 'Download BI report exports (CSV)',
             self::ManageCurrencies => 'Create, edit, and disable traded currencies',
             self::ManageSystemAlerts => 'View and acknowledge operational system alerts',
             self::ManageSystem => 'System health, setup reset, and infrastructure endpoints',
@@ -219,7 +225,9 @@ enum Permission: string
             self::ViewReports,
             self::AccessPerformance,
             self::ManageReportSchedules,
-            self::ViewBiDashboard => 'Reports',
+            self::ViewBiDashboard,
+            self::ViewTellerProductivity,
+            self::ExportBiReports => 'Reports',
             self::ManageCurrencies,
             self::ManageSystemAlerts,
             self::ManageSystem,
@@ -292,6 +300,8 @@ enum Permission: string
                 self::PostExpenses->value,
                 self::PostJournalEntries->value,
                 self::ViewBiDashboard->value,
+                self::ViewTellerProductivity->value,
+                self::ExportBiReports->value,
             ],
             UserRole::ComplianceOfficer->value => [
                 self::ApproveTransactions->value,
@@ -307,6 +317,7 @@ enum Permission: string
                 self::ManageSanctions->value,
                 self::ManageCustomers->value,
                 self::ViewBiDashboard->value,
+                self::ExportBiReports->value,
             ],
             UserRole::Accountant->value => [
                 self::AccessAccounting->value,
@@ -317,6 +328,8 @@ enum Permission: string
                 self::ViewReports->value,
                 self::ManageAllBranches->value,
                 self::ViewBiDashboard->value,
+                self::ViewTellerProductivity->value,
+                self::ExportBiReports->value,
             ],
             UserRole::Admin->value => array_column(self::cases(), 'value'),
         ];

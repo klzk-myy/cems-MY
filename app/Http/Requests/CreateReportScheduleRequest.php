@@ -22,13 +22,7 @@ class CreateReportScheduleRequest extends AuthorizedFormRequest
             ]);
         }
 
-        if (is_string($this->input('notification_recipients'))) {
-            $emails = array_values(array_filter(array_map(
-                'trim',
-                preg_split('/[\n,]+/', (string) $this->input('notification_recipients')) ?: []
-            )));
-            $this->merge(['notification_recipients' => $emails]);
-        }
+        $this->mergeRecipientList('notification_recipients');
     }
 
     /**

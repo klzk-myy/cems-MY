@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Bi;
 
 use App\Enums\Permission;
 use App\Enums\ReportType;
+use App\Exceptions\Domain\ReportValidationException;
 use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Concerns\ResolvesBiFilters;
 use App\Http\Controllers\Concerns\ResolvesBranchScope;
@@ -31,17 +32,24 @@ class ExportController extends Controller
     public function store(BiExportRequest $request): StreamedResponse
     {
         $this->requirePermission(Permission::ViewBiDashboard);
+        $this->requirePermission(Permission::ExportBiReports);
         [$from, $to] = $this->resolveBiPeriod($request);
 
         $branchId = $this->resolveReportBranchId($request->user(), $request);
 
-        $type = match ((string) $request->input('type')) {
+        $requestedType = (string) $request->input('type');
+        if ($requestedType === 'tellers') {
+            // Teller productivity is HR-sensitive — separate grant.
+            $this->requirePermission(Permission::ViewTellerProductivity);
+        }
+
+        $type = match ($requestedType) {
             'digest' => ReportType::BiDailyDigest,
             'branches' => ReportType::BiBranchPerformance,
             'currencies' => ReportType::BiCurrencyBreakdown,
             'tellers' => ReportType::BiTellerProductivity,
             'customers' => ReportType::BiTopCustomers,
-            default => throw new \InvalidArgumentException('Unsupported export type'),
+            default => throw new ReportValidationException('Unsupported export type'),
         };
 
         $filePath = $this->generator->generate($type, $from, $to, ['branch_id' => $branchId]);

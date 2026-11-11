@@ -42,17 +42,11 @@ class AnalyticsMonthlyCustomer extends BaseModel
         'computed_at',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'volume_myr' => MoneyCast::class,
-            'realized_margin_myr' => MoneyCast::class,
-            'computed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'volume_myr' => MoneyCast::class,
+        'realized_margin_myr' => MoneyCast::class,
+        'computed_at' => 'datetime',
+    ];
 
     use BelongsToBranch;
 

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Bi;
 
 use App\Enums\Permission;
 use App\Http\Controllers\Concerns\RequiresPermission;
+use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBiAlertRuleRequest;
 use App\Models\Bi\BiAlertRule;
-use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +22,7 @@ use Illuminate\View\View;
 class AlertRuleController extends Controller
 {
     use RequiresPermission;
+    use ResolvesBranchScope;
 
     /**
      * List the configured rules plus the create form.
@@ -42,16 +43,15 @@ class AlertRuleController extends Controller
                 })
             )
             ->orderBy('id')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
         return view('bi.alerts', [
             'rules' => $rules,
             'canManage' => $canManage,
             'metrics' => BiAlertRule::availableMetrics(),
             'comparisons' => BiAlertRule::availableComparisons(),
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
         ]);
     }
@@ -83,8 +83,17 @@ class AlertRuleController extends Controller
             ->with('success', 'Alert rule created.');
     }
 
-    public function destroy(BiAlertRule $rule): RedirectResponse
+    public function destroy(Request $request, BiAlertRule $rule): RedirectResponse
     {
+        $user = $request->user();
+
+        // Branch-scoped grantees may only delete rules pinned to their
+        // own branch — consolidated rules are global-admin territory.
+        if (! $user->role->canManageAllBranches()
+            && ($rule->branch_id === null || (int) $rule->branch_id !== (int) $user->branch_id)) {
+            abort(403);
+        }
+
         $rule->delete();
 
         return redirect()

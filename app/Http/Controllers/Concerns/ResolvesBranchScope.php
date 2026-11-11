@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 /**
  * Branch scope for rate reads and writes: users who can manage all branches
@@ -40,5 +42,19 @@ trait ResolvesBranchScope
         abort_if($user?->branch_id === null, 403, 'Your account is not assigned to a branch.');
 
         return $user->branch_id;
+    }
+
+    /**
+     * Branch selector options for filter bars — all branches for global
+     * viewers, empty collection for branch-scoped users (their selector
+     * is hidden anyway).
+     *
+     * @return Collection<int, Branch>
+     */
+    protected function branchSelectOptions(?User $user): Collection
+    {
+        return $user?->role->canManageAllBranches()
+            ? Branch::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
     }
 }

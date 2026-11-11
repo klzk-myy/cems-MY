@@ -537,6 +537,8 @@ class KpiService
 
         return [
             'volume_myr' => $volume,
+            'net_volume_myr' => $this->mathService->subtract($buy, $sell),
+            'buy_sell_ratio' => $this->mathService->safeDivide($buy, $sell, 4),
             'tx_count' => $txCount,
             'avg_ticket_myr' => $this->mathService->safeDivide($volume, (string) $completedCount, 4),
             'realized_margin_myr' => $margin,

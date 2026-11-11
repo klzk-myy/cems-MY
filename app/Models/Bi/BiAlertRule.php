@@ -2,6 +2,8 @@
 
 namespace App\Models\Bi;
 
+use App\Enums\BiAlertComparison;
+use App\Enums\SystemAlertLevel;
 use App\Models\BaseModel;
 use App\Models\Branch;
 use App\Models\Traits\BelongsToBranch;
@@ -17,10 +19,10 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $metric
- * @property string $comparison
+ * @property BiAlertComparison $comparison
  * @property string $threshold
  * @property int|null $branch_id
- * @property string $level
+ * @property SystemAlertLevel $level
  * @property array<int, string>|null $notification_recipients
  * @property bool $is_active
  * @property Carbon|null $last_evaluated_at
@@ -48,19 +50,15 @@ class BiAlertRule extends BaseModel
         'created_by',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'threshold' => 'decimal:4',
-            'notification_recipients' => 'array',
-            'is_active' => 'boolean',
-            'last_evaluated_at' => 'datetime',
-            'last_triggered_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'comparison' => BiAlertComparison::class,
+        'level' => SystemAlertLevel::class,
+        'threshold' => 'decimal:4',
+        'notification_recipients' => 'array',
+        'is_active' => 'boolean',
+        'last_evaluated_at' => 'datetime',
+        'last_triggered_at' => 'datetime',
+    ];
 
     /**
      * Metrics the evaluator can resolve via KpiService::periodMetrics().
@@ -88,12 +86,10 @@ class BiAlertRule extends BaseModel
      */
     public static function availableComparisons(): array
     {
-        return [
-            'lt' => 'below',
-            'lte' => 'at or below',
-            'gt' => 'above',
-            'gte' => 'at or above',
-        ];
+        return array_combine(
+            array_map(fn (BiAlertComparison $c) => $c->value, BiAlertComparison::cases()),
+            array_map(fn (BiAlertComparison $c) => $c->label(), BiAlertComparison::cases()),
+        );
     }
 
     /**

@@ -49,18 +49,12 @@ class AnalyticsDailyTeller extends BaseModel
         'computed_at',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'date' => 'date',
-            'volume_myr' => MoneyCast::class,
-            'approval_seconds_total' => 'decimal:2',
-            'computed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'date' => 'date',
+        'volume_myr' => MoneyCast::class,
+        'approval_seconds_total' => 'decimal:2',
+        'computed_at' => 'datetime',
+    ];
 
     use BelongsToBranch;
 

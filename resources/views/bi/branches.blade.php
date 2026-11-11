@@ -16,6 +16,8 @@
             <x-button variant="primary" type="submit">Apply</x-button>
         </x-filter-bar>
 
+        @include('bi.partials.date-presets')
+
         <div class="flex justify-end">
             <form method="POST" action="{{ route('bi.export') }}">
                 @csrf

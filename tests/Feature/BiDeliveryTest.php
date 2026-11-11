@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BiAlertComparison;
+use App\Enums\Permission;
 use App\Enums\ReportRunStatus;
 use App\Enums\ReportType;
+use App\Enums\SystemAlertLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Bi\BiAlertRule;
@@ -14,11 +17,14 @@ use App\Models\ReportSchedule;
 use App\Models\SystemAlert;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Notifications\ReportEmailNotification;
 use App\Services\Bi\AnalyticsSnapshotBuilder;
 use App\Services\Bi\BiAlertEvaluator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -198,7 +204,8 @@ class BiDeliveryTest extends TestCase
 
         $rule = BiAlertRule::first();
         $this->assertNotNull($rule);
-        $this->assertSame('critical', $rule->level);
+        $this->assertSame(SystemAlertLevel::Critical, $rule->level);
+        $this->assertSame(BiAlertComparison::Lt, $rule->comparison);
         $this->assertSame(['boss@example.com', 'ops@example.com'], $rule->notification_recipients);
 
         $this->actingAs($admin)
@@ -382,5 +389,82 @@ class BiDeliveryTest extends TestCase
         $this->assertNotNull($artifact);
         $this->assertEquals(now()->subMonthNoOverflow()->startOfMonth()->toDateString(), $artifact->period_start->toDateString());
         $this->assertEquals(now()->subMonthNoOverflow()->endOfMonth()->toDateString(), $artifact->period_end->toDateString());
+    }
+
+    #[Test]
+    public function branch_scoped_manager_cannot_delete_consolidated_or_other_branch_rules(): void
+    {
+        $branchA = Branch::factory()->create();
+        $branchB = Branch::factory()->create();
+        $manager = User::factory()->manager()->create(['branch_id' => $branchA->id]);
+
+        // Grant manage_report_schedules to the manager role via the
+        // authoritative matrix so the route middleware lets the request in.
+        DB::table('role_permissions')->updateOrInsert(
+            ['role' => $manager->role->value, 'permission' => Permission::ManageReportSchedules->value],
+            ['granted' => true]
+        );
+        Cache::flush();
+
+        $foreignRule = BiAlertRule::create([
+            'metric' => 'volume_myr',
+            'comparison' => 'lt',
+            'threshold' => '1',
+            'branch_id' => $branchB->id,
+            'level' => 'warning',
+            'is_active' => true,
+        ]);
+        $globalRule = BiAlertRule::create([
+            'metric' => 'volume_myr',
+            'comparison' => 'lt',
+            'threshold' => '1',
+            'branch_id' => null,
+            'level' => 'warning',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->delete(route('bi.alerts.destroy', $foreignRule))
+            ->assertForbidden();
+        $this->actingAs($manager)
+            ->delete(route('bi.alerts.destroy', $globalRule))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('bi_alert_rules', ['id' => $foreignRule->id]);
+        $this->assertDatabaseHas('bi_alert_rules', ['id' => $globalRule->id]);
+    }
+
+    #[Test]
+    public function completed_scheduled_run_emails_file_to_notification_recipients(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        config(['cems.system_user_id' => $user->id]);
+
+        $this->makeTransaction(['amount_myr' => '500.0000', 'created_at' => Carbon::yesterday()]);
+        $this->rebuild(Carbon::yesterday()->toDateString(), Carbon::yesterday()->toDateString());
+
+        $schedule = ReportSchedule::create([
+            'report_type' => ReportType::BiDailyDigest,
+            'cron_expression' => '0 6 * * *',
+            'parameters' => null,
+            'notification_recipients' => ['ops@example.com'],
+            'is_active' => true,
+            'created_by' => $user->id,
+        ]);
+        $schedule->forceFill(['next_run_at' => now()->subHour()])->save();
+
+        $this->artisanCommand('reports:process-schedules')->assertSuccessful();
+
+        $run = ReportRun::where('schedule_id', $schedule->id)->first();
+        $this->assertNotNull($run);
+        $this->assertSame(ReportRunStatus::Completed, $run->status, 'Run failed: '.$run->error_message);
+        $this->assertNotNull($run->emailed_at);
+
+        Notification::assertSentOnDemand(
+            ReportEmailNotification::class,
+            fn ($notification, $channels, $notifiable) => in_array('ops@example.com', (array) ($notifiable->routes['mail'] ?? []), true)
+        );
     }
 }

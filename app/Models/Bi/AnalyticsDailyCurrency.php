@@ -23,6 +23,8 @@ use Illuminate\Support\Carbon;
  * @property string $buy_volume_myr
  * @property string $sell_volume_myr
  * @property string $realized_margin_myr
+ * @property string $avg_buy_rate
+ * @property string $avg_sell_rate
  * @property Carbon|null $computed_at
  * @property-read Branch|null $branch
  * @property-read Currency $currency
@@ -40,24 +42,22 @@ class AnalyticsDailyCurrency extends BaseModel
         'buy_volume_myr',
         'sell_volume_myr',
         'realized_margin_myr',
+        'avg_buy_rate',
+        'avg_sell_rate',
         'computed_at',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
-    protected function casts(): array
-    {
-        return [
-            'date' => 'date',
-            'buy_qty' => MoneyCast::class,
-            'sell_qty' => MoneyCast::class,
-            'buy_volume_myr' => MoneyCast::class,
-            'sell_volume_myr' => MoneyCast::class,
-            'realized_margin_myr' => MoneyCast::class,
-            'computed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'date' => 'date',
+        'buy_qty' => MoneyCast::class,
+        'sell_qty' => MoneyCast::class,
+        'buy_volume_myr' => MoneyCast::class,
+        'sell_volume_myr' => MoneyCast::class,
+        'realized_margin_myr' => MoneyCast::class,
+        'avg_buy_rate' => 'decimal:8',
+        'avg_sell_rate' => 'decimal:8',
+        'computed_at' => 'datetime',
+    ];
 
     use BelongsToBranch;
 

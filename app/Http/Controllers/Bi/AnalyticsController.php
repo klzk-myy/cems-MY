@@ -7,17 +7,19 @@ use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Concerns\ResolvesBiFilters;
 use App\Http\Controllers\Concerns\ResolvesBranchScope;
 use App\Http\Controllers\Controller;
-use App\Models\Branch;
+use App\Models\Bi\AnalyticsDailyCurrency;
 use App\Models\Currency;
+use App\Models\Customer;
 use App\Services\Bi\AnalyticsSnapshotBuilder;
 use App\Services\Bi\DemandForecaster;
 use App\Services\Bi\KpiService;
+use App\Support\ChartPalette;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * BI report pages (BI-PLAN.md Phase 3): branch comparison, currency
+ * BI report pages: branch comparison, currency
  * deep-dive, operational SLA, and customer analytics — all reading the
  * analytics_* rollups through KpiService. Same filter conventions and
  * branch scoping as the BI dashboard.
@@ -64,9 +66,7 @@ class AnalyticsController extends Controller
                     ['label' => 'Realized margin (MYR)', 'data' => array_column($rows, 'realized_margin_myr'), 'backgroundColor' => '#d4a843'],
                 ],
             ],
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
         ]);
@@ -108,13 +108,11 @@ class AnalyticsController extends Controller
             'currencyOptions' => $currencyOptions,
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'mixChart' => [
                 'labels' => array_column($breakdown, 'currency_code'),
                 'datasets' => [
-                    ['data' => array_column($breakdown, 'volume_myr'), 'backgroundColor' => $this->palette(count($breakdown))],
+                    ['data' => array_column($breakdown, 'volume_myr'), 'backgroundColor' => ChartPalette::colors(count($breakdown))],
                 ],
             ],
             'trendChart' => [
@@ -147,16 +145,16 @@ class AnalyticsController extends Controller
         $branchId = $this->resolveReportBranchId($user, $request);
 
         $trend = $this->kpiService->operationsTrend($from, $to, $branchId);
+        $canViewTellers = $user->role->canPerform(Permission::ViewTellerProductivity);
 
         return view('bi.operations', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'tellers' => $this->kpiService->tellerProductivity($from, $to, $branchId),
+            'canViewTellers' => $canViewTellers,
+            'tellers' => $canViewTellers ? $this->kpiService->tellerProductivity($from, $to, $branchId) : [],
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'approvalChart' => [
                 'labels' => $trend['labels'],
                 'datasets' => [
@@ -189,16 +187,19 @@ class AnalyticsController extends Controller
         $branchId = $this->resolveReportBranchId($user, $request);
 
         $trend = $this->kpiService->activeCustomersTrend($from, $to, $branchId);
+        $topCustomers = $this->kpiService->topCustomers($from, $to, $branchId);
 
         return view('bi.customers', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'topCustomers' => $this->kpiService->topCustomers($from, $to, $branchId),
+            'topCustomers' => $topCustomers,
+            'customerModels' => Customer::query()
+                ->whereIn('id', array_column($topCustomers, 'customer_id') ?: [0])
+                ->get()
+                ->keyBy('id'),
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'activeChart' => [
                 'labels' => $trend['labels'],
                 'datasets' => [
@@ -254,18 +255,23 @@ class AnalyticsController extends Controller
         // All-currency demand summary for the horizon — the stocking table.
         $summary = $this->forecaster->forecastSummary($branchId, Carbon::tomorrow(), 7);
 
+        // The plan asks for >=6 months of rollup history before trusting
+        // demand forecasts; surface a warning rather than block the page.
+        $oldestRollup = AnalyticsDailyCurrency::min('date');
+        $insufficientHistory = $oldestRollup === null
+            || Carbon::parse($oldestRollup)->gt(today()->subMonths(6));
+
         return view('bi.forecast', [
             'from' => Carbon::tomorrow()->toDateString(),
             'to' => Carbon::tomorrow()->addDays(6)->toDateString(),
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
-            'branches' => $user->role->canManageAllBranches()
-                ? Branch::query()->orderBy('name')->get(['id', 'name'])
-                : collect(),
+            'branches' => $this->branchSelectOptions($user),
             'selected' => $selected,
             'currencyOptions' => $currencyOptions,
             'forecasts' => $forecasts,
             'summary' => $summary,
+            'insufficientHistory' => $insufficientHistory,
             'chart' => [
                 'labels' => $labels,
                 'datasets' => [
@@ -276,18 +282,5 @@ class AnalyticsController extends Controller
                 ],
             ],
         ]);
-    }
-
-    /**
-     * Chart.js doughnut palette — theme accent first, then a stable
-     * rotation so a given rank always renders the same color.
-     *
-     * @return array<int, string>
-     */
-    protected function palette(int $count): array
-    {
-        $colors = ['#d4a843', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316'];
-
-        return array_map(fn (int $i) => $colors[$i % count($colors)], range(0, max(0, $count - 1)));
     }
 }
