@@ -56,6 +56,7 @@ enum Permission: string
     case ManageThresholds = 'manage_thresholds';
     case AccessPerformance = 'access_performance';
     case ManageReportSchedules = 'manage_report_schedules';
+    case ViewBiDashboard = 'view_bi_dashboard';
     case ManageCurrencies = 'manage_currencies';
     case ManageSystemAlerts = 'manage_system_alerts';
     case ManageSystem = 'manage_system';
@@ -108,6 +109,7 @@ enum Permission: string
             self::ManageThresholds => 'Manage Thresholds',
             self::AccessPerformance => 'Access Performance Dashboard',
             self::ManageReportSchedules => 'Manage Report Schedules',
+            self::ViewBiDashboard => 'View BI Dashboard',
             self::ManageCurrencies => 'Manage Currencies',
             self::ManageSystemAlerts => 'Manage System Alerts',
             self::ManageSystem => 'Manage System',
@@ -162,6 +164,7 @@ enum Permission: string
             self::ManageThresholds => 'View and override compliance/operational threshold values',
             self::AccessPerformance => 'View the performance monitoring dashboard',
             self::ManageReportSchedules => 'Schedule automated report generation',
+            self::ViewBiDashboard => 'View the executive BI dashboard: KPIs, trends, and branch comparison',
             self::ManageCurrencies => 'Create, edit, and disable traded currencies',
             self::ManageSystemAlerts => 'View and acknowledge operational system alerts',
             self::ManageSystem => 'System health, setup reset, and infrastructure endpoints',
@@ -215,7 +218,8 @@ enum Permission: string
             self::ManageThresholds => 'Administration',
             self::ViewReports,
             self::AccessPerformance,
-            self::ManageReportSchedules => 'Reports',
+            self::ManageReportSchedules,
+            self::ViewBiDashboard => 'Reports',
             self::ManageCurrencies,
             self::ManageSystemAlerts,
             self::ManageSystem,
@@ -287,6 +291,7 @@ enum Permission: string
                 self::ManageAccounting->value,
                 self::PostExpenses->value,
                 self::PostJournalEntries->value,
+                self::ViewBiDashboard->value,
             ],
             UserRole::ComplianceOfficer->value => [
                 self::ApproveTransactions->value,
@@ -301,6 +306,7 @@ enum Permission: string
                 self::ManageRiskScreening->value,
                 self::ManageSanctions->value,
                 self::ManageCustomers->value,
+                self::ViewBiDashboard->value,
             ],
             UserRole::Accountant->value => [
                 self::AccessAccounting->value,
@@ -310,6 +316,7 @@ enum Permission: string
                 self::ManageAccountMappings->value,
                 self::ViewReports->value,
                 self::ManageAllBranches->value,
+                self::ViewBiDashboard->value,
             ],
             UserRole::Admin->value => array_column(self::cases(), 'value'),
         ];

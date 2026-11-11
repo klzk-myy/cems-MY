@@ -7,6 +7,42 @@
 // customerTypeahead, transactionWizard).
 
 export function registerComponents(Alpine) {
+    // Chart.js canvas wrapper — the CSP build can't evaluate inline
+    // x-data, so the chart config travels through data-config (JSON) and
+    // chart.js is code-split: it only downloads on pages that render a
+    // chart (BI dashboard, future report pages).
+    Alpine.data('chartData', () => ({
+        chart: null,
+        init() {
+            const canvas = this.$el.querySelector('canvas');
+            if (!canvas) {
+                return;
+            }
+
+            let config;
+            try {
+                config = JSON.parse(this.$el.dataset.config || '{}');
+            } catch (e) {
+                return;
+            }
+            if (!config.type || !config.data) {
+                return;
+            }
+
+            import('chart.js/auto')
+                .then(({ default: Chart }) => {
+                    this.chart = new Chart(canvas, config);
+                })
+                .catch(() => {});
+        },
+        destroy() {
+            if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
+        },
+    }));
+
     Alpine.data('transferModals', () => ({
         showCancelModal: false,
         showRejectModal: false,

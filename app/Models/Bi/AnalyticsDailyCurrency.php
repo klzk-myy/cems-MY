@@ -6,6 +6,8 @@ use App\Casts\MoneyCast;
 use App\Models\BaseModel;
 use App\Models\Branch;
 use App\Models\Currency;
+use App\Models\Traits\BelongsToBranch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -57,12 +59,15 @@ class AnalyticsDailyCurrency extends BaseModel
         ];
     }
 
+    use BelongsToBranch;
+
     /**
-     * @return BelongsTo<Branch, $this>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function branch(): BelongsTo
+    public function scopeForBranch(Builder $query, ?int $branchId): Builder
     {
-        return $this->belongsTo(Branch::class);
+        return $query->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
     }
 
     /**

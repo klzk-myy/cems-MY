@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SanctionSourceController;
 use App\Http\Controllers\Admin\ThresholdController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Bi\DashboardController as BiDashboardController;
 use App\Http\Controllers\BranchClosingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchPoolController;
@@ -532,6 +533,13 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/profitability', [AnalyticsController::class, 'profitability'])->name('profitability');
         Route::get('/customer-analysis', [AnalyticsController::class, 'customerAnalysis'])->name('customer-analysis');
         Route::get('/compliance-summary', [AnalyticsController::class, 'complianceSummary'])->name('compliance-summary');
+    });
+
+    // Executive BI dashboard — KPIs, trends, and branch comparison over
+    // the analytics_* rollups. Separate route from the operational
+    // dashboard; gated by its own permission.
+    Route::middleware('role:view_bi_dashboard')->prefix('bi')->name('bi.')->group(function () {
+        Route::get('/', [BiDashboardController::class, 'index'])->name('dashboard');
     });
 
     Route::middleware(['role:manage_users', 'mfa.verified'])->prefix('users')->name('users.')->group(function () {

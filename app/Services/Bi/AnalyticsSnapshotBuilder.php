@@ -46,6 +46,17 @@ class AnalyticsSnapshotBuilder
     }
 
     /**
+     * Rebuild only the daily rollups for today — the cheap freshness path
+     * for dashboards (3 aggregate queries). Callers should throttle via
+     * `Cache::add` debounce; the monthly rollup is intentionally left to
+     * the nightly window rebuild, so month-grain analytics lag by design.
+     */
+    public function refreshToday(): void
+    {
+        $this->rebuildDaily(today());
+    }
+
+    /**
      * Rebuild one month of the monthly-customer rollup.
      *
      * @param  string  $month  'YYYY-MM'

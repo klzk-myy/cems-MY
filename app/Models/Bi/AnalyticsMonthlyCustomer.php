@@ -6,6 +6,8 @@ use App\Casts\MoneyCast;
 use App\Models\BaseModel;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Traits\BelongsToBranch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -52,19 +54,22 @@ class AnalyticsMonthlyCustomer extends BaseModel
         ];
     }
 
+    use BelongsToBranch;
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForBranch(Builder $query, ?int $branchId): Builder
+    {
+        return $query->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
+    }
+
     /**
      * @return BelongsTo<Customer, $this>
      */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
-    }
-
-    /**
-     * @return BelongsTo<Branch, $this>
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 }
