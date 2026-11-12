@@ -5,6 +5,35 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 13: BI API v1
+
+### Files Changed
+- `app/Http/Controllers/Api/V1/BiController.php` — new read-only BI analytics controller
+- `routes/api_v1.php` — eight `/api/v1/bi/*` routes under `auth:sanctum` + `role:view_bi_dashboard`
+- `app/Services/Bi/KpiService.php` — `tellerProductivity()` branch scope qualified
+- `tests/Feature/Api/V1/BiApiTest.php`, `tests/Unit/KpiServiceTest.php` — coverage
+
+### Purpose
+Every operational module has an API v1 surface; BI was web-only. An API consumer and a browser now read the same numbers, because both go through `KpiService`.
+
+### Changes Made
+- Added `GET /api/v1/bi/{dashboard,branches,currencies,rates,operations,customers,stock,forecast}`. Each action applies the same `Permission::ViewBiDashboard` gate and the same `resolveReportBranchId()` scope as its web counterpart, and echoes the resolved period so a consumer can confirm the window.
+- `operations` returns an empty `tellers` array unless the caller holds `view_teller_productivity`, matching the web page.
+- Fixed a latent SQL bug the new tests exposed: `tellerProductivity()` joins `users`, which also carries a `branch_id` column, so the `forBranch()` scope's unqualified `where branch_id` was ambiguous. The scope is now qualified as `analytics_daily_teller.branch_id`.
+
+### Testing
+- `php artisan test --compact` — 2858 passed, 3 skipped, 0 failed
+- New API tests: authentication, permission matrix, dashboard payload shape and period echo, branch scoping, the teller grant, and the rates/stock payload shapes
+- New unit regression: `teller_productivity_scopes_by_branch_without_ambiguous_columns`
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed paths — no errors
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 1 changed symbol, 0 affected processes, risk low
+- The controller is new; the only change to existing code is the one-line column qualification in `tellerProductivity()`
+
+---
+
 ## [2026-11-12] - Round 12: BI dashboard drill-downs, sparklines and stock KPIs
 
 ### Files Changed
