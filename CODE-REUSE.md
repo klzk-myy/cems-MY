@@ -60,3 +60,13 @@ entries; mark resolved entries `status: done (<commit>)`):
 - where: `app/Http/Requests/StoreTransactionRequest.php`, `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php`, `app/Http/Requests/Concerns/HasTransactionValidationRules.php`
 - finding: Both booking form requests needed the same "resolve a counter within the acting user's branch" query while mapping `counter_id` to the canonical `till_id` before validation. Written once as a private `counterQuery()` per class, then hoisted into the `HasTransactionValidationRules` trait both requests already use.
 - status: done (this change set)
+
+## [2026-11-12] Balance-sign rule re-derived at every statement site
+- where: `app/Services/Accounting/LedgerService.php` (P&L, balance-sheet sections, net-income line), `app/Enums/AccountType.php`
+- finding: Credit-normal accounts had their `debit − credit` net flipped by hand (`multiply($net, '-1')`) at each statement site — one sign error away from a report off by a factor of two on a whole account class. Now one `AccountType::applyNaturalSign()` helper owns the rule; the remaining flips in the closing services select which journal-line side carries an amount, which is a different operation.
+- status: done (this change set)
+
+## [2026-11-12] Booking/day-close serialization duplicated in two services
+- where: `app/Services/Transaction/TransactionCreationService.php` (`serializeAgainstClosure`), `app/Services/Branch/BranchClosingService.php` (`initiateClosure`)
+- finding: Both paths needed the branch-row lock that serializes a booking against a closure initiation, but the booking path took only the workflow-table lock (which acquires nothing when no workflow rows exist). The booking path now mirrors the closure serializer via one named seam, so the lock ordering lives in one place.
+- status: done (this change set)
