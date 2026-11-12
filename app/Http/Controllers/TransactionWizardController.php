@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CddLevel;
+use App\Enums\Permission;
 use App\Enums\TransactionType;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\PermissionDeniedException;
@@ -60,6 +61,8 @@ class TransactionWizardController extends Controller
      */
     public function step1(TransactionWizardStep1Request $request): JsonResponse
     {
+        $this->requirePermission(Permission::CreateTransactions);
+
         $validated = $request->validated();
         /** @var Customer|null $customer */
         $customer = Customer::find($validated['customer_id']);
@@ -143,6 +146,8 @@ class TransactionWizardController extends Controller
      */
     public function step2(TransactionWizardStep2Request $request): JsonResponse
     {
+        $this->requirePermission(Permission::CreateTransactions);
+
         $validated = $request->validated();
         $sessionId = $validated['wizard_session_id'];
 
@@ -179,6 +184,8 @@ class TransactionWizardController extends Controller
      */
     public function step3(TransactionWizardStep3Request $request): JsonResponse
     {
+        $this->requirePermission(Permission::CreateTransactions);
+
         $validated = $request->validated();
         $sessionId = $validated['wizard_session_id'];
 
@@ -305,6 +312,8 @@ class TransactionWizardController extends Controller
      */
     public function cancel(string $sessionId): JsonResponse
     {
+        $this->requirePermission(Permission::CreateTransactions);
+
         $sessionData = $this->getOwnedSession($sessionId);
 
         if ($sessionData instanceof JsonResponse) {

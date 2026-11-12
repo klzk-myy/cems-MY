@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\StoreBudgetRequest;
 use App\Http\Requests\Accounting\UpdateBudgetRequest;
@@ -30,6 +31,8 @@ class BudgetController extends Controller
 
     public function store(StoreBudgetRequest $request): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessAccounting);
+
         $validated = $request->validated();
 
         foreach ($validated['budgets'] as $budgetData) {
@@ -47,6 +50,8 @@ class BudgetController extends Controller
 
     public function update(UpdateBudgetRequest $request, Budget $budget): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessAccounting);
+
         $validated = $request->validated();
 
         $budget->update([

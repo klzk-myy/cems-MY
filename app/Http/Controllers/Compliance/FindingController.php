@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\ComplianceCaseType;
+use App\Enums\Permission;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
@@ -67,6 +68,8 @@ class FindingController extends Controller
 
     public function createCase(CreateCaseFromFindingRequest $request, int $id): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $finding = ComplianceFinding::find($id);
@@ -115,6 +118,8 @@ class FindingController extends Controller
 
     public function dismiss(DismissFindingRequest $request, int $id): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $finding = ComplianceFinding::find($id);
 
         if (! $finding) {

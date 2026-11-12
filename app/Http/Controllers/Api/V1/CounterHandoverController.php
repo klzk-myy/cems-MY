@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\PermissionDeniedException;
 use App\Http\Controllers\Api\V1\Concerns\AuthorizesCounter;
@@ -25,6 +26,8 @@ class CounterHandoverController extends Controller
 
     public function acknowledge(AcknowledgeHandoverRequest $request, int $counterId, int $handoverId): JsonResponse
     {
+        $this->requirePermission(Permission::OperateCounters);
+
         $counter = $this->authorizeCounter($counterId);
         if (! $counter instanceof Counter) {
             return $this->notFoundResponse('Counter not found');

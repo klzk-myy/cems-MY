@@ -443,12 +443,4 @@ class Customer extends BaseModel
             return null;
         }
     }
-
-    /**
-     * Legacy alias for the decrypted ID number.
-     */
-    public function getIcNumberAttribute(): ?string
-    {
-        return $this->id_number;
-    }
 }

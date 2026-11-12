@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Enums\ImportStatus;
+use App\Enums\Permission;
 use App\Enums\SanctionStatus;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Concerns\SanctionEntryNormalizer;
@@ -105,6 +106,8 @@ class SanctionListController extends Controller
 
     public function storeEntry(StoreSanctionEntryRequest $request): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
@@ -122,6 +125,8 @@ class SanctionListController extends Controller
 
     public function updateEntry(UpdateSanctionEntryRequest $request, SanctionEntry $entry): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $request->merge([
             'entity_type' => ucfirst($request->input('entity_type', '')),
         ]);
@@ -172,6 +177,8 @@ class SanctionListController extends Controller
 
     public function triggerImport(int $listId): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $list = SanctionList::find($listId);
 
         if (! $list) {

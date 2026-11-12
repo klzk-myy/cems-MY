@@ -82,10 +82,11 @@ class SecurityHeadersTest extends TestCase
         preg_match('/style-src ([^;]+)/', $csp, $matches);
 
         $this->assertNotEmpty($matches, 'style-src directive missing');
-        $this->assertStringContainsString("'unsafe-inline'", $matches[1]);
+        $styleSrc = $matches[1] ?? '';
+        $this->assertStringContainsString("'unsafe-inline'", $styleSrc);
         // A nonce here would make 'unsafe-inline' inert (CSP3) and block the
         // charts' inline dimensions in production.
-        $this->assertStringNotContainsString("'nonce-", $matches[1]);
+        $this->assertStringNotContainsString("'nonce-", $styleSrc);
     }
 
     #[Test]

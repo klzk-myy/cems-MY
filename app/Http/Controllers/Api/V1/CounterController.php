@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\CounterSessionStatus;
+use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InvalidStateException;
 use App\Exceptions\Domain\SessionClosedException;
@@ -35,6 +36,8 @@ class CounterController extends Controller
      */
     public function store(StoreCounterRequest $request): JsonResponse
     {
+        $this->requirePermission(Permission::ManageCounters);
+
         $counter = $this->counterService->createCounter(
             $request->validated(),
             $request->user()
@@ -45,6 +48,8 @@ class CounterController extends Controller
 
     public function close(CloseCounterRequest $request, string $counterId): JsonResponse
     {
+        $this->requirePermission(Permission::OperateCounters);
+
         $validated = $request->validated();
 
         $counter = Counter::findOrFail($counterId);

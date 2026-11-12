@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Enums\UserRole;
+use App\Http\Middleware\CheckRole;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\User;
@@ -144,5 +145,27 @@ class BranchResourceAuthorizationTest extends TestCase
                     'is_active', 'mfa_enabled', 'created_at', 'updated_at',
                 ]],
             ]);
+    }
+
+    #[Test]
+    public function controller_level_check_enforces_the_matrix_when_route_middleware_is_bypassed(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create([
+            'role' => UserRole::Teller,
+            'branch_id' => $branch->id,
+        ]);
+
+        // Remove the route-level role gate to prove the controller still
+        // refuses a role the matrix does not grant manage_branches to.
+        $this->withoutMiddleware(CheckRole::class);
+
+        $this->actingAs($teller)
+            ->postJson('/api/v1/branches', [
+                'code' => 'TST',
+                'name' => 'Test Branch',
+                'type' => 'branch',
+            ])
+            ->assertStatus(403);
     }
 }

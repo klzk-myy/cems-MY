@@ -56,11 +56,35 @@ use RuntimeException;
 class SchemaSeeder extends Seeder
 {
     /**
-     * Deliberate rebuild paths opt in by setting this flag. Bare
-     * `db:seed --class=SchemaSeeder` on a populated database is refused —
-     * the destructive drop is too easy to trigger accidentally.
+     * Deliberate rebuild paths opt in through {@see runWithPopulatedGuard()}.
+     * Bare `db:seed --class=SchemaSeeder` on a populated database is refused —
+     * the destructive drop is too easy to trigger accidentally. Protected so
+     * no other code can flip it directly.
      */
-    public static bool $allowPopulated = false;
+    protected static bool $allowPopulated = false;
+
+    /**
+     * Run a callback with the populated-database guard temporarily lifted.
+     *
+     * The only sanctioned way to rebuild a populated database: the flag is
+     * protected, so callers cannot set it themselves, and the try/finally
+     * guarantees it is restored even when the callback throws.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function runWithPopulatedGuard(callable $callback): mixed
+    {
+        self::$allowPopulated = true;
+
+        try {
+            return $callback();
+        } finally {
+            self::$allowPopulated = false;
+        }
+    }
 
     /**
      * Run the seeder through the application container (used by tests and
@@ -72,15 +96,11 @@ class SchemaSeeder extends Seeder
      */
     public static function seedNow(Application $app): void
     {
-        self::$allowPopulated = true;
-
-        try {
+        self::runWithPopulatedGuard(function () use ($app) {
             $seeder = $app->make(self::class);
             $seeder->run();
             $app->make(ReferenceDataSeeder::class)->run();
-        } finally {
-            self::$allowPopulated = false;
-        }
+        });
     }
 
     public function run(): void
@@ -2339,14 +2359,24 @@ class SchemaSeeder extends Seeder
     {
         foreach ([
             'branches',
+            'users',
             'counters',
+            'counter_sessions',
+            'till_balances',
             'customers',
             'transactions',
             'journal_entries',
+            'account_ledger',
             'branch_pools',
+            'pool_remittances',
             'currency_positions',
+            'stock_reservations',
             'stock_transfers',
             'teller_allocations',
+            'expenses',
+            'reports_generated',
+            'system_alerts',
+            'audit_trails',
             'setup_state',
         ] as $table) {
             if (Schema::hasTable($table) && DB::table($table)->exists()) {

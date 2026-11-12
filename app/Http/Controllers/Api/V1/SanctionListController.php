@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Enums\SanctionStatus;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Concerns\SanctionEntryNormalizer;
@@ -76,6 +77,8 @@ class SanctionListController extends Controller
 
     public function triggerImport(int $listId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         $list = SanctionList::findOrFail($listId);
 
         try {
@@ -118,6 +121,8 @@ class SanctionListController extends Controller
 
     public function storeEntry(StoreSanctionEntryRequest $request): JsonResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         $validated = $request->validated();
 
         $normalized = $this->normalizeEntityName($validated['entity_name']);
@@ -132,6 +137,8 @@ class SanctionListController extends Controller
 
     public function updateEntry(UpdateSanctionEntryRequest $request, int $entryId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         $entry = SanctionEntry::findOrFail($entryId);
 
         $validated = $request->validated();
@@ -157,6 +164,8 @@ class SanctionListController extends Controller
 
     public function deleteEntry(int $entryId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         $entry = SanctionEntry::findOrFail($entryId);
 
         $entry->update(['status' => SanctionStatus::Inactive->value]);

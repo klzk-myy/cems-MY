@@ -22,6 +22,8 @@ class SanctionListControllerTest extends TestCase
     {
         $user = User::factory()->create(['role' => UserRole::ComplianceOfficer]);
 
+        $this->actingAs($user);
+
         $list = SanctionList::factory()->create();
         $entry = SanctionEntry::factory()->create([
             'list_id' => $list->id,

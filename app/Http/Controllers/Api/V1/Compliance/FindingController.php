@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Compliance;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\CaseManagementException;
 use App\Http\Concerns\FiltersComplianceFindings;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
@@ -47,6 +48,8 @@ class FindingController extends Controller
      */
     public function dismiss(DismissFindingRequest $request, int $id): JsonResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $finding = ComplianceFinding::findOrFail($id);

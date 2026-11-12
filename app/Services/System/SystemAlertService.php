@@ -19,23 +19,34 @@ class SystemAlertService
      */
     public function send(string $message, string $level = SystemAlertLevel::Info->value, array $options = []): SystemAlert
     {
-        return DB::transaction(function () use ($message, $level, $options) {
-            $alert = SystemAlert::create([
+        // Persist the alert first: the row is the compliance record. Email
+        // delivery must not be able to roll it back — a mailbox outage must
+        // not erase a breach notification.
+        $alert = DB::transaction(function () use ($message, $level, $options) {
+            return SystemAlert::create([
                 'level' => $level,
                 'message' => $message,
                 'source' => $options['source'] ?? null,
                 'metadata' => $options['metadata'] ?? null,
                 'created_at' => now(),
             ]);
-
-            if (in_array($level, [SystemAlertLevel::Warning->value, SystemAlertLevel::Critical->value])) {
-                $this->sendEmail($alert, $options);
-            }
-
-            $this->logAlert($alert);
-
-            return $alert;
         });
+
+        if (in_array($level, [SystemAlertLevel::Warning->value, SystemAlertLevel::Critical->value])) {
+            try {
+                $this->sendEmail($alert, $options);
+            } catch (\Throwable $e) {
+                // Delivery must never escape and take the caller's work with
+                // it — the alert row is already committed.
+                Log::error('Failed to send alert email: '.$e->getMessage(), [
+                    'alert_id' => $alert->id,
+                ]);
+            }
+        }
+
+        $this->logAlert($alert);
+
+        return $alert;
     }
 
     /**

@@ -41,22 +41,19 @@ class ResetTestDatabase extends Command
                 // --fresh --seed is the deliberate full rebuild: opt both
                 // seeders' populated-database guards into running.
                 DatabaseSeeder::$allowPopulated = true;
-                SchemaSeeder::$allowPopulated = true;
                 try {
-                    $this->call('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true]);
+                    SchemaSeeder::runWithPopulatedGuard(function () {
+                        $this->call('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true]);
+                    });
                 } finally {
                     DatabaseSeeder::$allowPopulated = false;
-                    SchemaSeeder::$allowPopulated = false;
                 }
             } else {
                 // --fresh is the deliberate rebuild path: opt SchemaSeeder
                 // into running against a populated database.
-                SchemaSeeder::$allowPopulated = true;
-                try {
+                SchemaSeeder::runWithPopulatedGuard(function () {
                     $this->call('db:seed', ['--class' => SchemaSeeder::class, '--force' => true]);
-                } finally {
-                    SchemaSeeder::$allowPopulated = false;
-                }
+                });
             }
 
             $this->info('Database refreshed with seeding.');

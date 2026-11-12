@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\MonthEndPreCheckFailedException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
@@ -22,6 +23,8 @@ class MonthEndCloseController extends Controller
 
     public function close(MonthEndCloseRequest $request): JsonResponse
     {
+        $this->requirePermission(Permission::ManageAccounting);
+
         $date = $request->input('date')
             ? Carbon::parse($request->input('date'))
             : now()->subMonth()->endOfMonth();

@@ -5,7 +5,71 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Hardening round 2: password rotation, branch-scoped counters, CSP styles, dead config
+## [2026-11-12] - Hardening round 3: controller permission sweep, fail-closed till rule, alert durability, seeder guard
+
+### Files Changed
+- `app/Http/Controllers/Api/V1/{Counter,MonthEndClose,BranchClosing,Branch,CounterHandover,Screening,SanctionList}Controller.php`, `app/Http/Controllers/Api/V1/Compliance/FindingController.php` — controller-level permission checks
+- `app/Http/Controllers/{TransactionWizardController,Accounting/BudgetController,Admin/SanctionSourceController,Compliance/FindingController,Compliance/SanctionListController,Compliance/ScreeningController,Compliance/ScreeningMatchController}.php` — controller-level permission checks
+- `app/Rules/ValidTill.php` — fail closed without an authenticated, branch-assigned user
+- `app/Services/System/SystemAlertService.php` — alert row commits before email delivery
+- `database/seeders/SchemaSeeder.php` — protected guard + `runWithPopulatedGuard()`; wider populated-database check
+- `app/Console/Commands/ResetTestDatabase.php` — uses the guard helper
+- `app/Models/Customer.php` — removed the dead `getIcNumberAttribute()` alias
+- `tests/Feature/Api/V1/BranchResourceAuthorizationTest.php`, `tests/Unit/Rules/ValidTillTest.php`, `tests/Unit/Services/SystemAlertServiceTest.php` — coverage
+- `phpstan-baseline.neon` — `ValidTillTest` closure count 1 → 2
+
+### Purpose
+Close the remaining audit findings that carry real production value: uneven
+controller-level authorization, a till rule that resolved counters without an
+authenticated branch, an alert record that could roll back with a failed email
+delivery, and a destructive seeder guard that any code could flip.
+
+### Changes Made
+- **Controller permission sweep.** 15 controllers with mutating actions now
+  call `requirePermission()` matching their route's `role:` key
+  (`ManageCounters`, `OperateCounters`, `ManageBranchClosing`, `ManageBranches`,
+  `ManageAccounting`, `ManageSanctions`, `AccessCompliance`,
+  `CreateTransactions`, `AccessAccounting`). The route middleware stays the
+  outer gate; the controller check keeps the permission enforced if routes are
+  regrouped. `NotificationPreferenceController` is intentionally untouched
+  (every authenticated user manages their own preferences); `SetupController`
+  and `Auth/*` are pre-auth or self-service by design.
+- **`ValidTill` fails closed.** Previously an unauthenticated caller fell back
+  to an unscoped counter lookup. It now refuses unless the user is
+  authenticated and branch-assigned, then scopes the lookup to that branch.
+- **`SystemAlertService::send()` commits the alert row first**, then delivers
+  email outside that transaction and catches delivery failures — a mailbox
+  outage can no longer roll back the compliance record.
+- **`SchemaSeeder` guard hardened.** `$allowPopulated` is now `protected`; the
+  only opt-in is `runWithPopulatedGuard(callable)`, used by `seedNow()` and
+  `db:reset-test --fresh`. `databaseIsPopulated()` now inspects 20 tables
+  instead of 10.
+- Removed `Customer::getIcNumberAttribute()` (zero references; duplicated the
+  decryption path).
+
+### Testing
+- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact tests/Feature/Api tests/Feature/Compliance tests/Feature/Web tests/Feature/Admin tests/Feature/Views` — 400 passed
+- `php artisan test --compact tests/Feature/Api/V1/BranchResourceAuthorizationTest.php tests/Feature/Commands` — 25 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The controller checks mirror the existing route middleware exactly, so no
+  authorized flow changes behaviour; a new test bypasses `CheckRole` with
+  `withoutMiddleware()` to prove the controller still refuses a teller calling
+  `POST /api/v1/branches`.
+- `ValidTill` is only used by the transaction form requests (all auth-guarded),
+  so failing closed affects no CLI/seed path; `TransactionImportService` has
+  its own till logic.
+- `detect_changes` — `risk_level: critical` (aggregate): 73 symbols across
+  27 files, 122 affected processes, no `partial`/`truncated` flags. The
+  critical rating comes from touching 15 controllers, which are hubs in the
+  execution graph; every touched action mirrors an existing route gate, and
+  the full suite is green.
+
+---
+
 
 ### Files Changed
 - `config/security.php` - rotation default 90 days; removed 7 dead `burst_allowance` keys
