@@ -213,15 +213,9 @@ class TransactionValidationService
     {
         $cacheKey = "sanction_check:customer:{$customer->id}";
 
-        if (Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
-        }
-
-        $result = $this->performSanctionsCheck($customer);
-
-        Cache::put($cacheKey, $result, self::SANCTION_CHECK_TTL);
-
-        return $result;
+        return Cache::remember($cacheKey, self::SANCTION_CHECK_TTL, function () use ($customer) {
+            return $this->performSanctionsCheck($customer);
+        });
     }
 
     /**

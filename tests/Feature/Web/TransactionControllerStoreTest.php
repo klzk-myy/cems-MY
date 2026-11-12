@@ -87,6 +87,32 @@ class TransactionControllerStoreTest extends TestCase
     }
 
     #[Test]
+    public function counter_id_from_another_branch_is_not_resolved_or_echoed(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['role' => UserRole::Teller, 'branch_id' => $branch->id]);
+        $this->setupStoreTest($teller);
+
+        $otherBranch = Branch::factory()->create();
+        $otherCounter = Counter::factory()->create([
+            'branch_id' => $otherBranch->id,
+            'code' => 'OTHER-COUNTER',
+        ]);
+
+        $customer = Customer::factory()->create();
+        $currency = Currency::factory()->create(['code' => 'USD']);
+
+        $payload = $this->basePayload($customer, $otherCounter, $currency);
+
+        $response = $this->actingAs($teller)->post('/transactions', $payload);
+
+        $response->assertSessionHasErrors('till_id');
+        // The foreign counter must never be resolved into its code and echoed
+        // back through the redirect input.
+        $this->assertNotSame('OTHER-COUNTER', session()->get('_old_input.till_id'));
+    }
+
+    #[Test]
     public function web_store_creates_completed_buy_transaction(): void
     {
         $branch = Branch::factory()->create();

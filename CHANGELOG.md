@@ -5,7 +5,83 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Production hardening: idempotency replay, logout CSRF, PII serialization, API headers, STR threshold
+## [2026-11-12] - Hardening round 2: password rotation, branch-scoped counters, CSP styles, dead config
+
+### Files Changed
+- `config/security.php` - rotation default 90 days; removed 7 dead `burst_allowance` keys
+- `.env.example` - `SECURITY_PASSWORD_EXPIRY_DAYS=90`
+- `database/factories/UserFactory.php` - stamp `password_changed_at`
+- `tests/Feature/Auth/LoginControllerTest.php` - stale-timestamp rotation coverage
+- `app/Http/Requests/StoreTransactionRequest.php` - branch-scoped counter resolution
+- `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php` - branch-scoped counter resolution
+- `app/Http/Requests/Concerns/HasTransactionValidationRules.php` - shared `counterQuery()`
+- `tests/Feature/Web/TransactionControllerStoreTest.php` - cross-branch counter regression
+- `app/Services/Branch/PoolRemittanceService.php` - documented cancel/acknowledge SoD asymmetry
+- `tests/Feature/PoolRemittanceTest.php` - receiver-cannot-cancel coverage
+- `app/Services/Transaction/TransactionValidationService.php` - `checkSanctions` via `Cache::remember`
+- `app/Services/Transaction/TransactionCreationService.php` - dropped stack trace from booking-failure context
+- `app/Http/Middleware/SecurityHeaders.php` - removed the inert `style-src` nonce
+- `app/Services/Accounting/LedgerService.php` - trial balance lists every account
+- `tests/Unit/LedgerServiceTest.php` - inactive-account footing coverage
+- `tests/Unit/SecurityHeadersTest.php` - style-src coverage
+
+### Purpose
+Continue closing the production gap audit. Forced password rotation was
+implemented but disabled by default (`SECURITY_PASSWORD_EXPIRY_DAYS=0`),
+contradicting the documented BNM policy. Counter resolution in the booking
+form requests was unscoped, so another branch's counter id resolved to its
+code and was echoed back through redirect input before validation. The CSP
+carried `'unsafe-inline'` alongside a nonce in `style-src`, which CSP3 makes
+inert — so the chart components' dynamic inline dimensions were blocked in
+production.
+
+### Changes Made
+- `config/security.php`: `password_expiry_days` defaults to 90 (env override
+  retained, `0` disables). `.env.example` updated to match. `UserFactory`
+  stamps `password_changed_at` so factory users are not born expired; tests
+  that exercise forced rotation set the timestamp to null/stale explicitly.
+- Both transaction form requests resolve counters through a `counterQuery()`
+  helper scoped to the acting user's branch; office roles without a branch
+  (admin) keep the unscoped lookup. `ValidTill` remains the authoritative
+  booking gate.
+- `SecurityHeaders`: `style-src` no longer receives the per-request nonce, so
+  `'unsafe-inline'` is effective and the chart components render in
+  production. `script-src` keeps its nonce; `unsafe-inline`/`unsafe-eval`
+  remain absent there.
+- `PoolRemittanceService::cancel()` documents the deliberate asymmetry: the
+  sender may withdraw their own pending remittance, the receiver may not
+  acknowledge their own. A test now asserts the receiving branch is refused.
+- `checkSanctions()` uses `Cache::remember()` (removes the has/get TOCTOU).
+- `recordBookingFailure()` no longer persists `getTraceAsString()` into the
+  `transaction_errors.error_context` JSON (size/PII exposure).
+- Removed the seven `security.rate_limits.*.burst_allowance` keys (zero
+  consumers).
+- `LedgerService::getTrialBalance()` now lists every account instead of only
+  active ones. `is_active` governs posting eligibility, not reporting: a
+  retired account that still carries a ledger balance must appear, otherwise
+  the trial balance's own debit/credit totals (and its `is_balanced` flag)
+  disagree with the ledger. The P&L, balance sheet and closing sweeps already
+  included every account, so the trial balance was the outlier.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2817 passed, 3 skipped
+- `php artisan test --compact tests/Feature/Auth tests/Feature/AuthenticationTest.php tests/Feature/SecurityTest.php` — 65 passed (also re-run under `SECURITY_PASSWORD_EXPIRY_DAYS=90`, the CI value)
+- `php artisan test --compact tests/Feature/Compliance tests/Feature/Api tests/Unit/Rules tests/Feature/Views` — 401 passed
+- `php artisan test --compact tests/Feature/Web/TransactionControllerStoreTest.php tests/Feature/Api/V1/TransactionControllerStoreTest.php tests/Feature/PoolRemittanceTest.php tests/Unit/SecurityHeadersTest.php` — 30 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+
+### Impact Analysis
+- Counter resolution: both form requests are leaf validation classes; the
+  scoped lookup only narrows which counters can resolve. `ValidTill` already
+  enforced branch scope on booking, so no booking path changes behaviour.
+- `checkSanctions` is a cache read-aside on the sanctions screening path;
+  `Cache::remember` is the same store/TTL, so the only change is atomicity.
+- `SecurityHeaders` affects every response's CSP header; `style-src` is the
+  only directive changed, and the previous nonce made `'unsafe-inline'` inert.
+
+---
+
 
 ### Files Changed
 - `app/Services/Transaction/TransactionCreationService.php` — booking replay flag

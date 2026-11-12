@@ -186,6 +186,15 @@ class PoolRemittanceService
         });
     }
 
+    /**
+     * Cancel a pending remittance and return the funds to the sending pool.
+     *
+     * Segregation of duties is deliberately asymmetric: the receiver may not
+     * acknowledge their own remittance (see acknowledge()), but the sender may
+     * withdraw their own pending request before it is acknowledged. Only
+     * sender-branch staff reach this method — the controller authorizes
+     * against from_branch_id — so a receiver cannot cancel.
+     */
     public function cancel(PoolRemittance $remittance, int $cancelledBy, ?string $reason = null): PoolRemittance
     {
         return DB::transaction(function () use ($remittance, $cancelledBy, $reason) {

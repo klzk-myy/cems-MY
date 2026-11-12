@@ -55,3 +55,8 @@ entries; mark resolved entries `status: done (<commit>)`):
 - finding: An 891-line stale backup of the spec sat in `tests/` (gitignored
   but present on disk) — drift risk when editing the wrong file.
 - status: done (this change set — file deleted)
+
+## [2026-11-12] Branch-scoped counter lookup duplicated across transaction form requests
+- where: `app/Http/Requests/StoreTransactionRequest.php`, `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php`, `app/Http/Requests/Concerns/HasTransactionValidationRules.php`
+- finding: Both booking form requests needed the same "resolve a counter within the acting user's branch" query while mapping `counter_id` to the canonical `till_id` before validation. Written once as a private `counterQuery()` per class, then hoisted into the `HasTransactionValidationRules` trait both requests already use.
+- status: done (this change set)

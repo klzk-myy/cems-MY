@@ -46,8 +46,10 @@ class SecurityHeaders
      *
      * Scripts run through the @alpinejs/csp build plus per-request nonces, so
      * neither 'unsafe-inline' nor 'unsafe-eval' is needed in script-src.
-     * 'unsafe-inline' stays in style-src for Alpine's x-show/x-cloak toggles
-     * and Tailwind's generated attribute styles.
+     * style-src deliberately keeps 'unsafe-inline': the chart components
+     * render dynamic inline widths/heights, and per CSP3 a nonce in the
+     * directive would make 'unsafe-inline' inert — blocking those styles in
+     * production.
      *
      * @var array<string, string>
      */
@@ -132,7 +134,6 @@ class SecurityHeaders
 
         if ($nonce !== null) {
             $directives['script-src'] = "'self' 'nonce-{$nonce}'";
-            $directives['style-src'] = "'self' 'nonce-{$nonce}' 'unsafe-inline'";
         }
 
         $parts = [];

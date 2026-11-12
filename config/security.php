@@ -45,8 +45,7 @@ return [
     | Hardened rate limiting to prevent brute force attacks, abuse,
     | and ensure system availability per BNM security requirements.
     |
-    | Note: Burst protection allows small bursts but enforces average rates
-    |
+    | Note: Each named limiter enforces a fixed average rate.
     */
 
     'rate_limits' => [
@@ -58,49 +57,42 @@ return [
         'login' => [
             'attempts' => 5,
             'per_minutes' => 1,
-            'burst_allowance' => 3, // Allow burst of 3 requests
             'decay_minutes' => 1,
         ],
         // API general: 30 per minute per IP (reduced from 60)
         'api' => [
             'attempts' => 30,
             'per_minutes' => 1,
-            'burst_allowance' => 10,
             'decay_minutes' => 1,
         ],
         // Transactions: 10 per minute per user (reduced from 30)
         'transactions' => [
             'attempts' => 10,
             'per_minutes' => 1,
-            'burst_allowance' => 3,
             'decay_minutes' => 1,
         ],
         // STR submission: 3 per minute per user (reduced from 10)
         'str' => [
             'attempts' => 3,
             'per_minutes' => 1,
-            'burst_allowance' => 1,
             'decay_minutes' => 1,
         ],
         // Bulk operations: 1 per 5 minutes per user
         'bulk' => [
             'attempts' => 1,
             'per_minutes' => 5,
-            'burst_allowance' => 1,
             'decay_minutes' => 5,
         ],
         // Export operations: 5 per minute per user
         'export' => [
             'attempts' => 5,
             'per_minutes' => 1,
-            'burst_allowance' => 2,
             'decay_minutes' => 1,
         ],
         // Sensitive operations (MFA, password change): 3 per minute
         'sensitive' => [
             'attempts' => 3,
             'per_minutes' => 1,
-            'burst_allowance' => 1,
             'decay_minutes' => 1,
         ],
     ],
@@ -205,11 +197,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Forced rotation interval in days, read by User::passwordExpired().
-    | Defaults to 0 — forced rotation is disabled unless configured.
+    | Defaults to 90 days per the BNM password policy; set
+    | SECURITY_PASSWORD_EXPIRY_DAYS=0 to disable forced rotation.
     |
     */
 
-    'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 0),
+    'password_expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
 
     /*
     |--------------------------------------------------------------------------

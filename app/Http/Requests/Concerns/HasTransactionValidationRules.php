@@ -9,6 +9,7 @@ use App\Rules\ValidCurrencyCode;
 use App\Rules\ValidQuantity;
 use App\Rules\ValidRate;
 use App\Rules\ValidTill;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
 /**
@@ -152,6 +153,26 @@ trait HasTransactionValidationRules
     protected function tillIdRule(): array
     {
         return ['nullable', 'string', new ValidTill];
+    }
+
+    /**
+     * Counter lookups are branch-scoped for branch-assigned users so a
+     * submitted id/code from another branch cannot resolve — and therefore
+     * cannot have that branch's counter code echoed back — before validation
+     * runs. Office roles without a branch (admin) keep the unscoped lookup.
+     *
+     * @return Builder<Counter>
+     */
+    protected function counterQuery(): Builder
+    {
+        $query = Counter::query();
+
+        $user = $this->user();
+        if ($user !== null && $user->branch_id !== null) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        return $query;
     }
 
     /**

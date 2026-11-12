@@ -515,7 +515,7 @@ class TransactionCreationService
                 $transaction->refresh(),
                 TransactionErrorHandler::ERROR_TYPE_ACCOUNTING,
                 'Booking failed: '.$e->getMessage(),
-                ['exception' => get_class($e), 'trace' => $e->getTraceAsString()]
+                ['exception' => get_class($e)]
             );
 
             $this->auditTrailHelper->recordTransaction($transaction->id, 'transaction_booking_failed', [

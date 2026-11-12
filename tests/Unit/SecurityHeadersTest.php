@@ -69,6 +69,26 @@ class SecurityHeadersTest extends TestCase
     }
 
     #[Test]
+    public function style_src_keeps_unsafe_inline_for_dynamic_chart_dimensions(): void
+    {
+        app()->instance('env', 'production');
+        $middleware = new SecurityHeaders;
+        $request = Request::create('/test', 'GET');
+        $response = new Response('test content');
+
+        $result = $middleware->handle($request, fn ($req) => $response);
+
+        $csp = $result->headers->get('Content-Security-Policy');
+        preg_match('/style-src ([^;]+)/', $csp, $matches);
+
+        $this->assertNotEmpty($matches, 'style-src directive missing');
+        $this->assertStringContainsString("'unsafe-inline'", $matches[1]);
+        // A nonce here would make 'unsafe-inline' inert (CSP3) and block the
+        // charts' inline dimensions in production.
+        $this->assertStringNotContainsString("'nonce-", $matches[1]);
+    }
+
+    #[Test]
     public function middleware_applies_csp_headers(): void
     {
         $middleware = new SecurityHeaders;

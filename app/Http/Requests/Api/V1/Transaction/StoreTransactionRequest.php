@@ -28,7 +28,7 @@ class StoreTransactionRequest extends ApiFormRequest
         if (! $this->filled('till_id') && $this->filled('counter_id')) {
             $counterId = $this->input('counter_id');
             $counter = is_numeric($counterId)
-                ? Counter::query()->find((int) $counterId)
+                ? $this->counterQuery()->find((int) $counterId)
                 : null;
 
             if ($counter instanceof Counter) {

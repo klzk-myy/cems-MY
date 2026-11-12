@@ -42,19 +42,40 @@ class LoginControllerTest extends TestCase
     #[Test]
     public function login_redirects_to_forced_password_change_when_rotation_is_due(): void
     {
-        // Expiry is disabled in the local env (SECURITY_PASSWORD_EXPIRY_DAYS=0);
-        // pin the policy so this test is env-independent.
+        // Pin the policy so this test is env-independent.
         config(['security.password_expiry_days' => 90]);
 
         $user = User::factory()->create([
             'username' => 'stale-password-user',
             'password_hash' => Hash::make('correct-password'),
             // No rotation timestamp means the BNM policy forces a change.
+            'password_changed_at' => null,
             'is_active' => true,
         ]);
 
         $this->post('/login', [
             'username' => 'stale-password-user',
+            'password' => 'correct-password',
+            'ip' => '127.0.0.1',
+        ])->assertRedirect(route('password.change'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    #[Test]
+    public function login_forces_rotation_when_the_password_is_older_than_the_policy(): void
+    {
+        config(['security.password_expiry_days' => 90]);
+
+        $user = User::factory()->create([
+            'username' => 'old-password-user',
+            'password_hash' => Hash::make('correct-password'),
+            'password_changed_at' => now()->subDays(91),
+            'is_active' => true,
+        ]);
+
+        $this->post('/login', [
+            'username' => 'old-password-user',
             'password' => 'correct-password',
             'ip' => '127.0.0.1',
         ])->assertRedirect(route('password.change'));

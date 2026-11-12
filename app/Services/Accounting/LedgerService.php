@@ -83,7 +83,12 @@ class LedgerService
         $cacheKey = "trial_balance.{$asOfDate}.".($branchId ?? 'all');
 
         return Cache::tags(['ledger', 'trial-balance'])->remember($cacheKey, 60, function () use ($asOfDate, $branchId) {
-            $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
+            // Every account is listed — including retired ones — so the trial
+            // balance foots to the ledger. `is_active` governs posting
+            // eligibility, not reporting: an account deactivated after it took
+            // a balance must still appear, otherwise total debits and credits
+            // disagree.
+            $accounts = ChartOfAccount::orderBy('account_code')->get();
             $accountCodes = $accounts->pluck('account_code')->toArray();
 
             if (empty($accountCodes)) {
