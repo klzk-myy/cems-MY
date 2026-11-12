@@ -111,6 +111,9 @@ class Customer extends BaseModel
 
     protected $hidden = [
         'id_number_encrypted',
+        // Blind indexes are lookup keys, not API data — never serialize them.
+        'id_number_hash',
+        'phone_hash',
     ];
 
     /**

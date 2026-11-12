@@ -15,6 +15,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Policies\StrReportPolicy;
 use App\Services\Compliance\StrReportService;
+use App\Services\ThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use PHPUnit\Framework\Attributes\Test;
@@ -99,6 +100,19 @@ class StrReportTest extends TestCase
 
         $this->expectException(CaseManagementException::class);
         $service->createFromCase($case, $this->officer);
+    }
+
+    #[Test]
+    public function str_threshold_honors_the_centralized_threshold_override(): void
+    {
+        $service = app(StrReportService::class);
+
+        $this->assertTrue($service->meetsThreshold('55000'));
+
+        app(ThresholdService::class)->set('reporting', 'str', '60000', 'Test override');
+
+        $this->assertFalse($service->meetsThreshold('55000'));
+        $this->assertTrue($service->meetsThreshold('60000'));
     }
 
     #[Test]

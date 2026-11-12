@@ -25,6 +25,18 @@ class CustomerBlindIndexTest extends TestCase
     }
 
     #[Test]
+    public function blind_index_hashes_are_not_serialized(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $payload = $customer->toArray();
+
+        $this->assertArrayNotHasKey('id_number_hash', $payload);
+        $this->assertArrayNotHasKey('phone_hash', $payload);
+        $this->assertArrayNotHasKey('id_number_encrypted', $payload);
+    }
+
+    #[Test]
     public function blind_index_different_inputs_produce_different_hashes(): void
     {
         $hash1 = CustomerService::computeBlindIndex('A123456');

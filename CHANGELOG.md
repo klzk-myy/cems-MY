@@ -5,7 +5,74 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-11] - BI analytics rollup layer (BI-PLAN.md phase 1)
+## [2026-11-12] - Production hardening: idempotency replay, logout CSRF, PII serialization, API headers, STR threshold
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — booking replay flag
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — corrected invariant + lost-race regression
+- `routes/auth.php` — logout is POST-only
+- `tests/Feature/AuthenticationTest.php` — GET logout now rejected
+- `app/Models/Customer.php` — blind indexes removed from serialization
+- `tests/Unit/CustomerBlindIndexTest.php` — serialization coverage
+- `bootstrap/app.php` — `SecurityHeaders` applied to the API group
+- `tests/Feature/Infrastructure/ApiSecurityHeadersTest.php` — new
+- `app/Services/Compliance/StrReportService.php` — threshold via `ThresholdService`
+- `tests/Feature/Compliance/StrReportTest.php` — threshold-override coverage
+- `app/Console/Commands/BusinessSetup.php` — dropped unimplemented `--with-demo`, corrected next-step routes
+
+### Purpose
+Close the P0/P1 findings from the full-repo production gap audit. The
+critical finding: an idempotent replay of an already-`Completed` booking
+fell through to Phase 2 and re-applied the position mutation, the journal
+entry, the teller-allocation earmark and the till adjustment, and
+re-emitted the creation audit / `TransactionCreated` event. The replay
+early-returns sat inside the `DB::transaction` closure, so they only
+exited the closure — Phase 2 ran on the replayed record anyway.
+
+### Changes Made
+- `TransactionCreationService::create()` now returns `[$transaction, $isReplay]`
+  from the booking transaction. Phase 2 (side effects), the creation audit,
+  the `TransactionCreated` event and the large-transaction escalation run
+  only for freshly created bookings. Fresh-creation behaviour is unchanged.
+- `routes/auth.php`: `Route::match(['GET','POST'])` → `Route::post` — a GET
+  logout is a CSRF logout vector. Both UI logouts were already POST forms.
+- `Customer::$hidden` now includes `id_number_hash` / `phone_hash`; blind
+  indexes are lookup keys, not API payloads.
+- `bootstrap/app.php`: `SecurityHeaders` prepended to the `api` group so API
+  responses carry the same baseline (`X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, CSP, HSTS in production).
+- `StrReportService` injects `ThresholdService` and resolves the filing
+  threshold through `reporting.str` (env + admin override) instead of a
+  hardcoded `50000` constant; the public `THRESHOLD` const is removed.
+- `BusinessSetup`: removed the `--with-demo` flag that only printed
+  "not yet implemented", and replaced the next-step routes
+  (`/exchange-rates`, `/counters/{code}/open`) that no longer exist with
+  the real surfaces.
+
+### Testing
+- `php artisan test --compact tests/Unit/Transaction/TransactionCreationServiceTest.php` — 29 passed
+- `php artisan test --compact tests/Feature/AuthenticationTest.php tests/Unit/CustomerBlindIndexTest.php tests/Feature/Compliance/StrReportTest.php tests/Feature/Infrastructure/ApiSecurityHeadersTest.php tests/Unit/SecurityHeadersTest.php` — 46 passed
+- `php artisan test --compact tests/Feature/Api tests/Feature/Customers tests/Feature/Compliance tests/Unit/Transaction` — 304 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+- `php artisan routes:validate` — 0 critical / 0 errors
+
+### Impact Analysis
+- `TransactionCreationService::create` — GitNexus `impact` upstream:
+  **CRITICAL** (core booking path), 4 execution flows affected
+  (`Api/V1/TransactionController@store`, `TransactionWizardController@step3`,
+  `TransactionController@store`, `TransactionImportService@processRow`).
+  The change is scoped to the replay branch only; the fresh-creation path
+  is byte-for-byte unchanged. The pre-existing test
+  `create_returns_existing_transaction_when_idempotency_key_matches`
+  asserted the buggy invariant (side effects expected `->once()` on replay);
+  it now asserts `->never()` and a second test covers the lost-insert-race
+  replay path.
+- `StrReportService` is resolved via `app()` at every call site, so the new
+  constructor dependency is container-provided; no manual instantiation.
+
+---
+
 
 Foundation for the BI initiative (`BI-PLAN.md`): pre-aggregated snapshot
 tables so dashboards/reports read rollups instead of scanning

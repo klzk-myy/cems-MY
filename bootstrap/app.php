@@ -61,9 +61,12 @@ $app = Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Global API rate limit (RouteServiceProvider 'api' limiter) runs
-        // before everything else in the group.
+        // before everything else in the group. SecurityHeaders is prepended
+        // too so every API response (including throttle 429s) carries the
+        // baseline headers instead of shipping bare JSON.
         $middleware->api(prepend: [
             'throttle:api',
+            SecurityHeaders::class,
         ]);
 
         // Enable stateful Sanctum authentication for first-party SPA API requests

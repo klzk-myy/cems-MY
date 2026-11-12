@@ -289,7 +289,7 @@ class TransactionCreationService
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
         // Failed and retried (or parked in the DLQ) instead of disappearing.
-        $transaction = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
+        [$transaction, $isReplay] = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
             // A finalized day close freezes the branch's books for that
             // business date — no new transactions can be booked on it.
             // Checked inside the transaction under the workflow-row lock so
@@ -320,7 +320,7 @@ class TransactionCreationService
             );
 
             if ($existingByIdempotencyKey) {
-                return $existingByIdempotencyKey;
+                return [$existingByIdempotencyKey, true];
             }
 
             // The 30-second heuristic window only guards interactive teller
@@ -344,7 +344,7 @@ class TransactionCreationService
                 $replayed = $this->resolveIdempotentReplay($e, $data, $userId);
 
                 if ($replayed !== null) {
-                    return $replayed;
+                    return [$replayed, true];
                 }
 
                 throw $e;
@@ -352,7 +352,7 @@ class TransactionCreationService
 
             $this->reserveStockIfPending($transaction, $data);
 
-            return $transaction;
+            return [$transaction, false];
         });
 
         // Phase 2: book the side effects for transactions that complete
@@ -360,7 +360,13 @@ class TransactionCreationService
         // marks the transaction Failed with an error record and dispatches the
         // retry job; the exception is rethrown so the caller still reports the
         // failure to the operator, but the record now exists for recovery.
-        if ($transaction->status === TransactionStatus::Completed) {
+        //
+        // A replayed booking already had its side effects applied by the
+        // winning request — re-entering would decrement the position again,
+        // post a second journal entry, re-earmark the teller allocation and
+        // re-adjust the till. The replay flag is what distinguishes "created
+        // fresh" from "returned the existing record".
+        if (! $isReplay && $transaction->status === TransactionStatus::Completed) {
             try {
                 // Phase 2 re-acquires the position lock and re-checks stock under
                 // it: the phase-1 lock was released at commit, so without this a
@@ -384,10 +390,14 @@ class TransactionCreationService
         // scoring on a transaction that was never booked. The booking failure
         // path always rethrows, so reaching this point means the booking
         // succeeded and the event is always safe to dispatch.
-        $this->recordCreationAudit($transaction, $user, $ipAddress);
-        $this->dispatchCreationEvent($transaction);
+        // An idempotent replay must not re-emit any of these: the winning
+        // request already audited, dispatched and escalated the booking.
+        if (! $isReplay) {
+            $this->recordCreationAudit($transaction, $user, $ipAddress);
+            $this->dispatchCreationEvent($transaction);
 
-        $this->escalateLargeTransactionToCompliance($transaction);
+            $this->escalateLargeTransactionToCompliance($transaction);
+        }
 
         return $transaction;
     }

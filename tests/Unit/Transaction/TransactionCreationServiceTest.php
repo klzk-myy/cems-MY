@@ -655,21 +655,21 @@ class TransactionCreationServiceTest extends TestCase
     }
 
     #[Test]
-    public function create_returns_existing_transaction_when_idempotency_key_matches(): void
+    public function create_returns_existing_transaction_without_reapplying_side_effects_when_idempotency_key_matches(): void
     {
-        $existing = Transaction::factory()->create();
+        $existing = Transaction::factory()->create(['status' => TransactionStatus::Completed->value]);
         $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturn($existing);
 
         $position = Mockery::mock(CurrencyPositionService::class);
         $position->shouldReceive('getPositionWithLock')->andReturnNull();
-        $position->shouldReceive('updatePosition')->once();
+        $position->shouldReceive('updatePosition')->never();
 
         $accounting = Mockery::mock(TransactionAccountingService::class);
-        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+        $accounting->shouldReceive('createImmediateAccountingEntries')->never();
 
         $audit = Mockery::mock(AuditTrailHelper::class);
-        $audit->shouldReceive('recordTransaction')->once();
+        $audit->shouldReceive('recordTransaction')->never();
 
         $service = $this->service([
             'idempotency' => $idempotency,
@@ -679,6 +679,42 @@ class TransactionCreationServiceTest extends TestCase
         ]);
 
         $this->assertSame($existing->id, $service->create($this->context())->id);
+    }
+
+    #[Test]
+    public function create_does_not_reapply_side_effects_on_lost_idempotency_key_race(): void
+    {
+        $existing = Transaction::factory()->create([
+            'idempotency_key' => 'race-key',
+            'status' => TransactionStatus::Completed->value,
+        ]);
+
+        // The pre-check misses because the winner has not committed yet; the
+        // replay resolution after the lost insert finds the winning row.
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
+        $idempotency->shouldReceive('findDuplicate')->once()->andReturnNull();
+        $idempotency->shouldReceive('findDuplicate')->once()->andReturn($existing);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->andReturnNull();
+        $position->shouldReceive('updatePosition')->never();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->never();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->never();
+
+        $service = $this->service([
+            'idempotency' => $idempotency,
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ]);
+
+        $context = $this->context(['data' => ['idempotency_key' => 'race-key']]);
+
+        $this->assertSame($existing->id, $service->create($context)->id);
     }
 
     #[Test]
