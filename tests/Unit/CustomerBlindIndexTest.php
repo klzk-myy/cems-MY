@@ -172,4 +172,13 @@ class CustomerBlindIndexTest extends TestCase
 
         $this->assertNotSame($service->hash('payload'), $service->legacyHash('payload'));
     }
+
+    #[Test]
+    public function encryption_service_is_shared_across_resolutions(): void
+    {
+        // The constructor derives the AES/MAC/hash subkeys with a 100k-iteration
+        // PBKDF2 pass. PII accessors resolve the service on every call, so it
+        // must be a singleton — otherwise every customer read pays that cost.
+        $this->assertSame(app(EncryptionService::class), app(EncryptionService::class));
+    }
 }

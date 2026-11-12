@@ -12,7 +12,9 @@ use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Models\Branch;
 use App\Models\BranchClosureWorkflow;
 use App\Models\Counter;
 use App\Models\Currency;
@@ -247,6 +249,44 @@ class TransactionCreationServiceTest extends TestCase
         ]);
 
         $this->expectException(BusinessDateFrozenException::class);
+        $this->completedBuyService()->create($context);
+    }
+
+    #[Test]
+    public function drawer_less_booking_without_a_resolvable_branch_fails_closed(): void
+    {
+        $user = User::factory()->create(['branch_id' => null, 'role' => UserRole::Teller]);
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'low',
+            'sanction_hit' => false,
+            'pep_status' => false,
+            'address' => '1 Test Street',
+            'phone' => '+60123456789',
+        ]);
+
+        $context = new TransactionCreationContext(
+            data: [
+                'customer_id' => $customer->id,
+                'type' => TransactionType::Buy->value,
+                'currency_code' => 'USD',
+                'quantity' => '100.00',
+                'rate' => '4.5',
+                'purpose' => 'Travel',
+                'source_of_funds' => 'Salary',
+                // A caller-supplied branch must not rescue a booking that has no
+                // resolvable branch of its own.
+                'branch_id' => Branch::factory()->create()->id,
+            ],
+            customer: $customer,
+            tillBalance: null,
+            cddLevel: CddLevel::Simplified,
+            holdRequired: false,
+            status: TransactionStatus::Completed,
+            amountMyr: '450.00',
+            user: $user,
+        );
+
+        $this->expectException(PermissionDeniedException::class);
         $this->completedBuyService()->create($context);
     }
 

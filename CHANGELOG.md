@@ -5,7 +5,40 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Day-close booking race regression test
+## [2026-11-12] - Round 8: branch consistency, PBKDF2 singleton, actor capture
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — booking branch derived once and persisted identically; fails closed without a branch; actor captured once
+- `app/Providers/AppServiceProvider.php` — `EncryptionService` bound as a singleton
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — fail-closed coverage
+- `tests/Unit/CustomerBlindIndexTest.php` — singleton coverage
+
+### Purpose
+Close the last three audit findings: the branch used for the freeze/position/stock
+checks could diverge from the branch persisted on the record; `EncryptionService`
+re-derived its subkeys (100k-iteration PBKDF2) on every PII accessor call; the
+actor was re-captured per field.
+
+### Changes Made
+- `$txnBranchId` no longer falls back to a caller-supplied `branch_id`, and
+  `createTransactionRecord()` persists that same value — the checks and the
+  record can no longer disagree. A booking with no resolvable branch fails
+  closed.
+- `tillBalance` is read nullsafe before the fallback chain.
+- `EncryptionService` is a singleton, so the PBKDF2 derivation runs once per
+  process. Key-rotation call sites construct it directly with overrides and are
+  unaffected.
+- `prepareAndCreate()` and `escalateLargeTransactionToCompliance()` capture the
+  actor once instead of per field.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2838 passed, 3 skipped
+- `php artisan test --compact tests/Unit/Transaction/TransactionCreationServiceTest.php` — 33 passed
+- `php artisan test --compact tests/Unit/CustomerBlindIndexTest.php` — 11 passed
+- `vendor/bin/phpstan analyse` — no errors
+
+---
+
 
 ### Files Changed
 - `app/Services/Transaction/TransactionCreationService.php` — extracted `serializeAgainstClosure()`

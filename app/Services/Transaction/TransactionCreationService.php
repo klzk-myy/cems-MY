@@ -90,9 +90,12 @@ class TransactionCreationService
 
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
-        $userId ??= ActorContext::capture()->userId;
+        // Capture the actor once: re-resolving auth()/request() per field is
+        // wasteful and can straddle a context change.
+        $actor = ActorContext::capture();
+        $userId ??= $actor->userId;
         $user = User::findOrFail($userId);
-        $ipAddress ??= ActorContext::capture()->ipAddress;
+        $ipAddress ??= $actor->ipAddress;
 
         return $this->create($this->buildCreationContext($user, $data, ipAddress: $ipAddress), $user->id, $ipAddress);
     }
@@ -298,7 +301,17 @@ class TransactionCreationService
         // stock checks: the booked till's branch when a drawer is used, else
         // the acting user's branch (drawer-less custody ends at the
         // allocation).
-        $txnBranchId = (int) ($context->tillBalance->branch_id ?? $context->user->branch_id ?? $data['branch_id'] ?? 0);
+        //
+        // A caller-supplied branch_id must NOT steer this: it would run the
+        // checks against one branch while the record persisted another. A
+        // booking with no resolvable branch fails closed.
+        $tillBranchId = $context->tillBalance?->branch_id;
+
+        $txnBranchId = (int) ($tillBranchId ?? $context->user->branch_id ?? 0);
+
+        if ($txnBranchId === 0) {
+            throw new PermissionDeniedException('create transactions without a resolvable branch');
+        }
 
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
@@ -343,7 +356,7 @@ class TransactionCreationService
                 // key loses the insert on the global unique index — rolling
                 // back to the savepoint keeps the outer transaction usable on
                 // drivers that poison it on constraint errors (PostgreSQL).
-                $transaction = DB::transaction(fn () => $this->createTransactionRecord($data, $context));
+                $transaction = DB::transaction(fn () => $this->createTransactionRecord($data, $context, $txnBranchId));
             } catch (QueryException $e) {
                 $replayed = $this->resolveIdempotentReplay($e, $data, $userId);
 
@@ -478,16 +491,18 @@ class TransactionCreationService
                 return;
             }
 
+            $actorId = ActorContext::capture()->userId;
+
             $confirmation = TransactionConfirmation::create([
                 'transaction_id' => $transaction->id,
-                'user_id' => ActorContext::capture()->userId,
+                'user_id' => $actorId,
                 'status' => TransactionConfirmationStatus::Pending->value,
                 'expires_at' => now()->addMinutes((int) config('transactions.confirmation_ttl_minutes', 30)),
             ]);
 
             $this->alertTriageService->notifyAvailableOfficers(
                 new LargeTransactionNotification($transaction, $confirmation),
-                ActorContext::capture()->userId
+                $actorId
             );
         } catch (Throwable $e) {
             Log::warning('Failed to escalate large transaction to compliance', [
@@ -718,13 +733,14 @@ class TransactionCreationService
         });
     }
 
-    private function createTransactionRecord(array $data, TransactionCreationContext $context): Transaction
+    private function createTransactionRecord(array $data, TransactionCreationContext $context, int $branchId): Transaction
     {
         $transaction = new Transaction([
             'customer_id' => $context->customer->id,
             'user_id' => $context->user->id,
-            // Drawer-less bookings scope to the acting user's branch.
-            'branch_id' => $context->tillBalance->branch_id ?? $context->user->branch_id,
+            // The branch the checks ran against — persisted identically so a
+            // caller-supplied branch can never diverge from the booking branch.
+            'branch_id' => $branchId,
             // Store the booked till balance's code — callers may submit an
             // id or code, but the transaction always records the code. Null
             // when no drawer was used.
