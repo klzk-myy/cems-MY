@@ -73,7 +73,7 @@ endorsed float-for-money.
   whose row is genuinely absent, so a legitimate audited rotation still verifies.
 
 ### Testing
-- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact` (full suite) — 2829 passed, 3 skipped
 - `php artisan test --compact tests/Unit/PepApprovalServiceTest.php tests/Unit/Transaction/TransactionCreationServiceTest.php` — 44 passed
 - `php artisan test --compact tests/Feature/Audit/AuditChainQuarantineTest.php tests/Feature/ReviewRegressionTest.php` — 27 passed
 - `php artisan test --compact tests/Unit/Transaction tests/Unit/TransactionReversalServiceTest.php tests/Feature/PoolRemittanceTest.php tests/Feature/BranchClosingWorkflowTest.php tests/Feature/Concurrency/AllocationRaceTest.php` — 170 passed
@@ -145,7 +145,7 @@ chain that could not detect hard-deleted rows.
   versions).
 
 ### Testing
-- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact` (full suite) — 2829 passed, 3 skipped
 - `php artisan test --compact tests/Feature/Audit tests/Feature/Auth tests/Feature/Customers tests/Feature/SecurityTest.php` — 173 passed
 - `vendor/bin/phpstan analyse` (whole app) — no errors
 - `vendor/bin/pint --dirty --format agent` — passed
