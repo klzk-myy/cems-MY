@@ -9,9 +9,11 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCreated;
 use App\Exceptions\Domain\AllocationValidationException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Models\BranchClosureWorkflow;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -43,6 +45,7 @@ use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionRecoveryService;
 use App\Services\Transaction\TransactionValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -191,6 +194,60 @@ class TransactionCreationServiceTest extends TestCase
         $this->assertEquals(TransactionType::Buy->value, $transaction->type->value);
         $this->assertEquals('100.0000', $transaction->quantity);
         $this->assertEquals('450.0000', $transaction->amount_myr);
+    }
+
+    #[Test]
+    public function booking_takes_the_branch_row_lock_before_the_freeze_check(): void
+    {
+        $service = $this->completedBuyService();
+
+        DB::enableQueryLog();
+        $service->create($this->context());
+        $queries = collect(DB::getQueryLog())->pluck('query');
+
+        // The lock is the branch-row read; the freeze check is the workflow read.
+        // Without the lock the booking would check first and a concurrent
+        // initiation could freeze the date before the booking commits.
+        $branchRead = $queries->search(
+            fn ($q) => str_contains($q, 'from "branches"') || str_contains($q, 'from branches')
+        );
+        $freezeCheck = $queries->search(
+            fn ($q) => str_contains($q, 'branch_closure_workflows')
+        );
+
+        $this->assertNotFalse($branchRead, 'The booking must read the branch row.');
+        $this->assertNotFalse($freezeCheck, 'The booking must run the day-close freeze check.');
+        $this->assertLessThan(
+            $freezeCheck,
+            $branchRead,
+            'The branch-row lock must be taken before the freeze check.'
+        );
+
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $this->assertStringContainsStringIgnoringCase(
+                'for update',
+                $queries[$branchRead],
+                'On MySQL the branch read must be a locking read.'
+            );
+        } else {
+            // SQLite's grammar drops FOR UPDATE, so the clause is not
+            // observable there — the ordering assertion above is the guard.
+        }
+    }
+
+    #[Test]
+    public function create_rejects_a_booking_on_a_frozen_business_date(): void
+    {
+        $context = $this->context();
+
+        BranchClosureWorkflow::factory()->create([
+            'branch_id' => $context->tillBalance->branch_id,
+            'business_date' => today(),
+            'status' => 'finalized',
+        ]);
+
+        $this->expectException(BusinessDateFrozenException::class);
+        $this->completedBuyService()->create($context);
     }
 
     #[Test]

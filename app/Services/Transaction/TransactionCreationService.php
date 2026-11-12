@@ -304,23 +304,7 @@ class TransactionCreationService
         // record must survive booking failures so the transaction can be marked
         // Failed and retried (or parked in the DLQ) instead of disappearing.
         [$transaction, $isReplay] = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
-            // A finalized day close freezes the branch's books for that
-            // business date — no new transactions can be booked on it.
-            // Checked inside the transaction under the workflow-row lock so
-            // a racing finalize serializes against the booking.
-            // Lock the branch row FIRST: when the branch has no workflow rows
-            // yet, the workflow-table lock inside freezesDateForUpdate()
-            // acquires nothing, so a concurrent initiation could freeze the
-            // date after our check. Mirrors BranchClosingService::initiateClosure().
-            Branch::whereKey($txnBranchId)->lockForUpdate()->first();
-
-            $today = now()->toDateString();
-
-            if (BranchClosureWorkflow::freezesDateForUpdate($txnBranchId, $today)) {
-                $branchCode = Branch::whereKey($txnBranchId)->value('code') ?? (string) $txnBranchId;
-
-                throw new BusinessDateFrozenException($branchCode, $today);
-            }
+            $this->serializeAgainstClosure($txnBranchId, now()->toDateString());
 
             // Acquire position lock FIRST for both Buy and Sell to prevent race conditions
             // This ensures stock check, idempotency check, and transaction creation happen atomically
@@ -628,6 +612,28 @@ class TransactionCreationService
             $data['currency_code'],
             (string) $branchId
         );
+    }
+
+    /**
+     * Serialize the booking against a concurrent day-close initiation.
+     *
+     * A closure freezes the branch's books for the business date, so no new
+     * transaction can be booked on it. The freeze check alone is not enough:
+     * with no workflow rows yet, the workflow-table lock inside
+     * freezesDateForUpdate() acquires nothing, so a concurrent initiation could
+     * freeze the date after this check and the booking would commit onto a
+     * frozen day. Locking the branch row first serializes the two — the same
+     * lock BranchClosingService::initiateClosure() takes.
+     */
+    protected function serializeAgainstClosure(int $branchId, string $date): void
+    {
+        Branch::whereKey($branchId)->lockForUpdate()->first();
+
+        if (BranchClosureWorkflow::freezesDateForUpdate($branchId, $date)) {
+            $branchCode = Branch::whereKey($branchId)->value('code') ?? (string) $branchId;
+
+            throw new BusinessDateFrozenException($branchCode, $date);
+        }
     }
 
     /**

@@ -5,7 +5,33 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Round 7: delete permission, HMAC key separation, blind-index versioning, policy floor
+## [2026-11-12] - Day-close booking race regression test
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — extracted `serializeAgainstClosure()`
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — ordering + frozen-date coverage
+
+### Purpose
+The branch-row lock that closes the booking/day-close race had no direct test —
+the SQLite concurrency harness cannot express lock ordering. Extract the
+lock+check into a named seam and guard it with a query-order assertion.
+
+### Changes Made
+- `serializeAgainstClosure()` performs the branch-row locking read and then the
+  freeze check; `create()` calls it inside the booking transaction.
+- `booking_takes_the_branch_row_lock_before_the_freeze_check` asserts from the
+  query log that the branch-row read precedes the workflow read. On MySQL it
+  also asserts the read carries `FOR UPDATE`; SQLite's grammar drops the
+  clause, so the ordering is the guard there.
+- `create_rejects_a_booking_on_a_frozen_business_date` covers the rejection.
+
+### Testing
+- Verified the ordering test **fails** when the lock line is removed and passes
+  with it (temporary edit, then restored).
+- `php artisan test --compact` (full suite) — 2836 passed, 3 skipped
+
+---
+
 
 ### Files Changed
 - `app/Enums/Permission.php` — new `delete_records` permission
