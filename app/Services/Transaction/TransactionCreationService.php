@@ -44,7 +44,6 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\ExchangeCalculatorTrait;
-use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Support\ActorContext;
 use App\ValueObjects\QuoteConvention;
@@ -57,7 +56,7 @@ use Throwable;
 
 class TransactionCreationService
 {
-    use AccountingEntriesTrait, ExchangeCalculatorTrait, TillBalanceTrait;
+    use AccountingEntriesTrait, ExchangeCalculatorTrait;
 
     public function __construct(
         protected TransactionIdempotencyService $idempotencyService,

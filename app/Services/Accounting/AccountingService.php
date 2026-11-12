@@ -173,9 +173,9 @@ class AccountingService
                 'branch_id' => $branchId,
             ]);
 
-            // Journal entry number is derived from the id so it is unique
-            // by construction without requiring a sequence table.
-            $entry->entry_number = 'JE-'.Carbon::parse($entryDate)->format('Ym').'-'.str_pad((string) $entry->id, 4, '0', STR_PAD_LEFT);
+            // Per-month sequential number (JE-YYYYMM-NNNN), allocated from a
+            // locked counter row so concurrent postings in one month serialise.
+            $entry->entry_number = $this->allocateEntryNumber($entryDate);
             $entry->save();
 
             foreach ($lines as $line) {
@@ -545,6 +545,54 @@ class AccountingService
     {
         $entry->loadMissing('lines');
         $this->updateLedger($entry);
+    }
+
+    /**
+     * Allocate the next per-month journal entry number (JE-YYYYMM-NNNN).
+     *
+     * The counter lives in journal_entry_sequences and is incremented under a
+     * row lock, so two concurrent postings in the same month serialise instead
+     * of drawing the same number. On first use for a month the counter
+     * continues from the highest existing id for that month, so deploying this
+     * over an existing ledger never reissues a number.
+     */
+    private function allocateEntryNumber(string $entryDate): string
+    {
+        $periodMonth = Carbon::parse($entryDate)->format('Ym');
+
+        $sequence = DB::transaction(function () use ($periodMonth) {
+            $row = DB::table('journal_entry_sequences')
+                ->where('period_month', $periodMonth)
+                ->lockForUpdate()
+                ->first();
+
+            if ($row === null) {
+                $lastId = JournalEntry::query()
+                    ->where('entry_number', 'like', "JE-{$periodMonth}-%")
+                    ->max('id');
+
+                $next = ((int) $lastId) + 1;
+
+                DB::table('journal_entry_sequences')->insert([
+                    'period_month' => $periodMonth,
+                    'last_number' => $next,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                return $next;
+            }
+
+            $next = ((int) $row->last_number) + 1;
+
+            DB::table('journal_entry_sequences')
+                ->where('period_month', $periodMonth)
+                ->update(['last_number' => $next, 'updated_at' => now()]);
+
+            return $next;
+        });
+
+        return 'JE-'.$periodMonth.'-'.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**

@@ -52,9 +52,13 @@ class DeviceComputations extends BaseModel
 
     /**
      * Check if the device is still valid (not expired).
+     *
+     * A NULL expiry is treated as invalid: every remembered device is stamped
+     * with an expiry, so a row without one is a legacy/backfilled artifact and
+     * must not grant a permanent MFA bypass.
      */
     public function isValid(): bool
     {
-        return is_null($this->expires_at) || $this->expires_at->isFuture();
+        return $this->expires_at !== null && $this->expires_at->isFuture();
     }
 }

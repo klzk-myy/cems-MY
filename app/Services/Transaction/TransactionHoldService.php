@@ -29,27 +29,4 @@ class TransactionHoldService
 
         return false;
     }
-
-    /**
-     * Get hold reasons for audit logging.
-     *
-     * @return array<string>
-     */
-    public function getHoldReasons(CddLevel $cddLevel, array $riskFlags = []): array
-    {
-        $reasons = [];
-
-        if ($cddLevel === CddLevel::Enhanced) {
-            $reasons[] = 'Enhanced CDD requires hold';
-        }
-
-        foreach ($riskFlags as $flag) {
-            if (isset($flag['severity']) && $flag['severity'] === self::CRITICAL_SEVERITY) {
-                $reason = $flag['type'] ?? 'Critical risk flag';
-                $reasons[] = "Critical risk: {$reason}";
-            }
-        }
-
-        return $reasons;
-    }
 }

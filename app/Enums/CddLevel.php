@@ -20,61 +20,6 @@ enum CddLevel: string
     case Enhanced = 'Enhanced';
 
     /**
-     * Determine CDD level based on amount and customer risk.
-     *
-     * @param  string  $amountMyr  Transaction amount in MYR
-     * @param  bool  $isPep  Whether customer is a Politically Exposed Person
-     * @param  bool  $hasSanctionMatch  Whether customer matches sanctions list
-     * @param  RiskRating|string  $riskRating  Customer risk rating
-     */
-    public static function determine(
-        string $amountMyr,
-        bool $isPep = false,
-        bool $hasSanctionMatch = false,
-        RiskRating|string $riskRating = 'low'
-    ): self {
-        // Handle enum or string
-        $riskRatingValue = $riskRating instanceof RiskRating
-            ? $riskRating->value
-            : strtolower($riskRating);
-
-        // Enhanced Due Diligence triggers (risk-based, not amount-based per pd-00.md 14C.13)
-        if ($isPep || $hasSanctionMatch || $riskRatingValue === RiskRating::High->value) {
-            return self::Enhanced;
-        }
-
-        if (! is_numeric($amountMyr)) {
-            throw new \InvalidArgumentException('Transaction amount must be numeric.');
-        }
-
-        /** @var numeric-string $amountMyr */
-        // Amount thresholds per pd-00.md 14C.12
-        // >= RM 10,000: Standard CDD
-        $standardThreshold = self::getStandardCddThreshold();
-
-        if (! is_numeric($standardThreshold)) {
-            throw new \LogicException('Configured standard CDD threshold must be numeric.');
-        }
-
-        if (bccomp($amountMyr, $standardThreshold) >= 0) {
-            return self::Standard;
-        }
-
-        // RM 3,000 - 10,000: Specific CDD
-        $specificThreshold = self::getSpecificCddThreshold();
-
-        if (! is_numeric($specificThreshold)) {
-            throw new \LogicException('Configured specific CDD threshold must be numeric.');
-        }
-
-        if (bccomp($amountMyr, $specificThreshold) >= 0) {
-            return self::Specific;
-        }
-
-        return self::Simplified;
-    }
-
-    /**
      * Check if this is simplified due diligence.
      */
     public function isSimplified(): bool

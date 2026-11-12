@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\System;
 
+use App\Models\DeviceComputations;
 use App\Models\MfaRecoveryCode;
 use App\Models\User;
 use App\Services\System\MfaService;
@@ -19,6 +20,36 @@ class MfaServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(MfaService::class);
+    }
+
+    #[Test]
+    public function trusted_device_with_future_expiry_is_accepted(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->service->rememberDevice($user, 'Test device', 30);
+
+        $this->assertTrue($this->service->hasTrustedDevice($user, hash('sha256', $token)));
+    }
+
+    #[Test]
+    public function trusted_device_without_an_expiry_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->service->rememberDevice($user, 'Legacy device', 30);
+
+        // Simulate a backfilled row that never got an expiry stamp.
+        DeviceComputations::where('user_id', $user->id)->update(['expires_at' => null]);
+
+        $this->assertFalse($this->service->hasTrustedDevice($user, hash('sha256', $token)));
+    }
+
+    #[Test]
+    public function expired_trusted_device_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->service->rememberDevice($user, 'Expired device', -1);
+
+        $this->assertFalse($this->service->hasTrustedDevice($user, hash('sha256', $token)));
     }
 
     #[Test]

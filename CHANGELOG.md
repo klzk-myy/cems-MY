@@ -5,7 +5,67 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Cleanup: CDD guard, BCMath consistency, display-cast annotations
+## [2026-11-12] - Round 4: cache consistency, per-month journal numbers, MFA expiry, dead code
+
+### Files Changed
+- `app/Services/Accounting/LedgerService.php` — P&L and balance sheet cached under the shared `ledger` tag
+- `app/Services/Accounting/AccountingService.php` — per-month sequential `entry_number`
+- `database/seeders/SchemaSeeder.php` — new `journal_entry_sequences` table (create + drop list)
+- `app/Services/System/MfaService.php`, `app/Models/DeviceComputations.php` — a NULL `expires_at` no longer grants trust
+- `app/Enums/CddLevel.php` — removed the dead `determine()` method
+- `app/Services/Transaction/TransactionHoldService.php` — removed the dead `getHoldReasons()`
+- `app/Services/Traits/TillBalanceTrait.php` — deleted (its only method was unused)
+- `app/Http/Middleware/EnsureBranchScope.php` — explicit guarantee/delegation docblock
+- Tests: `AccountingServiceTest`, `MfaServiceTest`, `ThresholdAccessCentralizedTest`, `TransactionHoldServiceTest`, `CriticalTransactionWorkflowTest`, `TransactionServiceTest`; deleted `tests/Unit/Services/Traits/TillBalanceTraitTest.php`
+
+### Purpose
+Close the last audit findings: the statement-caching inconsistency, the
+non-sequential journal entry numbers, the MFA NULL-expiry trust hole, and the
+dead code paths that had drifted away from production.
+
+### Changes Made
+- **Statement caching.** `getProfitAndLoss()` and `getBalanceSheet()` are now
+  cached under the same `ledger` tag and 60s TTL as `getTrialBalance()`. Every
+  ledger write flushes that tag from inside `updateLedger()`, so all three
+  statements stay consistent after a posting.
+- **Journal entry numbers.** New `journal_entry_sequences` table holds one
+  counter per `YYYY-MM`; `allocateEntryNumber()` increments it under a row lock
+  so concurrent postings in a month serialise. On first use for a month the
+  counter continues from the highest existing `JE-{Ym}-` id, so deploying over
+  an existing ledger never reissues a number. Numbers are now contiguous per
+  month (`JE-202601-0001`, `JE-202601-0002`, `JE-202602-0001`).
+- **MFA trusted devices.** `hasTrustedDevice()` and `getTrustedDevices()` now
+  require `expires_at > now()`; `DeviceComputations::isValid()` treats a NULL
+  expiry as invalid. `rememberDevice()` always stamps an expiry, so only
+  backfilled legacy rows are affected — they must re-authenticate once.
+- **Dead code removed.** `CddLevel::determine()` (superseded by
+  `CddLevelDeterminationService`), `TransactionHoldService::getHoldReasons()`,
+  and `TillBalanceTrait::updateTillBalance()` are gone, along with the tests
+  that only exercised them. `CriticalTransactionWorkflowTest` now derives the
+  expected CDD level from the production service.
+- **`EnsureBranchScope`** documents precisely what it guarantees (routes that
+  name a branch) and what it delegates (collection endpoints, via
+  `ResolvesBranchScope`, policies and services).
+
+### Testing
+- `php artisan test --compact` (full suite) — 2819 passed, 3 skipped
+- `php artisan test --compact tests/Unit/AccountingServiceTest.php tests/Unit/Services/System/MfaServiceTest.php tests/Unit/ThresholdAccessCentralizedTest.php tests/Unit/Transaction/TransactionHoldServiceTest.php tests/Feature/CriticalTransactionWorkflowTest.php` — 44 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The new cache wrapping reuses the existing `ledger` tag and TTL; the
+  invalidation path is unchanged and already fires on every posting.
+- `allocateEntryNumber()` runs inside the existing `createJournalEntry()`
+  transaction; `lockForUpdate()` serialises same-month postings. `entry_number`
+  is display-only (no lookup parses it), and `SetupService` opening balances
+  use a separate `OB-` prefix, so no number space collides.
+- Removing `CddLevel::determine()` deletes behaviour production never called;
+  `CddLevelDeterminationService` is covered by
+  `CddLevelDeterminationServiceTest`.
+
+---
+
 
 ### Files Changed
 - `app/Services/Transaction/TransactionCreationService.php` — explicit CDD guard; `MathService::compare()`

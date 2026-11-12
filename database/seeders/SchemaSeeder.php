@@ -124,6 +124,7 @@ class SchemaSeeder extends Seeder
             'fiscal_years',
             'accounting_periods',
             'journal_entries',
+            'journal_entry_sequences',
             'chart_of_accounts',
             'account_ledger',
             'account_mappings',
@@ -319,6 +320,12 @@ class SchemaSeeder extends Seeder
             $table->index(['closed_by', 'fiscal_year_id'], 'idx_b8bd21b18fbb');
             $table->foreign('fiscal_year_id')->references('id')->on('fiscal_years')->restrictOnDelete();
             $table->foreign('closed_by')->references('id')->on('users')->restrictOnDelete();
+        });
+
+        Schema::create('journal_entry_sequences', function (Blueprint $table) {
+            $table->string('period_month', 7)->primary();
+            $table->unsignedInteger('last_number')->default(0);
+            $table->timestamps();
         });
 
         Schema::create('journal_entries', function (Blueprint $table) {
