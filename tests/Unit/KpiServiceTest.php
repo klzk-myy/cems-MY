@@ -333,4 +333,23 @@ class KpiServiceTest extends TestCase
 
         $this->assertSame(1, $cards['unique_customers']['value']);
     }
+
+    #[Test]
+    public function teller_productivity_scopes_by_branch_without_ambiguous_columns(): void
+    {
+        $branch = Branch::factory()->create();
+        $teller = User::factory()->create(['branch_id' => $branch->id]);
+
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'user_id' => $teller->id,
+            'created_at' => today(),
+        ]);
+        $this->builder->rebuildRange(today(), today());
+
+        $rows = $this->kpi->tellerProductivity(today(), today(), $branch->id);
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($teller->id, $rows[0]['user_id']);
+    }
 }

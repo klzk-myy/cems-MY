@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\BiController;
 use App\Http\Controllers\Api\V1\BranchClosingController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\Compliance\AlertController;
@@ -478,6 +479,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->name('api.v1.accounting.month-end.close');
             Route::get('/status/{date}', [MonthEndCloseController::class, 'status'])
                 ->name('api.v1.accounting.month-end.status');
+        });
+
+        // BI analytics — read-only mirrors of the /bi pages over the same
+        // KpiService, so an API consumer and a browser render identical
+        // numbers for the same period. Teller productivity stays behind its
+        // own grant; the controller returns an empty list without it.
+        Route::prefix('bi')->name('bi.')->middleware('role:view_bi_dashboard')->group(function () {
+            Route::get('/dashboard', [BiController::class, 'dashboard'])
+                ->name('api.v1.bi.dashboard');
+            Route::get('/branches', [BiController::class, 'branches'])
+                ->name('api.v1.bi.branches');
+            Route::get('/currencies', [BiController::class, 'currencies'])
+                ->name('api.v1.bi.currencies');
+            Route::get('/rates', [BiController::class, 'rates'])
+                ->name('api.v1.bi.rates');
+            Route::get('/operations', [BiController::class, 'operations'])
+                ->name('api.v1.bi.operations');
+            Route::get('/customers', [BiController::class, 'customers'])
+                ->name('api.v1.bi.customers');
+            Route::get('/stock', [BiController::class, 'stock'])
+                ->name('api.v1.bi.stock');
+            Route::get('/forecast', [BiController::class, 'forecast'])
+                ->name('api.v1.bi.forecast');
         });
     });
 });

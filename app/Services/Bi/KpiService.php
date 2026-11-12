@@ -785,7 +785,8 @@ class KpiService
     {
         return AnalyticsDailyTeller::query()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
-            ->forBranch($branchId)
+            // Qualified: the users join also carries a branch_id column.
+            ->when($branchId, fn ($query) => $query->where('analytics_daily_teller.branch_id', $branchId))
             ->leftJoin('users', 'users.id', '=', 'analytics_daily_teller.user_id')
             ->groupBy('analytics_daily_teller.user_id', 'users.username')
             ->selectRaw('analytics_daily_teller.user_id')
