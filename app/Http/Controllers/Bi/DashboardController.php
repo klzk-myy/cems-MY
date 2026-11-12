@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bi;
 
+use App\Enums\KpiMetric;
 use App\Enums\Permission;
 use App\Http\Controllers\Concerns\RequiresPermission;
 use App\Http\Controllers\Concerns\ResolvesBiFilters;
@@ -80,15 +81,7 @@ class DashboardController extends Controller
                 : $this->statusMixChart($from, $to, $branchId),
             'lastComputedAt' => $this->kpiService->lastComputedAt($branchId),
             'sparklines' => $this->kpiService->cardSparklines($from, $to, $branchId),
-            'drill' => [
-                'volume_myr' => 'bi.branches',
-                'realized_margin_myr' => 'bi.currencies',
-                'tx_count' => 'bi.operations',
-                'unique_customers' => 'bi.customers',
-                'avg_ticket_myr' => 'bi.customers',
-                'cancel_rate_pct' => 'bi.operations',
-                'avg_approval_seconds' => 'bi.operations',
-            ],
+            'drill' => KpiMetric::drillRouteMap(),
         ]);
     }
 

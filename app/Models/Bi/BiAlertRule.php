@@ -3,6 +3,7 @@
 namespace App\Models\Bi;
 
 use App\Enums\BiAlertComparison;
+use App\Enums\KpiMetric;
 use App\Enums\SystemAlertLevel;
 use App\Models\BaseModel;
 use App\Models\Branch;
@@ -67,18 +68,7 @@ class BiAlertRule extends BaseModel
      */
     public static function availableMetrics(): array
     {
-        return [
-            'volume_myr' => 'Volume (MYR)',
-            'tx_count' => 'Transactions',
-            'realized_margin_myr' => 'Realized margin (MYR)',
-            'margin_pct' => 'Margin %',
-            'avg_ticket_myr' => 'Average ticket (MYR)',
-            'unique_customers' => 'Unique customers',
-            'cancel_rate_pct' => 'Cancel rate %',
-            'reject_rate_pct' => 'Reject rate %',
-            'avg_approval_seconds' => 'Avg approval time (s)',
-            'rate_override_count' => 'Rate overrides',
-        ];
+        return KpiMetric::labelMap();
     }
 
     /**

@@ -5,6 +5,35 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 14: KPI metric catalog
+
+### Files Changed
+- `app/Enums/KpiMetric.php` — new catalog: label, unit and drill route per metric
+- `app/Models/Bi/BiAlertRule.php` — `availableMetrics()` derives from the catalog
+- `app/Http/Controllers/Bi/DashboardController.php` — the per-card drill map derives from the catalog
+- `tests/Unit/KpiMetricTest.php` — coverage
+
+### Purpose
+`BI-PLAN.md:111-129` calls for a KPI registry where one definition drives the dashboard card, the report row, the scheduled export and any threshold alert, so formulas cannot diverge. Before this change the metric list was hardcoded twice — once in `BiAlertRule::availableMetrics()` for the alert form and its validation, and once as the dashboard's drill map — with nothing linking the two.
+
+### Changes Made
+- `KpiMetric` enumerates the ten metrics the alert evaluator can resolve. Each case carries its label, its display unit (`myr`, `percent`, `seconds`, `count`) and the BI page that carries its detail view.
+- `BiAlertRule::availableMetrics()` now returns `KpiMetric::labelMap()`, so the alert form, its validation rule and the evaluator's label lookup all read one list.
+- The dashboard's drill map now comes from `KpiMetric::drillRouteMap()` instead of a literal array. The resolved routes are unchanged — the enum encodes the same mappings the array held.
+- The case values are exactly the strings `KpiService::summarize()` returns and `bi_alert_rules.metric` stores, so the catalog is the source of truth rather than a parallel list.
+
+### Testing
+- `php artisan test --compact` — 2861 passed, 3 skipped, 0 failed
+- New `KpiMetricTest`: the alert catalog equals the enum's label map; every metric resolves a label, a known unit and a route that actually exists; and every catalog key is resolvable by `KpiService::periodMetrics()`, which is what the alert evaluator reads
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed paths — no errors
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 4 changed symbols, 6 affected processes, risk **high**. The rating comes from `DashboardController::index` (every BI page's navigation depends on it) and `BiAlertRule::availableMetrics` (the alert form, validation and evaluator). The change is a straight extraction — no behaviour was altered — and the alert, dashboard and delivery suites plus the full suite pass unchanged.
+- The existing `bi_alert_rules` rows store the same string keys, so no data migration is needed.
+
+---
+
 ## [2026-11-12] - Round 13: BI API v1
 
 ### Files Changed
