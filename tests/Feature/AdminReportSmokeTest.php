@@ -395,4 +395,37 @@ class AdminReportSmokeTest extends TestCase
         $response->assertSee($customer->full_name);
         $response->assertSee('Edit Customer');
     }
+
+    #[Test]
+    public function customer_edit_page_renders_apostrophe_names_without_double_escaping(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = Customer::factory()->create(['full_name' => "Scot O'Reilly"]);
+
+        $content = (string) $this->actingAs($admin)
+            ->get(route('customers.edit', $customer))
+            ->getContent();
+
+        // Blade pre-escapes bound/mustache component attributes and the
+        // component escapes once, so the attribute must carry the
+        // single-escaped name. A double escape renders "O&amp;#039;Reilly"
+        // visibly in the field.
+        $this->assertStringContainsString('Scot O&#039;Reilly', $content);
+        $this->assertStringNotContainsString('Scot O&amp;#039;Reilly', $content);
+    }
+
+    #[Test]
+    public function customer_edit_page_still_escapes_flashed_old_input(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $customer = Customer::factory()->create(['full_name' => 'Plain Name']);
+
+        $content = (string) $this->actingAs($admin)
+            ->withSession(['_old_input' => ['full_name' => '<script>alert(1)</script>']])
+            ->get(route('customers.edit', $customer))
+            ->getContent();
+
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $content);
+        $this->assertStringContainsString('&lt;script&gt;', $content);
+    }
 }

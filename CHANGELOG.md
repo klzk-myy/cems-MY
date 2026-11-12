@@ -5,6 +5,35 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 10: input component double-escaping
+
+### Files Changed
+- `resources/views/components/input.blade.php` — the `value` attribute is rendered unescaped, and flashed old input is escaped explicitly
+- `tests/Feature/AdminReportSmokeTest.php` — regression coverage for both directions
+
+### Purpose
+The `value` attribute of `<x-input>` was escaped twice. Blade pre-escapes bound (`:value="..."`) and mustache (`value="{{ ... }}"`) string attributes before the component receives them (verified: both compile to `e(...)` / `BladeCompiler::sanitizeComponentAttribute(...)`), and the component escaped them again with `{{ $inputValue }}`.
+
+Visible effect: any stored value containing `'`, `"`, `&`, `<` or `>` rendered corrupted in the field — a customer named `Scot O'Reilly` displayed as `Scot O&#039;Reilly` on `/customers/{id}/edit`. It also made `AdminReportSmokeTest::customer_edit_page_loads_for_admin` fail roughly 1 run in 25, because the assertion compared the escaped name against a page that carried the double-escaped form. That flake is what failed CI on `main` after PR #4 merged.
+
+### Changes Made
+- `input.blade.php` now renders `value="{!! $inputValue !!}"` and escapes the one source that arrives raw — flashed `old()` input — with `e()`. The previous `old($name, $value)` merge was replaced by an explicit null-default lookup so the pre-escaped prop and the raw flashed value are no longer indistinguishable.
+- Confirmed the sibling components do not share the defect: `textarea` renders `{{ $slot }}` where `$slot` is an `HtmlString` (so `e()` does not re-escape), `select` labels come from the app's own option arrays, and `checkbox` only ever receives the literal default `1`.
+
+### Testing
+- `php artisan test --compact` — 2842 passed, 3 skipped, 0 failed
+- `AdminReportSmokeTest::customer_edit_page_loads_for_admin` run 30× consecutively after the fix: 0 failures (was ~1 in 25)
+- New tests: `customer_edit_page_renders_apostrophe_names_without_double_escaping` (asserts the single-escaped form is present and the double-escaped form is absent), `customer_edit_page_still_escapes_flashed_old_input` (asserts `<script>` in flashed input is emitted as `&lt;script&gt;`, not raw)
+- `npm run build` — rebuilt `public/build`, which `CompiledAssetsTest` requires to be newer than `resources/views`
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress tests/Feature/AdminReportSmokeTest.php` — no errors
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 1 changed symbol, 0 affected processes, risk low
+- Blast radius: the component is used by every `<x-input>` tag across the views, but the change only alters the escaping of the emitted attribute — output is now correct for values containing HTML-significant characters and unchanged for all other values
+
+---
+
 ## [2026-11-12] - Round 9: sanctions search authorization gate
 
 ### Files Changed

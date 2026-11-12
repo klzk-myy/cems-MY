@@ -15,7 +15,15 @@
 $attrs = ($attributes ?? new \Illuminate\View\ComponentAttributeBag);
 $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 $hasError = $name && $errors->has($name);
-$inputValue = $name ? old($name, $value ?? $attrs->get('value')) : ($value ?? $attrs->get('value'));
+
+// Blade pre-escapes bound (`:value="..."`) and mustache (`value="{{ ... }}"`)
+// string attributes before the component receives them, so the value is
+// rendered unescaped below. Flashed old input is raw user data, so it is the
+// one source that has to be escaped here.
+$oldInput = $name ? old($name, null) : null;
+$inputValue = $oldInput !== null
+    ? (is_string($oldInput) ? e($oldInput) : $oldInput)
+    : ($value ?? $attrs->get('value'));
 @endphp
 
 <div class="{{ $inline ? '' : 'mb-4' }}">
@@ -29,7 +37,7 @@ $inputValue = $name ? old($name, $value ?? $attrs->get('value')) : ($value ?? $a
 
     <input type="{{ $type }}"
            @if($name) name="{{ $name }}" id="{{ $name }}" @endif
-           @if(!is_null($inputValue)) value="{{ $inputValue }}" @endif
+           @if(!is_null($inputValue)) value="{!! $inputValue !!}" @endif
            @if($required) required aria-required="true" @endif
            @if($disabled) disabled @endif
            @if($readonly) readonly @endif
