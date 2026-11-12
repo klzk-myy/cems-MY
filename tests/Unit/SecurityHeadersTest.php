@@ -69,6 +69,20 @@ class SecurityHeadersTest extends TestCase
     }
 
     #[Test]
+    public function security_header_baseline_overrides_a_preset_value(): void
+    {
+        app()->instance('env', 'production');
+        $middleware = new SecurityHeaders;
+        $request = Request::create('/test', 'GET');
+        $response = new Response('test content');
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+
+        $result = $middleware->handle($request, fn ($req) => $response);
+
+        $this->assertSame('DENY', $result->headers->get('X-Frame-Options'));
+    }
+
+    #[Test]
     public function style_src_keeps_unsafe_inline_for_dynamic_chart_dimensions(): void
     {
         app()->instance('env', 'production');

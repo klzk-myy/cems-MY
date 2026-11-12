@@ -11,6 +11,7 @@ use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Compliance\StrReport;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\System\SystemAlertService;
 use App\Services\ThresholdService;
 use App\Support\ThresholdDefaults;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,8 @@ class StrReportService
 {
     public function __construct(
         protected AuditService $auditService,
-        protected ThresholdService $thresholdService
+        protected ThresholdService $thresholdService,
+        protected SystemAlertService $alertService
     ) {}
 
     /**
@@ -301,6 +303,20 @@ class StrReportService
                 'error' => $e->getMessage(),
                 'exception_class' => $e::class,
             ]);
+
+            // A missed STR is compliance-relevant: leave an operator-visible
+            // trace, not just a log line.
+            $this->alertService->warning(
+                'STR auto-draft failed for case '.$case->case_number,
+                [
+                    'source' => 'str_auto_draft',
+                    'metadata' => [
+                        'case_id' => $case->id,
+                        'error' => $e->getMessage(),
+                        'exception_class' => $e::class,
+                    ],
+                ]
+            );
 
             return null;
         }

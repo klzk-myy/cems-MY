@@ -42,7 +42,7 @@ class PoolRemittanceService
         protected BranchPoolService $poolService,
     ) {}
 
-    public function initiate(Branch $from, Branch $to, string $currencyCode, float|string $amountMyr, int $initiatedBy, ?string $notes = null): PoolRemittance
+    public function initiate(Branch $from, Branch $to, string $currencyCode, string $amountMyr, int $initiatedBy, ?string $notes = null): PoolRemittance
     {
         $amountMyr = (string) $amountMyr;
 
@@ -67,8 +67,10 @@ class PoolRemittanceService
         // index on remittance_number rejects the loser, so retry the whole
         // transaction (number regenerated) rather than surfacing a 500.
         for ($attempt = 0; ; $attempt++) {
+            $candidateNumber = null;
+
             try {
-                return DB::transaction(function () use ($from, $to, $currencyCode, $amountMyr, $initiatedBy, $notes) {
+                return DB::transaction(function () use ($from, $to, $currencyCode, $amountMyr, $initiatedBy, $notes, &$candidateNumber) {
                     $pool = BranchPool::where('branch_id', $from->id)
                         ->where('currency_code', $currencyCode)
                         ->lockForUpdate()
@@ -82,7 +84,7 @@ class PoolRemittanceService
                     $pool->save();
 
                     $remittance = PoolRemittance::create([
-                        'remittance_number' => PoolRemittance::generateRemittanceNumber(),
+                        'remittance_number' => $candidateNumber = PoolRemittance::generateRemittanceNumber(),
                         'from_branch_id' => $from->id,
                         'to_branch_id' => $to->id,
                         'currency_code' => $currencyCode,
@@ -121,10 +123,13 @@ class PoolRemittanceService
                     return $remittance;
                 });
             } catch (UniqueConstraintViolationException $e) {
-                // Only remittance_number collisions are retryable — any other
+                // Only a remittance_number collision is retryable — any other
                 // unique violation is a data/programming error and must surface
-                // unchanged rather than being masked as a retry.
-                if (! str_contains($e->getMessage(), 'remittance_number')) {
+                // unchanged rather than being masked as a retry. Probe the
+                // number directly instead of matching driver message text,
+                // which changes with localization and driver versions.
+                if ($candidateNumber === null
+                    || ! PoolRemittance::where('remittance_number', $candidateNumber)->exists()) {
                     throw $e;
                 }
 

@@ -167,7 +167,9 @@ abstract class BaseMonitor
                 && is_numeric($currentValue)
                 && (str_contains($key, 'score') || str_contains($key, 'count'))
             ) {
-                $current[$key] = max((float) $currentValue, (float) $value);
+                $current[$key] = $this->math->compare((string) $currentValue, (string) $value) >= 0
+                    ? $currentValue
+                    : $value;
 
                 continue;
             }

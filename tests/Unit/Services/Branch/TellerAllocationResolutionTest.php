@@ -61,7 +61,7 @@ class TellerAllocationResolutionTest extends TestCase
 
         $this->service->shouldReceive('validateTransaction')
             ->once()
-            ->with($user, 'USD', '1000.00', true)
+            ->with($user, 'USD', '1000.00', true, null)
             ->andReturn(new AllocationValidationResult(
                 valid: true,
                 allocation: $expectedAllocation
@@ -82,7 +82,7 @@ class TellerAllocationResolutionTest extends TestCase
 
         $this->service->shouldReceive('validateTransaction')
             ->once()
-            ->with($user, 'USD', '1000.00', true)
+            ->with($user, 'USD', '1000.00', true, null)
             ->andReturn(new AllocationValidationResult(
                 valid: false,
                 reason: 'Insufficient allocation balance'
@@ -104,11 +104,15 @@ class TellerAllocationResolutionTest extends TestCase
 
         $expectedAllocation = Mockery::mock(TellerAllocation::class);
 
-        $this->service->shouldReceive('validateTransaction')->never();
-        $this->service->shouldReceive('getActiveAllocation')
+        // Sells are validated too: the teller hands over foreign currency from
+        // their float, so both the balance and the daily limit are checked.
+        $this->service->shouldReceive('validateTransaction')
             ->once()
-            ->with($user, 'EUR')
-            ->andReturn($expectedAllocation);
+            ->with($user, 'EUR', '500.00', false, null)
+            ->andReturn(new AllocationValidationResult(
+                valid: true,
+                allocation: $expectedAllocation
+            ));
 
         $allocation = $this->service->resolveForTransaction($user, [
             'type' => TransactionType::Sell->value,
@@ -116,5 +120,27 @@ class TellerAllocationResolutionTest extends TestCase
         ], '500.00');
 
         $this->assertSame($expectedAllocation, $allocation);
+    }
+
+    public function test_resolve_for_transaction_sell_throws_when_validation_fails(): void
+    {
+        $user = Mockery::mock(User::class);
+        $user->shouldReceive('isTeller')->once()->andReturn(true);
+
+        $this->service->shouldReceive('validateTransaction')
+            ->once()
+            ->with($user, 'EUR', '500.00', false, null)
+            ->andReturn(new AllocationValidationResult(
+                valid: false,
+                reason: 'No EUR balance available to sell'
+            ));
+
+        $this->expectException(AllocationValidationException::class);
+        $this->expectExceptionMessage('Allocation validation failed: No EUR balance available to sell');
+
+        $this->service->resolveForTransaction($user, [
+            'type' => TransactionType::Sell->value,
+            'currency_code' => 'EUR',
+        ], '500.00');
     }
 }

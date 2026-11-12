@@ -97,13 +97,14 @@ class SecurityHeaders
 
     /**
      * Apply standard security headers.
+     *
+     * Enforced, not opt-out: a controller or upstream middleware that sets one
+     * of these first does not silently weaken the baseline.
      */
     protected function applySecurityHeaders(Response $response): void
     {
         foreach ($this->securityHeaders as $header => $value) {
-            if (! $response->headers->has($header)) {
-                $response->headers->set($header, $value);
-            }
+            $response->headers->set($header, $value);
         }
     }
 

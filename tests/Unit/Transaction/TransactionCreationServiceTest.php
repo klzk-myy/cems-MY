@@ -8,6 +8,7 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCreated;
+use App\Exceptions\Domain\AllocationValidationException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\TillBalanceMissingException;
@@ -751,6 +752,55 @@ class TransactionCreationServiceTest extends TestCase
         $service->create($this->context([
             'data' => ['type' => TransactionType::Sell->value],
         ]));
+    }
+
+    #[Test]
+    public function create_rejects_sell_when_teller_allocation_lacks_foreign_balance(): void
+    {
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'low',
+            'address' => '1 Test Street',
+            'phone' => '+60123456789',
+        ]);
+        $counter = Counter::factory()->create(['status' => 'active']);
+        Currency::factory()->create(['code' => 'USD', 'rate_unit' => 1]);
+
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $allocation = $this->tellerAllocation($user, $counter, 'USD');
+        $allocation->update(['current_quantity' => '10.00']);
+
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Sell->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.5',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->zeroOrMoreTimes();
+        $position->shouldReceive('getAvailableBalance')->andReturn('1000.00');
+
+        $service = $this->completedBuyService(['position' => $position]);
+
+        // The branch has the stock, but the teller's own float does not — a Sell
+        // must be validated against the allocation, not booked to fail later.
+        $this->expectException(AllocationValidationException::class);
+        $service->prepareAndCreate($data, $user->id);
     }
 
     #[Test]

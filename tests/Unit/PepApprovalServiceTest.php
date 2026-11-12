@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\ApprovalLevel;
+use App\Enums\ApprovalStatus;
 use App\Enums\PepType;
 use App\Enums\RiskRating;
 use App\Models\Customer;
@@ -36,6 +37,29 @@ class PepApprovalServiceTest extends TestCase
     /**
      * Test that Foreign PEPs always require head office approval.
      */
+    #[Test]
+    public function approval_is_scoped_to_the_transaction_type(): void
+    {
+        $customer = Customer::factory()->create([
+            'pep_status' => true,
+            'pep_type' => PepType::Foreign->value,
+            'risk_rating' => RiskRating::Low,
+        ]);
+
+        PepApprovalRequest::create([
+            'customer_id' => $customer->id,
+            'transaction_type' => 'buy',
+            'status' => ApprovalStatus::Approved->value,
+            'approval_level' => 'head_office_senior_management',
+            'requested_at' => now(),
+        ]);
+
+        // A Buy approval must not satisfy a Sell: the two directions move
+        // different custody and need their own head-office sign-off.
+        $this->assertTrue($this->service->hasApprovedApproval($customer, 'buy'));
+        $this->assertFalse($this->service->hasApprovedApproval($customer, 'sell'));
+    }
+
     #[Test]
     public function foreign_pep_requires_head_office_approval(): void
     {
@@ -238,7 +262,7 @@ class PepApprovalServiceTest extends TestCase
         $approver = User::factory()->create();
         $this->service->approve($request, $approver);
 
-        $this->assertTrue($this->service->hasApprovedApproval($customer));
+        $this->assertTrue($this->service->hasApprovedApproval($customer, 'new_relationship'));
     }
 
     /**

@@ -147,8 +147,7 @@ class TransactionCreationService
             );
         }
 
-        $cddLevel = $cddFloor !== null
-            && array_search($cddFloor, CddLevel::cases(), true) > array_search($freshCddLevel, CddLevel::cases(), true)
+        $cddLevel = $cddFloor !== null && $cddFloor->severity() > $freshCddLevel->severity()
             ? $cddFloor
             : $freshCddLevel;
 
@@ -158,6 +157,10 @@ class TransactionCreationService
                 [
                     'type' => (string) $data['type'],
                     'currency_code' => (string) $data['currency_code'],
+                    // Sells are checked against the foreign float in the
+                    // transaction's own currency units — without the quantity
+                    // the check would compare MYR against the FCY balance.
+                    'quantity' => (string) ($data['quantity'] ?? '0'),
                 ],
                 $amountMyr
             )
@@ -305,6 +308,12 @@ class TransactionCreationService
             // business date — no new transactions can be booked on it.
             // Checked inside the transaction under the workflow-row lock so
             // a racing finalize serializes against the booking.
+            // Lock the branch row FIRST: when the branch has no workflow rows
+            // yet, the workflow-table lock inside freezesDateForUpdate()
+            // acquires nothing, so a concurrent initiation could freeze the
+            // date after our check. Mirrors BranchClosingService::initiateClosure().
+            Branch::whereKey($txnBranchId)->lockForUpdate()->first();
+
             $today = now()->toDateString();
 
             if (BranchClosureWorkflow::freezesDateForUpdate($txnBranchId, $today)) {

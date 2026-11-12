@@ -5,7 +5,159 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Round 4: cache consistency, per-month journal numbers, MFA expiry, dead code
+## [2026-11-12] - Round 6: PEP scoping, day-close race lock, Sell custody, audit gap refinement
+
+### Files Changed
+- `app/Services/Compliance/PepApprovalService.php`, `app/Services/Transaction/TransactionValidationService.php` — PEP approval is scoped to the transaction type
+- `app/Services/Transaction/TransactionCreationService.php` — locks the branch row before the day-close freeze check
+- `app/Services/Branch/TellerAllocationService.php` — Sells are validated against the teller allocation
+- `app/Services/Branch/PoolRemittanceService.php` — `initiate()` takes a string amount only
+- `app/Services/Audit/AuditChainService.php` — id-gap check refined to allow `GAP:`-boundary gaps
+- `app/Services/Compliance/Monitors/BaseMonitor.php` — string comparison replaces float `max()`
+- `tests/Feature/Concurrency/ApprovalRaceTest.php` — active teller allocation fixture
+- `tests/Unit/Services/Branch/TellerAllocationResolutionTest.php` — Sell resolution now validated
+- `config/security.php`, `.env.example` — the IP-block whitelist no longer defaults to a private subnet in production
+- `app/Providers/EventServiceProvider.php` — compliance-critical job failures now raise an alert
+- `tests/Feature/Jobs/QueueFailureAlertTest.php` — new
+- `.github/workflows/deploy.yml` — registers the previously missing `str:install-bnm-reference-unique`
+- `tests/Feature/Infrastructure/InstallerRegistrationTest.php` — new guard: every installer must be in the deploy workflow
+- `tests/Feature/Concurrency/ApprovalRaceTest.php`, `tests/Feature/Api/V1/SellDoesNotCreateEmptyPositionTest.php` — fixtures funded for the Sell validation
+- `tests/Unit/PepApprovalServiceTest.php`, `tests/Unit/Transaction/TransactionCreationServiceTest.php`, `tests/Feature/Audit/AuditChainQuarantineTest.php` — coverage
+
+### Purpose
+Close four audit findings: a PEP approval that satisfied the wrong transaction
+direction, a booking/day-close race that could post against a freezing date, a
+Sell path that booked unfundable allocations, and a remittance signature that
+endorsed float-for-money.
+
+### Changes Made
+- **PEP approval scoping.** `hasApprovedApproval()` now takes the transaction
+  type and filters on it, so a Buy approval no longer satisfies a Sell (and
+  vice versa). `requestApproval()` already keyed on the type; the gate now does
+  too.
+- **Day-close race.** `create()` locks the branch row before
+  `freezesDateForUpdate()`. With no workflow rows yet, the workflow-table lock
+  acquires nothing, so a concurrent `initiateClosure()` could previously freeze
+  the date after the booking's check. This mirrors the serializer the closure
+  path already uses.
+- **Sell custody.** `TellerAllocationService::resolveForTransaction()` now runs
+  the same `validateTransaction()` for both directions. A Sell checks the
+  allocation's foreign float (`hasAvailable`) plus the daily MYR limit instead
+  of attaching the allocation unvalidated and failing later at approval.
+- **Remittance amount type.** `initiate(..., string $amountMyr, ...)` — the
+  controller already cast, so no caller changes; the signature no longer
+  endorses float-for-money at the API boundary.
+- **IP whitelist default.** The whitelist defaulted to `192.168.1.0/24` in
+  every environment, exempting a whole subnet from brute-force IP blocking in
+  production. It now defaults to empty outside local development, and
+  `.env.example` ships it empty.
+- **Queue failure alerting.** The `Queue::failing` callback logged and stopped.
+  Compliance/audit jobs (`ImportSanctionsJob`, `ComplianceScreeningJob`,
+  `RunComplianceMonitorJob`, `SealAuditHashJob`, `ProcessTransactionRetry`,
+  `ReconcileDeferredAccountingJob`) now also raise a `SystemAlert`, so a
+  permanently failed obligation is operator-actionable instead of a log line.
+- **Installer registration guard.** `str:install-bnm-reference-unique` was
+  missing from `.github/workflows/deploy.yml` — the exact failure mode that
+  previously broke production. The workflow now registers it, and
+  `InstallerRegistrationTest` asserts every `Install*` command appears there so
+  the next installer cannot silently skip production.
+- **Sell quantity unit mismatch.** `buildCreationContext()` now passes the
+  transaction quantity to `resolveForTransaction()`. Without it the Sell check
+  compared the MYR amount against the teller's foreign-currency float — the
+  same unit mismatch the Buy path already guards against.
+- **Monitor merge arithmetic.** `BaseMonitor::mergeFindingDetails()` compares
+  `score`/`count` values with `MathService::compare()` (BCMath strings) instead
+  of a float `max()`, keeping monitoring metrics on string arithmetic.
+- **Audit gap refinement.** The id-contiguity check from round 5 allowed
+  `GAP:`-covered gaps to be flagged as deletions; it now subtracts boundaries
+  whose row is genuinely absent, so a legitimate audited rotation still verifies.
+
+### Testing
+- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact tests/Unit/PepApprovalServiceTest.php tests/Unit/Transaction/TransactionCreationServiceTest.php` — 44 passed
+- `php artisan test --compact tests/Feature/Audit/AuditChainQuarantineTest.php tests/Feature/ReviewRegressionTest.php` — 27 passed
+- `php artisan test --compact tests/Unit/Transaction tests/Unit/TransactionReversalServiceTest.php tests/Feature/PoolRemittanceTest.php tests/Feature/BranchClosingWorkflowTest.php tests/Feature/Concurrency/AllocationRaceTest.php` — 170 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The PEP scoping is a deliberate tightening: an existing Buy approval no longer
+  covers a Sell. Any deployment with in-flight PEP approvals keyed to one
+  direction will require a fresh approval for the other — intended per pd-00.
+- The branch-row lock adds one `SELECT ... FOR UPDATE` to every booking. It
+  serialises against closure initiation only; the position lock ordering is
+  unchanged.
+- The Sell validation is a behaviour change: unfundable Sells are now rejected
+  at booking rather than at approval. The atomic allocation guards remain.
+
+---
+
+
+### Files Changed
+- `AGENTS.md`, `CLAUDE.md` — removed references to the non-existent `StrictRateLimit` / `checkBurst` / `strict.ratelimit` middleware
+- `app/Services/System/RateLimitService.php` — rate-limit hit tracking is now lock-protected
+- `app/Services/Audit/AuditChainService.php` — id-contiguity check in `verifyChainIntegrity()`
+- `app/Models/Customer.php` — ID-number decryption failures are logged, not silently swallowed
+- `app/Enums/CddLevel.php` — explicit `severity()` replaces the declaration-order comparison
+- `app/Services/Transaction/TransactionCreationService.php` — uses `CddLevel::severity()`
+- `app/Services/Transaction/TransactionReversalService.php`, `config/cems.php` — separate `transaction_reversal_window_hours`
+- `app/Services/Compliance/StrReportService.php` — a failed STR auto-draft now raises an operator-visible alert
+- `app/Services/Branch/PoolRemittanceService.php` — retryability probed from the collided number, not driver message text
+- `app/Http/Middleware/SecurityHeaders.php` — the baseline is enforced, not opt-out
+- `tests/Feature/Audit/AuditChainQuarantineTest.php`, `tests/Unit/TransactionReversalServiceTest.php`, `tests/Unit/SecurityHeadersTest.php`, `tests/Unit/CddLevelTest.php` — coverage
+
+### Purpose
+Close three audit findings: documentation describing rate limiting that does
+not exist, a monitoring read-modify-write that could lose updates, and an audit
+chain that could not detect hard-deleted rows.
+
+### Changes Made
+- **Docs.** `AGENTS.md` §4 and `CLAUDE.md` described a `StrictRateLimit`
+  middleware with a `checkBurst()` sub-check; neither exists (the code was
+  already removed). The docs now describe the real `ThrottleRequests`
+  middleware and the fail-open monitoring path.
+- **Hit tracking atomicity.** `logRateLimitHit()` previously did
+  `get → append → put` on the hits key. The read-filter-write now runs under a
+  per-IP `Cache::lock()`, matching the project's "no non-atomic read-then-write"
+  directive.
+- **Audit id-gap detection.** `verifyChainIntegrity()` now confirms the id range
+  spanned by the verified entries is contiguous. Hard-deleting a row leaves the
+  remaining hashes chaining correctly, so only an id-gap check can see it; a
+  quarantine boundary marker alone is not proof the row still exists.
+- **Decryption logging.** `Customer::getIdNumberAttribute()` still returns null
+  on a decryption failure (display-safe) but now logs the error, so tampering
+  or key problems are observable instead of silent.
+- **CDD severity.** `CddLevel::severity()` gives each level an explicit
+  ordinal; `buildCreationContext()` compares those instead of relying on enum
+  declaration order via `array_search()`.
+- **Reversal window.** New `cems.transaction_reversal_window_hours`
+  (`REVERSAL_WINDOW_HOURS`, default 24) replaces the alias to the cancellation
+  window key, so the two policies can be tuned independently.
+- **Security headers enforced.** `SecurityHeaders::applySecurityHeaders()` now
+  sets the baseline unconditionally; a controller or upstream middleware that
+  presets one of these headers no longer silently weakens it.
+- **STR auto-draft failures.** A swallowed auto-draft left no STR and no
+  operator-visible trace. The catch now raises a `SystemAlert` in addition to
+  the log, so a missed regulatory report is actionable.
+- **Remittance retry detection.** `initiate()` now decides retryability by
+  probing whether the generated number actually collided, instead of matching
+  the driver's error-message text (which changes with localization and driver
+  versions).
+
+### Testing
+- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact tests/Feature/Audit tests/Feature/Auth tests/Feature/Customers tests/Feature/SecurityTest.php` — 173 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- `logRateLimitHit()` only feeds monitoring/alerting; enforcement is unchanged.
+- The id-gap check adds one `COUNT` per verification run (already chunked at
+  1000), and `audit:rotate` deletes only archive files, so it cannot
+  false-positive on a legitimate purge.
+
+---
+
 
 ### Files Changed
 - `app/Services/Accounting/LedgerService.php` — P&L and balance sheet cached under the shared `ledger` tag

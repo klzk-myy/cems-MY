@@ -95,7 +95,7 @@ class TransactionValidationService
     public function validatePepRequirements(Customer $customer, array $data): void
     {
         if ($this->pepApprovalService->requiresHeadOfficeApproval($customer)) {
-            if (! $this->pepApprovalService->hasApprovedApproval($customer)) {
+            if (! $this->pepApprovalService->hasApprovedApproval($customer, $data['type'] ?? 'transaction')) {
                 $pendingApproval = $this->pepApprovalService->requestApproval(
                     $customer,
                     $data['type'] ?? 'transaction'

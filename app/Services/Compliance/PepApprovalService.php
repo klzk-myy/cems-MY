@@ -252,9 +252,10 @@ class PepApprovalService
     /**
      * Check if a customer has an approved PEP approval.
      */
-    public function hasApprovedApproval(Customer $customer): bool
+    public function hasApprovedApproval(Customer $customer, string $transactionType): bool
     {
         return PepApprovalRequest::where('customer_id', $customer->id)
+            ->where('transaction_type', $transactionType)
             ->where('status', ApprovalStatus::Approved->value)
             ->exists();
     }

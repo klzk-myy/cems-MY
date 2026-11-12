@@ -12,6 +12,12 @@ return [
     'transaction_cancellation_window_hours' => env('CANCELLATION_WINDOW_HOURS', 24),
 
     /*
+    | Reversal window — deliberately separate from the cancellation window so
+    | the two policies can be tuned independently.
+    */
+    'transaction_reversal_window_hours' => env('REVERSAL_WINDOW_HOURS', 24),
+
+    /*
     |--------------------------------------------------------------------------
     | Base (Local) Currency
     |--------------------------------------------------------------------------

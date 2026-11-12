@@ -20,6 +20,20 @@ enum CddLevel: string
     case Enhanced = 'Enhanced';
 
     /**
+     * Ordinal severity used when comparing levels — never rely on declaration
+     * order for this.
+     */
+    public function severity(): int
+    {
+        return match ($this) {
+            self::Simplified => 0,
+            self::Specific => 1,
+            self::Standard => 2,
+            self::Enhanced => 3,
+        };
+    }
+
+    /**
      * Check if this is simplified due diligence.
      */
     public function isSimplified(): bool

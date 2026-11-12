@@ -118,7 +118,13 @@ return [
         'max_block_duration_minutes' => 1440,
         // Whitelisted IPs (never block) - supports exact IPs and CIDR notation
         // Examples: 192.168.1.1, 10.0.0.0/8, 172.16.0.0/12, 127.0.0.1
-        'whitelist' => array_filter(explode(',', (string) env('SECURITY_IP_WHITELIST', '192.168.1.0/24,127.0.0.1'))),
+        // Private ranges are a development convenience only: in production an
+        // unset whitelist must block every address, not hand a permanent
+        // exemption to a whole subnet.
+        'whitelist' => array_filter(explode(',', (string) env(
+            'SECURITY_IP_WHITELIST',
+            env('APP_ENV') === 'production' ? '' : '192.168.1.0/24,127.0.0.1'
+        ))),
         // Cache key prefix for Redis
         'cache_prefix' => 'ip_block:',
         'failed_attempts_prefix' => 'ip_failed:',

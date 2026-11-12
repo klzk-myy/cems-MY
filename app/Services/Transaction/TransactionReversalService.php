@@ -124,14 +124,14 @@ class TransactionReversalService
 
     public function isWithinCancellationWindow(Transaction $transaction): bool
     {
-        $windowMinutes = config('cems.transaction_cancellation_window_hours', 24) * 60;
+        $windowMinutes = config('cems.transaction_reversal_window_hours', 24) * 60;
 
         return $transaction->created_at->diffInMinutes(now()) <= $windowMinutes;
     }
 
     public function getCancellationWindowHours(): int
     {
-        return (int) config('cems.transaction_cancellation_window_hours', 24);
+        return (int) config('cems.transaction_reversal_window_hours', 24);
     }
 
     public function createRefundTransaction(Transaction $original, int $approvedBy): Transaction

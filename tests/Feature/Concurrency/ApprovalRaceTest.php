@@ -14,6 +14,7 @@ use App\Models\Currency;
 use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\StockReservation;
+use App\Models\TellerAllocation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
@@ -53,6 +54,22 @@ class ApprovalRaceTest extends ConcurrentTestCase
 
         $this->teller->forceFill(['branch_id' => $this->counter->branch_id])->save();
         $this->compliance->forceFill(['branch_id' => $this->counter->branch_id])->save();
+
+        // Drawerless custody: a teller needs an active, same-day allocation to
+        // book in either direction. Sized to cover the test sells.
+        TellerAllocation::factory()->create([
+            'user_id' => $this->teller->id,
+            'branch_id' => $this->counter->branch_id,
+            'counter_id' => $this->counter->id,
+            'currency_code' => 'USD',
+            'allocated_quantity' => '100000.00',
+            'current_quantity' => '100000.00',
+            'requested_quantity' => '100000.00',
+            'daily_limit_myr' => '1000000.0000',
+            'daily_used_myr' => '0.0000',
+            'status' => 'active',
+            'session_date' => today(),
+        ]);
 
         CounterSession::factory()->create([
             'counter_id' => $this->counter->id,

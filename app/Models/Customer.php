@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Customer Model
@@ -439,7 +440,14 @@ class Customer extends BaseModel
         try {
             // Accessors cannot receive DI; resolved intentionally.
             return app(EncryptionService::class)->decrypt($this->id_number_encrypted);
-        } catch (\Exception $_e) {
+        } catch (\Exception $e) {
+            // A tampered or undecryptable row must be observable, not silently
+            // rendered as "no ID". Keep the null (display-safe) but log it.
+            Log::error('Failed to decrypt customer ID number', [
+                'customer_id' => $this->getKey(),
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
