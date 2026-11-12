@@ -3,6 +3,7 @@
 namespace App\Services\System;
 
 use App\Exceptions\Domain\EncryptionConfigurationException;
+use Illuminate\Support\Facades\Log;
 
 class EncryptionService
 {
@@ -16,6 +17,8 @@ class EncryptionService
     protected string $key;
 
     protected string $macKey;
+
+    protected string $hashKey;
 
     /**
      * Optional credential overrides allow instantiating the service with
@@ -46,6 +49,10 @@ class EncryptionService
         // Separate MAC subkey via HKDF so the encryption key is never reused
         // for authentication (key separation).
         $this->macKey = hash_hkdf('sha256', $this->key, 32, 'encryption-mac');
+
+        // Separate hash subkey for the blind-index/HMAC helper — the same
+        // key-separation rationale as the MAC above.
+        $this->hashKey = hash_hkdf('sha256', $this->key, 32, 'encryption-hash');
     }
 
     public function encrypt(string $data): string
@@ -104,9 +111,16 @@ class EncryptionService
 
     /**
      * Legacy format: base64(iv + ciphertext) with no integrity protection.
+     *
+     * Every read is logged so the remaining legacy inventory is observable
+     * (the payload is malleable until re-encrypted).
      */
     protected function decryptLegacy(string $encryptedData): ?string
     {
+        Log::warning('Reading legacy unauthenticated ciphertext', [
+            'prefix' => substr($encryptedData, 0, 8),
+        ]);
+
         $data = base64_decode($encryptedData, true);
         if ($data === false || strlen($data) < 17) {
             return null;
@@ -131,10 +145,24 @@ class EncryptionService
     /**
      * Hash data using HMAC-SHA256 to prevent length extension attacks.
      *
+     * Uses the dedicated HKDF hash subkey, never the encryption key.
+     *
      * @param  string  $data  Data to hash
      * @return string HMAC-SHA256 hash as hex string
      */
     public function hash(string $data): string
+    {
+        return hash_hmac('sha256', $data, $this->hashKey);
+    }
+
+    /**
+     * Pre-key-separation hash derivation.
+     *
+     * Kept so values written before the HKDF hash subkey existed still verify
+     * until they are re-indexed (see customers:re-encrypt). Do not use for new
+     * writes.
+     */
+    public function legacyHash(string $data): string
     {
         return hash_hmac('sha256', $data, $this->key);
     }
@@ -151,23 +179,53 @@ class EncryptionService
      */
     public static function blindIndex(string $data): string
     {
+        static $hashKey = null;
+
+        if ($hashKey === null) {
+            $hashKey = hash_hkdf('sha256', self::derivedEncryptionKey(), 32, 'encryption-hash');
+        }
+
+        return hash_hmac('sha256', $data, $hashKey);
+    }
+
+    /**
+     * Pre-key-separation blind index, so rows written before the HKDF hash
+     * subkey existed still resolve until they are re-indexed.
+     */
+    public static function legacyBlindIndex(string $data): string
+    {
         static $derivedKey = null;
 
         if ($derivedKey === null) {
-            $rawKey = config('app.key');
-            if (empty($rawKey)) {
-                throw new EncryptionConfigurationException('Encryption key not configured');
-            }
-
-            $salt = config('app.encryption_salt');
-            if (empty($salt)) {
-                throw new EncryptionConfigurationException('APP_ENCRYPTION_SALT is not configured');
-            }
-
-            $iterations = config('app.encryption_iterations', 100000);
-            $derivedKey = hash_pbkdf2('sha256', $rawKey, $salt, $iterations, 32, true);
+            $derivedKey = self::derivedEncryptionKey();
         }
 
         return hash_hmac('sha256', $data, $derivedKey);
+    }
+
+    /**
+     * The PBKDF2-derived encryption key from config — the same derivation the
+     * constructor performs, without the key/salt overrides.
+     */
+    private static function derivedEncryptionKey(): string
+    {
+        $rawKey = config('app.key');
+        if (empty($rawKey)) {
+            throw new EncryptionConfigurationException('Encryption key not configured');
+        }
+
+        $salt = config('app.encryption_salt');
+        if (empty($salt)) {
+            throw new EncryptionConfigurationException('APP_ENCRYPTION_SALT is not configured');
+        }
+
+        return hash_pbkdf2(
+            'sha256',
+            $rawKey,
+            $salt,
+            max(1, (int) config('app.encryption_iterations', 100000)),
+            32,
+            true
+        );
     }
 }

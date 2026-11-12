@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\BranchClosingChecklistIncompleteException;
 use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\InvalidStateException;
@@ -26,6 +27,8 @@ class BranchClosingController extends Controller
 
     public function initiate(BranchClosingRequest $request, int $branchId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranchClosing);
+
         $branch = Branch::findOrFail($branchId);
 
         $this->authorizeBranchAccess($branchId);
@@ -71,6 +74,8 @@ class BranchClosingController extends Controller
 
     public function settle(BranchClosingRequest $request, int $branchId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranchClosing);
+
         $branch = Branch::findOrFail($branchId);
 
         $this->authorizeBranchAccess($branchId);
@@ -96,6 +101,8 @@ class BranchClosingController extends Controller
 
     public function finalize(BranchClosingRequest $request, int $branchId): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranchClosing);
+
         $branch = Branch::findOrFail($branchId);
 
         $this->authorizeBranchAccess($branchId);

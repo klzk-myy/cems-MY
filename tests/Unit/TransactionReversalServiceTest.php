@@ -238,6 +238,21 @@ class TransactionReversalServiceTest extends TestCase
     }
 
     #[Test]
+    public function reversal_window_is_independent_of_the_cancellation_window(): void
+    {
+        config(['cems.transaction_cancellation_window_hours' => 1]);
+        config(['cems.transaction_reversal_window_hours' => 48]);
+
+        $transaction = Transaction::factory()->create([
+            'created_at' => now()->subHours(12),
+        ]);
+
+        // 12h is outside a 1h cancellation window but inside the 48h reversal window.
+        $this->assertTrue($this->service->isWithinCancellationWindow($transaction));
+        $this->assertSame(48, $this->service->getCancellationWindowHours());
+    }
+
+    #[Test]
     public function compliance_officer_can_reverse_any_transaction(): void
     {
         $compliance = User::factory()->create(['role' => UserRole::ComplianceOfficer]);

@@ -38,7 +38,6 @@ use App\Services\DTOs\ApprovalResult;
 use App\Services\System\CacheInvalidationService;
 use App\Services\System\MathService;
 use App\Services\Traits\AccountingEntriesTrait;
-use App\Services\Traits\TillBalanceTrait;
 use App\Support\ActorContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -46,7 +45,7 @@ use Illuminate\Support\Facades\Log;
 
 class TransactionApprovalService
 {
-    use AccountingEntriesTrait, TillBalanceTrait;
+    use AccountingEntriesTrait;
 
     public function __construct(
         protected TransactionMonitoringService $monitoringService,

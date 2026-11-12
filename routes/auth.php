@@ -15,7 +15,9 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update')->middleware('throttle:password-reset');
 });
 
-Route::match(['GET', 'POST'], '/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+// Logout is POST-only: a GET logout would let any cross-site request end a
+// authenticated session (CSRF logout). Every UI logout is already a POST form.
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');

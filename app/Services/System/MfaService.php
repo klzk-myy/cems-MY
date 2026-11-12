@@ -337,10 +337,7 @@ class MfaService
     {
         $trustedDevice = DeviceComputations::where('user_id', $user->id)
             ->where('device_fingerprint', $tokenHash)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
+            ->where('expires_at', '>', now())
             ->first();
 
         if ($trustedDevice) {
@@ -410,10 +407,7 @@ class MfaService
     public function getTrustedDevices(User $user): Collection
     {
         return DeviceComputations::where('user_id', $user->id)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
+            ->where('expires_at', '>', now())
             ->orderBy('last_used_at', 'desc')
             ->get();
     }

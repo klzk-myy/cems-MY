@@ -299,23 +299,29 @@ class RateLimitService
             'method' => $request->method(),
         ]);
 
-        // Store hit for alert analysis
+        // Store hit for alert analysis. The read-filter-write runs under a
+        // per-IP lock so concurrent hits cannot lose an update — the project's
+        // Redis directives forbid non-atomic read-then-write.
         $cacheKey = self::RATE_LIMIT_HITS_PREFIX.$ip;
-        $hits = Cache::store(config('ratelimit.store'))->get($cacheKey, []);
-        $hits[] = [
-            'timestamp' => now()->toDateTimeString(),
-            'limiter' => $limiterName,
-            'user_id' => $userId,
-        ];
-
-        // Keep only hits within the alert window
+        $store = Cache::store(config('ratelimit.store'));
         $window = config('security.rate_limit_monitoring.alert_window_minutes', 10);
-        $cutoff = now()->subMinutes($window);
-        $hits = array_filter($hits, function ($hit) use ($cutoff) {
-            return now()->parse($hit['timestamp'])->greaterThanOrEqualTo($cutoff);
-        });
 
-        Cache::store(config('ratelimit.store'))->put($cacheKey, $hits, now()->addMinutes($window));
+        $hits = Cache::lock("rate_limit_hits_lock:{$ip}", 5)->block(2, function () use ($store, $cacheKey, $limiterName, $userId, $window) {
+            $hits = $store->get($cacheKey, []);
+            $hits[] = [
+                'timestamp' => now()->toDateTimeString(),
+                'limiter' => $limiterName,
+                'user_id' => $userId,
+            ];
+
+            // Keep only hits within the alert window
+            $cutoff = now()->subMinutes($window);
+            $hits = array_filter($hits, fn ($hit) => now()->parse($hit['timestamp'])->greaterThanOrEqualTo($cutoff));
+
+            $store->put($cacheKey, array_values($hits), now()->addMinutes($window));
+
+            return array_values($hits);
+        }) ?? [];
 
         // Check if alert threshold is exceeded
         $this->checkAlertThreshold($ip, $hits);

@@ -130,6 +130,51 @@ class AccountingServiceTest extends TestCase
     }
 
     #[Test]
+    public function journal_entry_numbers_are_sequential_per_month(): void
+    {
+        ChartOfAccount::factory()->create([
+            'account_code' => '1010',
+            'account_name' => 'Cash',
+            'account_type' => 'Asset',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+        ChartOfAccount::factory()->create([
+            'account_code' => '4010',
+            'account_name' => 'Revenue',
+            'account_type' => 'Revenue',
+            'is_active' => true,
+            'allow_journal' => true,
+        ]);
+
+        FiscalYear::factory()->create(['year_code' => '2026', 'start_date' => '2026-01-01', 'end_date' => '2026-12-31']);
+        foreach (['2026-01', '2026-02'] as $periodCode) {
+            AccountingPeriod::factory()->create([
+                'period_code' => $periodCode,
+                'start_date' => $periodCode.'-01',
+                'end_date' => $periodCode.'-28',
+                'status' => 'open',
+            ]);
+        }
+
+        $user = User::factory()->create();
+        $service = new AccountingService($this->mathService, new AuditService, new CacheInvalidationService);
+
+        $lines = [
+            ['account_code' => '1010', 'debit' => '100.00', 'credit' => '0'],
+            ['account_code' => '4010', 'debit' => '0', 'credit' => '100.00'],
+        ];
+
+        $janFirst = $service->createJournalEntry($lines, 'Manual', null, 'First', '2026-01-10', $user->id);
+        $janSecond = $service->createJournalEntry($lines, 'Manual', null, 'Second', '2026-01-20', $user->id);
+        $febFirst = $service->createJournalEntry($lines, 'Manual', null, 'Third', '2026-02-05', $user->id);
+
+        $this->assertSame('JE-202601-0001', $janFirst->entry_number);
+        $this->assertSame('JE-202601-0002', $janSecond->entry_number);
+        $this->assertSame('JE-202602-0001', $febFirst->entry_number);
+    }
+
+    #[Test]
     public function reversal_creates_explicit_link(): void
     {
         $cashAccount = ChartOfAccount::factory()->create([

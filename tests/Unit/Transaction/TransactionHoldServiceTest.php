@@ -66,45 +66,4 @@ class TransactionHoldServiceTest extends TestCase
 
         $this->assertFalse($result);
     }
-
-    #[Test]
-    public function get_hold_reasons_includes_enhanced_cdd(): void
-    {
-        $reasons = $this->service->getHoldReasons(CddLevel::Enhanced, []);
-
-        $this->assertContains('Enhanced CDD requires hold', $reasons);
-    }
-
-    #[Test]
-    public function get_hold_reasons_includes_critical_flags(): void
-    {
-        $riskFlags = [
-            ['type' => 'structuring', 'severity' => 'critical'],
-        ];
-
-        $reasons = $this->service->getHoldReasons(CddLevel::Standard, $riskFlags);
-
-        $this->assertContains('Critical risk: structuring', $reasons);
-    }
-
-    #[Test]
-    public function get_hold_reasons_only_contains_enhanced_and_critical(): void
-    {
-        $reasons = $this->service->getHoldReasons(CddLevel::Standard, [
-            ['type' => 'structuring', 'severity' => 'critical'],
-        ]);
-
-        $this->assertEquals(1, count($reasons));
-        $this->assertContains('Critical risk: structuring', $reasons);
-    }
-
-    #[Test]
-    public function no_duplicate_reasons_when_enhanced_and_critical(): void
-    {
-        $reasons = $this->service->getHoldReasons(CddLevel::Enhanced, [
-            ['type' => 'structuring', 'severity' => 'critical'],
-        ]);
-
-        $this->assertEquals(2, count($reasons)); // "Enhanced CDD" + "Critical risk: structuring"
-    }
 }

@@ -5,7 +5,6 @@ namespace Tests\Unit;
 use App\Enums\AmlRuleType;
 use App\Enums\CddLevel;
 use App\Enums\ComplianceFlagType;
-use App\Enums\RiskRating;
 use App\Services\ThresholdService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -13,32 +12,12 @@ use Tests\TestCase;
 class ThresholdAccessCentralizedTest extends TestCase
 {
     #[Test]
-    public function cdd_level_uses_centralized_threshold_access(): void
+    public function cdd_level_threshold_amounts_use_centralized_thresholds(): void
     {
-        // Verify CddLevel::determine uses centralized thresholds
-        $standard = CddLevel::determine('10000');
-        $this->assertEquals(CddLevel::Standard, $standard);
-
-        $specific = CddLevel::determine('5000');
-        $this->assertEquals(CddLevel::Specific, $specific);
-
-        $simplified = CddLevel::determine('1000');
-        $this->assertEquals(CddLevel::Simplified, $simplified);
-
-        // Verify CddLevel::thresholdAmount() uses centralized thresholds
+        // Verify CddLevel::thresholdAmount() uses centralized thresholds.
+        // CDD *determination* is covered by CddLevelDeterminationServiceTest.
         $this->assertStringContainsString('3000', CddLevel::Specific->thresholdAmount());
         $this->assertStringContainsString('10000', CddLevel::Standard->thresholdAmount());
-    }
-
-    #[Test]
-    public function cdd_level_enhanced_bypasses_amount_check(): void
-    {
-        // Enhanced is triggered by risk, not amount
-        $enhanced = CddLevel::determine('100', isPep: true);
-        $this->assertEquals(CddLevel::Enhanced, $enhanced);
-
-        $enhancedByRisk = CddLevel::determine('100', riskRating: RiskRating::High);
-        $this->assertEquals(CddLevel::Enhanced, $enhancedByRisk);
     }
 
     #[Test]
@@ -78,7 +57,7 @@ class ThresholdAccessCentralizedTest extends TestCase
 
         $thresholdService = new ThresholdService;
 
-        // CddLevel uses centralized thresholds in determine() method
+        // CddLevel uses centralized thresholds in thresholdAmount()
         // Standard CDD is triggered at or above standard threshold
         $this->assertTrue(
             bccomp('10000', $thresholdService->getStandardCddThreshold()) >= 0,

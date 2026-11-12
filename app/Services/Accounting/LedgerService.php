@@ -83,7 +83,12 @@ class LedgerService
         $cacheKey = "trial_balance.{$asOfDate}.".($branchId ?? 'all');
 
         return Cache::tags(['ledger', 'trial-balance'])->remember($cacheKey, 60, function () use ($asOfDate, $branchId) {
-            $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
+            // Every account is listed — including retired ones — so the trial
+            // balance foots to the ledger. `is_active` governs posting
+            // eligibility, not reporting: an account deactivated after it took
+            // a balance must still appear, otherwise total debits and credits
+            // disagree.
+            $accounts = ChartOfAccount::orderBy('account_code')->get();
             $accountCodes = $accounts->pluck('account_code')->toArray();
 
             if (empty($accountCodes)) {
@@ -307,49 +312,55 @@ class LedgerService
      */
     public function getProfitAndLoss(string $fromDate, string $toDate, ?int $branchId = null): array
     {
-        $revenues = ChartOfAccount::where('account_type', AccountType::Revenue->value)->get();
-        $revenueData = [];
-        $totalRevenue = '0';
+        $cacheKey = sprintf('profit_loss.%s.%s.%s', $fromDate, $toDate, $branchId ?? 'all');
 
-        // Get aggregated balances for all accounts in one query
-        $allBalances = $this->getAggregatedAccountBalances($fromDate, $toDate, $branchId);
+        // Cached under the same 'ledger' tag as the trial balance: every
+        // ledger write flushes it, so the three statements stay consistent.
+        return Cache::tags(['ledger', 'profit-loss'])->remember($cacheKey, 60, function () use ($fromDate, $toDate, $branchId) {
+            $revenues = ChartOfAccount::where('account_type', AccountType::Revenue->value)->get();
+            $revenueData = [];
+            $totalRevenue = '0';
 
-        foreach ($revenues as $revenue) {
-            $net = $allBalances->get($revenue->account_code, '0');
-            $balance = $this->mathService->multiply($net, '-1'); // credits - debits
-            $revenueData[] = [
-                'account_code' => $revenue->account_code,
-                'account_name' => $revenue->account_name,
-                'amount_myr' => $balance,
+            // Get aggregated balances for all accounts in one query
+            $allBalances = $this->getAggregatedAccountBalances($fromDate, $toDate, $branchId);
+
+            foreach ($revenues as $revenue) {
+                $net = $allBalances->get($revenue->account_code, '0');
+                $balance = AccountType::Revenue->applyNaturalSign($net); // credits - debits
+                $revenueData[] = [
+                    'account_code' => $revenue->account_code,
+                    'account_name' => $revenue->account_name,
+                    'amount_myr' => $balance,
+                ];
+                $totalRevenue = $this->mathService->add($totalRevenue, $balance);
+            }
+
+            $expenses = ChartOfAccount::where('account_type', AccountType::Expense->value)->get();
+            $expenseData = [];
+            $totalExpenses = '0';
+
+            foreach ($expenses as $expense) {
+                $net = $allBalances->get($expense->account_code, '0');
+                $balance = $net;
+                $expenseData[] = [
+                    'account_code' => $expense->account_code,
+                    'account_name' => $expense->account_name,
+                    'amount_myr' => $balance,
+                ];
+                $totalExpenses = $this->mathService->add($totalExpenses, $balance);
+            }
+
+            $netProfit = $this->mathService->subtract($totalRevenue, $totalExpenses);
+
+            return [
+                'revenues' => $revenueData,
+                'total_revenue' => $totalRevenue,
+                'expenses' => $expenseData,
+                'total_expenses' => $totalExpenses,
+                'net_profit' => $netProfit,
+                'period' => ['from' => $fromDate, 'to' => $toDate],
             ];
-            $totalRevenue = $this->mathService->add($totalRevenue, $balance);
-        }
-
-        $expenses = ChartOfAccount::where('account_type', AccountType::Expense->value)->get();
-        $expenseData = [];
-        $totalExpenses = '0';
-
-        foreach ($expenses as $expense) {
-            $net = $allBalances->get($expense->account_code, '0');
-            $balance = $net;
-            $expenseData[] = [
-                'account_code' => $expense->account_code,
-                'account_name' => $expense->account_name,
-                'amount_myr' => $balance,
-            ];
-            $totalExpenses = $this->mathService->add($totalExpenses, $balance);
-        }
-
-        $netProfit = $this->mathService->subtract($totalRevenue, $totalExpenses);
-
-        return [
-            'revenues' => $revenueData,
-            'total_revenue' => $totalRevenue,
-            'expenses' => $expenseData,
-            'total_expenses' => $totalExpenses,
-            'net_profit' => $netProfit,
-            'period' => ['from' => $fromDate, 'to' => $toDate],
-        ];
+        });
     }
 
     /**
@@ -412,50 +423,55 @@ class LedgerService
      */
     public function getBalanceSheet(string $asOfDate, ?int $branchId = null): array
     {
-        $assets = ChartOfAccount::where('account_type', AccountType::Asset->value)->get();
-        $liabilities = ChartOfAccount::where('account_type', AccountType::Liability->value)->get();
-        $equities = ChartOfAccount::where('account_type', AccountType::Equity->value)->get();
+        $cacheKey = sprintf('balance_sheet.%s.%s', $asOfDate, $branchId ?? 'all');
 
-        $allBalances = $this->getAggregatedAccountBalances(null, $asOfDate, $branchId);
+        // See getProfitAndLoss(): shared 'ledger' tag, flushed on any posting.
+        return Cache::tags(['ledger', 'balance-sheet'])->remember($cacheKey, 60, function () use ($asOfDate, $branchId) {
+            $assets = ChartOfAccount::where('account_type', AccountType::Asset->value)->get();
+            $liabilities = ChartOfAccount::where('account_type', AccountType::Liability->value)->get();
+            $equities = ChartOfAccount::where('account_type', AccountType::Equity->value)->get();
 
-        // Debit-normal sections report the raw net; credit-normal sections
-        // flip the sign so credit balances show as positive.
-        [$assetData, $totalAssets] = $this->sectionTotals($assets, $allBalances, '1');
-        [$liabilityData, $totalLiabilities] = $this->sectionTotals($liabilities, $allBalances, '-1');
-        [$equityData, $totalEquity] = $this->sectionTotals($equities, $allBalances, '-1');
+            $allBalances = $this->getAggregatedAccountBalances(null, $asOfDate, $branchId);
 
-        // Unclosed revenue/expense balances are the period's net income and
-        // belong in equity — without them the sheet is off by exactly that
-        // amount between period closes. The line reads zero once
-        // PeriodCloseService has posted the closing entries.
-        $netIncome = '0';
-        foreach (ChartOfAccount::whereIn('account_type', ['Revenue', 'Expense'])->get(['account_code']) as $plAccount) {
-            $netIncome = $this->mathService->add($netIncome, $allBalances->get($plAccount->account_code, '0'));
-        }
-        $netIncome = $this->mathService->multiply($netIncome, '-1');
+            // Debit-normal sections report the raw net; credit-normal sections
+            // flip the sign so credit balances show as positive.
+            [$assetData, $totalAssets] = $this->sectionTotals($assets, $allBalances, AccountType::Asset);
+            [$liabilityData, $totalLiabilities] = $this->sectionTotals($liabilities, $allBalances, AccountType::Liability);
+            [$equityData, $totalEquity] = $this->sectionTotals($equities, $allBalances, AccountType::Equity);
 
-        $equityData[] = [
-            'account_code' => '',
-            'account_name' => 'Net Income (Current Period)',
-            'balance' => $netIncome,
-            'amount_myr' => $netIncome,
-        ];
-        $totalEquity = $this->mathService->add($totalEquity, $netIncome);
+            // Unclosed revenue/expense balances are the period's net income and
+            // belong in equity — without them the sheet is off by exactly that
+            // amount between period closes. The line reads zero once
+            // PeriodCloseService has posted the closing entries.
+            $netIncome = '0';
+            foreach (ChartOfAccount::whereIn('account_type', ['Revenue', 'Expense'])->get(['account_code']) as $plAccount) {
+                $netIncome = $this->mathService->add($netIncome, $allBalances->get($plAccount->account_code, '0'));
+            }
+            $netIncome = AccountType::Equity->applyNaturalSign($netIncome);
 
-        $liabilitiesPlusEquity = $this->mathService->add($totalLiabilities, $totalEquity);
+            $equityData[] = [
+                'account_code' => '',
+                'account_name' => 'Net Income (Current Period)',
+                'balance' => $netIncome,
+                'amount_myr' => $netIncome,
+            ];
+            $totalEquity = $this->mathService->add($totalEquity, $netIncome);
 
-        return [
-            'assets' => $assetData,
-            'total_assets' => $totalAssets,
-            'liabilities' => $liabilityData,
-            'total_liabilities' => $totalLiabilities,
-            'equity' => $equityData,
-            'total_equity' => $totalEquity,
-            'liabilities_plus_equity' => $liabilitiesPlusEquity,
-            'total_liabilities_equity' => $liabilitiesPlusEquity,
-            'is_balanced' => $this->mathService->compare($totalAssets, $liabilitiesPlusEquity) === 0,
-            'as_of_date' => $asOfDate,
-        ];
+            $liabilitiesPlusEquity = $this->mathService->add($totalLiabilities, $totalEquity);
+
+            return [
+                'assets' => $assetData,
+                'total_assets' => $totalAssets,
+                'liabilities' => $liabilityData,
+                'total_liabilities' => $totalLiabilities,
+                'equity' => $equityData,
+                'total_equity' => $totalEquity,
+                'liabilities_plus_equity' => $liabilitiesPlusEquity,
+                'total_liabilities_equity' => $liabilitiesPlusEquity,
+                'is_balanced' => $this->mathService->compare($totalAssets, $liabilitiesPlusEquity) === 0,
+                'as_of_date' => $asOfDate,
+            ];
+        });
     }
 
     /**
@@ -468,17 +484,13 @@ class LedgerService
      * @param  \Illuminate\Support\Collection<string, string>  $balances
      * @return array{0: array<int, array{account_code: string, account_name: string, balance: string, amount_myr: string}>, 1: string}
      */
-    private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, string $sign): array
+    private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, AccountType $type): array
     {
         $rows = [];
         $total = '0';
 
         foreach ($accounts as $account) {
-            $balance = $balances->get($account->account_code, '0');
-
-            if ($sign === '-1') {
-                $balance = $this->mathService->multiply($balance, '-1');
-            }
+            $balance = $type->applyNaturalSign($balances->get($account->account_code, '0'));
 
             $rows[] = [
                 'account_code' => $account->account_code,
@@ -527,7 +539,7 @@ class LedgerService
      * @param  int|null  $branchId  Optional branch ID to filter by
      * @return string Account balance as a string
      */
-    public function getAccountBalance(string $accountCode, string $asOfDate, ?int $branchId = null): string
+    public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
     {
         return $this->accountingService->getAccountBalance($accountCode, $asOfDate, $branchId);
     }

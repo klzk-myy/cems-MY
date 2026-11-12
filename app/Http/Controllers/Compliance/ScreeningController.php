@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\Permission;
 use App\Http\Concerns\HandlesControllerErrors;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
@@ -37,6 +38,8 @@ class ScreeningController extends Controller
 
     public function screen(Request $request, int $customerId): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $customer = Customer::findOrFail($customerId);
 
         try {

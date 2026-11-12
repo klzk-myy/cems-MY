@@ -129,7 +129,7 @@ class TransactionServiceTest extends TestCase
             'opened_by' => $this->teller->id,
         ]);
 
-        // Create MYR till balance (required by updateTillBalance)
+        // Create MYR till balance (required when the booking is applied to the till)
         TillBalance::factory()->create([
             'till_id' => $this->counter->code,
             'currency_code' => 'MYR',

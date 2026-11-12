@@ -11,6 +11,9 @@ use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Compliance\StrReport;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\System\SystemAlertService;
+use App\Services\ThresholdService;
+use App\Support\ThresholdDefaults;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -25,14 +28,33 @@ use Illuminate\Support\Facades\Log;
  */
 class StrReportService
 {
-    /**
-     * pd-00 section 22 filing threshold in MYR.
-     */
-    public const THRESHOLD = '50000';
-
     public function __construct(
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected ThresholdService $thresholdService,
+        protected SystemAlertService $alertService
     ) {}
+
+    /**
+     * pd-00 section 22 filing threshold in MYR, resolved through the
+     * centralized threshold system so an admin override in
+     * /admin/thresholds applies here too.
+     *
+     * @return numeric-string
+     */
+    private function threshold(): string
+    {
+        $value = $this->thresholdService->get(
+            'reporting',
+            'str',
+            ThresholdDefaults::FALLBACK_STR
+        );
+
+        if (! is_numeric($value)) {
+            throw new \InvalidArgumentException('STR filing threshold must be numeric.');
+        }
+
+        return (string) $value;
+    }
 
     /**
      * Draft an STR from a completed compliance case.
@@ -72,7 +94,7 @@ class StrReportService
 
         if (! $this->meetsThreshold($triggerAmountMyr)) {
             throw new CaseManagementException(
-                'Case '.$case->case_number.' aggregate MYR '.$triggerAmountMyr.' is below the '.self::THRESHOLD.' threshold'
+                'Case '.$case->case_number.' aggregate MYR '.$triggerAmountMyr.' is below the '.$this->threshold().' threshold'
             );
         }
 
@@ -230,7 +252,7 @@ class StrReportService
             throw new \InvalidArgumentException('STR aggregate amount must be numeric.');
         }
 
-        return bccomp($amountMyr, self::THRESHOLD, 4) >= 0;
+        return bccomp($amountMyr, $this->threshold(), 4) >= 0;
     }
 
     /**
@@ -282,6 +304,20 @@ class StrReportService
                 'exception_class' => $e::class,
             ]);
 
+            // A missed STR is compliance-relevant: leave an operator-visible
+            // trace, not just a log line.
+            $this->alertService->warning(
+                'STR auto-draft failed for case '.$case->case_number,
+                [
+                    'source' => 'str_auto_draft',
+                    'metadata' => [
+                        'case_id' => $case->id,
+                        'error' => $e->getMessage(),
+                        'exception_class' => $e::class,
+                    ],
+                ]
+            );
+
             return null;
         }
     }
@@ -294,7 +330,7 @@ class StrReportService
         $reasons = $case->alerts()->pluck('reason')->filter()->unique()->take(3)->all();
 
         $parts = [
-            'Case '.$case->case_number.' ('.$case->case_type->label().') closed with aggregate flagged transactions at or above RM '.number_format((float) self::THRESHOLD, 2).'.',
+            'Case '.$case->case_number.' ('.$case->case_type->label().') closed with aggregate flagged transactions at or above RM '.number_format((float) $this->threshold(), 2).'.',
         ];
 
         if ($reasons !== []) {

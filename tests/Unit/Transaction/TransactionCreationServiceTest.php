@@ -8,9 +8,14 @@ use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Events\TransactionCreated;
+use App\Exceptions\Domain\AllocationValidationException;
+use App\Exceptions\Domain\BusinessDateFrozenException;
 use App\Exceptions\Domain\DuplicateTransactionException;
 use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\PermissionDeniedException;
 use App\Exceptions\Domain\TillBalanceMissingException;
+use App\Models\Branch;
+use App\Models\BranchClosureWorkflow;
 use App\Models\Counter;
 use App\Models\Currency;
 use App\Models\CurrencyPosition;
@@ -42,6 +47,7 @@ use App\Services\Transaction\TransactionIdempotencyService;
 use App\Services\Transaction\TransactionRecoveryService;
 use App\Services\Transaction\TransactionValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -190,6 +196,98 @@ class TransactionCreationServiceTest extends TestCase
         $this->assertEquals(TransactionType::Buy->value, $transaction->type->value);
         $this->assertEquals('100.0000', $transaction->quantity);
         $this->assertEquals('450.0000', $transaction->amount_myr);
+    }
+
+    #[Test]
+    public function booking_takes_the_branch_row_lock_before_the_freeze_check(): void
+    {
+        $service = $this->completedBuyService();
+
+        DB::enableQueryLog();
+        $service->create($this->context());
+        $queries = collect(DB::getQueryLog())->pluck('query');
+
+        // The lock is the branch-row read; the freeze check is the workflow read.
+        // Without the lock the booking would check first and a concurrent
+        // initiation could freeze the date before the booking commits.
+        $branchRead = $queries->search(
+            fn ($q) => str_contains($q, 'from "branches"') || str_contains($q, 'from branches')
+        );
+        $freezeCheck = $queries->search(
+            fn ($q) => str_contains($q, 'branch_closure_workflows')
+        );
+
+        $this->assertNotFalse($branchRead, 'The booking must read the branch row.');
+        $this->assertNotFalse($freezeCheck, 'The booking must run the day-close freeze check.');
+        $this->assertLessThan(
+            $freezeCheck,
+            $branchRead,
+            'The branch-row lock must be taken before the freeze check.'
+        );
+
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $this->assertStringContainsStringIgnoringCase(
+                'for update',
+                $queries[$branchRead],
+                'On MySQL the branch read must be a locking read.'
+            );
+        } else {
+            // SQLite's grammar drops FOR UPDATE, so the clause is not
+            // observable there — the ordering assertion above is the guard.
+        }
+    }
+
+    #[Test]
+    public function create_rejects_a_booking_on_a_frozen_business_date(): void
+    {
+        $context = $this->context();
+
+        BranchClosureWorkflow::factory()->create([
+            'branch_id' => $context->tillBalance->branch_id,
+            'business_date' => today(),
+            'status' => 'finalized',
+        ]);
+
+        $this->expectException(BusinessDateFrozenException::class);
+        $this->completedBuyService()->create($context);
+    }
+
+    #[Test]
+    public function drawer_less_booking_without_a_resolvable_branch_fails_closed(): void
+    {
+        $user = User::factory()->create(['branch_id' => null, 'role' => UserRole::Teller]);
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'low',
+            'sanction_hit' => false,
+            'pep_status' => false,
+            'address' => '1 Test Street',
+            'phone' => '+60123456789',
+        ]);
+
+        $context = new TransactionCreationContext(
+            data: [
+                'customer_id' => $customer->id,
+                'type' => TransactionType::Buy->value,
+                'currency_code' => 'USD',
+                'quantity' => '100.00',
+                'rate' => '4.5',
+                'purpose' => 'Travel',
+                'source_of_funds' => 'Salary',
+                // A caller-supplied branch must not rescue a booking that has no
+                // resolvable branch of its own.
+                'branch_id' => Branch::factory()->create()->id,
+            ],
+            customer: $customer,
+            tillBalance: null,
+            cddLevel: CddLevel::Simplified,
+            holdRequired: false,
+            status: TransactionStatus::Completed,
+            amountMyr: '450.00',
+            user: $user,
+        );
+
+        $this->expectException(PermissionDeniedException::class);
+        $this->completedBuyService()->create($context);
     }
 
     #[Test]
@@ -655,21 +753,21 @@ class TransactionCreationServiceTest extends TestCase
     }
 
     #[Test]
-    public function create_returns_existing_transaction_when_idempotency_key_matches(): void
+    public function create_returns_existing_transaction_without_reapplying_side_effects_when_idempotency_key_matches(): void
     {
-        $existing = Transaction::factory()->create();
+        $existing = Transaction::factory()->create(['status' => TransactionStatus::Completed->value]);
         $idempotency = Mockery::mock(TransactionIdempotencyService::class);
         $idempotency->shouldReceive('findDuplicate')->andReturn($existing);
 
         $position = Mockery::mock(CurrencyPositionService::class);
         $position->shouldReceive('getPositionWithLock')->andReturnNull();
-        $position->shouldReceive('updatePosition')->once();
+        $position->shouldReceive('updatePosition')->never();
 
         $accounting = Mockery::mock(TransactionAccountingService::class);
-        $accounting->shouldReceive('createImmediateAccountingEntries')->once();
+        $accounting->shouldReceive('createImmediateAccountingEntries')->never();
 
         $audit = Mockery::mock(AuditTrailHelper::class);
-        $audit->shouldReceive('recordTransaction')->once();
+        $audit->shouldReceive('recordTransaction')->never();
 
         $service = $this->service([
             'idempotency' => $idempotency,
@@ -679,6 +777,42 @@ class TransactionCreationServiceTest extends TestCase
         ]);
 
         $this->assertSame($existing->id, $service->create($this->context())->id);
+    }
+
+    #[Test]
+    public function create_does_not_reapply_side_effects_on_lost_idempotency_key_race(): void
+    {
+        $existing = Transaction::factory()->create([
+            'idempotency_key' => 'race-key',
+            'status' => TransactionStatus::Completed->value,
+        ]);
+
+        // The pre-check misses because the winner has not committed yet; the
+        // replay resolution after the lost insert finds the winning row.
+        $idempotency = Mockery::mock(TransactionIdempotencyService::class);
+        $idempotency->shouldReceive('findDuplicate')->once()->andReturnNull();
+        $idempotency->shouldReceive('findDuplicate')->once()->andReturn($existing);
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->andReturnNull();
+        $position->shouldReceive('updatePosition')->never();
+
+        $accounting = Mockery::mock(TransactionAccountingService::class);
+        $accounting->shouldReceive('createImmediateAccountingEntries')->never();
+
+        $audit = Mockery::mock(AuditTrailHelper::class);
+        $audit->shouldReceive('recordTransaction')->never();
+
+        $service = $this->service([
+            'idempotency' => $idempotency,
+            'position' => $position,
+            'accounting' => $accounting,
+            'audit' => $audit,
+        ]);
+
+        $context = $this->context(['data' => ['idempotency_key' => 'race-key']]);
+
+        $this->assertSame($existing->id, $service->create($context)->id);
     }
 
     #[Test]
@@ -715,6 +849,55 @@ class TransactionCreationServiceTest extends TestCase
         $service->create($this->context([
             'data' => ['type' => TransactionType::Sell->value],
         ]));
+    }
+
+    #[Test]
+    public function create_rejects_sell_when_teller_allocation_lacks_foreign_balance(): void
+    {
+        $customer = Customer::factory()->create([
+            'risk_rating' => 'low',
+            'address' => '1 Test Street',
+            'phone' => '+60123456789',
+        ]);
+        $counter = Counter::factory()->create(['status' => 'active']);
+        Currency::factory()->create(['code' => 'USD', 'rate_unit' => 1]);
+
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'USD',
+            'branch_id' => $counter->branch_id,
+        ]);
+        TillBalance::factory()->create([
+            'till_id' => $counter->code,
+            'currency_code' => 'MYR',
+            'branch_id' => $counter->branch_id,
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $counter->branch_id]);
+        $allocation = $this->tellerAllocation($user, $counter, 'USD');
+        $allocation->update(['current_quantity' => '10.00']);
+
+        $data = [
+            'customer_id' => $customer->id,
+            'type' => TransactionType::Sell->value,
+            'currency_code' => 'USD',
+            'quantity' => '100.00',
+            'rate' => '4.5',
+            'purpose' => 'Travel',
+            'source_of_funds' => 'Savings',
+            'till_id' => (string) $counter->code,
+        ];
+
+        $position = Mockery::mock(CurrencyPositionService::class);
+        $position->shouldReceive('getPositionWithLock')->zeroOrMoreTimes();
+        $position->shouldReceive('getAvailableBalance')->andReturn('1000.00');
+
+        $service = $this->completedBuyService(['position' => $position]);
+
+        // The branch has the stock, but the teller's own float does not — a Sell
+        // must be validated against the allocation, not booked to fail later.
+        $this->expectException(AllocationValidationException::class);
+        $service->prepareAndCreate($data, $user->id);
     }
 
     #[Test]

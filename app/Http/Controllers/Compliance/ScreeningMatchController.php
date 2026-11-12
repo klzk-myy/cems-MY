@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Compliance;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ConfirmScreeningMatchRequest;
 use App\Http\Requests\DismissScreeningMatchRequest;
@@ -58,6 +59,8 @@ class ScreeningMatchController extends Controller
 
     public function confirm(ConfirmScreeningMatchRequest $request, int $resultId): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $result = ScreeningResult::query()
@@ -136,6 +139,8 @@ class ScreeningMatchController extends Controller
 
     public function dismiss(DismissScreeningMatchRequest $request, int $resultId): RedirectResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $result = ScreeningResult::query()->findOrFail($resultId);

@@ -7,6 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Enforce branch scope on routes that name a branch.
+ *
+ * GUARANTEE: when the route carries a {branch}, {branchId} or {branch_id}
+ * parameter, a non-privileged user is confined to their own branch (403
+ * otherwise), and a branch operating role with no assigned branch is refused
+ * outright.
+ *
+ * DELEGATED: collection endpoints that name no branch parameter cannot be
+ * checked here. They are scoped downstream by ResolvesBranchScope,
+ * BranchScopedQuery, policies and services, which read the caller's own
+ * branch rather than a client-supplied filter. Do not add an endpoint to
+ * this group trusting the middleware alone — it must apply its own filter.
+ */
 class EnsureBranchScope
 {
     public function handle(Request $request, Closure $next): Response

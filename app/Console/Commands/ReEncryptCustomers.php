@@ -112,6 +112,13 @@ class ReEncryptCustomers extends Command
         $this->table(['Metric', 'Count'], [
             ['Customers re-encrypted', $customerCount],
             ['Customer relations re-encrypted', $relationCount],
+            [
+                'Legacy unauthenticated rows remaining',
+                Customer::query()
+                    ->whereNotNull('id_number_encrypted')
+                    ->where('id_number_encrypted', 'not like', 'v2:%')
+                    ->count(),
+            ],
             ['Failures', count($failures)],
         ]);
 

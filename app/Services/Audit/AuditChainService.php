@@ -216,6 +216,7 @@ class AuditChainService
         $broken = null;
         $isFirstEntryInWindow = true;
         $quarantineBoundaries = [];
+        $verifiedIds = [];
 
         $query = SystemLog::whereNotNull('entry_hash')->orderBy('id', 'asc');
 
@@ -228,7 +229,7 @@ class AuditChainService
             $query->whereIn('id', $lastIds);
         }
 
-        $query->chunkById(1000, function ($entries) use (&$previousHash, &$checked, &$broken, &$isFirstEntryInWindow, &$quarantineBoundaries) {
+        $query->chunkById(1000, function ($entries) use (&$previousHash, &$checked, &$broken, &$isFirstEntryInWindow, &$quarantineBoundaries, &$verifiedIds) {
             foreach ($entries as $entry) {
                 // A GAP:<id> previous_hash marks an explicit quarantine
                 // boundary: the entry sealed across a permanently unsealable
@@ -292,8 +293,53 @@ class AuditChainService
 
                 $previousHash = $storedHash;
                 $checked++;
+                $verifiedIds[] = (int) $entry->id;
             }
         });
+
+        // A hash-valid chain can still hide hard-deleted unsealed rows: if the
+        // missing row leaves no trace, every remaining entry still verifies
+        // against its predecessor. Confirm the id range is contiguous — any
+        // absent id inside it was never written or was deleted.
+        //
+        // Gaps covered by a GAP:<id> quarantine boundary are explained: that
+        // marker is written precisely when a row is removed or permanently
+        // unsealable (e.g. an audited rotation archive), so those ids are
+        // allowed to be absent.
+        if ($broken === null && $verifiedIds !== []) {
+            $firstId = min($verifiedIds);
+            $lastId = max($verifiedIds);
+            $expectedRows = ($lastId - $firstId) + 1;
+            $presentRows = SystemLog::whereBetween('id', [$firstId, $lastId])->count();
+            $missingRows = $expectedRows - $presentRows;
+
+            // A missing row is explained only when a GAP boundary names it AND
+            // the row really is absent (a present quarantined row is already
+            // counted in $presentRows).
+            $explainedMissing = 0;
+            foreach ($quarantineBoundaries as $boundary) {
+                $quarantinedId = (int) $boundary['quarantined_id'];
+
+                if ($quarantinedId >= $firstId
+                    && $quarantinedId <= $lastId
+                    && ! SystemLog::whereKey($quarantinedId)->exists()) {
+                    $explainedMissing++;
+                }
+            }
+
+            if ($missingRows > $explainedMissing) {
+                return [
+                    'valid' => false,
+                    'broken_at' => null,
+                    'message' => 'Audit log rows are missing from the verified id range — possible deletion of unsealed rows.',
+                    'id_range' => [$firstId, $lastId],
+                    'expected_rows' => $expectedRows,
+                    'present_rows' => $presentRows,
+                    'explained_by_boundaries' => $explainedMissing,
+                    'quarantine_boundaries' => $quarantineBoundaries,
+                ];
+            }
+        }
 
         if ($broken) {
             return $broken + ['quarantine_boundaries' => $quarantineBoundaries];

@@ -17,6 +17,7 @@ use App\Models\StockReservation;
 use App\Models\TillBalance;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Compliance\CddLevelDeterminationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -502,6 +503,7 @@ class CriticalTransactionWorkflowTest extends TestCase
         $customer = $customer ?? $this->customer;
         $amountMyr = bcmul($amount, '4.50', 4);
 
-        return CddLevel::determine($amountMyr, $customer->pep_status, $customer->sanction_hit ?? false, $customer->risk_rating);
+        // Production CDD determination lives in the service, not the enum.
+        return app(CddLevelDeterminationService::class)->determineCDDLevel($amountMyr, $customer);
     }
 }

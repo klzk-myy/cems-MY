@@ -141,14 +141,15 @@ class AuthenticationTest extends TestCase
     }
 
     #[Test]
-    public function authenticated_user_can_logout_via_get(): void
+    public function logout_via_get_is_rejected(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/logout');
 
-        $response->assertRedirect('/');
-        $this->assertGuest();
+        // GET logout would let any cross-site request end the session.
+        $response->assertStatus(405);
+        $this->assertAuthenticated();
     }
 
     #[Test]

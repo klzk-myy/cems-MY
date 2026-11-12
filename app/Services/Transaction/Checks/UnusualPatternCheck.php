@@ -24,6 +24,7 @@ class UnusualPatternCheck implements TransactionCheck
             return [];
         }
 
+        // Display-only cast for the flag reason string; not money arithmetic.
         $deviationPct = (float) $this->thresholdService->get('monitoring', 'unusual_pattern_multiplier', 2) * 100;
 
         return [new FlagDescriptor(

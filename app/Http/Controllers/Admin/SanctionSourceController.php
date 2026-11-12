@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Permission;
 use App\Enums\SanctionListType;
 use App\Enums\SanctionSourceFormat;
 use App\Enums\UpdateStatus;
@@ -49,6 +50,8 @@ class SanctionSourceController extends Controller
 
     public function store(StoreSanctionSourceRequest $request): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         $validated = $request->validated();
 
         $slug = Str::slug($validated['name']);
@@ -82,6 +85,8 @@ class SanctionSourceController extends Controller
 
     public function sync(SanctionList $list): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         try {
             $result = $this->orchestrationService->syncSanctionsList($list, true);
 
@@ -97,6 +102,8 @@ class SanctionSourceController extends Controller
 
     public function destroy(SanctionList $list): RedirectResponse
     {
+        $this->requirePermission(Permission::ManageSanctions);
+
         // Entries soft-delete with the list so the screening pool stops
         // matching them; restrictOnDelete on list_id only guards hard
         // deletes, so the FK stays intact.

@@ -109,6 +109,29 @@ class AuditChainQuarantineTest extends TestCase
     }
 
     #[Test]
+    public function verify_chain_integrity_detects_deleted_rows_inside_the_verified_range(): void
+    {
+        $a = $this->makeLog('a');
+        $b = $this->makeLog('b');
+        $c = $this->makeLog('c');
+
+        $this->chainService->sealLogEntry($a->id);
+
+        // Hard-delete the unsealed middle row BEFORE c seals. The seal guard
+        // sees no live row between a and c, so c seals against a with no GAP
+        // boundary — the hash link check alone cannot see the hole.
+        DB::table('system_logs')->where('id', $b->id)->delete();
+
+        $this->assertTrue($this->chainService->sealLogEntry($c->id));
+
+        $result = $this->chainService->verifyChainIntegrity();
+
+        $this->assertFalse($result['valid']);
+        $this->assertStringContainsString('missing', $result['message']);
+        $this->assertSame([$a->id, $c->id], $result['id_range']);
+    }
+
+    #[Test]
     public function seal_job_quarantines_blocking_row_on_permanent_failure(): void
     {
         Queue::fake();

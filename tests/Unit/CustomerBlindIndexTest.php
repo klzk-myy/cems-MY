@@ -25,6 +25,18 @@ class CustomerBlindIndexTest extends TestCase
     }
 
     #[Test]
+    public function blind_index_hashes_are_not_serialized(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $payload = $customer->toArray();
+
+        $this->assertArrayNotHasKey('id_number_hash', $payload);
+        $this->assertArrayNotHasKey('phone_hash', $payload);
+        $this->assertArrayNotHasKey('id_number_encrypted', $payload);
+    }
+
+    #[Test]
     public function blind_index_different_inputs_produce_different_hashes(): void
     {
         $hash1 = CustomerService::computeBlindIndex('A123456');
@@ -127,5 +139,46 @@ class CustomerBlindIndexTest extends TestCase
         $second->refresh();
         $this->assertSame(CustomerService::computeBlindIndex('OTHER222'), $second->id_number_hash);
         $this->assertSame($first->id, $service->findByIdNumber('SHARED111')?->id);
+    }
+
+    #[Test]
+    public function blind_index_variants_cover_current_and_legacy_derivations(): void
+    {
+        $variants = CustomerService::computeBlindIndexVariants('A123456');
+
+        $this->assertNotSame($variants[0], $variants[1]);
+        $this->assertSame(CustomerService::computeBlindIndex('A123456'), $variants[0]);
+        $this->assertSame(EncryptionService::legacyBlindIndex('A123456'), $variants[1]);
+    }
+
+    #[Test]
+    public function lookup_resolves_a_row_written_with_the_legacy_derivation(): void
+    {
+        $idNumber = 'A987654';
+        $customer = Customer::factory()->create([
+            'id_number_hash' => EncryptionService::legacyBlindIndex($idNumber),
+        ]);
+
+        $service = app(CustomerService::class);
+
+        $this->assertSame($customer->id, $service->findByIdNumber($idNumber)?->id);
+        $this->assertSame($customer->id, $service->findActiveByIdNumber($idNumber)?->id);
+    }
+
+    #[Test]
+    public function hash_uses_a_dedicated_subkey_not_the_encryption_key(): void
+    {
+        $service = app(EncryptionService::class);
+
+        $this->assertNotSame($service->hash('payload'), $service->legacyHash('payload'));
+    }
+
+    #[Test]
+    public function encryption_service_is_shared_across_resolutions(): void
+    {
+        // The constructor derives the AES/MAC/hash subkeys with a 100k-iteration
+        // PBKDF2 pass. PII accessors resolve the service on every call, so it
+        // must be a singleton — otherwise every customer read pays that cost.
+        $this->assertSame(app(EncryptionService::class), app(EncryptionService::class));
     }
 }

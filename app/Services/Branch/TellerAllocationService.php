@@ -486,17 +486,23 @@ class TellerAllocationService
             return null;
         }
 
-        if ($data['type'] === TransactionType::Buy->value) {
-            $result = $this->validateTransaction($user, $data['currency_code'], $amountMyr, true);
+        // One validation path for both directions: a Buy checks the daily MYR
+        // turnover limit, a Sell additionally checks the foreign float it hands
+        // over. Skipping validation for Sells booked unfundable allocations
+        // that only failed later at approval.
+        $result = $this->validateTransaction(
+            $user,
+            $data['currency_code'],
+            $amountMyr,
+            $data['type'] === TransactionType::Buy->value,
+            $data['quantity'] ?? null,
+        );
 
-            if (! $result->valid) {
-                throw new AllocationValidationException($result->reason);
-            }
-
-            return $result->allocation;
+        if (! $result->valid) {
+            throw new AllocationValidationException($result->reason);
         }
 
-        return $this->getActiveAllocation($user, $data['currency_code']);
+        return $result->allocation;
     }
 
     /**

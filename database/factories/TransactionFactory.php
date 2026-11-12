@@ -31,12 +31,15 @@ class TransactionFactory extends Factory
             'customer_id' => Customer::factory(),
             'user_id' => User::factory(),
             'branch_id' => Branch::factory(),
-            'till_id' => 'MAIN',
+            // Drawer-less custody: a factory row has no booked drawer.
+            'till_id' => null,
             'type' => fake()->randomElement([
                 TransactionType::Buy->value,
                 TransactionType::Sell->value,
             ]),
-            'currency_code' => fn () => (Currency::query()->inRandomOrder()->first()->code)
+            // Deterministic pick (was inRandomOrder(), which could flip between
+            // runs and turn a real failure into a pass).
+            'currency_code' => fn () => Currency::query()->orderBy('code')->first()->code
                 ?? Currency::factory()->create()->code,
             'amount_myr' => $amountMyr,
             'quantity' => $quantity,

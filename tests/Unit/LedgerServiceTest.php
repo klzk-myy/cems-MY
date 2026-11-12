@@ -100,6 +100,27 @@ class LedgerServiceTest extends TestCase
     }
 
     #[Test]
+    public function trial_balance_includes_inactive_accounts_with_balances(): void
+    {
+        $today = now()->toDateString();
+        $this->createLedgerEntry('1000', $today, '10000.00', '0.00', '10000.00');
+        $this->createLedgerEntry('2000', $today, '0.00', '3000.00', '3000.00');
+        $this->createLedgerEntry('3000', $today, '0.00', '7000.00', '7000.00');
+        $this->createLedgerEntry('4000', $today, '0.00', '5000.00', '5000.00');
+        $this->createLedgerEntry('5000', $today, '5000.00', '0.00', '5000.00');
+
+        // Retire the expense account after it has taken a balance: it must
+        // still appear so the statement foots to the ledger.
+        ChartOfAccount::where('account_code', '5000')->update(['is_active' => false]);
+
+        $result = $this->service->getTrialBalance($today);
+
+        $codes = collect($result['accounts'])->pluck('account_code')->toArray();
+        $this->assertContains('5000', $codes);
+        $this->assertTrue($result['is_balanced']);
+    }
+
+    #[Test]
     public function get_trial_balance_has_debit_and_credit_columns(): void
     {
         $this->createLedgerEntry('1000', now()->toDateString(), '1000.00', '0.00', '1000.00');

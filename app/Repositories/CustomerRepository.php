@@ -21,7 +21,7 @@ class CustomerRepository
 
     public function findByIdNumber(string $idNumber): ?Customer
     {
-        return Customer::where('id_number_hash', CustomerService::computeBlindIndex($idNumber))->first();
+        return Customer::whereIn('id_number_hash', CustomerService::computeBlindIndexVariants($idNumber))->first();
     }
 
     public function search(string $query): Collection
@@ -43,7 +43,7 @@ class CustomerRepository
         // HMAC digest, so a plaintext LIKE against it can never hit. Matching
         // the hash of the raw query keeps "type an IC, find the customer"
         // working in the same search box as the name branch.
-        $idHash = CustomerService::computeBlindIndex($query);
+        $idHashes = CustomerService::computeBlindIndexVariants($query);
 
         // Explicit ESCAPE clause: SQLite has no default escape character, MySQL uses
         // backslash by default, so without this the escaped wildcards are meaningless
@@ -53,9 +53,9 @@ class CustomerRepository
         // branches cannot escape the mandatory is_active filter, and any branch
         // scoping is its own grouped AND clause rather than a trailing orWhere
         // that would return customers matching neither name nor ID hash.
-        $q = Customer::where(function ($builder) use ($pattern, $idHash) {
+        $q = Customer::where(function ($builder) use ($pattern, $idHashes) {
             $builder->whereRaw('full_name LIKE ? ESCAPE ?', [$pattern, '\\'])
-                ->orWhere('id_number_hash', $idHash);
+                ->orWhereIn('id_number_hash', $idHashes);
         })
             ->where('is_active', true);
 
@@ -65,11 +65,14 @@ class CustomerRepository
         return $q->limit($limit)->get();
     }
 
-    public function findActiveByIdNumberHash(string $idHash, ?int $branchId = null): ?Customer
+    /**
+     * @param  string|array<string>  $idHash
+     */
+    public function findActiveByIdNumberHash(string|array $idHash, ?int $branchId = null): ?Customer
     {
         // Identity (hash match + active) is mandatory. Customers are
         // company-wide — $branchId no longer narrows the lookup.
-        $q = Customer::where('id_number_hash', $idHash)
+        $q = Customer::whereIn('id_number_hash', (array) $idHash)
             ->where('is_active', true);
 
         return $q->first();

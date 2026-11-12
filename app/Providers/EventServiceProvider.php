@@ -11,6 +11,12 @@ use App\Events\SanctionsListUpdated;
 use App\Events\TransactionApproved;
 use App\Events\TransactionCancelled;
 use App\Events\TransactionCreated;
+use App\Jobs\Accounting\ReconcileDeferredAccountingJob;
+use App\Jobs\Audit\SealAuditHashJob;
+use App\Jobs\Compliance\RunComplianceMonitorJob;
+use App\Jobs\ComplianceScreeningJob;
+use App\Jobs\ImportSanctionsJob;
+use App\Jobs\ProcessTransactionRetry;
 use App\Listeners\ComplianceEventListener;
 use App\Listeners\CustomerRelationListener;
 use App\Listeners\RelatedPartyOwnershipConcernListener;
@@ -20,6 +26,7 @@ use App\Listeners\TransactionCancelledListener;
 use App\Listeners\TransactionCreatedListener;
 use App\Listeners\TriggerSanctionsRescreening;
 use App\Services\System\CacheMonitoringService;
+use App\Services\System\SystemAlertService;
 use Illuminate\Cache\Events\CacheHit;
 use Illuminate\Cache\Events\CacheMissed;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -129,6 +136,34 @@ class EventServiceProvider extends ServiceProvider
                 'queue' => $event->job->getQueue(),
                 'error' => $event->exception->getMessage(),
             ]);
+
+            // Compliance and audit obligations must not vanish into a log line:
+            // a permanently failed sanctions import or audit seal is
+            // operator-actionable, so raise an alert alongside the log.
+            $criticalJobs = [
+                ImportSanctionsJob::class,
+                ComplianceScreeningJob::class,
+                RunComplianceMonitorJob::class,
+                SealAuditHashJob::class,
+                ProcessTransactionRetry::class,
+                ReconcileDeferredAccountingJob::class,
+            ];
+
+            $jobName = $event->job->getName();
+
+            if (in_array($jobName, $criticalJobs, true)) {
+                app(SystemAlertService::class)->warning(
+                    "Queue job failed: {$jobName}",
+                    [
+                        'source' => 'queue',
+                        'metadata' => [
+                            'job_id' => $event->job->getJobId(),
+                            'queue' => $event->job->getQueue(),
+                            'error' => $event->exception->getMessage(),
+                        ],
+                    ]
+                );
+            }
         });
     }
 

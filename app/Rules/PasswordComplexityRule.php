@@ -26,7 +26,7 @@ class PasswordComplexityRule implements ValidationRule
         $password = (string) $value;
 
         $policy = config('security.password', [
-            'min_length' => 8,
+            'min_length' => 12,
             'max_bytes' => 72,
             'require_uppercase' => true,
             'require_lowercase' => true,
@@ -34,7 +34,7 @@ class PasswordComplexityRule implements ValidationRule
             'require_symbols' => true,
         ]);
 
-        $minLength = (int) ($policy['min_length'] ?? 8);
+        $minLength = (int) ($policy['min_length'] ?? 12);
         $maxBytes = (int) ($policy['max_bytes'] ?? 72);
         $requireUppercase = (bool) ($policy['require_uppercase'] ?? true);
         $requireLowercase = (bool) ($policy['require_lowercase'] ?? true);

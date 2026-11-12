@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Exceptions\Domain\DomainException;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Concerns\AuthorizesBranchResource;
@@ -38,6 +39,8 @@ class BranchController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranches);
+
         $perPage = min(100, max(1, (int) $request->get('per_page', 20)));
         $branches = Branch::orderBy('code')->paginate($perPage);
 
@@ -52,6 +55,8 @@ class BranchController extends Controller
      */
     public function store(StoreBranchRequest $request): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranches);
+
         $validated = $request->validated();
 
         $branch = $this->branchService->createBranch($validated, (int) Auth::id(), $request->ip());
@@ -77,6 +82,8 @@ class BranchController extends Controller
      */
     public function update(UpdateBranchRequest $request, int $id): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranches);
+
         $branch = Branch::findOrFail($id);
 
         $validated = $request->validated();
@@ -91,6 +98,8 @@ class BranchController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
+        $this->requirePermission(Permission::ManageBranches);
+
         $branch = Branch::findOrFail($id);
 
         try {

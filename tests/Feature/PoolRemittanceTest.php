@@ -273,6 +273,20 @@ class PoolRemittanceTest extends TestCase
     }
 
     #[Test]
+    public function receiving_branch_cannot_cancel_a_pending_remittance(): void
+    {
+        $this->pool($this->branch, '1000.0000');
+        $remittance = $this->service->initiate($this->branch, $this->hq, 'MYR', '400.00', $this->manager->id);
+
+        // The receiving side may not withdraw the sender's request.
+        $this->actingAs($this->hqUser)
+            ->post(route('branch-pools.remittances.cancel', $remittance))
+            ->assertForbidden();
+
+        $this->assertSame(PoolRemittanceStatus::Pending, $remittance->fresh()->status);
+    }
+
+    #[Test]
     public function pool_show_lists_inbound_remittances_for_the_receiving_branch(): void
     {
         $hqPool = $this->pool($this->hq, '0.0000');

@@ -6,6 +6,7 @@ use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Services\System\CacheInvalidationService;
+use App\Services\System\EncryptionService;
 use App\Services\ThresholdService;
 use App\View\Composers\NotificationComposer;
 use App\View\Composers\UserComposer;
@@ -31,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
         // Request/job-scoped: the persisted-override snapshot is loaded once
         // per lifecycle, so all consumers share one threshold_audits query.
         $this->app->scoped(ThresholdService::class);
+
+        // The constructor derives the AES/MAC/hash subkeys with a 100k-iteration
+        // PBKDF2 pass. PII accessors resolve this service on every call, so
+        // singleton scope pays that cost once per process. Key-rotation call
+        // sites construct the service directly with overrides, so they are
+        // unaffected.
+        $this->app->singleton(EncryptionService::class);
     }
 
     /**

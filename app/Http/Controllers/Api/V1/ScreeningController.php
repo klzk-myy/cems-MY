@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Api\V1\Traits\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Screening\BatchScreenRequest;
@@ -20,6 +21,8 @@ class ScreeningController extends Controller
 
     public function screen(ScreeningRequest $request, int $customerId): JsonResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $customer = Customer::findOrFail($customerId);
 
         $response = $this->screeningService->screenCustomer($customer);
@@ -47,6 +50,8 @@ class ScreeningController extends Controller
 
     public function batchScreen(BatchScreenRequest $request): JsonResponse
     {
+        $this->requirePermission(Permission::AccessCompliance);
+
         $validated = $request->validated();
 
         $results = $this->screeningService->batchScreen($validated['customer_ids']);

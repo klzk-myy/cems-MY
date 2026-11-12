@@ -36,6 +36,10 @@ class UserFactory extends Factory
             'mfa_secret' => null,
             'is_active' => true,
             'last_login_at' => null,
+            // Stamped so factory users are not immediately "expired" under the
+            // BNM rotation policy; tests that exercise forced rotation set this
+            // to null or a stale date explicitly.
+            'password_changed_at' => now(),
         ];
     }
 

@@ -17,8 +17,7 @@ class BusinessSetup extends Command
 {
     protected $signature = 'business:setup
                             {--fresh : Rebuild the schema via SchemaSeeder, dropping ALL existing data}
-                            {--seed-only : Only run seeders, leaving the schema untouched}
-                            {--with-demo : Include demo data}';
+                            {--seed-only : Only run seeders, leaving the schema untouched}';
 
     protected $description = 'Complete business setup for CEMS-MY - initializes all required components for operations';
 
@@ -127,13 +126,6 @@ class BusinessSetup extends Command
         Artisan::call('db:seed', ['--class' => 'AmlRuleSeeder', '--force' => true]);
         $this->info('Compliance data loaded');
 
-        if ($this->option('with-demo')) {
-            $this->info('');
-            $this->info('Demo Data');
-            $this->info('─────────');
-            $this->warn('Demo data option selected but not yet implemented');
-        }
-
         $this->printSummary();
 
         return 0;
@@ -173,9 +165,9 @@ class BusinessSetup extends Command
         $this->info('Next Steps:');
         $this->info('  1. Start the application: php artisan serve');
         $this->info('  2. Login at: http://localhost:8000/login');
-        $this->info('  3. Verify exchange rates at /exchange-rates');
-        $this->info('  4. Open a counter at /counters/{code}/open');
-        $this->info('  5. Start processing transactions!');
+        $this->info('  3. Set branch exchange rates at /rates');
+        $this->info('  4. Fund branch pools at /branch-pools');
+        $this->info('  5. Review operations at /dashboard');
         $this->info('');
 
         if ($rateCount === 0) {

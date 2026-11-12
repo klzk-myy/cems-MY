@@ -339,6 +339,21 @@ class CustomerService
     }
 
     /**
+     * Blind-index variants for lookups: the current (HKDF hash subkey)
+     * derivation first, then the pre-key-separation derivation so rows written
+     * before the separation existed still resolve until they are re-indexed.
+     *
+     * @return array{0: string, 1: string}
+     */
+    public static function computeBlindIndexVariants(string $plaintext): array
+    {
+        return [
+            static::computeBlindIndex($plaintext),
+            EncryptionService::legacyBlindIndex($plaintext),
+        ];
+    }
+
+    /**
      * Find a customer by their ID number using the blind index.
      *
      * This allows searching for customers by ID number without
@@ -359,7 +374,7 @@ class CustomerService
         $customers = $this->customerRepository->searchActive($query, 10, $branchId);
 
         if ($customers->isEmpty()) {
-            $idHash = $this->computeBlindIndex($query);
+            $idHash = $this->computeBlindIndexVariants($query);
             $byHash = $this->customerRepository->findActiveByIdNumberHash($idHash, $branchId);
             if ($byHash) {
                 $customers = collect([$byHash]);
@@ -400,7 +415,7 @@ class CustomerService
     public function findActiveByIdNumber(string $idNumber): ?Customer
     {
         return $this->customerRepository->findActiveByIdNumberHash(
-            self::computeBlindIndex($idNumber)
+            self::computeBlindIndexVariants($idNumber)
         );
     }
 

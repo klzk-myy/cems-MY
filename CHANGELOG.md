@@ -5,7 +5,601 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-11] - BI analytics rollup layer (BI-PLAN.md phase 1)
+## [2026-11-12] - Round 8: branch consistency, PBKDF2 singleton, actor capture
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — booking branch derived once and persisted identically; fails closed without a branch; actor captured once
+- `app/Providers/AppServiceProvider.php` — `EncryptionService` bound as a singleton
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — fail-closed coverage
+- `tests/Unit/CustomerBlindIndexTest.php` — singleton coverage
+
+### Purpose
+Close the last three audit findings: the branch used for the freeze/position/stock
+checks could diverge from the branch persisted on the record; `EncryptionService`
+re-derived its subkeys (100k-iteration PBKDF2) on every PII accessor call; the
+actor was re-captured per field.
+
+### Changes Made
+- `$txnBranchId` no longer falls back to a caller-supplied `branch_id`, and
+  `createTransactionRecord()` persists that same value — the checks and the
+  record can no longer disagree. A booking with no resolvable branch fails
+  closed.
+- `tillBalance` is read nullsafe before the fallback chain.
+- `EncryptionService` is a singleton, so the PBKDF2 derivation runs once per
+  process. Key-rotation call sites construct it directly with overrides and are
+  unaffected.
+- `prepareAndCreate()` and `escalateLargeTransactionToCompliance()` capture the
+  actor once instead of per field.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2838 passed, 3 skipped
+- `php artisan test --compact tests/Unit/Transaction/TransactionCreationServiceTest.php` — 33 passed
+- `php artisan test --compact tests/Unit/CustomerBlindIndexTest.php` — 11 passed
+- `vendor/bin/phpstan analyse` — no errors
+
+---
+
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — extracted `serializeAgainstClosure()`
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — ordering + frozen-date coverage
+
+### Purpose
+The branch-row lock that closes the booking/day-close race had no direct test —
+the SQLite concurrency harness cannot express lock ordering. Extract the
+lock+check into a named seam and guard it with a query-order assertion.
+
+### Changes Made
+- `serializeAgainstClosure()` performs the branch-row locking read and then the
+  freeze check; `create()` calls it inside the booking transaction.
+- `booking_takes_the_branch_row_lock_before_the_freeze_check` asserts from the
+  query log that the branch-row read precedes the workflow read. On MySQL it
+  also asserts the read carries `FOR UPDATE`; SQLite's grammar drops the
+  clause, so the ordering is the guard there.
+- `create_rejects_a_booking_on_a_frozen_business_date` covers the rejection.
+
+### Testing
+- Verified the ordering test **fails** when the lock line is removed and passes
+  with it (temporary edit, then restored).
+- `php artisan test --compact` (full suite) — 2836 passed, 3 skipped
+
+---
+
+
+### Files Changed
+- `app/Enums/Permission.php` — new `delete_records` permission
+- `app/Policies/{TransactionPolicy,JournalEntryPolicy,CounterPolicy}.php` — matrix-driven delete
+- `app/Services/System/EncryptionService.php` — dedicated HKDF hash subkey; `legacyHash()` / `legacyBlindIndex()`
+- `app/Services/Customer/CustomerService.php`, `app/Repositories/CustomerRepository.php` — versioned blind-index lookups
+- `app/Console/Commands/ReEncryptCustomers.php` — legacy ciphertext inventory
+- `database/factories/TransactionFactory.php` — deterministic currency, `till_id = null`
+- `config/security.php`, `app/Rules/PasswordComplexityRule.php`, `.env.example`, `README.md` — 12-character floor
+- `app/Enums/AccountType.php`, `app/Services/Accounting/LedgerService.php` — shared `applyNaturalSign()`
+- `app/Services/Compliance/PepApprovalService.php` — duplicate-request message carries the approval ID
+- `app/Models/Transaction.php` — documented active vs legacy open statuses
+- Tests: `AuthorizationTest`, `CustomerBlindIndexTest`, `TransactionCreatedListenerTest`, `PasswordPolicyTest`
+
+### Purpose
+Close the remaining audit findings: hardcoded delete grants, HMAC key reuse
+with no migration path, an unobserved legacy-ciphertext inventory, flaky
+factory fields, a documented 8-character password floor, and hand-derived
+balance-sign rules.
+
+### Changes Made
+- **Delete permission.** `delete_records` joins the matrix; the transaction,
+  journal-entry and counter policies now use it, so a non-admin role can be
+  granted (or admin revoked) through `/admin/role-permissions`.
+- **HMAC key separation, deployable.** `hash()`/`blindIndex()` use a dedicated
+  HKDF `encryption-hash` subkey; `legacyHash()`/`legacyBlindIndex()` keep the
+  old derivation. Lookups try both, so existing blind indexes resolve until
+  `customers:re-encrypt` upgrades them. `hash_uses_a_dedicated_subkey…` and
+  legacy-lookup tests cover it.
+- **Legacy ciphertext observable.** `decryptLegacy()` logs each read, and the
+  re-encrypt command now reports how many legacy rows remain.
+- **Factory determinism.** `currency_code` picks the alphabetically-first
+  currency instead of a random one; `till_id` is null (drawer-less), matching
+  what the booking service produces.
+- **Password floor 12.** Config, rule fallback, `.env.example` and the README
+  updated together.
+- **Shared sign helper.** `AccountType::applyNaturalSign()` replaces the
+  hand-derived `multiply($net, '-1')` flips in the P&L, balance-sheet sections
+  and net-income line.
+- **PEP duplicate message** now carries the existing approval ID.
+- **Open statuses documented** — active vs legacy, so historical rows stay open
+  without implying the legacy states are reachable.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2834 passed, 3 skipped
+- `php artisan test --compact tests/Unit/CustomerBlindIndexTest.php tests/Unit/Repositories/CustomerRepositoryTest.php tests/Feature/ReEncryptCustomersCommandTest.php` — 22 passed
+- `php artisan test --compact tests/Feature/Policies/AuthorizationTest.php` — 64 passed
+- `php artisan test --compact tests/Unit/Listeners/TransactionCreatedListenerTest.php` — 2 passed
+- `php artisan test --compact --filter=Password` — 44 passed
+- `vendor/bin/phpstan analyse` — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- `delete_records` defaults to admin only (admin receives every case from the
+  matrix); existing identity checks are gone, so a revoked admin loses delete.
+- The blind-index change is backward compatible by construction: writes use the
+  new derivation, reads accept both. `customers:re-encrypt` upgrades the rest.
+- The password floor is a policy change: accounts created before the bump keep
+  their passwords until rotation.
+
+---
+
+
+### Files Changed
+- `app/Services/Accounting/LedgerService.php` — `getAccountBalance()` accepts a nullable date
+- `app/Models/BranchClosureWorkflow.php` — documented the deliberately discarded lock read
+
+### Purpose
+Two last consistency nits from the audit.
+
+### Changes Made
+- `LedgerService::getAccountBalance()` now mirrors `AccountingService` by
+  accepting `?string $asOfDate = null` (the canonical service already defaults
+  to today), so callers need not repeat `now()->toDateString()`.
+- `freezesDateForUpdate()` carries an explicit comment that the locking read's
+  boolean is deliberately discarded — the lock is the point, not the value.
+
+### Testing
+- `php artisan test --compact tests/Unit/LedgerServiceTest.php tests/Unit/LedgerServiceBalanceTest.php tests/Feature/BranchClosingWorkflowTest.php` — 48 passed
+- `vendor/bin/phpstan analyse` — no errors
+
+---
+
+
+### Files Changed
+- `app/Services/Compliance/PepApprovalService.php`, `app/Services/Transaction/TransactionValidationService.php` — PEP approval is scoped to the transaction type
+- `app/Services/Transaction/TransactionCreationService.php` — locks the branch row before the day-close freeze check
+- `app/Services/Branch/TellerAllocationService.php` — Sells are validated against the teller allocation
+- `app/Services/Branch/PoolRemittanceService.php` — `initiate()` takes a string amount only
+- `app/Services/Audit/AuditChainService.php` — id-gap check refined to allow `GAP:`-boundary gaps
+- `app/Services/Compliance/Monitors/BaseMonitor.php` — string comparison replaces float `max()`
+- `tests/Feature/Concurrency/ApprovalRaceTest.php` — active teller allocation fixture
+- `tests/Unit/Services/Branch/TellerAllocationResolutionTest.php` — Sell resolution now validated
+- `config/security.php`, `.env.example` — the IP-block whitelist no longer defaults to a private subnet in production
+- `app/Providers/EventServiceProvider.php` — compliance-critical job failures now raise an alert
+- `tests/Feature/Jobs/QueueFailureAlertTest.php` — new
+- `.github/workflows/deploy.yml` — registers the previously missing `str:install-bnm-reference-unique`
+- `tests/Feature/Infrastructure/InstallerRegistrationTest.php` — new guard: every installer must be in the deploy workflow
+- `tests/Feature/Concurrency/ApprovalRaceTest.php`, `tests/Feature/Api/V1/SellDoesNotCreateEmptyPositionTest.php` — fixtures funded for the Sell validation
+- `tests/Unit/PepApprovalServiceTest.php`, `tests/Unit/Transaction/TransactionCreationServiceTest.php`, `tests/Feature/Audit/AuditChainQuarantineTest.php` — coverage
+
+### Purpose
+Close four audit findings: a PEP approval that satisfied the wrong transaction
+direction, a booking/day-close race that could post against a freezing date, a
+Sell path that booked unfundable allocations, and a remittance signature that
+endorsed float-for-money.
+
+### Changes Made
+- **PEP approval scoping.** `hasApprovedApproval()` now takes the transaction
+  type and filters on it, so a Buy approval no longer satisfies a Sell (and
+  vice versa). `requestApproval()` already keyed on the type; the gate now does
+  too.
+- **Day-close race.** `create()` locks the branch row before
+  `freezesDateForUpdate()`. With no workflow rows yet, the workflow-table lock
+  acquires nothing, so a concurrent `initiateClosure()` could previously freeze
+  the date after the booking's check. This mirrors the serializer the closure
+  path already uses.
+- **Sell custody.** `TellerAllocationService::resolveForTransaction()` now runs
+  the same `validateTransaction()` for both directions. A Sell checks the
+  allocation's foreign float (`hasAvailable`) plus the daily MYR limit instead
+  of attaching the allocation unvalidated and failing later at approval.
+- **Remittance amount type.** `initiate(..., string $amountMyr, ...)` — the
+  controller already cast, so no caller changes; the signature no longer
+  endorses float-for-money at the API boundary.
+- **IP whitelist default.** The whitelist defaulted to `192.168.1.0/24` in
+  every environment, exempting a whole subnet from brute-force IP blocking in
+  production. It now defaults to empty outside local development, and
+  `.env.example` ships it empty.
+- **Queue failure alerting.** The `Queue::failing` callback logged and stopped.
+  Compliance/audit jobs (`ImportSanctionsJob`, `ComplianceScreeningJob`,
+  `RunComplianceMonitorJob`, `SealAuditHashJob`, `ProcessTransactionRetry`,
+  `ReconcileDeferredAccountingJob`) now also raise a `SystemAlert`, so a
+  permanently failed obligation is operator-actionable instead of a log line.
+- **Installer registration guard.** `str:install-bnm-reference-unique` was
+  missing from `.github/workflows/deploy.yml` — the exact failure mode that
+  previously broke production. The workflow now registers it, and
+  `InstallerRegistrationTest` asserts every `Install*` command appears there so
+  the next installer cannot silently skip production.
+- **Sell quantity unit mismatch.** `buildCreationContext()` now passes the
+  transaction quantity to `resolveForTransaction()`. Without it the Sell check
+  compared the MYR amount against the teller's foreign-currency float — the
+  same unit mismatch the Buy path already guards against.
+- **Monitor merge arithmetic.** `BaseMonitor::mergeFindingDetails()` compares
+  `score`/`count` values with `MathService::compare()` (BCMath strings) instead
+  of a float `max()`, keeping monitoring metrics on string arithmetic.
+- **Audit gap refinement.** The id-contiguity check from round 5 allowed
+  `GAP:`-covered gaps to be flagged as deletions; it now subtracts boundaries
+  whose row is genuinely absent, so a legitimate audited rotation still verifies.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2829 passed, 3 skipped
+- `php artisan test --compact tests/Unit/PepApprovalServiceTest.php tests/Unit/Transaction/TransactionCreationServiceTest.php` — 44 passed
+- `php artisan test --compact tests/Feature/Audit/AuditChainQuarantineTest.php tests/Feature/ReviewRegressionTest.php` — 27 passed
+- `php artisan test --compact tests/Unit/Transaction tests/Unit/TransactionReversalServiceTest.php tests/Feature/PoolRemittanceTest.php tests/Feature/BranchClosingWorkflowTest.php tests/Feature/Concurrency/AllocationRaceTest.php` — 170 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The PEP scoping is a deliberate tightening: an existing Buy approval no longer
+  covers a Sell. Any deployment with in-flight PEP approvals keyed to one
+  direction will require a fresh approval for the other — intended per pd-00.
+- The branch-row lock adds one `SELECT ... FOR UPDATE` to every booking. It
+  serialises against closure initiation only; the position lock ordering is
+  unchanged.
+- The Sell validation is a behaviour change: unfundable Sells are now rejected
+  at booking rather than at approval. The atomic allocation guards remain.
+
+---
+
+
+### Files Changed
+- `AGENTS.md`, `CLAUDE.md` — removed references to the non-existent `StrictRateLimit` / `checkBurst` / `strict.ratelimit` middleware
+- `app/Services/System/RateLimitService.php` — rate-limit hit tracking is now lock-protected
+- `app/Services/Audit/AuditChainService.php` — id-contiguity check in `verifyChainIntegrity()`
+- `app/Models/Customer.php` — ID-number decryption failures are logged, not silently swallowed
+- `app/Enums/CddLevel.php` — explicit `severity()` replaces the declaration-order comparison
+- `app/Services/Transaction/TransactionCreationService.php` — uses `CddLevel::severity()`
+- `app/Services/Transaction/TransactionReversalService.php`, `config/cems.php` — separate `transaction_reversal_window_hours`
+- `app/Services/Compliance/StrReportService.php` — a failed STR auto-draft now raises an operator-visible alert
+- `app/Services/Branch/PoolRemittanceService.php` — retryability probed from the collided number, not driver message text
+- `app/Http/Middleware/SecurityHeaders.php` — the baseline is enforced, not opt-out
+- `tests/Feature/Audit/AuditChainQuarantineTest.php`, `tests/Unit/TransactionReversalServiceTest.php`, `tests/Unit/SecurityHeadersTest.php`, `tests/Unit/CddLevelTest.php` — coverage
+
+### Purpose
+Close three audit findings: documentation describing rate limiting that does
+not exist, a monitoring read-modify-write that could lose updates, and an audit
+chain that could not detect hard-deleted rows.
+
+### Changes Made
+- **Docs.** `AGENTS.md` §4 and `CLAUDE.md` described a `StrictRateLimit`
+  middleware with a `checkBurst()` sub-check; neither exists (the code was
+  already removed). The docs now describe the real `ThrottleRequests`
+  middleware and the fail-open monitoring path.
+- **Hit tracking atomicity.** `logRateLimitHit()` previously did
+  `get → append → put` on the hits key. The read-filter-write now runs under a
+  per-IP `Cache::lock()`, matching the project's "no non-atomic read-then-write"
+  directive.
+- **Audit id-gap detection.** `verifyChainIntegrity()` now confirms the id range
+  spanned by the verified entries is contiguous. Hard-deleting a row leaves the
+  remaining hashes chaining correctly, so only an id-gap check can see it; a
+  quarantine boundary marker alone is not proof the row still exists.
+- **Decryption logging.** `Customer::getIdNumberAttribute()` still returns null
+  on a decryption failure (display-safe) but now logs the error, so tampering
+  or key problems are observable instead of silent.
+- **CDD severity.** `CddLevel::severity()` gives each level an explicit
+  ordinal; `buildCreationContext()` compares those instead of relying on enum
+  declaration order via `array_search()`.
+- **Reversal window.** New `cems.transaction_reversal_window_hours`
+  (`REVERSAL_WINDOW_HOURS`, default 24) replaces the alias to the cancellation
+  window key, so the two policies can be tuned independently.
+- **Security headers enforced.** `SecurityHeaders::applySecurityHeaders()` now
+  sets the baseline unconditionally; a controller or upstream middleware that
+  presets one of these headers no longer silently weakens it.
+- **STR auto-draft failures.** A swallowed auto-draft left no STR and no
+  operator-visible trace. The catch now raises a `SystemAlert` in addition to
+  the log, so a missed regulatory report is actionable.
+- **Remittance retry detection.** `initiate()` now decides retryability by
+  probing whether the generated number actually collided, instead of matching
+  the driver's error-message text (which changes with localization and driver
+  versions).
+
+### Testing
+- `php artisan test --compact` (full suite) — 2829 passed, 3 skipped
+- `php artisan test --compact tests/Feature/Audit tests/Feature/Auth tests/Feature/Customers tests/Feature/SecurityTest.php` — 173 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- `logRateLimitHit()` only feeds monitoring/alerting; enforcement is unchanged.
+- The id-gap check adds one `COUNT` per verification run (already chunked at
+  1000), and `audit:rotate` deletes only archive files, so it cannot
+  false-positive on a legitimate purge.
+
+---
+
+
+### Files Changed
+- `app/Services/Accounting/LedgerService.php` — P&L and balance sheet cached under the shared `ledger` tag
+- `app/Services/Accounting/AccountingService.php` — per-month sequential `entry_number`
+- `database/seeders/SchemaSeeder.php` — new `journal_entry_sequences` table (create + drop list)
+- `app/Services/System/MfaService.php`, `app/Models/DeviceComputations.php` — a NULL `expires_at` no longer grants trust
+- `app/Enums/CddLevel.php` — removed the dead `determine()` method
+- `app/Services/Transaction/TransactionHoldService.php` — removed the dead `getHoldReasons()`
+- `app/Services/Traits/TillBalanceTrait.php` — deleted (its only method was unused)
+- `app/Http/Middleware/EnsureBranchScope.php` — explicit guarantee/delegation docblock
+- Tests: `AccountingServiceTest`, `MfaServiceTest`, `ThresholdAccessCentralizedTest`, `TransactionHoldServiceTest`, `CriticalTransactionWorkflowTest`, `TransactionServiceTest`; deleted `tests/Unit/Services/Traits/TillBalanceTraitTest.php`
+
+### Purpose
+Close the last audit findings: the statement-caching inconsistency, the
+non-sequential journal entry numbers, the MFA NULL-expiry trust hole, and the
+dead code paths that had drifted away from production.
+
+### Changes Made
+- **Statement caching.** `getProfitAndLoss()` and `getBalanceSheet()` are now
+  cached under the same `ledger` tag and 60s TTL as `getTrialBalance()`. Every
+  ledger write flushes that tag from inside `updateLedger()`, so all three
+  statements stay consistent after a posting.
+- **Journal entry numbers.** New `journal_entry_sequences` table holds one
+  counter per `YYYY-MM`; `allocateEntryNumber()` increments it under a row lock
+  so concurrent postings in a month serialise. On first use for a month the
+  counter continues from the highest existing `JE-{Ym}-` id, so deploying over
+  an existing ledger never reissues a number. Numbers are now contiguous per
+  month (`JE-202601-0001`, `JE-202601-0002`, `JE-202602-0001`).
+- **MFA trusted devices.** `hasTrustedDevice()` and `getTrustedDevices()` now
+  require `expires_at > now()`; `DeviceComputations::isValid()` treats a NULL
+  expiry as invalid. `rememberDevice()` always stamps an expiry, so only
+  backfilled legacy rows are affected — they must re-authenticate once.
+- **Dead code removed.** `CddLevel::determine()` (superseded by
+  `CddLevelDeterminationService`), `TransactionHoldService::getHoldReasons()`,
+  and `TillBalanceTrait::updateTillBalance()` are gone, along with the tests
+  that only exercised them. `CriticalTransactionWorkflowTest` now derives the
+  expected CDD level from the production service.
+- **`EnsureBranchScope`** documents precisely what it guarantees (routes that
+  name a branch) and what it delegates (collection endpoints, via
+  `ResolvesBranchScope`, policies and services).
+
+### Testing
+- `php artisan test --compact` (full suite) — 2819 passed, 3 skipped
+- `php artisan test --compact tests/Unit/AccountingServiceTest.php tests/Unit/Services/System/MfaServiceTest.php tests/Unit/ThresholdAccessCentralizedTest.php tests/Unit/Transaction/TransactionHoldServiceTest.php tests/Feature/CriticalTransactionWorkflowTest.php` — 44 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The new cache wrapping reuses the existing `ledger` tag and TTL; the
+  invalidation path is unchanged and already fires on every posting.
+- `allocateEntryNumber()` runs inside the existing `createJournalEntry()`
+  transaction; `lockForUpdate()` serialises same-month postings. `entry_number`
+  is display-only (no lookup parses it), and `SetupService` opening balances
+  use a separate `OB-` prefix, so no number space collides.
+- Removing `CddLevel::determine()` deletes behaviour production never called;
+  `CddLevelDeterminationService` is covered by
+  `CddLevelDeterminationServiceTest`.
+
+---
+
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — explicit CDD guard; `MathService::compare()`
+- `app/Services/Transaction/RateManagementService.php` — annotated display-only float casts
+- `app/Services/Transaction/Checks/StructuringCheck.php`, `Checks/UnusualPatternCheck.php` — annotated display-only float casts
+
+### Purpose
+Close the last low-risk audit items that need no business decision.
+
+### Changes Made
+- `buildCreationContext()` now throws a typed `TransactionValidationException`
+  when the CDD assessment is missing instead of letting
+  `array_search(null, CddLevel::cases())` raise a `TypeError`. The method is
+  public and also called by the wizard and import paths.
+- `ensureStockForSell()` uses `MathService::compare()` (same scale=4 as the
+  previous direct `bccomp()` call).
+- Annotated the display-only `(float)` casts in the rate and structuring
+  checks as non-money formatting, matching the audit's request to make the
+  exception to the BCMath-only convention explicit.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2822 passed, 3 skipped
+- `php artisan test --compact tests/Unit/Transaction tests/Feature/TransactionWizardTest.php tests/Feature/TransactionWorkflowTest.php` — 121 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+
+### Impact Analysis
+- The CDD guard is on a path already gated by `runComplianceGates()`; it only
+  changes the failure mode (typed domain exception vs `TypeError`) for a
+  hypothetical caller that bypasses that gate.
+
+---
+
+
+### Files Changed
+- `app/Http/Controllers/Api/V1/{Counter,MonthEndClose,BranchClosing,Branch,CounterHandover,Screening,SanctionList}Controller.php`, `app/Http/Controllers/Api/V1/Compliance/FindingController.php` — controller-level permission checks
+- `app/Http/Controllers/{TransactionWizardController,Accounting/BudgetController,Admin/SanctionSourceController,Compliance/FindingController,Compliance/SanctionListController,Compliance/ScreeningController,Compliance/ScreeningMatchController}.php` — controller-level permission checks
+- `app/Rules/ValidTill.php` — fail closed without an authenticated, branch-assigned user
+- `app/Services/System/SystemAlertService.php` — alert row commits before email delivery
+- `database/seeders/SchemaSeeder.php` — protected guard + `runWithPopulatedGuard()`; wider populated-database check
+- `app/Console/Commands/ResetTestDatabase.php` — uses the guard helper
+- `app/Models/Customer.php` — removed the dead `getIcNumberAttribute()` alias
+- `tests/Feature/Api/V1/BranchResourceAuthorizationTest.php`, `tests/Unit/Rules/ValidTillTest.php`, `tests/Unit/Services/SystemAlertServiceTest.php` — coverage
+- `phpstan-baseline.neon` — `ValidTillTest` closure count 1 → 2
+
+### Purpose
+Close the remaining audit findings that carry real production value: uneven
+controller-level authorization, a till rule that resolved counters without an
+authenticated branch, an alert record that could roll back with a failed email
+delivery, and a destructive seeder guard that any code could flip.
+
+### Changes Made
+- **Controller permission sweep.** 15 controllers with mutating actions now
+  call `requirePermission()` matching their route's `role:` key
+  (`ManageCounters`, `OperateCounters`, `ManageBranchClosing`, `ManageBranches`,
+  `ManageAccounting`, `ManageSanctions`, `AccessCompliance`,
+  `CreateTransactions`, `AccessAccounting`). The route middleware stays the
+  outer gate; the controller check keeps the permission enforced if routes are
+  regrouped. `NotificationPreferenceController` is intentionally untouched
+  (every authenticated user manages their own preferences); `SetupController`
+  and `Auth/*` are pre-auth or self-service by design.
+- **`ValidTill` fails closed.** Previously an unauthenticated caller fell back
+  to an unscoped counter lookup. It now refuses unless the user is
+  authenticated and branch-assigned, then scopes the lookup to that branch.
+- **`SystemAlertService::send()` commits the alert row first**, then delivers
+  email outside that transaction and catches delivery failures — a mailbox
+  outage can no longer roll back the compliance record.
+- **`SchemaSeeder` guard hardened.** `$allowPopulated` is now `protected`; the
+  only opt-in is `runWithPopulatedGuard(callable)`, used by `seedNow()` and
+  `db:reset-test --fresh`. `databaseIsPopulated()` now inspects 20 tables
+  instead of 10.
+- Removed `Customer::getIcNumberAttribute()` (zero references; duplicated the
+  decryption path).
+
+### Testing
+- `php artisan test --compact` (full suite) — 2822 passed, 3 skipped
+- `php artisan test --compact tests/Feature/Api tests/Feature/Compliance tests/Feature/Web tests/Feature/Admin tests/Feature/Views` — 400 passed
+- `php artisan test --compact tests/Feature/Api/V1/BranchResourceAuthorizationTest.php tests/Feature/Commands` — 25 passed
+- `vendor/bin/phpstan analyse` (whole app) — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- The controller checks mirror the existing route middleware exactly, so no
+  authorized flow changes behaviour; a new test bypasses `CheckRole` with
+  `withoutMiddleware()` to prove the controller still refuses a teller calling
+  `POST /api/v1/branches`.
+- `ValidTill` is only used by the transaction form requests (all auth-guarded),
+  so failing closed affects no CLI/seed path; `TransactionImportService` has
+  its own till logic.
+- `detect_changes` — `risk_level: critical` (aggregate): 73 symbols across
+  27 files, 122 affected processes, no `partial`/`truncated` flags. The
+  critical rating comes from touching 15 controllers, which are hubs in the
+  execution graph; every touched action mirrors an existing route gate, and
+  the full suite is green.
+
+---
+
+
+### Files Changed
+- `config/security.php` - rotation default 90 days; removed 7 dead `burst_allowance` keys
+- `.env.example` - `SECURITY_PASSWORD_EXPIRY_DAYS=90`
+- `database/factories/UserFactory.php` - stamp `password_changed_at`
+- `tests/Feature/Auth/LoginControllerTest.php` - stale-timestamp rotation coverage
+- `app/Http/Requests/StoreTransactionRequest.php` - branch-scoped counter resolution
+- `app/Http/Requests/Api/V1/Transaction/StoreTransactionRequest.php` - branch-scoped counter resolution
+- `app/Http/Requests/Concerns/HasTransactionValidationRules.php` - shared `counterQuery()`
+- `tests/Feature/Web/TransactionControllerStoreTest.php` - cross-branch counter regression
+- `app/Services/Branch/PoolRemittanceService.php` - documented cancel/acknowledge SoD asymmetry
+- `tests/Feature/PoolRemittanceTest.php` - receiver-cannot-cancel coverage
+- `app/Services/Transaction/TransactionValidationService.php` - `checkSanctions` via `Cache::remember`
+- `app/Services/Transaction/TransactionCreationService.php` - dropped stack trace from booking-failure context
+- `app/Http/Middleware/SecurityHeaders.php` - removed the inert `style-src` nonce
+- `app/Services/Accounting/LedgerService.php` - trial balance lists every account
+- `tests/Unit/LedgerServiceTest.php` - inactive-account footing coverage
+- `tests/Unit/SecurityHeadersTest.php` - style-src coverage
+
+### Purpose
+Continue closing the production gap audit. Forced password rotation was
+implemented but disabled by default (`SECURITY_PASSWORD_EXPIRY_DAYS=0`),
+contradicting the documented BNM policy. Counter resolution in the booking
+form requests was unscoped, so another branch's counter id resolved to its
+code and was echoed back through redirect input before validation. The CSP
+carried `'unsafe-inline'` alongside a nonce in `style-src`, which CSP3 makes
+inert — so the chart components' dynamic inline dimensions were blocked in
+production.
+
+### Changes Made
+- `config/security.php`: `password_expiry_days` defaults to 90 (env override
+  retained, `0` disables). `.env.example` updated to match. `UserFactory`
+  stamps `password_changed_at` so factory users are not born expired; tests
+  that exercise forced rotation set the timestamp to null/stale explicitly.
+- Both transaction form requests resolve counters through a `counterQuery()`
+  helper scoped to the acting user's branch; office roles without a branch
+  (admin) keep the unscoped lookup. `ValidTill` remains the authoritative
+  booking gate.
+- `SecurityHeaders`: `style-src` no longer receives the per-request nonce, so
+  `'unsafe-inline'` is effective and the chart components render in
+  production. `script-src` keeps its nonce; `unsafe-inline`/`unsafe-eval`
+  remain absent there.
+- `PoolRemittanceService::cancel()` documents the deliberate asymmetry: the
+  sender may withdraw their own pending remittance, the receiver may not
+  acknowledge their own. A test now asserts the receiving branch is refused.
+- `checkSanctions()` uses `Cache::remember()` (removes the has/get TOCTOU).
+- `recordBookingFailure()` no longer persists `getTraceAsString()` into the
+  `transaction_errors.error_context` JSON (size/PII exposure).
+- Removed the seven `security.rate_limits.*.burst_allowance` keys (zero
+  consumers).
+- `LedgerService::getTrialBalance()` now lists every account instead of only
+  active ones. `is_active` governs posting eligibility, not reporting: a
+  retired account that still carries a ledger balance must appear, otherwise
+  the trial balance's own debit/credit totals (and its `is_balanced` flag)
+  disagree with the ledger. The P&L, balance sheet and closing sweeps already
+  included every account, so the trial balance was the outlier.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2817 passed, 3 skipped
+- `php artisan test --compact tests/Feature/Auth tests/Feature/AuthenticationTest.php tests/Feature/SecurityTest.php` — 65 passed (also re-run under `SECURITY_PASSWORD_EXPIRY_DAYS=90`, the CI value)
+- `php artisan test --compact tests/Feature/Compliance tests/Feature/Api tests/Unit/Rules tests/Feature/Views` — 401 passed
+- `php artisan test --compact tests/Feature/Web/TransactionControllerStoreTest.php tests/Feature/Api/V1/TransactionControllerStoreTest.php tests/Feature/PoolRemittanceTest.php tests/Unit/SecurityHeadersTest.php` — 30 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+
+### Impact Analysis
+- Counter resolution: both form requests are leaf validation classes; the
+  scoped lookup only narrows which counters can resolve. `ValidTill` already
+  enforced branch scope on booking, so no booking path changes behaviour.
+- `checkSanctions` is a cache read-aside on the sanctions screening path;
+  `Cache::remember` is the same store/TTL, so the only change is atomicity.
+- `SecurityHeaders` affects every response's CSP header; `style-src` is the
+  only directive changed, and the previous nonce made `'unsafe-inline'` inert.
+
+---
+
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — booking replay flag
+- `tests/Unit/Transaction/TransactionCreationServiceTest.php` — corrected invariant + lost-race regression
+- `routes/auth.php` — logout is POST-only
+- `tests/Feature/AuthenticationTest.php` — GET logout now rejected
+- `app/Models/Customer.php` — blind indexes removed from serialization
+- `tests/Unit/CustomerBlindIndexTest.php` — serialization coverage
+- `bootstrap/app.php` — `SecurityHeaders` applied to the API group
+- `tests/Feature/Infrastructure/ApiSecurityHeadersTest.php` — new
+- `app/Services/Compliance/StrReportService.php` — threshold via `ThresholdService`
+- `tests/Feature/Compliance/StrReportTest.php` — threshold-override coverage
+- `app/Console/Commands/BusinessSetup.php` — dropped unimplemented `--with-demo`, corrected next-step routes
+
+### Purpose
+Close the P0/P1 findings from the full-repo production gap audit. The
+critical finding: an idempotent replay of an already-`Completed` booking
+fell through to Phase 2 and re-applied the position mutation, the journal
+entry, the teller-allocation earmark and the till adjustment, and
+re-emitted the creation audit / `TransactionCreated` event. The replay
+early-returns sat inside the `DB::transaction` closure, so they only
+exited the closure — Phase 2 ran on the replayed record anyway.
+
+### Changes Made
+- `TransactionCreationService::create()` now returns `[$transaction, $isReplay]`
+  from the booking transaction. Phase 2 (side effects), the creation audit,
+  the `TransactionCreated` event and the large-transaction escalation run
+  only for freshly created bookings. Fresh-creation behaviour is unchanged.
+- `routes/auth.php`: `Route::match(['GET','POST'])` → `Route::post` — a GET
+  logout is a CSRF logout vector. Both UI logouts were already POST forms.
+- `Customer::$hidden` now includes `id_number_hash` / `phone_hash`; blind
+  indexes are lookup keys, not API payloads.
+- `bootstrap/app.php`: `SecurityHeaders` prepended to the `api` group so API
+  responses carry the same baseline (`X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, CSP, HSTS in production).
+- `StrReportService` injects `ThresholdService` and resolves the filing
+  threshold through `reporting.str` (env + admin override) instead of a
+  hardcoded `50000` constant; the public `THRESHOLD` const is removed.
+- `BusinessSetup`: removed the `--with-demo` flag that only printed
+  "not yet implemented", and replaced the next-step routes
+  (`/exchange-rates`, `/counters/{code}/open`) that no longer exist with
+  the real surfaces.
+
+### Testing
+- `php artisan test --compact tests/Unit/Transaction/TransactionCreationServiceTest.php` — 29 passed
+- `php artisan test --compact tests/Feature/AuthenticationTest.php tests/Unit/CustomerBlindIndexTest.php tests/Feature/Compliance/StrReportTest.php tests/Feature/Infrastructure/ApiSecurityHeadersTest.php tests/Unit/SecurityHeadersTest.php` — 46 passed
+- `php artisan test --compact tests/Feature/Api tests/Feature/Customers tests/Feature/Compliance tests/Unit/Transaction` — 304 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+- `php artisan routes:validate` — 0 critical / 0 errors
+
+### Impact Analysis
+- `TransactionCreationService::create` — GitNexus `impact` upstream:
+  **CRITICAL** (core booking path), 4 execution flows affected
+  (`Api/V1/TransactionController@store`, `TransactionWizardController@step3`,
+  `TransactionController@store`, `TransactionImportService@processRow`).
+  The change is scoped to the replay branch only; the fresh-creation path
+  is byte-for-byte unchanged. The pre-existing test
+  `create_returns_existing_transaction_when_idempotency_key_matches`
+  asserted the buggy invariant (side effects expected `->once()` on replay);
+  it now asserts `->never()` and a second test covers the lost-insert-race
+  replay path.
+- `StrReportService` is resolved via `app()` at every call site, so the new
+  constructor dependency is container-provided; no manual instantiation.
+
+---
+
 
 Foundation for the BI initiative (`BI-PLAN.md`): pre-aggregated snapshot
 tables so dashboards/reports read rollups instead of scanning

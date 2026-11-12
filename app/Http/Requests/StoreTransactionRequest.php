@@ -6,6 +6,7 @@ use App\Enums\IdType;
 use App\Http\Requests\Concerns\HasTransactionValidationRules;
 use App\Models\Counter;
 use App\Models\Transaction;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -54,15 +55,19 @@ class StoreTransactionRequest extends AuthorizedFormRequest
             // so a submitted pair pointing at different counters cannot
             // store a divergent (till_id, counter_id) on the transaction.
             $till = $this->input('till_id');
-            $counter = is_scalar($till) ? Counter::findByCodeOrId((string) $till) : null;
-            $merged['counter_id'] = $counter?->id;
+            $counter = is_scalar($till)
+                ? $this->counterQuery()
+                    ->where(fn (Builder $q) => $q->where('code', (string) $till)->orWhere('id', (string) $till))
+                    ->first()
+                : null;
+            $merged['counter_id'] = $counter?->getKey();
             if ($counter instanceof Counter) {
                 $merged['till_id'] = $counter->code;
             }
         } elseif ($this->filled('counter_id')) {
             $counterId = $this->input('counter_id');
             $counter = is_numeric($counterId)
-                ? Counter::query()->find((int) $counterId)
+                ? $this->counterQuery()->find((int) $counterId)
                 : null;
             $merged['till_id'] = $counter instanceof Counter
                 ? $counter->code
@@ -130,7 +135,7 @@ class StoreTransactionRequest extends AuthorizedFormRequest
     {
         $validator->after(function ($validator) {
             $counter = $this->filled('counter_id')
-                ? Counter::query()->find((int) $this->input('counter_id'))
+                ? $this->counterQuery()->find((int) $this->input('counter_id'))
                 : null;
 
             if ($counter instanceof Counter

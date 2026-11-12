@@ -49,6 +49,7 @@ enum Permission: string
     case PostJournalEntries = 'post_journal_entries';
     case ManageAccountMappings = 'manage_account_mappings';
     case ManageCustomers = 'manage_customers';
+    case DeleteRecords = 'delete_records';
     case AccessBranches = 'access_branches';
     case ManageBranches = 'manage_branches';
     case ManageBranchClosing = 'manage_branch_closing';
@@ -104,6 +105,7 @@ enum Permission: string
             self::PostJournalEntries => 'Post Journal Entries',
             self::ManageAccountMappings => 'Manage Account Mappings',
             self::ManageCustomers => 'Manage Customers',
+            self::DeleteRecords => 'Delete Records',
             self::AccessBranches => 'Access Branches',
             self::ManageBranches => 'Manage Branches',
             self::ManageBranchClosing => 'Manage Branch Closing',
@@ -161,6 +163,7 @@ enum Permission: string
             self::PostJournalEntries => 'Create and post manual journal entries',
             self::ManageAccountMappings => 'Edit the business-event to chart-of-accounts mapping',
             self::ManageCustomers => 'Close customer accounts and perform customer maintenance',
+            self::DeleteRecords => 'Delete transactions, journal entries, counters and other records',
             self::AccessBranches => 'View and edit own branch details',
             self::ManageBranches => 'Create, update, and deactivate branches',
             self::ManageBranchClosing => 'Run the branch closing workflow',
@@ -217,6 +220,7 @@ enum Permission: string
             self::ManageAllBranches,
             self::AssignRoles,
             self::ManageCustomers,
+            self::DeleteRecords,
             self::AccessBranches,
             self::ManageBranches,
             self::ManageBranchClosing,

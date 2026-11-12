@@ -44,7 +44,6 @@ use App\Services\System\MathService;
 use App\Services\ThresholdService;
 use App\Services\Traits\AccountingEntriesTrait;
 use App\Services\Traits\ExchangeCalculatorTrait;
-use App\Services\Traits\TillBalanceTrait;
 use App\Services\Transaction\DTOs\TransactionCreationContext;
 use App\Support\ActorContext;
 use App\ValueObjects\QuoteConvention;
@@ -57,7 +56,7 @@ use Throwable;
 
 class TransactionCreationService
 {
-    use AccountingEntriesTrait, ExchangeCalculatorTrait, TillBalanceTrait;
+    use AccountingEntriesTrait, ExchangeCalculatorTrait;
 
     public function __construct(
         protected TransactionIdempotencyService $idempotencyService,
@@ -91,9 +90,12 @@ class TransactionCreationService
 
     public function prepareAndCreate(array $data, ?int $userId = null, ?string $ipAddress = null): Transaction
     {
-        $userId ??= ActorContext::capture()->userId;
+        // Capture the actor once: re-resolving auth()/request() per field is
+        // wasteful and can straddle a context change.
+        $actor = ActorContext::capture();
+        $userId ??= $actor->userId;
         $user = User::findOrFail($userId);
-        $ipAddress ??= ActorContext::capture()->ipAddress;
+        $ipAddress ??= $actor->ipAddress;
 
         return $this->create($this->buildCreationContext($user, $data, ipAddress: $ipAddress), $user->id, $ipAddress);
     }
@@ -136,8 +138,19 @@ class TransactionCreationService
         // Never downgrade due diligence: the effective CDD level is the
         // higher of the fresh assessment and any caller-supplied floor.
         $freshCddLevel = $validationResult->getCDDLevel();
-        $cddLevel = $cddFloor !== null
-            && array_search($cddFloor, CddLevel::cases(), true) > array_search($freshCddLevel, CddLevel::cases(), true)
+
+        if ($freshCddLevel === null) {
+            // runComplianceGates() blocks before returning without a CDD
+            // assessment; a null here means a caller bypassed that gate, and
+            // the array_search below would TypeError instead of failing with
+            // an actionable domain error.
+            throw new TransactionValidationException(
+                field: 'cdd_level',
+                message: 'CDD assessment is required before a transaction can be booked.'
+            );
+        }
+
+        $cddLevel = $cddFloor !== null && $cddFloor->severity() > $freshCddLevel->severity()
             ? $cddFloor
             : $freshCddLevel;
 
@@ -147,6 +160,10 @@ class TransactionCreationService
                 [
                     'type' => (string) $data['type'],
                     'currency_code' => (string) $data['currency_code'],
+                    // Sells are checked against the foreign float in the
+                    // transaction's own currency units — without the quantity
+                    // the check would compare MYR against the FCY balance.
+                    'quantity' => (string) ($data['quantity'] ?? '0'),
                 ],
                 $amountMyr
             )
@@ -284,23 +301,23 @@ class TransactionCreationService
         // stock checks: the booked till's branch when a drawer is used, else
         // the acting user's branch (drawer-less custody ends at the
         // allocation).
-        $txnBranchId = (int) ($context->tillBalance->branch_id ?? $context->user->branch_id ?? $data['branch_id'] ?? 0);
+        //
+        // A caller-supplied branch_id must NOT steer this: it would run the
+        // checks against one branch while the record persisted another. A
+        // booking with no resolvable branch fails closed.
+        $tillBranchId = $context->tillBalance?->branch_id;
+
+        $txnBranchId = (int) ($tillBranchId ?? $context->user->branch_id ?? 0);
+
+        if ($txnBranchId === 0) {
+            throw new PermissionDeniedException('create transactions without a resolvable branch');
+        }
 
         // Phase 1: validate, persist the transaction record and commit it. The
         // record must survive booking failures so the transaction can be marked
         // Failed and retried (or parked in the DLQ) instead of disappearing.
-        $transaction = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
-            // A finalized day close freezes the branch's books for that
-            // business date — no new transactions can be booked on it.
-            // Checked inside the transaction under the workflow-row lock so
-            // a racing finalize serializes against the booking.
-            $today = now()->toDateString();
-
-            if (BranchClosureWorkflow::freezesDateForUpdate($txnBranchId, $today)) {
-                $branchCode = Branch::whereKey($txnBranchId)->value('code') ?? (string) $txnBranchId;
-
-                throw new BusinessDateFrozenException($branchCode, $today);
-            }
+        [$transaction, $isReplay] = DB::transaction(function () use ($context, $data, $userId, $txnBranchId) {
+            $this->serializeAgainstClosure($txnBranchId, now()->toDateString());
 
             // Acquire position lock FIRST for both Buy and Sell to prevent race conditions
             // This ensures stock check, idempotency check, and transaction creation happen atomically
@@ -320,7 +337,7 @@ class TransactionCreationService
             );
 
             if ($existingByIdempotencyKey) {
-                return $existingByIdempotencyKey;
+                return [$existingByIdempotencyKey, true];
             }
 
             // The 30-second heuristic window only guards interactive teller
@@ -339,12 +356,12 @@ class TransactionCreationService
                 // key loses the insert on the global unique index — rolling
                 // back to the savepoint keeps the outer transaction usable on
                 // drivers that poison it on constraint errors (PostgreSQL).
-                $transaction = DB::transaction(fn () => $this->createTransactionRecord($data, $context));
+                $transaction = DB::transaction(fn () => $this->createTransactionRecord($data, $context, $txnBranchId));
             } catch (QueryException $e) {
                 $replayed = $this->resolveIdempotentReplay($e, $data, $userId);
 
                 if ($replayed !== null) {
-                    return $replayed;
+                    return [$replayed, true];
                 }
 
                 throw $e;
@@ -352,7 +369,7 @@ class TransactionCreationService
 
             $this->reserveStockIfPending($transaction, $data);
 
-            return $transaction;
+            return [$transaction, false];
         });
 
         // Phase 2: book the side effects for transactions that complete
@@ -360,7 +377,13 @@ class TransactionCreationService
         // marks the transaction Failed with an error record and dispatches the
         // retry job; the exception is rethrown so the caller still reports the
         // failure to the operator, but the record now exists for recovery.
-        if ($transaction->status === TransactionStatus::Completed) {
+        //
+        // A replayed booking already had its side effects applied by the
+        // winning request — re-entering would decrement the position again,
+        // post a second journal entry, re-earmark the teller allocation and
+        // re-adjust the till. The replay flag is what distinguishes "created
+        // fresh" from "returned the existing record".
+        if (! $isReplay && $transaction->status === TransactionStatus::Completed) {
             try {
                 // Phase 2 re-acquires the position lock and re-checks stock under
                 // it: the phase-1 lock was released at commit, so without this a
@@ -384,10 +407,14 @@ class TransactionCreationService
         // scoring on a transaction that was never booked. The booking failure
         // path always rethrows, so reaching this point means the booking
         // succeeded and the event is always safe to dispatch.
-        $this->recordCreationAudit($transaction, $user, $ipAddress);
-        $this->dispatchCreationEvent($transaction);
+        // An idempotent replay must not re-emit any of these: the winning
+        // request already audited, dispatched and escalated the booking.
+        if (! $isReplay) {
+            $this->recordCreationAudit($transaction, $user, $ipAddress);
+            $this->dispatchCreationEvent($transaction);
 
-        $this->escalateLargeTransactionToCompliance($transaction);
+            $this->escalateLargeTransactionToCompliance($transaction);
+        }
 
         return $transaction;
     }
@@ -464,16 +491,18 @@ class TransactionCreationService
                 return;
             }
 
+            $actorId = ActorContext::capture()->userId;
+
             $confirmation = TransactionConfirmation::create([
                 'transaction_id' => $transaction->id,
-                'user_id' => ActorContext::capture()->userId,
+                'user_id' => $actorId,
                 'status' => TransactionConfirmationStatus::Pending->value,
                 'expires_at' => now()->addMinutes((int) config('transactions.confirmation_ttl_minutes', 30)),
             ]);
 
             $this->alertTriageService->notifyAvailableOfficers(
                 new LargeTransactionNotification($transaction, $confirmation),
-                ActorContext::capture()->userId
+                $actorId
             );
         } catch (Throwable $e) {
             Log::warning('Failed to escalate large transaction to compliance', [
@@ -505,7 +534,7 @@ class TransactionCreationService
                 $transaction->refresh(),
                 TransactionErrorHandler::ERROR_TYPE_ACCOUNTING,
                 'Booking failed: '.$e->getMessage(),
-                ['exception' => get_class($e), 'trace' => $e->getTraceAsString()]
+                ['exception' => get_class($e)]
             );
 
             $this->auditTrailHelper->recordTransaction($transaction->id, 'transaction_booking_failed', [
@@ -581,7 +610,7 @@ class TransactionCreationService
             );
         }
 
-        if (bccomp($availableBalance, $data['quantity'], 4) < 0) {
+        if ($this->mathService->compare($availableBalance, $data['quantity']) < 0) {
             throw new InsufficientStockException(
                 $data['currency_code'],
                 $data['quantity'],
@@ -598,6 +627,28 @@ class TransactionCreationService
             $data['currency_code'],
             (string) $branchId
         );
+    }
+
+    /**
+     * Serialize the booking against a concurrent day-close initiation.
+     *
+     * A closure freezes the branch's books for the business date, so no new
+     * transaction can be booked on it. The freeze check alone is not enough:
+     * with no workflow rows yet, the workflow-table lock inside
+     * freezesDateForUpdate() acquires nothing, so a concurrent initiation could
+     * freeze the date after this check and the booking would commit onto a
+     * frozen day. Locking the branch row first serializes the two — the same
+     * lock BranchClosingService::initiateClosure() takes.
+     */
+    protected function serializeAgainstClosure(int $branchId, string $date): void
+    {
+        Branch::whereKey($branchId)->lockForUpdate()->first();
+
+        if (BranchClosureWorkflow::freezesDateForUpdate($branchId, $date)) {
+            $branchCode = Branch::whereKey($branchId)->value('code') ?? (string) $branchId;
+
+            throw new BusinessDateFrozenException($branchCode, $date);
+        }
     }
 
     /**
@@ -682,13 +733,14 @@ class TransactionCreationService
         });
     }
 
-    private function createTransactionRecord(array $data, TransactionCreationContext $context): Transaction
+    private function createTransactionRecord(array $data, TransactionCreationContext $context, int $branchId): Transaction
     {
         $transaction = new Transaction([
             'customer_id' => $context->customer->id,
             'user_id' => $context->user->id,
-            // Drawer-less bookings scope to the acting user's branch.
-            'branch_id' => $context->tillBalance->branch_id ?? $context->user->branch_id,
+            // The branch the checks ran against — persisted identically so a
+            // caller-supplied branch can never diverge from the booking branch.
+            'branch_id' => $branchId,
             // Store the booked till balance's code — callers may submit an
             // id or code, but the transaction always records the code. Null
             // when no drawer was used.
