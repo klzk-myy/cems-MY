@@ -5,7 +5,40 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Hardening round 3: controller permission sweep, fail-closed till rule, alert durability, seeder guard
+## [2026-11-12] - Cleanup: CDD guard, BCMath consistency, display-cast annotations
+
+### Files Changed
+- `app/Services/Transaction/TransactionCreationService.php` — explicit CDD guard; `MathService::compare()`
+- `app/Services/Transaction/RateManagementService.php` — annotated display-only float casts
+- `app/Services/Transaction/Checks/StructuringCheck.php`, `Checks/UnusualPatternCheck.php` — annotated display-only float casts
+
+### Purpose
+Close the last low-risk audit items that need no business decision.
+
+### Changes Made
+- `buildCreationContext()` now throws a typed `TransactionValidationException`
+  when the CDD assessment is missing instead of letting
+  `array_search(null, CddLevel::cases())` raise a `TypeError`. The method is
+  public and also called by the wizard and import paths.
+- `ensureStockForSell()` uses `MathService::compare()` (same scale=4 as the
+  previous direct `bccomp()` call).
+- Annotated the display-only `(float)` casts in the rate and structuring
+  checks as non-money formatting, matching the audit's request to make the
+  exception to the BCMath-only convention explicit.
+
+### Testing
+- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact tests/Unit/Transaction tests/Feature/TransactionWizardTest.php tests/Feature/TransactionWorkflowTest.php` — 121 passed
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse <edited paths>` — no errors
+
+### Impact Analysis
+- The CDD guard is on a path already gated by `runComplianceGates()`; it only
+  changes the failure mode (typed domain exception vs `TypeError`) for a
+  hypothetical caller that bypasses that gate.
+
+---
+
 
 ### Files Changed
 - `app/Http/Controllers/Api/V1/{Counter,MonthEndClose,BranchClosing,Branch,CounterHandover,Screening,SanctionList}Controller.php`, `app/Http/Controllers/Api/V1/Compliance/FindingController.php` — controller-level permission checks

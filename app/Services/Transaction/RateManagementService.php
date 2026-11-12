@@ -367,6 +367,7 @@ class RateManagementService
         return [
             ...$result,
             'valid' => false,
+            // sprintf display value only — the deviation itself is BCMath.
             'reason' => sprintf(
                 'Rate deviation %.2f%% exceeds the maximum %.2f%% allowed for your role (%s). Ask a manager to book this rate.',
                 (float) $deviationPercent,
@@ -499,6 +500,7 @@ class RateManagementService
         $spread = bcdiv(bcsub($sellRate, $buyRate, 8), $denominator, 8);
 
         if (bccomp($spread, $maxSpread, 8) > 0) {
+            // sprintf display values only — spread comparisons stay in BCMath.
             throw new InvalidRateException(sprintf(
                 'Spread %.2f%% exceeds the maximum allowed spread of %.2f%%.',
                 (float) $this->mathService->multiply($spread, '100'),

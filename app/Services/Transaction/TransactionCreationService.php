@@ -136,6 +136,18 @@ class TransactionCreationService
         // Never downgrade due diligence: the effective CDD level is the
         // higher of the fresh assessment and any caller-supplied floor.
         $freshCddLevel = $validationResult->getCDDLevel();
+
+        if ($freshCddLevel === null) {
+            // runComplianceGates() blocks before returning without a CDD
+            // assessment; a null here means a caller bypassed that gate, and
+            // the array_search below would TypeError instead of failing with
+            // an actionable domain error.
+            throw new TransactionValidationException(
+                field: 'cdd_level',
+                message: 'CDD assessment is required before a transaction can be booked.'
+            );
+        }
+
         $cddLevel = $cddFloor !== null
             && array_search($cddFloor, CddLevel::cases(), true) > array_search($freshCddLevel, CddLevel::cases(), true)
             ? $cddFloor
@@ -591,7 +603,7 @@ class TransactionCreationService
             );
         }
 
-        if (bccomp($availableBalance, $data['quantity'], 4) < 0) {
+        if ($this->mathService->compare($availableBalance, $data['quantity']) < 0) {
             throw new InsufficientStockException(
                 $data['currency_code'],
                 $data['quantity'],

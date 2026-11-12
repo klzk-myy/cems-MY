@@ -23,6 +23,8 @@ class StructuringCheck implements TransactionCheck
             return [];
         }
 
+        // Display-only cast: the threshold is rendered in a human-readable
+        // flag reason, never used in money arithmetic.
         return [new FlagDescriptor(
             type: ComplianceFlagType::Structuring,
             reason: 'Potential structuring: 3+ transactions under RM '
