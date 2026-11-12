@@ -57,12 +57,12 @@ class BiPagesTest extends TestCase
     #[Test]
     public function bi_report_pages_require_authentication_and_permission(): void
     {
-        foreach (['bi.branches', 'bi.currencies', 'bi.operations', 'bi.customers'] as $route) {
+        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers'] as $route) {
             $this->get(route($route))->assertRedirect();
         }
 
         $teller = User::factory()->teller()->create();
-        foreach (['bi.branches', 'bi.currencies', 'bi.operations', 'bi.customers'] as $route) {
+        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers'] as $route) {
             $this->actingAs($teller)->get(route($route))->assertForbidden();
         }
     }
@@ -156,6 +156,135 @@ class BiPagesTest extends TestCase
             ->assertSee('Top Customers')
             ->assertSee('Valued Client')
             ->assertSee('900.00');
+    }
+
+    #[Test]
+    public function rates_page_shows_spread_and_market_deviation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $branch = Branch::factory()->create();
+
+        // Buy at 4.00 and sell at 4.10 against a 3.95 board rate: the day's
+        // spread is 0.10 and the average transacted rate is 4.05.
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Buy->value,
+            'quantity' => '100.0000',
+            'amount_myr' => '400.0000',
+            'rate' => '4.00000000',
+            'base_rate' => '3.95000000',
+            'created_at' => today(),
+        ]);
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'type' => TransactionType::Sell->value,
+            'quantity' => '100.0000',
+            'amount_myr' => '410.0000',
+            'rate' => '4.10000000',
+            'base_rate' => '3.95000000',
+            'created_at' => today(),
+        ]);
+        $this->rebuild(today()->toDateString(), today()->toDateString());
+
+        $this->actingAs($admin)
+            ->get(route('bi.rates'))
+            ->assertOk()
+            ->assertSee('Rate vs Market Mid')
+            ->assertSee('USD')
+            ->assertSee('4.0500')
+            ->assertSee('3.9500')
+            // (4.05 - 3.95) / 3.95
+            ->assertSee('2.5316%');
+    }
+
+    #[Test]
+    public function rates_page_respects_branch_scope(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $other = Branch::factory()->create();
+
+        $this->makeTransaction([
+            'branch_id' => $manager->branch_id,
+            'currency_code' => 'USD',
+            'rate' => '4.10000000',
+            'base_rate' => '4.00000000',
+            'created_at' => today(),
+        ]);
+        $this->makeTransaction([
+            'branch_id' => $other->id,
+            'currency_code' => 'EUR',
+            'rate' => '4.20000000',
+            'base_rate' => '4.00000000',
+            'created_at' => today(),
+        ]);
+        $this->rebuild(today()->toDateString(), today()->toDateString());
+
+        $this->actingAs($manager)
+            ->get(route('bi.rates'))
+            ->assertOk()
+            // Only the manager's own branch row is listed.
+            ->assertSee('2.5000%')
+            ->assertDontSee('5.0000%');
+    }
+
+    #[Test]
+    public function operations_page_shows_turnaround_distribution_backlog_and_approvers(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $branch = Branch::factory()->create();
+
+        // Turnarounds of exactly 1h and 3h → median 1h, P90 3h.
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'created_at' => Carbon::parse('2026-09-15 09:00:00'),
+            'approved_at' => Carbon::parse('2026-09-15 10:00:00'),
+        ]);
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'created_at' => Carbon::parse('2026-09-15 11:00:00'),
+            'approved_at' => Carbon::parse('2026-09-15 14:00:00'),
+        ]);
+        // A pending transaction created half an hour ago.
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'status' => TransactionStatus::PendingApproval->value,
+            'created_at' => now()->subMinutes(30),
+        ]);
+
+        $this->rebuild('2026-09-01', '2026-09-30');
+
+        $this->actingAs($admin)
+            ->get(route('bi.operations', ['start_date' => '2026-09-01', 'end_date' => '2026-09-30']))
+            ->assertOk()
+            ->assertSee('Pending Approval Backlog')
+            ->assertSee('Approver Workload')
+            ->assertSee('0-1h')
+            ->assertSee('over 24h');
+    }
+
+    #[Test]
+    public function customers_page_shows_concentration_repeat_rate_and_cohorts(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $branch = Branch::factory()->create();
+
+        $repeat = Customer::factory()->create();
+        $oneOff = Customer::factory()->create();
+
+        $this->makeTransaction(['branch_id' => $branch->id, 'customer_id' => $repeat->id, 'amount_myr' => '500.0000', 'created_at' => Carbon::parse('2026-08-15')]);
+        $this->makeTransaction(['branch_id' => $branch->id, 'customer_id' => $repeat->id, 'amount_myr' => '500.0000', 'created_at' => Carbon::parse('2026-09-20')]);
+        $this->makeTransaction(['branch_id' => $branch->id, 'customer_id' => $oneOff->id, 'amount_myr' => '300.0000', 'created_at' => Carbon::parse('2026-09-10')]);
+        $this->rebuild('2026-08-01', '2026-09-30');
+
+        $this->actingAs($admin)
+            ->get(route('bi.customers', ['start_date' => '2026-08-01', 'end_date' => '2026-09-30']))
+            ->assertOk()
+            ->assertSee('Top-10 Concentration')
+            // One of the two active customers traded twice.
+            ->assertSee('50.00')
+            ->assertSee('Cohort Retention')
+            ->assertSee('Aug 2026')
+            ->assertSee('Sep 2026');
     }
 
     #[Test]

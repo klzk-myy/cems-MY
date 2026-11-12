@@ -132,6 +132,55 @@ class AnalyticsController extends Controller
     }
 
     /**
+     * Rate analytics: spread capture over time, override frequency, and
+     * the per-currency gap between the transacted rate and the market mid.
+     */
+    public function rates(Request $request): View
+    {
+        $this->requirePermission(Permission::ViewBiDashboard);
+        $this->refreshTodaysRollups($this->snapshotBuilder);
+        [$from, $to] = $this->resolveBiPeriod($request);
+
+        $user = auth()->user();
+        $branchId = $this->resolveReportBranchId($user, $request);
+
+        $currencyOptions = Currency::query()
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->pluck('code', 'code');
+
+        $selected = strtoupper((string) $request->input('currency', ''));
+        if (! $currencyOptions->has($selected)) {
+            $selected = '';
+        }
+
+        $analytics = $this->kpiService->rateAnalytics($from, $to, $branchId, $selected ?: null);
+
+        return view('bi.rates', [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'rows' => $analytics['currencies'],
+            'selected' => $selected,
+            'currencyOptions' => $currencyOptions,
+            'branchId' => $branchId,
+            'canSeeAllBranches' => $user->role->canManageAllBranches(),
+            'branches' => $this->branchSelectOptions($user),
+            'spreadChart' => [
+                'labels' => $analytics['labels'],
+                'datasets' => [
+                    ['label' => 'Spread (sell − buy rate)', 'data' => $analytics['spread'], 'borderColor' => '#3b82f6', 'backgroundColor' => 'rgba(59, 130, 246, 0.15)', 'fill' => true, 'tension' => 0.3],
+                ],
+            ],
+            'overrideChart' => [
+                'labels' => $analytics['labels'],
+                'datasets' => [
+                    ['label' => 'Override rate %', 'data' => $analytics['override_rate_pct'], 'borderColor' => '#f59e0b', 'backgroundColor' => '#f59e0b', 'tension' => 0.3],
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * Operational SLA: approval turnaround, cancel/reject rates, and
      * per-teller productivity.
      */
@@ -146,11 +195,13 @@ class AnalyticsController extends Controller
 
         $trend = $this->kpiService->operationsTrend($from, $to, $branchId);
         $canViewTellers = $user->role->canPerform(Permission::ViewTellerProductivity);
+        $sla = $this->kpiService->approvalSla($from, $to, $branchId);
 
         return view('bi.operations', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'canViewTellers' => $canViewTellers,
+            'sla' => $sla,
             'tellers' => $canViewTellers ? $this->kpiService->tellerProductivity($from, $to, $branchId) : [],
             'branchId' => $branchId,
             'canSeeAllBranches' => $user->role->canManageAllBranches(),
@@ -188,10 +239,12 @@ class AnalyticsController extends Controller
 
         $trend = $this->kpiService->activeCustomersTrend($from, $to, $branchId);
         $topCustomers = $this->kpiService->topCustomers($from, $to, $branchId);
+        $analytics = $this->kpiService->customerAnalytics($from, $to, $branchId);
 
         return view('bi.customers', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'analytics' => $analytics,
             'topCustomers' => $topCustomers,
             'customerModels' => Customer::query()
                 ->whereIn('id', array_column($topCustomers, 'customer_id') ?: [0])

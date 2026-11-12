@@ -9,6 +9,7 @@ use App\Enums\ReportType;
 use App\Enums\SystemAlertLevel;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
+use App\Models\Bi\AnalyticsDailyBranch;
 use App\Models\Bi\BiAlertRule;
 use App\Models\Branch;
 use App\Models\ReportGenerated;
@@ -20,12 +21,14 @@ use App\Models\User;
 use App\Notifications\ReportEmailNotification;
 use App\Services\Bi\AnalyticsSnapshotBuilder;
 use App\Services\Bi\BiAlertEvaluator;
+use App\Services\Bi\VolumeAnomalyDetector;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\PendingCommand;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -466,5 +469,62 @@ class BiDeliveryTest extends TestCase
             ReportEmailNotification::class,
             fn ($notification, $channels, $notifiable) => in_array('ops@example.com', (array) ($notifiable->routes['mail'] ?? []), true)
         );
+    }
+
+    #[Test]
+    public function volume_anomaly_detector_flags_a_surge_against_the_baseline(): void
+    {
+        $branch = Branch::factory()->create();
+
+        // A varying 30-day baseline around 102 MYR, then a 100x surge.
+        foreach (range(1, 30) as $offset) {
+            AnalyticsDailyBranch::create([
+                'date' => Carbon::yesterday()->subDays($offset)->toDateString(),
+                'branch_id' => $branch->id,
+                'buy_volume_myr' => $offset % 2 === 0 ? '104.0000' : '100.0000',
+                'sell_volume_myr' => '0.0000',
+                'computed_at' => now(),
+            ]);
+        }
+        AnalyticsDailyBranch::create([
+            'date' => Carbon::yesterday()->toDateString(),
+            'branch_id' => $branch->id,
+            'buy_volume_myr' => '10000.0000',
+            'sell_volume_myr' => '0.0000',
+            'computed_at' => now(),
+        ]);
+
+        $counts = app(VolumeAnomalyDetector::class)->detect(Carbon::yesterday(), 3.0);
+
+        $this->assertSame(1, $counts['evaluated']);
+        $this->assertSame(1, $counts['flagged']);
+        $this->assertDatabaseHas('system_alerts', ['source' => 'bi_volume_anomaly']);
+    }
+
+    #[Test]
+    public function volume_anomaly_detector_ignores_insufficient_baseline(): void
+    {
+        $branch = Branch::factory()->create();
+        AnalyticsDailyBranch::create([
+            'date' => Carbon::yesterday()->toDateString(),
+            'branch_id' => $branch->id,
+            'buy_volume_myr' => '9999.0000',
+            'computed_at' => now(),
+        ]);
+
+        $counts = app(VolumeAnomalyDetector::class)->detect(Carbon::yesterday(), 3.0);
+
+        $this->assertSame(0, $counts['evaluated']);
+        $this->assertSame(0, $counts['flagged']);
+    }
+
+    #[Test]
+    public function detect_anomalies_command_reports_counts(): void
+    {
+        /** @var PendingCommand $command */
+        $command = $this->artisan('bi:detect-anomalies', ['--date' => Carbon::yesterday()->toDateString()]);
+        $command
+            ->expectsOutputToContain('0 branch(es)')
+            ->assertSuccessful();
     }
 }
