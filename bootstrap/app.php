@@ -79,7 +79,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => Authenticate::class,
             'auth.basic' => AuthenticateWithBasicAuth::class,
-            'auth.session' => AuthenticateSession::class, // DISABLED
+            // Inert until a session carries `password_hash_` (written by
+            // LoginController::logoutOtherDevices); from then on it invalidates
+            // any session whose stored hash no longer matches the user.
+            'auth.session' => AuthenticateSession::class,
             'branch.scope' => EnsureBranchScope::class,
             'cache.headers' => SetCacheHeaders::class,
             'can' => Authorize::class,

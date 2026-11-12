@@ -78,6 +78,33 @@ class SanctionsScreeningCountersApiTest extends TestCase
     }
 
     #[Test]
+    public function sanctions_search_requires_compliance_permission(): void
+    {
+        $teller = $this->createUser(UserRole::Teller);
+        $manager = $this->createUser(UserRole::Manager);
+
+        $this->actingAs($teller)->postJson('/api/v1/sanctions/search', [
+            'name' => 'John Smith',
+        ])->assertForbidden();
+
+        $this->actingAs($manager)->postJson('/api/v1/sanctions/search', [
+            'name' => 'John Smith',
+        ])->assertForbidden();
+    }
+
+    #[Test]
+    public function sanctions_search_does_not_persist_for_unauthorised_roles(): void
+    {
+        $teller = $this->createUser(UserRole::Teller);
+
+        $this->actingAs($teller)->postJson('/api/v1/sanctions/search', [
+            'name' => 'John Smith',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('screening_results', 0);
+    }
+
+    #[Test]
     public function screening_batch_screens_multiple_customers(): void
     {
         $officer = $this->createUser(UserRole::ComplianceOfficer);
