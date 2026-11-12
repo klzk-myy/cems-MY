@@ -69,7 +69,7 @@ class TransactionPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->role === UserRole::Admin;
+        return $user->role->canPerform(Permission::DeleteRecords);
     }
 
     /**

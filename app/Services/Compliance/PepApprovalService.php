@@ -103,11 +103,15 @@ class PepApprovalService
         return DB::transaction(function () use ($customer, $transactionType) {
             Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
 
-            if (PepApprovalRequest::where('customer_id', $customer->id)
+            $existingPending = PepApprovalRequest::where('customer_id', $customer->id)
                 ->where('transaction_type', $transactionType)
                 ->where('status', ApprovalStatus::Pending->value)
-                ->exists()) {
-                throw new PepApprovalRequiredException('Pending approval already exists for this customer and transaction type');
+                ->first();
+
+            if ($existingPending) {
+                throw new PepApprovalRequiredException(
+                    "Pending approval already exists for this customer and transaction type. Approval ID: {$existingPending->id}"
+                );
             }
 
             return PepApprovalRequest::create([

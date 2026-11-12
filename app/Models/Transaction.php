@@ -245,14 +245,23 @@ class Transaction extends TransactionModel
         ];
     }
 
+    /**
+     * Statuses that count as "open" (not yet finalized).
+     *
+     * Active: PendingApproval, PendingCancellation.
+     * Legacy: Draft, Pending, OnHold — no code path creates them, but
+     * historical rows must still be treated as open rather than silently
+     * dropped from open queues.
+     */
     protected function openStatusValues(): array
     {
         return [
-            TransactionStatus::Draft->value,
             TransactionStatus::PendingApproval->value,
+            TransactionStatus::PendingCancellation->value,
+            // Legacy states, retained for historical rows only.
+            TransactionStatus::Draft->value,
             TransactionStatus::Pending->value,
             TransactionStatus::OnHold->value,
-            TransactionStatus::PendingCancellation->value,
         ];
     }
 

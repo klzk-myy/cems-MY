@@ -326,7 +326,7 @@ class LedgerService
 
             foreach ($revenues as $revenue) {
                 $net = $allBalances->get($revenue->account_code, '0');
-                $balance = $this->mathService->multiply($net, '-1'); // credits - debits
+                $balance = AccountType::Revenue->applyNaturalSign($net); // credits - debits
                 $revenueData[] = [
                     'account_code' => $revenue->account_code,
                     'account_name' => $revenue->account_name,
@@ -435,9 +435,9 @@ class LedgerService
 
             // Debit-normal sections report the raw net; credit-normal sections
             // flip the sign so credit balances show as positive.
-            [$assetData, $totalAssets] = $this->sectionTotals($assets, $allBalances, '1');
-            [$liabilityData, $totalLiabilities] = $this->sectionTotals($liabilities, $allBalances, '-1');
-            [$equityData, $totalEquity] = $this->sectionTotals($equities, $allBalances, '-1');
+            [$assetData, $totalAssets] = $this->sectionTotals($assets, $allBalances, AccountType::Asset);
+            [$liabilityData, $totalLiabilities] = $this->sectionTotals($liabilities, $allBalances, AccountType::Liability);
+            [$equityData, $totalEquity] = $this->sectionTotals($equities, $allBalances, AccountType::Equity);
 
             // Unclosed revenue/expense balances are the period's net income and
             // belong in equity — without them the sheet is off by exactly that
@@ -447,7 +447,7 @@ class LedgerService
             foreach (ChartOfAccount::whereIn('account_type', ['Revenue', 'Expense'])->get(['account_code']) as $plAccount) {
                 $netIncome = $this->mathService->add($netIncome, $allBalances->get($plAccount->account_code, '0'));
             }
-            $netIncome = $this->mathService->multiply($netIncome, '-1');
+            $netIncome = AccountType::Equity->applyNaturalSign($netIncome);
 
             $equityData[] = [
                 'account_code' => '',
@@ -484,17 +484,13 @@ class LedgerService
      * @param  \Illuminate\Support\Collection<string, string>  $balances
      * @return array{0: array<int, array{account_code: string, account_name: string, balance: string, amount_myr: string}>, 1: string}
      */
-    private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, string $sign): array
+    private function sectionTotals(\Illuminate\Support\Collection $accounts, \Illuminate\Support\Collection $balances, AccountType $type): array
     {
         $rows = [];
         $total = '0';
 
         foreach ($accounts as $account) {
-            $balance = $balances->get($account->account_code, '0');
-
-            if ($sign === '-1') {
-                $balance = $this->mathService->multiply($balance, '-1');
-            }
+            $balance = $type->applyNaturalSign($balances->get($account->account_code, '0'));
 
             $rows[] = [
                 'account_code' => $account->account_code,

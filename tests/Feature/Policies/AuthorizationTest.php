@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Policies;
 
+use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\Counter;
 use App\Models\Customer;
 use App\Models\JournalEntry;
+use App\Models\RolePermission;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Policies\BranchPolicy;
@@ -157,6 +159,22 @@ class AuthorizationTest extends TestCase
         $manager = User::factory()->create(['role' => UserRole::Manager]);
 
         $this->assertFalse($policy->delete($manager));
+    }
+
+    #[Test]
+    public function transaction_policy_honours_a_matrix_delete_grant_for_a_non_admin(): void
+    {
+        $policy = app(TransactionPolicy::class);
+        $manager = User::factory()->create(['role' => UserRole::Manager]);
+
+        // The grant is a matrix row, not an identity check: a non-admin role can
+        // be given the capability and can have it revoked.
+        RolePermission::updateOrCreate(
+            ['role' => UserRole::Manager->value, 'permission' => Permission::DeleteRecords->value],
+            ['granted' => true],
+        );
+
+        $this->assertTrue($policy->delete($manager));
     }
 
     // ─── Customer Policy ──────────────────────────────────────────────

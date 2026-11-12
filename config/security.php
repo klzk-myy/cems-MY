@@ -183,7 +183,7 @@ return [
     */
 
     'password' => [
-        'min_length' => (int) env('SECURITY_PASSWORD_MIN_LENGTH', 8),
+        'min_length' => (int) env('SECURITY_PASSWORD_MIN_LENGTH', 12),
         // bcrypt silently truncates input at 72 bytes, so anything longer is
         // rejected: the effective secret must always be the whole password.
         'max_bytes' => (int) env('SECURITY_PASSWORD_MAX_BYTES', 72),

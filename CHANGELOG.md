@@ -5,7 +5,69 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Cleanup: account-balance nullability, locking-read comment
+## [2026-11-12] - Round 7: delete permission, HMAC key separation, blind-index versioning, policy floor
+
+### Files Changed
+- `app/Enums/Permission.php` — new `delete_records` permission
+- `app/Policies/{TransactionPolicy,JournalEntryPolicy,CounterPolicy}.php` — matrix-driven delete
+- `app/Services/System/EncryptionService.php` — dedicated HKDF hash subkey; `legacyHash()` / `legacyBlindIndex()`
+- `app/Services/Customer/CustomerService.php`, `app/Repositories/CustomerRepository.php` — versioned blind-index lookups
+- `app/Console/Commands/ReEncryptCustomers.php` — legacy ciphertext inventory
+- `database/factories/TransactionFactory.php` — deterministic currency, `till_id = null`
+- `config/security.php`, `app/Rules/PasswordComplexityRule.php`, `.env.example`, `README.md` — 12-character floor
+- `app/Enums/AccountType.php`, `app/Services/Accounting/LedgerService.php` — shared `applyNaturalSign()`
+- `app/Services/Compliance/PepApprovalService.php` — duplicate-request message carries the approval ID
+- `app/Models/Transaction.php` — documented active vs legacy open statuses
+- Tests: `AuthorizationTest`, `CustomerBlindIndexTest`, `TransactionCreatedListenerTest`, `PasswordPolicyTest`
+
+### Purpose
+Close the remaining audit findings: hardcoded delete grants, HMAC key reuse
+with no migration path, an unobserved legacy-ciphertext inventory, flaky
+factory fields, a documented 8-character password floor, and hand-derived
+balance-sign rules.
+
+### Changes Made
+- **Delete permission.** `delete_records` joins the matrix; the transaction,
+  journal-entry and counter policies now use it, so a non-admin role can be
+  granted (or admin revoked) through `/admin/role-permissions`.
+- **HMAC key separation, deployable.** `hash()`/`blindIndex()` use a dedicated
+  HKDF `encryption-hash` subkey; `legacyHash()`/`legacyBlindIndex()` keep the
+  old derivation. Lookups try both, so existing blind indexes resolve until
+  `customers:re-encrypt` upgrades them. `hash_uses_a_dedicated_subkey…` and
+  legacy-lookup tests cover it.
+- **Legacy ciphertext observable.** `decryptLegacy()` logs each read, and the
+  re-encrypt command now reports how many legacy rows remain.
+- **Factory determinism.** `currency_code` picks the alphabetically-first
+  currency instead of a random one; `till_id` is null (drawer-less), matching
+  what the booking service produces.
+- **Password floor 12.** Config, rule fallback, `.env.example` and the README
+  updated together.
+- **Shared sign helper.** `AccountType::applyNaturalSign()` replaces the
+  hand-derived `multiply($net, '-1')` flips in the P&L, balance-sheet sections
+  and net-income line.
+- **PEP duplicate message** now carries the existing approval ID.
+- **Open statuses documented** — active vs legacy, so historical rows stay open
+  without implying the legacy states are reachable.
+
+### Testing
+- `php artisan test --compact` (full suite) — 2834 passed, 3 skipped
+- `php artisan test --compact tests/Unit/CustomerBlindIndexTest.php tests/Unit/Repositories/CustomerRepositoryTest.php tests/Feature/ReEncryptCustomersCommandTest.php` — 22 passed
+- `php artisan test --compact tests/Feature/Policies/AuthorizationTest.php` — 64 passed
+- `php artisan test --compact tests/Unit/Listeners/TransactionCreatedListenerTest.php` — 2 passed
+- `php artisan test --compact --filter=Password` — 44 passed
+- `vendor/bin/phpstan analyse` — no errors
+- `vendor/bin/pint --dirty --format agent` — passed
+
+### Impact Analysis
+- `delete_records` defaults to admin only (admin receives every case from the
+  matrix); existing identity checks are gone, so a revoked admin loses delete.
+- The blind-index change is backward compatible by construction: writes use the
+  new derivation, reads accept both. `customers:re-encrypt` upgrades the rest.
+- The password floor is a policy change: accounts created before the bump keep
+  their passwords until rotation.
+
+---
+
 
 ### Files Changed
 - `app/Services/Accounting/LedgerService.php` — `getAccountBalance()` accepts a nullable date

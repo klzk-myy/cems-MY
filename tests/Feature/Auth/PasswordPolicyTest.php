@@ -219,7 +219,7 @@ class PasswordPolicyTest extends TestCase
     public function minimum_length_counts_characters_not_bytes(): void
     {
         // 7 characters but 10 bytes — ä, ß and ö are multibyte. A byte
-        // count would have let this through the 8-character floor.
+        // count would have let this through the 12-character floor.
         $validator = Validator::make(
             ['password' => 'Päßwö1!'],
             ['password' => [new PasswordComplexityRule]],
@@ -227,7 +227,7 @@ class PasswordPolicyTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertStringContainsString(
-            'at least 8 characters',
+            'at least 12 characters',
             $validator->errors()->first('password')
         );
     }

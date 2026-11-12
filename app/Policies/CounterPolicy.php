@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Enums\UserRole;
 use App\Models\Counter;
 use App\Models\User;
 
@@ -55,6 +54,6 @@ class CounterPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->role === UserRole::Admin;
+        return $user->role->canPerform(Permission::DeleteRecords);
     }
 }

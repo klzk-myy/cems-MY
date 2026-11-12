@@ -140,4 +140,36 @@ class CustomerBlindIndexTest extends TestCase
         $this->assertSame(CustomerService::computeBlindIndex('OTHER222'), $second->id_number_hash);
         $this->assertSame($first->id, $service->findByIdNumber('SHARED111')?->id);
     }
+
+    #[Test]
+    public function blind_index_variants_cover_current_and_legacy_derivations(): void
+    {
+        $variants = CustomerService::computeBlindIndexVariants('A123456');
+
+        $this->assertNotSame($variants[0], $variants[1]);
+        $this->assertSame(CustomerService::computeBlindIndex('A123456'), $variants[0]);
+        $this->assertSame(EncryptionService::legacyBlindIndex('A123456'), $variants[1]);
+    }
+
+    #[Test]
+    public function lookup_resolves_a_row_written_with_the_legacy_derivation(): void
+    {
+        $idNumber = 'A987654';
+        $customer = Customer::factory()->create([
+            'id_number_hash' => EncryptionService::legacyBlindIndex($idNumber),
+        ]);
+
+        $service = app(CustomerService::class);
+
+        $this->assertSame($customer->id, $service->findByIdNumber($idNumber)?->id);
+        $this->assertSame($customer->id, $service->findActiveByIdNumber($idNumber)?->id);
+    }
+
+    #[Test]
+    public function hash_uses_a_dedicated_subkey_not_the_encryption_key(): void
+    {
+        $service = app(EncryptionService::class);
+
+        $this->assertNotSame($service->hash('payload'), $service->legacyHash('payload'));
+    }
 }
