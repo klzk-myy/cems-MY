@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <x-page-header
             title="Customer Analytics"
-            description="Active and new customers per month; top accounts by volume"
+            description="Concentration, repeat rate, lifetime value, cohort retention and top accounts"
         />
 
         @include('bi.partials.nav')
@@ -27,6 +27,13 @@
                 @if($canSeeAllBranches && $branchId)<input type="hidden" name="branch_id" value="{{ $branchId }}">@endif
                 <x-button variant="secondary" size="sm" type="submit">Export CSV</x-button>
             </form>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-stat-card label="Top-10 Concentration" :value="number_format((float) $analytics['concentration_top10_pct'], 2) . '%'" color="blue" />
+            <x-stat-card label="Repeat Rate" :value="number_format((float) $analytics['repeat_rate_pct'], 2) . '%'" color="green" />
+            <x-stat-card label="Avg Txns / Active" :value="number_format((float) $analytics['avg_txn_per_active'], 2)" color="purple" />
+            <x-stat-card label="Avg Lifetime Value" :value="'RM ' . number_format((float) $analytics['avg_ltv_myr'], 2)" color="yellow" />
         </div>
 
         <x-card title="Active Customers" description="Monthly distinct customers, split new vs returning">
@@ -64,6 +71,33 @@
                 @empty
                     <tr>
                         <td colspan="6" class="px-4 py-6 text-sm text-center text-ink-muted">No customer activity in this period.</td>
+                    </tr>
+                @endforelse
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
+
+        <x-card title="Cohort Retention" description="Customers grouped by the month of their first transaction, then counted active in each later month">
+            <x-table>
+                <x-slot:thead>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Cohort</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Size</th>
+                    @foreach(($analytics['cohorts'][0]['cells'] ?? []) as $cell)
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">{{ \Carbon\Carbon::parse($cell['month'].'-01')->format('M Y') }}</th>
+                    @endforeach
+                </x-slot:thead>
+                <x-slot:tbody>
+                @forelse($analytics['cohorts'] as $cohort)
+                    <tr>
+                        <td class="px-4 py-3 text-sm font-medium text-ink dark:text-ink-dark">{{ \Carbon\Carbon::parse($cohort['cohort_month'].'-01')->format('M Y') }}</td>
+                        <td class="px-4 py-3 text-sm text-right text-ink dark:text-ink-dark">{{ number_format($cohort['cohort_size']) }}</td>
+                        @foreach($cohort['cells'] as $cell)
+                            <td class="px-4 py-3 text-sm text-right text-ink dark:text-ink-dark">{{ $cell['active'] }} ({{ $cell['pct'] }}%)</td>
+                        @endforeach
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="px-4 py-6 text-sm text-center text-ink-muted">No customer cohorts in this period.</td>
                     </tr>
                 @endforelse
                 </x-slot:tbody>

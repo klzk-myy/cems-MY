@@ -44,6 +44,34 @@
             </x-card>
         </div>
 
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-stat-card label="Median Approval" :value="number_format((float) $sla['median_seconds'] / 60, 1) . ' min'" color="blue" />
+            <x-stat-card label="P90 Approval" :value="number_format((float) $sla['p90_seconds'] / 60, 1) . ' min'" color="purple" />
+            <x-stat-card label="Fastest Approval" :value="number_format((float) $sla['min_seconds']) . ' s'" color="green" />
+            <x-stat-card label="Slowest Approval" :value="number_format((float) $sla['max_seconds'] / 60, 1) . ' min'" color="red" />
+        </div>
+
+        <x-card title="Pending Approval Backlog" description="Transactions awaiting approval right now, bucketed by age">
+            <x-table>
+                <x-slot:thead>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Age Bucket</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Pending</th>
+                </x-slot:thead>
+                <x-slot:tbody>
+                @forelse($sla['backlog'] as $bucket)
+                    <tr>
+                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $bucket['bucket'] }}</td>
+                        <td class="px-4 py-3 text-sm text-right font-medium text-ink dark:text-ink-dark">{{ number_format($bucket['count']) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="2" class="px-4 py-6 text-sm text-center text-ink-muted">No pending transactions.</td>
+                    </tr>
+                @endforelse
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
+
         <x-card title="Teller Productivity" description="Ordered by period volume; approval time measures the teller's own transactions">
             <x-table>
                 <x-slot:thead>
@@ -72,6 +100,26 @@
                 @empty
                     <tr>
                         <td colspan="7" class="px-4 py-6 text-sm text-center text-ink-muted">No teller activity in this period.</td>
+                    </tr>
+                @endforelse
+                </x-slot:tbody>
+            </x-table>
+        </x-card>
+        <x-card title="Approver Workload" description="Approved transactions in the period, by approver">
+            <x-table>
+                <x-slot:thead>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-ink-muted uppercase">Approver</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-ink-muted uppercase">Approved</th>
+                </x-slot:thead>
+                <x-slot:tbody>
+                @forelse($sla['approvers'] as $approver)
+                    <tr>
+                        <td class="px-4 py-3 text-sm text-ink dark:text-ink-dark">{{ $approver['approver_name'] }}</td>
+                        <td class="px-4 py-3 text-sm text-right text-ink dark:text-ink-dark">{{ number_format($approver['approved_count']) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="2" class="px-4 py-6 text-sm text-center text-ink-muted">No approvals in this period.</td>
                     </tr>
                 @endforelse
                 </x-slot:tbody>

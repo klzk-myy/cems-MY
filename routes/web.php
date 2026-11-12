@@ -545,6 +545,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/', [BiDashboardController::class, 'index'])->name('dashboard');
         Route::get('/branches', [BiAnalyticsController::class, 'branches'])->name('branches');
         Route::get('/currencies', [BiAnalyticsController::class, 'currencies'])->name('currencies');
+        Route::get('/rates', [BiAnalyticsController::class, 'rates'])->name('rates');
         Route::get('/operations', [BiAnalyticsController::class, 'operations'])->name('operations');
         Route::get('/customers', [BiAnalyticsController::class, 'customers'])->name('customers');
         Route::get('/forecast', [BiAnalyticsController::class, 'forecast'])->name('forecast');

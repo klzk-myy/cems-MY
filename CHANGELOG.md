@@ -5,6 +5,42 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 11: BI analytics gap closure
+
+### Files Changed
+- `app/Services/Bi/KpiService.php` — new `rateAnalytics()`/`dailySpread()`/`rateDeviation()`, `customerAnalytics()`/`customerCohorts()`, `approvalSla()`/`percentile()`
+- `app/Http/Controllers/Bi/AnalyticsController.php` — new `rates()` action; `customers()` and `operations()` pass the new analytics
+- `app/Services/Bi/VolumeAnomalyDetector.php` — new rolling-baseline anomaly detector
+- `app/Console/Commands/DetectBiVolumeAnomalies.php` — new `bi:detect-anomalies` command
+- `bootstrap/app.php` — schedule the anomaly check at 03:05
+- `routes/web.php`, `resources/views/bi/partials/nav.blade.php` — `/bi/rates` route and nav link
+- `resources/views/bi/rates.blade.php` — new page
+- `resources/views/bi/customers.blade.php`, `resources/views/bi/operations.blade.php` — new sections
+- `tests/Feature/BiPagesTest.php`, `tests/Feature/BiDeliveryTest.php` — coverage
+
+### Purpose
+Close the gaps found by the BI gap analysis against `BI-PLAN.md`. Phase 3 lists six report pages; the **rate analytics** page was missing entirely. The **customer analytics** page carried only an active/new trend and a top-accounts table, and the **approval SLA** surface stopped at an average turnaround. Phase 5's **volume anomaly flags** had no implementation.
+
+### Changes Made
+- **Rate analytics** (`/bi/rates`): daily volume-weighted spread (sell rate − buy rate) and override frequency from the rollups, plus per-currency deviation of the transacted rate from the market mid. Deviation reads `transactions.rate`/`base_rate` because the rollups never carried the board rate; all money math stays in `MathService`.
+- **Customer analytics**: top-10 concentration, repeat rate, average transactions per active customer, average lifetime value, and a cohort retention matrix. Cohorts are grouped by first-ever rollup month over all history, so a long-standing customer is never mislabelled "new".
+- **Approval SLA**: median / P90 / min / max turnaround (nearest-rank percentile over per-transaction seconds — the rollup total cannot yield a distribution), the live pending-approval backlog bucketed 0-1h / 1-4h / 4-24h / over 24h, and per-approver workload.
+- **Volume anomaly detection**: `VolumeAnomalyDetector` scores each active branch's latest day against the mean and variance of its preceding 90 days. The comparison uses squared deviations, so no square root is needed and a flat baseline (zero variance) can never flag; branches with fewer than 14 baseline days are skipped. Breaches raise a `bi_volume_anomaly` SystemAlert — distinct from the AML monitors, since this is ops.
+
+### Testing
+- `php artisan test --compact` — 2849 passed, 3 skipped, 0 failed
+- BI suites (`BiPagesTest`, `BiDeliveryTest`, `BiDashboardTest`, `BiForecastTest`, `AnalyticsSnapshotBuilderTest`) — 51 passed
+- New tests cover the rates page (spread/deviation rendering, branch scoping), the customer analytics page, the operations SLA sections, and the anomaly detector (surge flags, insufficient baseline skipped, command output)
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed paths — no errors
+- `npm run build` — required because `CompiledAssetsTest` asserts `public/build` is newer than `resources/views`
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 18 changed symbols, 24 affected processes, risk **critical**. The rating comes from `KpiService` being the hub of every BI page; the diff is purely additive (696 insertions, 3 deletions — the deletions are import reordering), and every affected page's existing tests still pass.
+- The new command is scheduled `withoutOverlapping()` and `onOneServer()`, matching the other BI jobs.
+
+---
+
 ## [2026-11-12] - Round 10: input component double-escaping
 
 ### Files Changed

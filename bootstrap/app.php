@@ -569,6 +569,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/bi-forecast.log'));
+
+        // Volume anomaly flags - each branch's latest day is scored against
+        // its own 90-day baseline, so an unusual trading day is raised as an
+        // ops alert without anyone watching a dashboard.
+        $schedule->command('bi:detect-anomalies')
+            ->dailyAt('03:05')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/bi-anomalies.log'));
     })
 
     // Disable framework event auto-discovery: Application::configure() co-registers

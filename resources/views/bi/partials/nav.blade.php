@@ -3,6 +3,7 @@ $biLinks = [
     ['route' => 'bi.dashboard', 'label' => 'Dashboard'],
     ['route' => 'bi.branches', 'label' => 'Branches'],
     ['route' => 'bi.currencies', 'label' => 'Currencies'],
+    ['route' => 'bi.rates', 'label' => 'Rates'],
     ['route' => 'bi.operations', 'label' => 'Operations'],
     ['route' => 'bi.customers', 'label' => 'Customers'],
     ['route' => 'bi.forecast', 'label' => 'Forecast'],

@@ -7,8 +7,10 @@ use App\Models\Bi\AnalyticsDailyCurrency;
 use App\Models\Bi\AnalyticsDailyTeller;
 use App\Models\Bi\AnalyticsMonthlyCustomer;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Services\System\MathService;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -319,6 +321,141 @@ class KpiService
     }
 
     /**
+     * Rate analytics: daily spread capture and override frequency from the
+     * rollups, plus the per-currency deviation of the transacted rate from
+     * the market mid. Deviation reads the transaction rows because the
+     * rollups never carried `base_rate`.
+     *
+     * @param  string|null  $currencyCode  Restrict the daily series to one currency.
+     * @return array{labels: array<int, string>, spread: array<int, string>, overrides: array<int, int>, override_rate_pct: array<int, string>, currencies: array<int, array<string, mixed>>}
+     */
+    public function rateAnalytics(Carbon $from, Carbon $to, ?int $branchId, ?string $currencyCode = null): array
+    {
+        $spreadRows = AnalyticsDailyCurrency::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->when($currencyCode, fn ($query) => $query->where('currency_code', $currencyCode))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(avg_buy_rate * buy_volume_myr) as buy_value')
+            ->selectRaw('SUM(buy_volume_myr) as buy_volume')
+            ->selectRaw('SUM(avg_sell_rate * sell_volume_myr) as sell_value')
+            ->selectRaw('SUM(sell_volume_myr) as sell_volume')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $overrideRows = AnalyticsDailyBranch::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(rate_override_count) as overrides')
+            ->selectRaw('SUM(tx_count) as tx_count')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $labels = $spread = $overrides = $overrideRate = [];
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $key = $day->toDateString();
+            $spreadRow = $spreadRows->get($key);
+            $overrideRow = $overrideRows->get($key);
+
+            $labels[] = $day->format('M j');
+            $spread[] = $this->dailySpread($spreadRow);
+            $overrides[] = (int) ($overrideRow->overrides ?? 0);
+            $overrideRate[] = $overrideRow === null
+                ? '0'
+                : $this->mathService->multiply(
+                    $this->mathService->safeDivide((string) $overrideRow->overrides, (string) $overrideRow->tx_count, 6),
+                    '100', 4
+                );
+        }
+
+        return [
+            'labels' => $labels,
+            'spread' => $spread,
+            'overrides' => $overrides,
+            'override_rate_pct' => $overrideRate,
+            'currencies' => $this->rateDeviation($from, $to, $branchId),
+        ];
+    }
+
+    /**
+     * Volume-weighted buy/sell spread for one day's currency rollup rows.
+     * Zero when either side had no volume — a spread across a one-sided
+     * day is not meaningful.
+     */
+    protected function dailySpread(?\stdClass $row): string
+    {
+        if ($row === null) {
+            return '0';
+        }
+
+        $buyVolume = (string) $row->buy_volume;
+        $sellVolume = (string) $row->sell_volume;
+
+        if ($this->mathService->compare($buyVolume, '0') <= 0
+            || $this->mathService->compare($sellVolume, '0') <= 0) {
+            return '0';
+        }
+
+        $avgBuy = $this->mathService->safeDivide((string) $row->buy_value, $buyVolume, 8);
+        $avgSell = $this->mathService->safeDivide((string) $row->sell_value, $sellVolume, 8);
+
+        return $this->mathService->subtract($avgSell, $avgBuy);
+    }
+
+    /**
+     * Per-currency deviation of the transacted rate from the market mid
+     * (`base_rate`) over completed transactions in the period.
+     *
+     * @return array<int, array{currency_code: string, tx_count: int, avg_rate: string, avg_base_rate: string, deviation_pct: string, override_count: int}>
+     */
+    protected function rateDeviation(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        return Transaction::query()
+            ->completed()
+            ->forDateRange($from->toDateString(), $to->toDateString())
+            ->forBranch($branchId)
+            ->whereNotNull('base_rate')
+            ->groupBy('currency_code')
+            ->selectRaw('currency_code')
+            ->selectRaw('COUNT(*) as tx_count')
+            ->selectRaw('SUM(rate) as rate_total')
+            ->selectRaw('SUM(base_rate) as base_total')
+            ->selectRaw('SUM(CASE WHEN rate_override THEN 1 ELSE 0 END) as overrides')
+            ->orderBy('currency_code')
+            ->toBase()
+            ->get()
+            ->map(function ($row) {
+                $txCount = (string) $row->tx_count;
+                $avgRate = $this->mathService->safeDivide((string) $row->rate_total, $txCount, 8);
+                $avgBase = $this->mathService->safeDivide((string) $row->base_total, $txCount, 8);
+
+                return [
+                    'currency_code' => $row->currency_code,
+                    'tx_count' => (int) $row->tx_count,
+                    'avg_rate' => $avgRate,
+                    'avg_base_rate' => $avgBase,
+                    'deviation_pct' => $this->mathService->multiply(
+                        $this->mathService->safeDivide(
+                            $this->mathService->subtract($avgRate, $avgBase),
+                            $avgBase,
+                            8
+                        ),
+                        '100', 4
+                    ),
+                    'override_count' => (int) $row->overrides,
+                ];
+            })
+            ->all();
+    }
+
+    /**
      * Daily operational SLA series: average approval turnaround and
      * cancel/reject rates per day.
      *
@@ -362,6 +499,99 @@ class KpiService
             'cancel_rate_pct' => $cancelRate,
             'reject_rate_pct' => $rejectRate,
         ];
+    }
+
+    /**
+     * Approval SLA depth: turnaround distribution, the live pending-approval
+     * backlog bucketed by age, and per-approver workload. The distribution
+     * and the backlog read the transactions table — the rollups carry only
+     * the total seconds, which cannot yield percentiles or current state.
+     *
+     * @return array{median_seconds: string, p90_seconds: string, min_seconds: string, max_seconds: string, backlog: array<int, array{bucket: string, count: int}>, approvers: array<int, array{user_id: int, approver_name: string, approved_count: int}>}
+     */
+    public function approvalSla(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $seconds = Transaction::query()
+            ->whereBetween('created_at', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->whereNotNull('created_at')
+            ->whereNotNull('approved_at')
+            ->select('created_at', 'approved_at')
+            ->get()
+            ->map(fn ($row) => abs((int) $row->created_at->diffInSeconds($row->approved_at)))
+            ->sort()
+            ->values();
+
+        $count = $seconds->count();
+
+        $backlog = Transaction::query()
+            ->pendingApproval()
+            ->forBranch($branchId)
+            ->whereNotNull('created_at')
+            ->select('created_at')
+            ->get()
+            ->reduce(function (array $buckets, $row): array {
+                $age = (int) now()->diffInHours($row->created_at);
+
+                $key = match (true) {
+                    $age < 1 => '0-1h',
+                    $age < 4 => '1-4h',
+                    $age < 24 => '4-24h',
+                    default => 'over 24h',
+                };
+
+                $buckets[$key]++;
+
+                return $buckets;
+            }, ['0-1h' => 0, '1-4h' => 0, '4-24h' => 0, 'over 24h' => 0]);
+
+        $approvers = Transaction::query()
+            ->whereBetween('created_at', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->whereNotNull('approved_by')
+            ->groupBy('approved_by')
+            ->selectRaw('approved_by as user_id')
+            ->selectRaw('COUNT(*) as approved_count')
+            ->orderByDesc('approved_count')
+            ->limit(20)
+            ->toBase()
+            ->get();
+
+        $names = User::query()->whereIn('id', $approvers->pluck('user_id'))->pluck('username', 'id');
+
+        return [
+            'median_seconds' => $this->percentile($seconds, 50),
+            'p90_seconds' => $this->percentile($seconds, 90),
+            'min_seconds' => $count > 0 ? (string) $seconds->first() : '0',
+            'max_seconds' => $count > 0 ? (string) $seconds->last() : '0',
+            'backlog' => collect($backlog)
+                ->map(fn (int $bucketCount, string $bucket) => ['bucket' => $bucket, 'count' => $bucketCount])
+                ->values()
+                ->all(),
+            'approvers' => $approvers->map(fn ($row) => [
+                'user_id' => (int) $row->user_id,
+                'approver_name' => $names->get($row->user_id) ?? 'Unknown',
+                'approved_count' => (int) $row->approved_count,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * Nearest-rank percentile over a sorted collection of integers.
+     *
+     * @param  Collection<int, int<0, max>>  $sorted
+     */
+    protected function percentile(Collection $sorted, int $percentile): string
+    {
+        $count = $sorted->count();
+
+        if ($count === 0) {
+            return '0';
+        }
+
+        $index = max(0, min($count - 1, (int) ceil($percentile / 100 * $count) - 1));
+
+        return (string) $sorted->get($index);
     }
 
     /**
@@ -482,6 +712,134 @@ class KpiService
         }
 
         return ['labels' => $labels, 'active' => $activeSeries, 'new' => $newSeries];
+    }
+
+    /**
+     * Customer analytics beyond the top-accounts table: concentration,
+     * repeat rate, lifetime value, and a cohort retention matrix.
+     *
+     * @return array{concentration_top10_pct: string, repeat_rate_pct: string, avg_txn_per_active: string, avg_ltv_myr: string, cohorts: array<int, array<string, mixed>>}
+     */
+    public function customerAnalytics(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $monthFrom = $from->format('Y-m');
+        $monthTo = $to->format('Y-m');
+
+        $perCustomer = AnalyticsMonthlyCustomer::query()
+            ->whereBetween('month', [$monthFrom, $monthTo])
+            ->forBranch($branchId)
+            ->selectRaw('customer_id')
+            ->selectRaw('SUM(tx_count) as tx_count')
+            ->selectRaw('SUM(volume_myr) as volume')
+            ->groupBy('customer_id')
+            ->toBase()
+            ->get();
+
+        $totalVolume = $perCustomer->reduce(
+            fn ($carry, $row) => $this->mathService->add($carry, (string) $row->volume),
+            '0'
+        );
+
+        $top10Volume = (string) $perCustomer
+            ->sortByDesc(fn ($row) => (float) $row->volume)
+            ->take(10)
+            ->reduce(fn ($carry, $row) => $this->mathService->add($carry, (string) $row->volume), '0');
+
+        $activeCount = $perCustomer->count();
+        $repeatCount = $perCustomer->filter(fn ($row) => (int) $row->tx_count > 1)->count();
+
+        return [
+            'concentration_top10_pct' => $this->mathService->multiply(
+                $this->mathService->safeDivide($top10Volume, $totalVolume, 6),
+                '100', 2
+            ),
+            'repeat_rate_pct' => $this->mathService->multiply(
+                $this->mathService->safeDivide((string) $repeatCount, (string) $activeCount, 6),
+                '100', 2
+            ),
+            'avg_txn_per_active' => $this->mathService->safeDivide(
+                (string) $perCustomer->sum('tx_count'), (string) $activeCount, 2
+            ),
+            'avg_ltv_myr' => $this->mathService->safeDivide($totalVolume, (string) $activeCount, 2),
+            'cohorts' => $this->customerCohorts($monthFrom, $monthTo, $branchId),
+        ];
+    }
+
+    /**
+     * Cohort retention: customers grouped by the month of their first-ever
+     * rollup row, then counted active in each subsequent month. Only the
+     * cohort months inside the window are reported, so a customer who
+     * started earlier counts as returning, never as "new".
+     *
+     * @return array<int, array{cohort_month: string, cohort_size: int, cells: array<int, array{month: string, active: int, pct: string}>}>
+     */
+    protected function customerCohorts(string $monthFrom, string $monthTo, ?int $branchId): array
+    {
+        $firstMonths = DB::table('analytics_monthly_customer')
+            ->select('customer_id', DB::raw('MIN(month) as first_month'))
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->groupBy('customer_id');
+
+        $cohortSizes = DB::query()
+            ->fromSub($firstMonths, 'fm')
+            ->selectRaw('first_month as cohort_month')
+            ->selectRaw('COUNT(*) as size')
+            ->whereBetween('first_month', [$monthFrom, $monthTo])
+            ->groupBy('first_month')
+            ->pluck('size', 'cohort_month');
+
+        if ($cohortSizes->isEmpty()) {
+            return [];
+        }
+
+        $retention = DB::query()
+            ->fromSub($firstMonths, 'fm')
+            ->join('analytics_monthly_customer as amc', function ($join): void {
+                $join->on('amc.customer_id', '=', 'fm.customer_id')
+                    ->on('amc.month', '>=', 'fm.first_month');
+            })
+            ->whereBetween('fm.first_month', [$monthFrom, $monthTo])
+            ->whereBetween('amc.month', [$monthFrom, $monthTo])
+            ->when($branchId, fn ($query) => $query->where('amc.branch_id', $branchId))
+            ->selectRaw('fm.first_month as cohort_month')
+            ->selectRaw('amc.month as month')
+            ->selectRaw('COUNT(DISTINCT fm.customer_id) as active')
+            ->groupBy('fm.first_month', 'amc.month')
+            ->get()
+            ->groupBy('cohort_month');
+
+        $months = [];
+        for ($month = Carbon::parse($monthFrom.'-01'); $month->format('Y-m') <= $monthTo; $month->addMonth()) {
+            $months[] = $month->format('Y-m');
+        }
+
+        $retentionByMonth = $retention->map(
+            fn ($group) => $group->keyBy('month')
+        );
+
+        return $cohortSizes->map(function ($size, $cohortMonth) use ($months, $retentionByMonth): array {
+            $cells = [];
+
+            foreach ($months as $month) {
+                if ($month < $cohortMonth) {
+                    continue;
+                }
+
+                $match = $retentionByMonth->get($cohortMonth)?->get($month);
+                $active = $match === null ? 0 : (int) $match->active;
+
+                $cells[] = [
+                    'month' => $month,
+                    'active' => $active,
+                    'pct' => $this->mathService->multiply(
+                        $this->mathService->safeDivide((string) $active, (string) $size, 6),
+                        '100', 1
+                    ),
+                ];
+            }
+
+            return ['cohort_month' => $cohortMonth, 'cohort_size' => (int) $size, 'cells' => $cells];
+        })->values()->all();
     }
 
     /**
