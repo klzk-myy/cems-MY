@@ -5,7 +5,28 @@ All notable changes to this project are documented here. Format per
 
 ---
 
-## [2026-11-12] - Round 6: PEP scoping, day-close race lock, Sell custody, audit gap refinement
+## [2026-11-12] - Cleanup: account-balance nullability, locking-read comment
+
+### Files Changed
+- `app/Services/Accounting/LedgerService.php` — `getAccountBalance()` accepts a nullable date
+- `app/Models/BranchClosureWorkflow.php` — documented the deliberately discarded lock read
+
+### Purpose
+Two last consistency nits from the audit.
+
+### Changes Made
+- `LedgerService::getAccountBalance()` now mirrors `AccountingService` by
+  accepting `?string $asOfDate = null` (the canonical service already defaults
+  to today), so callers need not repeat `now()->toDateString()`.
+- `freezesDateForUpdate()` carries an explicit comment that the locking read's
+  boolean is deliberately discarded — the lock is the point, not the value.
+
+### Testing
+- `php artisan test --compact tests/Unit/LedgerServiceTest.php tests/Unit/LedgerServiceBalanceTest.php tests/Feature/BranchClosingWorkflowTest.php` — 48 passed
+- `vendor/bin/phpstan analyse` — no errors
+
+---
+
 
 ### Files Changed
 - `app/Services/Compliance/PepApprovalService.php`, `app/Services/Transaction/TransactionValidationService.php` — PEP approval is scoped to the transaction type

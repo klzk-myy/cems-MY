@@ -127,6 +127,9 @@ class BranchClosureWorkflow extends BaseModel
      */
     public static function freezesDateForUpdate(int $branchId, string $date): bool
     {
+        // The boolean is deliberately discarded: this locking read is what
+        // serializes the check against a concurrent settle→finalize. Do not
+        // "simplify" it to a non-locking read.
         static::where('branch_id', $branchId)->lockForUpdate()->exists();
 
         return static::freezesDate($branchId, $date);

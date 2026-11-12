@@ -543,7 +543,7 @@ class LedgerService
      * @param  int|null  $branchId  Optional branch ID to filter by
      * @return string Account balance as a string
      */
-    public function getAccountBalance(string $accountCode, string $asOfDate, ?int $branchId = null): string
+    public function getAccountBalance(string $accountCode, ?string $asOfDate = null, ?int $branchId = null): string
     {
         return $this->accountingService->getAccountBalance($accountCode, $asOfDate, $branchId);
     }
