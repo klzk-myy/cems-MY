@@ -5,6 +5,33 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 9: sanctions search authorization gate
+
+### Files Changed
+- `app/Http/Controllers/Api/V1/SanctionController.php` — `search()` now requires the `access_compliance` permission; corrected the comment that claimed a branch restriction the code never enforced
+- `bootstrap/app.php` — replaced the inaccurate `// DISABLED` comment on the `auth.session` alias with the middleware's actual activation condition
+- `tests/Feature/Api/V1/SanctionsScreeningCountersApiTest.php` — coverage for the new gate
+
+### Purpose
+`POST /api/v1/sanctions/search` was the only API v1 route with no authorization at either layer (no `role:` middleware, no in-controller check). Any authenticated token — teller, manager, accountant — could invoke a compliance screening operation. Because `CustomerScreeningService::screenName()` defaults to `persist: true`, each call also wrote a `screening_results` row, so the open route was a write path as well as a read. The web equivalent (`compliance/sanctions/*`) is gated behind `role:access_compliance`.
+
+### Changes Made
+- Added the `RequiresPermission` trait to `SanctionController` and called `requirePermission(Permission::AccessCompliance)` at the top of `search()`, matching the web surface.
+- Replaced the misleading "Non-admin users can only access sanctions data for their branch context" comment — the block only logged, it did not restrict — with the permission gate; the audit log for branch users is retained.
+- Documented that `AuthenticateSession` is inert until a session carries `password_hash_` (written by `LoginController::logoutOtherDevices`), rather than claiming it is disabled while the middleware is applied in `routes/auth.php` and `routes/web.php`.
+
+### Testing
+- `php artisan test --compact tests/Feature/Api/V1/SanctionsScreeningCountersApiTest.php` — 15 passed (25 assertions)
+- New tests: `sanctions_search_requires_compliance_permission` (teller and manager receive 403), `sanctions_search_does_not_persist_for_unauthorised_roles` (no `screening_results` row written on rejection)
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed files — no errors
+
+### Impact Analysis
+- GitNexus `impact` on `SanctionController::search` (upstream): risk LOW, 1 direct caller (`routes/api_v1.php`), epistemic exact, no affected processes
+- GitNexus `detect_changes` (scope all): 8 changed symbols, 0 affected processes, risk low
+
+---
+
 ## [2026-11-12] - Round 8: branch consistency, PBKDF2 singleton, actor capture
 
 ### Files Changed
