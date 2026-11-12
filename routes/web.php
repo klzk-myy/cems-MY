@@ -549,6 +549,7 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/operations', [BiAnalyticsController::class, 'operations'])->name('operations');
         Route::get('/customers', [BiAnalyticsController::class, 'customers'])->name('customers');
         Route::get('/forecast', [BiAnalyticsController::class, 'forecast'])->name('forecast');
+        Route::get('/stock', [BiAnalyticsController::class, 'stock'])->name('stock');
         Route::post('/export', [BiExportController::class, 'store'])->name('export');
         Route::get('/alerts', [BiAlertRuleController::class, 'index'])->name('alerts');
         Route::post('/alerts', [BiAlertRuleController::class, 'store'])

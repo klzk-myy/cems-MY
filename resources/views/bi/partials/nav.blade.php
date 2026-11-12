@@ -7,6 +7,7 @@ $biLinks = [
     ['route' => 'bi.operations', 'label' => 'Operations'],
     ['route' => 'bi.customers', 'label' => 'Customers'],
     ['route' => 'bi.forecast', 'label' => 'Forecast'],
+    ['route' => 'bi.stock', 'label' => 'Stock & Risk'],
     ['route' => 'bi.alerts', 'label' => 'Alerts'],
 ];
 @endphp

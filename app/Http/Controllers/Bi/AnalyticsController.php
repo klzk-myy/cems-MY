@@ -181,6 +181,33 @@ class AnalyticsController extends Controller
     }
 
     /**
+     * Stock and risk: position exposure, limit utilization, turnover and
+     * days-of-stock, plus the read-only compliance snapshot.
+     */
+    public function stock(Request $request): View
+    {
+        $this->requirePermission(Permission::ViewBiDashboard);
+        $this->refreshTodaysRollups($this->snapshotBuilder);
+        [$from, $to] = $this->resolveBiPeriod($request);
+
+        $user = auth()->user();
+        $branchId = $this->resolveReportBranchId($user, $request);
+
+        $analytics = $this->kpiService->stockAndCompliance($from, $to, $branchId);
+
+        return view('bi.stock', [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'rows' => $analytics['positions'],
+            'totals' => $analytics['totals'],
+            'compliance' => $analytics['compliance'],
+            'branchId' => $branchId,
+            'canSeeAllBranches' => $user->role->canManageAllBranches(),
+            'branches' => $this->branchSelectOptions($user),
+        ]);
+    }
+
+    /**
      * Operational SLA: approval turnaround, cancel/reject rates, and
      * per-teller productivity.
      */
