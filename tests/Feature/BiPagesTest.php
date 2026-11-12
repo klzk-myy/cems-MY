@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Models\Branch;
+use App\Models\Currency;
+use App\Models\CurrencyPosition;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\User;
@@ -57,12 +59,12 @@ class BiPagesTest extends TestCase
     #[Test]
     public function bi_report_pages_require_authentication_and_permission(): void
     {
-        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers'] as $route) {
+        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers', 'bi.stock'] as $route) {
             $this->get(route($route))->assertRedirect();
         }
 
         $teller = User::factory()->teller()->create();
-        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers'] as $route) {
+        foreach (['bi.branches', 'bi.currencies', 'bi.rates', 'bi.operations', 'bi.customers', 'bi.stock'] as $route) {
             $this->actingAs($teller)->get(route($route))->assertForbidden();
         }
     }
@@ -285,6 +287,39 @@ class BiPagesTest extends TestCase
             ->assertSee('Cohort Retention')
             ->assertSee('Aug 2026')
             ->assertSee('Sep 2026');
+    }
+
+    #[Test]
+    public function stock_page_shows_position_exposure_and_compliance(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $branch = Branch::factory()->create();
+
+        Currency::factory()->create(['code' => 'USD', 'name' => 'US Dollar', 'is_active' => true]);
+        CurrencyPosition::factory()->create([
+            'currency_code' => 'USD',
+            'branch_id' => $branch->id,
+            'quantity' => '1000.0000',
+            'current_rate' => '4.20000000',
+            'current_value' => '4200.0000',
+            'unrealized_gain_loss' => '200.0000',
+        ]);
+
+        $this->makeTransaction([
+            'branch_id' => $branch->id,
+            'currency_code' => 'USD',
+            'amount_myr' => '500.0000',
+            'created_at' => today(),
+        ]);
+        $this->rebuild(today()->toDateString(), today()->toDateString());
+
+        $this->actingAs($admin)
+            ->get(route('bi.stock'))
+            ->assertOk()
+            ->assertSee('Position Exposure')
+            ->assertSee('Compliance Snapshot')
+            ->assertSee('US Dollar')
+            ->assertSee('4,200.00');
     }
 
     #[Test]

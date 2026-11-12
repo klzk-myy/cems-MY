@@ -5,6 +5,38 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-12] - Round 12: BI dashboard drill-downs, sparklines and stock KPIs
+
+### Files Changed
+- `resources/views/components/stat-card.blade.php` — new `href` (drill-down) and `sparkline` props
+- `resources/views/components/sparkline.blade.php` — new pure-SVG sparkline component
+- `app/Services/Bi/KpiService.php` — new `cardSparklines()` and `stockAndCompliance()`; `ThresholdService` injected
+- `app/Http/Controllers/Bi/DashboardController.php` — passes sparkline series and the per-card drill routes
+- `app/Http/Controllers/Bi/AnalyticsController.php` — new `stock()` action
+- `resources/views/bi/dashboard.blade.php`, `resources/views/bi/stock.blade.php`, `resources/views/bi/partials/nav.blade.php`, `routes/web.php` — view, new page, nav link, route
+- `tests/Feature/BiDashboardTest.php`, `tests/Feature/BiPagesTest.php` — coverage
+
+### Purpose
+Close the remaining `BI-PLAN.md` presentation items and the rest of the KPI catalog. The plan specifies each dashboard card as "value + delta vs prior period + sparkline. Each card links to its `drill_route`" (`BI-PLAN.md:160-161`) — the cards had the first two and neither of the last two. The KPI catalog (`:135-150`) also lists unrealized position P&L, stock KPIs (value vs limit, turnover, days-of-stock) and compliance KPIs (flagged rate, open alerts, STR count); none were surfaced.
+
+### Changes Made
+- **Dashboard drill-downs** — every KPI card now links to the page carrying its detail view, carrying the current `start_date`/`end_date`/`branch_id` filters. Branch-scoped viewers get the same links; the target pages re-apply their own scope.
+- **Sparklines** — `KpiService::cardSparklines()` builds one daily series per card metric (volume, margin, transactions, customers, ticket, cancel rate, turnaround) from the branch and currency rollups, and a pure-SVG `x-sparkline` renders it. No JS, so the strict CSP is untouched and nothing needs rebuilding beyond the normal Vite pass.
+- **Stock & Risk page** (`/bi/stock`) — position exposure with limit utilization (reusing `ThresholdService::getPositionLimits()`), turnover ratio and days-of-stock derived from the period's currency rollup, unrealized P&L, and the read-only compliance snapshot (completed transactions, flagged count and rate, open alerts, open flags, STR reports). Detailed AML work stays on the compliance pages.
+
+### Testing
+- `php artisan test --compact` — 2851 passed, 3 skipped, 0 failed
+- New tests: dashboard cards render sparklines and drill-down links; the stock page renders exposure, valuation and the compliance snapshot; `bi.stock` joins the authentication and permission matrix
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed paths — no errors
+- `npm run build` — required because `CompiledAssetsTest` asserts `public/build` is newer than `resources/views`
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 11 changed symbols, 12 affected processes, risk **high**. The rating is driven by `KpiService` — its constructor gained a `ThresholdService` dependency — and by the dashboard controller index, which every BI page's navigation depends on. The constructor change is container-resolved and no call site constructs `KpiService` manually (only `app(KpiService::class)` in tests); every BI test and the full suite pass.
+- `x-stat-card` is used outside BI too; the new props default to `null`, so existing usages render exactly as before (verified by the unchanged passing suites that use it).
+
+---
+
 ## [2026-11-12] - Round 11: BI analytics gap closure
 
 ### Files Changed

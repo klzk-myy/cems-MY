@@ -6,9 +6,14 @@ use App\Models\Bi\AnalyticsDailyBranch;
 use App\Models\Bi\AnalyticsDailyCurrency;
 use App\Models\Bi\AnalyticsDailyTeller;
 use App\Models\Bi\AnalyticsMonthlyCustomer;
+use App\Models\Compliance\Alert;
+use App\Models\Compliance\FlaggedTransaction;
+use App\Models\Compliance\StrReport;
+use App\Models\CurrencyPosition;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\System\MathService;
+use App\Services\ThresholdService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +28,7 @@ class KpiService
 {
     public function __construct(
         protected MathService $mathService,
+        protected ThresholdService $thresholdService,
     ) {}
 
     /**
@@ -65,6 +71,79 @@ class KpiService
             'avg_approval_seconds' => $this->deltaCard($current['avg_approval_seconds'], $prior['avg_approval_seconds']),
             'rate_override_count' => $this->deltaCard($current['rate_override_count'], $prior['rate_override_count'], cast: 'int'),
         ];
+    }
+
+    /**
+     * Daily series for each dashboard card, used to render sparklines.
+     * Volume, ticket, cancel rate and turnaround come from the branch
+     * rollup; margin needs the currency rollup.
+     *
+     * @return array<string, array<int, int|float>>
+     */
+    public function cardSparklines(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $branchRows = AnalyticsDailyBranch::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(buy_volume_myr + sell_volume_myr) as volume')
+            ->selectRaw('SUM(completed_count) as completed')
+            ->selectRaw('SUM(tx_count) as tx_count')
+            ->selectRaw('SUM(cancelled_count) as cancelled')
+            ->selectRaw('SUM(approved_count) as approved')
+            ->selectRaw('SUM(approval_seconds_total) as approval_seconds')
+            ->selectRaw('SUM(unique_customers) as unique_customers')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $marginRows = AnalyticsDailyCurrency::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('date')
+            ->selectRaw('date')
+            ->selectRaw('SUM(realized_margin_myr) as margin')
+            ->toBase()
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse($row->date)->toDateString());
+
+        $series = [
+            'volume_myr' => [],
+            'realized_margin_myr' => [],
+            'tx_count' => [],
+            'unique_customers' => [],
+            'avg_ticket_myr' => [],
+            'cancel_rate_pct' => [],
+            'avg_approval_seconds' => [],
+        ];
+
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $key = $day->toDateString();
+            $row = $branchRows->get($key);
+
+            $volume = (string) ($row->volume ?? '0');
+            $completed = (string) ($row->completed ?? '0');
+            $txCount = (string) ($row->tx_count ?? '0');
+            $approved = (string) ($row->approved ?? '0');
+
+            $series['volume_myr'][] = (float) $volume;
+            $marginRow = $marginRows->get($key);
+            $series['realized_margin_myr'][] = (float) ($marginRow === null ? '0' : (string) $marginRow->margin);
+            $series['tx_count'][] = (int) ($row->tx_count ?? 0);
+            $series['unique_customers'][] = (int) ($row->unique_customers ?? 0);
+            $series['avg_ticket_myr'][] = (float) $this->mathService->safeDivide($volume, $completed, 4);
+            $series['cancel_rate_pct'][] = (float) $this->mathService->multiply(
+                $this->mathService->safeDivide((string) ($row->cancelled ?? '0'), $txCount, 6),
+                '100', 4
+            );
+            $series['avg_approval_seconds'][] = (float) $this->mathService->safeDivide(
+                (string) ($row->approval_seconds ?? '0'), $approved, 2
+            );
+        }
+
+        return $series;
     }
 
     /**
@@ -592,6 +671,108 @@ class KpiService
         $index = max(0, min($count - 1, (int) ceil($percentile / 100 * $count) - 1));
 
         return (string) $sorted->get($index);
+    }
+
+    /**
+     * Stock and risk: position exposure and limit utilization, turnover
+     * and days-of-stock from the period's currency rollup, plus the
+     * compliance snapshot the plan lists as a read-only BI view.
+     *
+     * @return array{positions: array<int, array<string, mixed>>, totals: array<string, string>, compliance: array<string, int|string>}
+     */
+    public function stockAndCompliance(Carbon $from, Carbon $to, ?int $branchId): array
+    {
+        $limits = $this->thresholdService->getPositionLimits();
+        $days = (string) ((int) $from->diffInDays($to) + 1);
+
+        $volumeRows = AnalyticsDailyCurrency::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->forBranch($branchId)
+            ->groupBy('currency_code')
+            ->selectRaw('currency_code')
+            ->selectRaw('SUM(sell_qty) as sold')
+            ->selectRaw('SUM(buy_volume_myr + sell_volume_myr) as volume')
+            ->toBase()
+            ->get()
+            ->keyBy('currency_code');
+
+        $positions = CurrencyPosition::query()
+            ->with('currency')
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->orderBy('currency_code')
+            ->get();
+
+        $rows = [];
+        $totalExposure = '0';
+        $totalUnrealized = '0';
+
+        foreach ($positions as $position) {
+            $quantity = $this->mathService->abs((string) $position->quantity);
+            $rate = (string) ($position->current_rate ?? '0');
+            $limit = $limits[$position->currency_code] ?? null;
+            $limitValue = $limit ?? '0';
+
+            $volumeRow = $volumeRows->get($position->currency_code);
+            $sold = $volumeRow === null ? '0' : (string) $volumeRow->sold;
+            $volume = $volumeRow === null ? '0' : (string) $volumeRow->volume;
+
+            $rows[] = [
+                'currency_code' => $position->currency_code,
+                'currency_name' => $position->currency->name ?? $position->currency_code,
+                'quantity' => (string) $position->quantity,
+                'average_cost' => (string) $position->average_cost,
+                'current_rate' => $rate,
+                'current_value' => (string) $position->current_value,
+                'unrealized_gain_loss' => (string) $position->unrealized_gain_loss,
+                'position_limit' => $limit,
+                'utilization_pct' => $this->mathService->compare($limitValue, '0') > 0
+                    ? $this->mathService->multiply($this->mathService->divide($quantity, $limitValue), '100')
+                    : '0',
+                'turnover_ratio' => $this->mathService->safeDivide($volume, $quantity, 2),
+                'days_of_stock' => $this->mathService->compare($sold, '0') > 0
+                    ? $this->mathService->divide($quantity, $this->mathService->divide($sold, $days, 4), 1)
+                    : '0',
+            ];
+
+            $totalExposure = $this->mathService->add(
+                $totalExposure,
+                $this->mathService->multiply($quantity, $rate)
+            );
+            $totalUnrealized = $this->mathService->add($totalUnrealized, (string) $position->unrealized_gain_loss);
+        }
+
+        $completed = Transaction::query()
+            ->completed()
+            ->forDateRange($from->toDateString(), $to->toDateString())
+            ->forBranch($branchId)
+            ->count();
+
+        $flagged = FlaggedTransaction::query()
+            ->whereBetween('created_at', [$from->toDateString(), $to->toDateString()])
+            ->count();
+
+        return [
+            'positions' => $rows,
+            'totals' => [
+                'exposure_myr' => $totalExposure,
+                'unrealized_gain_loss_myr' => $totalUnrealized,
+                'unrealized_pct' => $this->mathService->multiply(
+                    $this->mathService->safeDivide($totalUnrealized, $totalExposure, 8),
+                    '100', 2
+                ),
+            ],
+            'compliance' => [
+                'completed_transactions' => $completed,
+                'flagged_transactions' => $flagged,
+                'flagged_rate_pct' => $this->mathService->multiply(
+                    $this->mathService->safeDivide((string) $flagged, (string) $completed, 6),
+                    '100', 4
+                ),
+                'open_alerts' => Alert::query()->open()->count(),
+                'open_flags' => FlaggedTransaction::query()->open()->count(),
+                'str_reports' => StrReport::query()->count(),
+            ],
+        ];
     }
 
     /**

@@ -181,4 +181,31 @@ class BiDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('No analytics data yet');
     }
+
+    #[Test]
+    public function dashboard_cards_render_sparklines_and_drill_down_links(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $branch = Branch::factory()->create();
+
+        foreach (range(1, 5) as $offset) {
+            $this->makeTransaction([
+                'branch_id' => $branch->id,
+                'amount_myr' => (string) (100 * $offset),
+                'created_at' => today()->subDays($offset),
+            ]);
+        }
+        $this->rebuild(today()->subDays(5)->toDateString(), today()->toDateString());
+
+        $content = (string) $this->actingAs($admin)->get(route('bi.dashboard'))->getContent();
+
+        // Each card drills into the page that carries its detail view.
+        $this->assertStringContainsString('/bi/branches', $content);
+        $this->assertStringContainsString('/bi/currencies', $content);
+        $this->assertStringContainsString('/bi/operations', $content);
+        $this->assertStringContainsString('/bi/customers', $content);
+
+        // Sparkline polylines are rendered for the series-bearing cards.
+        $this->assertStringContainsString('<polyline', $content);
+    }
 }
