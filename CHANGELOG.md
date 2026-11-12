@@ -27,7 +27,7 @@ Close the last low-risk audit items that need no business decision.
   exception to the BCMath-only convention explicit.
 
 ### Testing
-- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact` (full suite) — 2822 passed, 3 skipped
 - `php artisan test --compact tests/Unit/Transaction tests/Feature/TransactionWizardTest.php tests/Feature/TransactionWorkflowTest.php` — 121 passed
 - `vendor/bin/pint --dirty --format agent` — passed
 - `vendor/bin/phpstan analyse <edited paths>` — no errors
@@ -81,7 +81,7 @@ delivery, and a destructive seeder guard that any code could flip.
   decryption path).
 
 ### Testing
-- `php artisan test --compact` (full suite) — see below
+- `php artisan test --compact` (full suite) — 2822 passed, 3 skipped
 - `php artisan test --compact tests/Feature/Api tests/Feature/Compliance tests/Feature/Web tests/Feature/Admin tests/Feature/Views` — 400 passed
 - `php artisan test --compact tests/Feature/Api/V1/BranchResourceAuthorizationTest.php tests/Feature/Commands` — 25 passed
 - `vendor/bin/phpstan analyse` (whole app) — no errors
