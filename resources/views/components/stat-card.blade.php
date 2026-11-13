@@ -5,6 +5,7 @@
     'trend' => null,
     'href' => null,
     'sparkline' => null,
+    'target' => null,
 ])
 
 @php
@@ -31,6 +32,9 @@ $classes = 'rounded-xl border border-border bg-surface p-5 dark:bg-card-dark dar
             @endif
         </span>
         <span class="mt-1 block text-2xl font-bold {{ $colors[$color] }} dark:text-ink-dark">{{ $displayValue }}</span>
+        @if($target !== null)
+            <span class="mt-1 block text-xs text-ink-muted dark:text-ink-dark">{{ $target }}</span>
+        @endif
         @if($sparkline !== null && count($sparkline) > 1)
             <span class="mt-3 block">
                 <x-sparkline :data="$sparkline" />
@@ -45,6 +49,9 @@ $classes = 'rounded-xl border border-border bg-surface p-5 dark:bg-card-dark dar
             <p class="mt-1 text-xs {{ $trend > 0 ? 'text-success-text' : 'text-danger' }} dark:text-ink-muted">
                 {{ $trend > 0 ? '+' : '' }}{{ $trend }}%
             </p>
+        @endif
+        @if($target !== null)
+            <p class="mt-1 text-xs text-ink-muted dark:text-ink-dark">{{ $target }}</p>
         @endif
         @if($sparkline !== null && count($sparkline) > 1)
             <div class="mt-3">

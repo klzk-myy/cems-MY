@@ -59,17 +59,21 @@
                 ? number_format($approvalSeconds / 60, 1) . ' min'
                 : number_format($approvalSeconds, 0) . ' s';
             $drillTo = fn (string $key) => route($drill[$key], request()->only('start_date', 'end_date', 'branch_id'));
+            $target = fn (string $metric, string $value) => isset($targets[$metric]) && (float) $targets[$metric]['target_value'] > 0
+                ? 'Target '.number_format((float) $targets[$metric]['target_value'], 2)
+                    .' · '.number_format(((float) $value / (float) $targets[$metric]['target_value']) * 100, 1).'%'
+                : null;
         @endphp
 
         <x-stat-grid>
-            <x-stat-card label="Volume (MYR)" :value="$money($cards['volume_myr']['value'])" color="green" :trend="$delta($cards['volume_myr'])" :href="$drillTo('volume_myr')" :sparkline="$sparklines['volume_myr']" />
-            <x-stat-card label="Realized Margin (MYR)" :value="$money($cards['realized_margin_myr']['value'])" color="purple" :trend="$delta($cards['realized_margin_myr'])" :href="$drillTo('realized_margin_myr')" :sparkline="$sparklines['realized_margin_myr']" />
-            <x-stat-card label="Margin %" :value="number_format((float) $cards['margin_pct']['value'], 2) . '%'" color="yellow" :trend="$delta($cards['margin_pct'])" :href="$drillTo('realized_margin_myr')" />
-            <x-stat-card label="Transactions" :value="number_format($cards['tx_count']['value'])" color="blue" :trend="$delta($cards['tx_count'])" :href="$drillTo('tx_count')" :sparkline="$sparklines['tx_count']" />
-            <x-stat-card label="Unique Customers" :value="number_format($cards['unique_customers']['value'])" color="blue" :trend="$delta($cards['unique_customers'])" :href="$drillTo('unique_customers')" :sparkline="$sparklines['unique_customers']" />
-            <x-stat-card label="Avg Ticket (MYR)" :value="$money($cards['avg_ticket_myr']['value'])" color="gray" :trend="$delta($cards['avg_ticket_myr'])" :href="$drillTo('avg_ticket_myr')" :sparkline="$sparklines['avg_ticket_myr']" />
-            <x-stat-card label="Cancel Rate" :value="number_format((float) $cards['cancel_rate_pct']['value'], 2) . '%'" color="red" :trend="$delta($cards['cancel_rate_pct'])" :href="$drillTo('cancel_rate_pct')" :sparkline="$sparklines['cancel_rate_pct']" />
-            <x-stat-card label="Avg Approval Time" :value="$approvalLabel" color="gray" :trend="$delta($cards['avg_approval_seconds'])" :href="$drillTo('avg_approval_seconds')" :sparkline="$sparklines['avg_approval_seconds']" />
+            <x-stat-card label="Volume (MYR)" :value="$money($cards['volume_myr']['value'])" color="green" :trend="$delta($cards['volume_myr'])" :href="$drillTo('volume_myr')" :sparkline="$sparklines['volume_myr']" :target="$target('volume_myr', $cards['volume_myr']['value'])" />
+            <x-stat-card label="Realized Margin (MYR)" :value="$money($cards['realized_margin_myr']['value'])" color="purple" :trend="$delta($cards['realized_margin_myr'])" :href="$drillTo('realized_margin_myr')" :sparkline="$sparklines['realized_margin_myr']" :target="$target('realized_margin_myr', $cards['realized_margin_myr']['value'])" />
+            <x-stat-card label="Margin %" :value="number_format((float) $cards['margin_pct']['value'], 2) . '%'" color="yellow" :trend="$delta($cards['margin_pct'])" :href="$drillTo('realized_margin_myr')" :target="$target('margin_pct', $cards['margin_pct']['value'])" />
+            <x-stat-card label="Transactions" :value="number_format($cards['tx_count']['value'])" color="blue" :trend="$delta($cards['tx_count'])" :href="$drillTo('tx_count')" :sparkline="$sparklines['tx_count']" :target="$target('tx_count', (string) $cards['tx_count']['value'])" />
+            <x-stat-card label="Unique Customers" :value="number_format($cards['unique_customers']['value'])" color="blue" :trend="$delta($cards['unique_customers'])" :href="$drillTo('unique_customers')" :sparkline="$sparklines['unique_customers']" :target="$target('unique_customers', (string) $cards['unique_customers']['value'])" />
+            <x-stat-card label="Avg Ticket (MYR)" :value="$money($cards['avg_ticket_myr']['value'])" color="gray" :trend="$delta($cards['avg_ticket_myr'])" :href="$drillTo('avg_ticket_myr')" :sparkline="$sparklines['avg_ticket_myr']" :target="$target('avg_ticket_myr', $cards['avg_ticket_myr']['value'])" />
+            <x-stat-card label="Cancel Rate" :value="number_format((float) $cards['cancel_rate_pct']['value'], 2) . '%'" color="red" :trend="$delta($cards['cancel_rate_pct'])" :href="$drillTo('cancel_rate_pct')" :sparkline="$sparklines['cancel_rate_pct']" :target="$target('cancel_rate_pct', $cards['cancel_rate_pct']['value'])" />
+            <x-stat-card label="Avg Approval Time" :value="$approvalLabel" color="gray" :trend="$delta($cards['avg_approval_seconds'])" :href="$drillTo('avg_approval_seconds')" :sparkline="$sparklines['avg_approval_seconds']" :target="$target('avg_approval_seconds', $cards['avg_approval_seconds']['value'])" />
         </x-stat-grid>
 
         @if($lastComputedAt === null)

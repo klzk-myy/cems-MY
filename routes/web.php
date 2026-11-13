@@ -10,6 +10,7 @@ use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BranchScopeController;
+use App\Http\Controllers\Admin\KpiTargetController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\SanctionSourceController;
 use App\Http\Controllers\Admin\ThresholdController;
@@ -602,6 +603,13 @@ Route::middleware(['auth', 'auth.session', 'session.timeout', 'mfa.enabled'])->g
         Route::get('/', [ThresholdController::class, 'index'])->name('index');
         Route::post('/', [ThresholdController::class, 'update'])->name('update')->middleware('password.confirm');
         Route::post('/reset', [ThresholdController::class, 'reset'])->name('reset')->middleware('password.confirm');
+    });
+
+    // Operational KPI targets — BI-PLAN.md §8 open question 2. Revenue is
+    // covered by GL budgets; volume and turnaround targets live here.
+    Route::middleware(['role:manage_thresholds', 'mfa.verified'])->prefix('admin/kpi-targets')->name('admin.kpi-targets.')->group(function () {
+        Route::get('/', [KpiTargetController::class, 'index'])->name('index');
+        Route::post('/', [KpiTargetController::class, 'update'])->name('update')->middleware('password.confirm');
     });
 
     Route::middleware(['role:access_branches'])->prefix('branches')->name('branches.')->group(function () {
