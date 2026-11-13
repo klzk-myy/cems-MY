@@ -214,6 +214,7 @@ class SchemaSeeder extends Seeder
             'analytics_monthly_customer',
             'analytics_daily_forecast',
             'bi_alert_rules',
+            'kpi_targets',
         ];
 
         Schema::disableForeignKeyConstraints();
@@ -2351,6 +2352,27 @@ class SchemaSeeder extends Seeder
             $table->index('branch_id', 'analytics_daily_forecast_branch_id_index');
             $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
             $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
+        });
+
+        // Operational KPI targets — BI-PLAN.md §8 open question 2. GL budgets
+        // cover revenue; volume and turnaround targets are not expressible
+        // there, so they live here. branch_id NULL is the company-wide target,
+        // mirrored by the branch_key generated column so the unique index
+        // survives MySQL's NULL-distinct behaviour.
+        Schema::create('kpi_targets', function (Blueprint $table) {
+            $table->id();
+            $table->string('kpi_metric', 64);
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->unsignedBigInteger('branch_key')->storedAs('IFNULL(branch_id, 0)');
+            $table->string('period', 16)->default('day');
+            $table->decimal('target_value', 20, 4)->default(0);
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['kpi_metric', 'branch_key', 'period'], 'kpi_targets_metric_branch_period_unique');
+            $table->index('branch_id', 'kpi_targets_branch_id_index');
+            $table->foreign('branch_id')->references('id')->on('branches')->cascadeOnDelete();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
 
     }

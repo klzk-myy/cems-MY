@@ -5,6 +5,42 @@ All notable changes to this project are documented here. Format per
 
 ---
 
+## [2026-11-13] - Round 15: operational KPI targets
+
+### Files Changed
+- `database/seeders/SchemaSeeder.php` — new `kpi_targets` table (drop list + create)
+- `app/Models/Bi/KpiTarget.php` — new model
+- `app/Services/Bi/KpiService.php` — new `targets()` reader
+- `app/Http/Controllers/Admin/KpiTargetController.php` — new admin CRUD
+- `app/Http/Requests/UpdateKpiTargetsRequest.php` — new form request
+- `app/Console/Commands/InstallKpiTargetsTable.php` — new `kpi:install-targets-table` upgrade path
+- `app/Http/Controllers/Bi/DashboardController.php`, `resources/views/bi/dashboard.blade.php`, `resources/views/components/stat-card.blade.php` — cards show target and attainment
+- `routes/web.php` — admin route; `.github/workflows/deploy.yml` — installer in the post-deploy chain
+- `tests/Feature/AdminKpiTargetTest.php` — coverage
+
+### Purpose
+`BI-PLAN.md:269` leaves open whether operational KPI targets are needed beyond GL budgets, noting that volume and turnaround targets would need a small table. Revenue is covered by the chart of accounts; a daily volume target or an approval-turnaround ceiling is not expressible there. This resolves the question: targets are now a first-class, admin-managed BI entity.
+
+### Changes Made
+- `kpi_targets` stores one row per metric × branch × period, with a nullable `branch_id` (company-wide) and a `branch_key` generated column so the unique index survives MySQL's NULL-distinct behaviour, matching the other BI tables.
+- `KpiService::targets()` resolves the effective target for a scope: a branch row overrides the company-wide row, and a company-wide viewer only sees the company-wide rows.
+- `/admin/kpi-targets` lets a `manage_thresholds` holder set targets per metric, per period, per branch. Mutations require `mfa.verified` and `password.confirm`; the request whitelists the compound keys so the form cannot mint an unknown metric, branch or period.
+- Dashboard cards render `Target <value> · <attainment>%` beneath the delta when a target exists for that metric, and nothing when one does not — so an untargeted metric reads exactly as before.
+- `kpi:install-targets-table` creates the table on a live database, because `SchemaSeeder` only runs on fresh installs and the dashboard would otherwise fail on a database predating the table. It is registered in `deploy.yml`'s post-deploy chain alongside the other installers.
+
+### Testing
+- `php artisan test --compact` — 2867 passed, 3 skipped, 0 failed
+- New `AdminKpiTargetTest`: permission gate, branch-over-company override resolution, save-and-persist, rejection of unknown metric/branch/period keys, installer registration and idempotency, and the dashboard target line
+- `vendor/bin/pint --dirty --format agent` — passed
+- `vendor/bin/phpstan analyse --no-progress` on the changed paths — no errors
+- `npm run build` — required because `CompiledAssetsTest` asserts `public/build` is newer than `resources/views`
+
+### Impact Analysis
+- GitNexus `detect_changes` (scope all): 4 changed symbols, 6 affected processes, risk **high** — driven by `DashboardController::index` (every BI page's navigation) and `SchemaSeeder::createSchema`. The schema change is additive; `SchemaSeeder` is destructive and only runs through guarded call sites, and the new table is created on live databases by the installer registered in the deploy chain.
+- Two defects were found and fixed while writing the tests: `whereIn('branch_id', [null])` matches nothing in SQL, so the scope filter needed a `whereNull`/`orWhere` group; and the admin view referenced the model as if it were an enum.
+
+---
+
 ## [2026-11-12] - Round 14: KPI metric catalog
 
 ### Files Changed

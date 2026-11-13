@@ -81,6 +81,7 @@ class DashboardController extends Controller
                 : $this->statusMixChart($from, $to, $branchId),
             'lastComputedAt' => $this->kpiService->lastComputedAt($branchId),
             'sparklines' => $this->kpiService->cardSparklines($from, $to, $branchId),
+            'targets' => $this->kpiService->targets($branchId),
             'drill' => KpiMetric::drillRouteMap(),
         ]);
     }

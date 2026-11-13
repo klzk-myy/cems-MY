@@ -136,6 +136,7 @@ jobs:
             php artisan stock-transfers:install-branch-fks
             php artisan transactions:install-reexecuted-columns
             php artisan str:install-bnm-reference-unique
+            php artisan kpi:install-targets-table
             php artisan accounting:install-mappings
             php artisan permissions:sync
             php artisan audit:seal-pending --no-interaction

@@ -6,6 +6,7 @@ use App\Models\Bi\AnalyticsDailyBranch;
 use App\Models\Bi\AnalyticsDailyCurrency;
 use App\Models\Bi\AnalyticsDailyTeller;
 use App\Models\Bi\AnalyticsMonthlyCustomer;
+use App\Models\Bi\KpiTarget;
 use App\Models\Compliance\Alert;
 use App\Models\Compliance\FlaggedTransaction;
 use App\Models\Compliance\StrReport;
@@ -1022,6 +1023,43 @@ class KpiService
 
             return ['cohort_month' => $cohortMonth, 'cohort_size' => (int) $size, 'cells' => $cells];
         })->values()->all();
+    }
+
+    /**
+     * Configured targets for one scope and period, keyed by metric. A
+     * branch row overrides the company-wide row for that metric; metrics
+     * without a target are absent so the card falls back to delta-only.
+     *
+     * @return array<string, array{period: string, target_value: string}>
+     */
+    public function targets(?int $branchId, string $period = KpiTarget::PERIOD_DAY): array
+    {
+        $rows = KpiTarget::query()
+            ->where('period', $period)
+            ->where(function ($query) use ($branchId): void {
+                $query->whereNull('branch_id');
+
+                if ($branchId !== null) {
+                    $query->orWhere('branch_id', $branchId);
+                }
+            })
+            ->get();
+
+        $targets = [];
+
+        foreach ($rows as $row) {
+            // The company-wide row must not displace a branch-specific one.
+            if ($row->branch_id === null && isset($targets[$row->kpi_metric])) {
+                continue;
+            }
+
+            $targets[$row->kpi_metric] = [
+                'period' => $row->period,
+                'target_value' => (string) $row->target_value,
+            ];
+        }
+
+        return $targets;
     }
 
     /**
